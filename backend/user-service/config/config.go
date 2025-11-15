@@ -11,15 +11,15 @@ import (
 )
 
 type Config struct {
-	Server    ServerConfig    `env:",prefix=SERVER_"`
-	Database  DatabaseConfig  `env:",prefix=DATABASE_"`
-	Redis     RedisConfig     `env:",prefix=REDIS_"`
-	JWT       JWTConfig       `env:",prefix=JWT_"`
-	RateLimit RateLimitConfig `env:",prefix=RATE_LIMIT_"`
-	CORS      CORSConfig      `env:",prefix=CORS_"`
-	Log       LogConfig       `env:",prefix=LOG_"`
-	External  ExternalConfig  `env:",prefix=EXTERNAL_"`
-	Firebase  FirebaseConfig  `env:",prefix=FIREBASE_"`
+	Server    ServerConfig    `envPrefix:"SERVER_"`
+	Database  DatabaseConfig  `envPrefix:"DATABASE_"`
+	Redis     RedisConfig     `envPrefix:"REDIS_"`
+	JWT       JWTConfig       `envPrefix:"JWT_"`
+	RateLimit RateLimitConfig `envPrefix:"RATE_LIMIT_"`
+	CORS      CORSConfig      `envPrefix:"CORS_"`
+	Log       LogConfig       `envPrefix:"LOG_"`
+	External  ExternalConfig  `envPrefix:"EXTERNAL_"`
+	Firebase  FirebaseConfig  `envPrefix:"FIREBASE_"`
 }
 
 type ServerConfig struct {
@@ -208,5 +208,26 @@ func (c *LogConfig) ToSharedLogConfig() interface{} {
 		MaxBackups: c.MaxBackups,
 		MaxAge:     c.MaxAge,
 		Compress:   c.Compress,
+	}
+}
+
+// ToSharedCORSConfig converts local CORSConfig to shared CORSConfig for compatibility
+func (c *CORSConfig) ToSharedCORSConfig() interface{} {
+	// Since we can't import shared config due to circular dependency,
+	// we'll create a compatible struct with the same field structure
+	return struct {
+		AllowOrigins     []string `mapstructure:"allow_origins"`
+		AllowMethods     []string `mapstructure:"allow_methods"`
+		AllowHeaders     []string `mapstructure:"allow_headers"`
+		ExposeHeaders    []string `mapstructure:"expose_headers"`
+		AllowCredentials bool     `mapstructure:"allow_credentials"`
+		MaxAge           int      `mapstructure:"max_age"`
+	}{
+		AllowOrigins:     c.AllowOrigins,
+		AllowMethods:     c.AllowMethods,
+		AllowHeaders:     c.AllowHeaders,
+		ExposeHeaders:    c.ExposeHeaders,
+		AllowCredentials: c.AllowCredentials,
+		MaxAge:           c.MaxAge,
 	}
 }

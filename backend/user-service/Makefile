@@ -1,11 +1,20 @@
 
-.PHONY: build run migrate test clean
+.PHONY: build run migrate test clean docker-up init-db dev
 
 build:
 	go build -o bin/user-service.exe cmd/server/main.go
 
 build-migrate:
 	go build -o bin/migrate.exe cmd/migrate/main.go
+
+docker-up:
+	cd .. && docker-compose up -d
+
+init-db: docker-up
+	timeout /t 3
+	docker exec -it postgres psql -U postgres -c "CREATE DATABASE bus_dev_user;" || echo "Database already exists"
+
+dev: init-db migrate run
 
 run:
 	go run cmd/server/main.go

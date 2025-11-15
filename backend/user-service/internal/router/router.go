@@ -1,10 +1,14 @@
 package router
 
 import (
+	"time"
+
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
 	"bus-booking/shared/ginext"
 	"bus-booking/shared/middleware"
+	"bus-booking/user-service/config"
 	"bus-booking/user-service/internal/handler"
 )
 
@@ -13,13 +17,14 @@ type RouterConfig struct {
 	UserHandler *handler.UserHandler
 	AuthHandler *handler.AuthHandler
 	ServiceName string
+	Config      *config.Config
 }
 
 // SetupRoutes configures all routes for the service
 func SetupRoutes(router *gin.Engine, config *RouterConfig) {
 	// Apply global middleware
 	router.Use(middleware.RequestContextMiddleware(config.ServiceName))
-	router.Use(middleware.SetupCORS(nil)) // Pass nil for default CORS config
+	router.Use(setupLocalCORS(&config.Config.CORS))
 	router.Use(middleware.Logger())
 
 	// Health check endpoint
@@ -84,4 +89,27 @@ func SetupRoutes(router *gin.Engine, config *RouterConfig) {
 			}
 		}
 	}
+}
+
+// setupLocalCORS creates CORS middleware from local config
+func setupLocalCORS(cfg *config.CORSConfig) gin.HandlerFunc {
+	corsConfig := cors.Config{
+		AllowOrigins:     cfg.AllowOrigins,
+		AllowMethods:     cfg.AllowMethods,
+		AllowHeaders:     cfg.AllowHeaders,
+		ExposeHeaders:    cfg.ExposeHeaders,
+		AllowCredentials: cfg.AllowCredentials,
+		MaxAge:           time.Duration(cfg.MaxAge) * time.Second,
+	}
+
+	// If allow origins contains "*", use AllowAllOrigins
+	for _, origin := range cfg.AllowOrigins {
+		if origin == "*" {
+			corsConfig.AllowAllOrigins = true
+			corsConfig.AllowOrigins = nil
+			break
+		}
+	}
+
+	return cors.New(corsConfig)
 }

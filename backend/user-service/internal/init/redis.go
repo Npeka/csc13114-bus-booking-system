@@ -8,7 +8,6 @@ import (
 	"bus-booking/user-service/internal/db"
 )
 
-// InitRedis initializes Redis connection
 func InitRedis(cfg *config.Config) (*sharedDB.RedisManager, error) {
 	redisManager, err := db.NewRedisConnection(&cfg.Redis)
 	if err != nil {

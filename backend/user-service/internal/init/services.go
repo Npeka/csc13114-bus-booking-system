@@ -13,19 +13,14 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// InitServices initializes all application services and handlers
 func InitServices(cfg *config.Config, database *sharedDB.DatabaseManager, firebaseAuth *auth.Client) (*handler.UserHandler, *handler.AuthHandler) {
-	// Initialize utilities
 	jwtManager := utils.NewJWTManager(&cfg.JWT)
 
-	// Initialize repositories
 	userRepo := repository.NewUserRepository(database.DB)
 
-	// Initialize services
 	userService := service.NewUserService(userRepo)
 	authService := service.NewAuthService(userRepo, jwtManager, firebaseAuth, cfg)
 
-	// Initialize handlers
 	userHandler := handler.NewUserHandler(userService)
 	authHandler := handler.NewAuthHandler(authService)
 

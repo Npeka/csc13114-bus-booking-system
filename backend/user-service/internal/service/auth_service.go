@@ -127,6 +127,11 @@ func (s *AuthService) OAuth2Signin(ctx context.Context, req *model.OAuth2SigninR
 		return nil, errors.New("unsupported OAuth2 provider")
 	}
 
+	if s.firebaseAuth == nil {
+		log.Error().Msg("Firebase Auth is not initialized")
+		return nil, errors.New("Firebase Auth is not available")
+	}
+
 	token, err := s.firebaseAuth.VerifyIDToken(ctx, req.IDToken)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to verify Firebase ID token")

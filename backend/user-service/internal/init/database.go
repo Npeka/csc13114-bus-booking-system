@@ -9,15 +9,12 @@ import (
 	"bus-booking/user-service/internal/model"
 )
 
-// InitDatabase initializes database connection and runs migrations
 func InitDatabase(cfg *config.Config) (*sharedDB.DatabaseManager, error) {
-	// Initialize database connection
 	dbManager, err := db.NewPostgresConnection(&cfg.Database, cfg.Server.Environment)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	// Run database migrations
 	if err := dbManager.AutoMigrate(&model.User{}); err != nil {
 		return nil, fmt.Errorf("failed to run database migrations: %w", err)
 	}

@@ -6,10 +6,8 @@ import (
 	"bus-booking/user-service/config"
 )
 
-// SetupLogger sets up logger using local config
 func SetupLogger(cfg *config.LogConfig) error {
-	// Convert local config to shared config
-	sharedCfg := &sharedConfig.LogConfig{
+	return logger.SetupLogger(&sharedConfig.LogConfig{
 		Level:      cfg.Level,
 		Format:     cfg.Format,
 		Output:     cfg.Output,
@@ -18,7 +16,5 @@ func SetupLogger(cfg *config.LogConfig) error {
 		MaxBackups: cfg.MaxBackups,
 		MaxAge:     cfg.MaxAge,
 		Compress:   cfg.Compress,
-	}
-
-	return logger.SetupLogger(sharedCfg)
+	})
 }
