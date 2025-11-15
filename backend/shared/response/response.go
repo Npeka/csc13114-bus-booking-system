@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	sharedcontext "csc13114-bus-ticket-booking-system/shared/context"
+	sharedcontext "bus-booking/shared/context"
 
 	"github.com/gin-gonic/gin"
 )

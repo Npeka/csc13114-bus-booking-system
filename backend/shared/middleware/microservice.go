@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"csc13114-bus-ticket-booking-system/shared/constants"
-	sharedcontext "csc13114-bus-ticket-booking-system/shared/context"
+	"bus-booking/shared/constants"
+	sharedcontext "bus-booking/shared/context"
 
 	"github.com/gin-gonic/gin"
 )

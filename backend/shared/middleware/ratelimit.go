@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"csc13114-bus-ticket-booking-system/shared/config"
-	"csc13114-bus-ticket-booking-system/shared/response"
+	"bus-booking/shared/config"
+	"bus-booking/shared/response"
 
 	"github.com/gin-gonic/gin"
 	goredis "github.com/redis/go-redis/v9"

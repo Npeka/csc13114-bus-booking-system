@@ -3,8 +3,8 @@ package router
 import (
 	"github.com/gin-gonic/gin"
 
-	"csc13114-bus-ticket-booking-system/shared/middleware"
-	"csc13114-bus-ticket-booking-system/template-service/internal/handler"
+	"bus-booking/shared/middleware"
+	"bus-booking/template-service/internal/handler"
 )
 
 // RouterConfig holds router dependencies

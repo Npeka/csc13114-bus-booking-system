@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"csc13114-bus-ticket-booking-system/shared/config"
+	"bus-booking/shared/config"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"

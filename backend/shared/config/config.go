@@ -15,6 +15,7 @@ type Config struct {
 	Database  DatabaseConfig  `mapstructure:"database"`
 	Redis     RedisConfig     `mapstructure:"redis"`
 	JWT       JWTConfig       `mapstructure:"jwt"`
+	OAuth     OAuthConfig     `mapstructure:"oauth"`
 	RateLimit RateLimitConfig `mapstructure:"rate_limit"`
 	CORS      CORSConfig      `mapstructure:"cors"`
 	Log       LogConfig       `mapstructure:"log"`
@@ -93,6 +94,22 @@ type LogConfig struct {
 	MaxBackups int    `mapstructure:"max_backups" env:"LOG_MAX_BACKUPS" default:"3"`
 	MaxAge     int    `mapstructure:"max_age" env:"LOG_MAX_AGE" default:"30"`
 	Compress   bool   `mapstructure:"compress" env:"LOG_COMPRESS" default:"true"`
+}
+
+type OAuthConfig struct {
+	Firebase FirebaseConfig `mapstructure:"firebase"`
+}
+
+type FirebaseConfig struct {
+	ProjectID           string `mapstructure:"project_id" env:"FIREBASE_PROJECT_ID" validate:"required"`
+	PrivateKeyID        string `mapstructure:"private_key_id" env:"FIREBASE_PRIVATE_KEY_ID" validate:"required"`
+	PrivateKey          string `mapstructure:"private_key" env:"FIREBASE_PRIVATE_KEY" validate:"required"`
+	ClientEmail         string `mapstructure:"client_email" env:"FIREBASE_CLIENT_EMAIL" validate:"required,email"`
+	ClientID            string `mapstructure:"client_id" env:"FIREBASE_CLIENT_ID" validate:"required"`
+	AuthURI             string `mapstructure:"auth_uri" env:"FIREBASE_AUTH_URI" default:"https://accounts.google.com/o/oauth2/auth"`
+	TokenURI            string `mapstructure:"token_uri" env:"FIREBASE_TOKEN_URI" default:"https://oauth2.googleapis.com/token"`
+	AuthProviderCertURL string `mapstructure:"auth_provider_x509_cert_url" env:"FIREBASE_AUTH_PROVIDER_CERT_URL" default:"https://www.googleapis.com/oauth2/v1/certs"`
+	ClientCertURL       string `mapstructure:"client_x509_cert_url" env:"FIREBASE_CLIENT_CERT_URL" validate:"required"`
 }
 
 type ExternalConfig struct {

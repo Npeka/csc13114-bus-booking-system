@@ -5,10 +5,10 @@ import (
 	"errors"
 	"time"
 
-	"csc13114-bus-ticket-booking-system/shared/constants"
-	"csc13114-bus-ticket-booking-system/shared/utils"
-	"csc13114-bus-ticket-booking-system/template-service/internal/model"
-	"csc13114-bus-ticket-booking-system/template-service/internal/repository"
+	"bus-booking/shared/constants"
+	"bus-booking/shared/utils"
+	"bus-booking/template-service/internal/model"
+	"bus-booking/template-service/internal/repository"
 
 	"github.com/rs/zerolog/log"
 )

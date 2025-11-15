@@ -6,7 +6,7 @@ import (
 	"strings"
 	"unicode"
 
-	"csc13114-bus-ticket-booking-system/shared/response"
+	"bus-booking/shared/response"
 
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"

@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"csc13114-bus-ticket-booking-system/shared/config"
+	"bus-booking/shared/config"
 
 	"github.com/rs/zerolog/log"
 	"gorm.io/driver/postgres"

@@ -1,8 +1,8 @@
-module csc13114-bus-ticket-booking-system/template-service
+module bus-booking/template-service
 
 go 1.23.3
 
-replace csc13114-bus-ticket-booking-system/shared => ../shared
+replace bus-booking/shared => ../shared
 
 require (
 	github.com/gin-gonic/gin v1.11.0
@@ -12,7 +12,7 @@ require (
 require github.com/mattn/go-colorable v0.1.13 // indirect
 
 require (
-	csc13114-bus-ticket-booking-system/shared v0.0.0-00010101000000-000000000000
+	bus-booking/shared v0.0.0-00010101000000-000000000000
 	github.com/bytedance/sonic v1.14.0 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
 	github.com/caarlos0/env/v11 v11.2.2 // indirect

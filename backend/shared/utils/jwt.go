@@ -3,17 +3,18 @@ package utils
 import (
 	"time"
 
-	"csc13114-bus-ticket-booking-system/shared/config"
+	"bus-booking/shared/config"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 // JWTClaims represents JWT claims structure
 type JWTClaims struct {
-	UserID    string `json:"user_id"`
-	Email     string `json:"email"`
-	Role      string `json:"role"`
-	TokenType string `json:"token_type"` // "access" or "refresh"
+	UserID    uuid.UUID `json:"user_id"`
+	Email     string    `json:"email"`
+	Role      string    `json:"role"`
+	TokenType string    `json:"token_type"` // "access" or "refresh"
 	jwt.RegisteredClaims
 }
 
@@ -30,7 +31,7 @@ func NewJWTManager(cfg *config.JWTConfig) *JWTManager {
 }
 
 // GenerateAccessToken generates an access token
-func (jm *JWTManager) GenerateAccessToken(userID, email, role string) (string, error) {
+func (jm *JWTManager) GenerateAccessToken(userID uuid.UUID, email, role string) (string, error) {
 	now := time.Now()
 	claims := &JWTClaims{
 		UserID:    userID,
@@ -51,7 +52,7 @@ func (jm *JWTManager) GenerateAccessToken(userID, email, role string) (string, e
 }
 
 // GenerateRefreshToken generates a refresh token
-func (jm *JWTManager) GenerateRefreshToken(userID, email, role string) (string, error) {
+func (jm *JWTManager) GenerateRefreshToken(userID uuid.UUID, email, role string) (string, error) {
 	now := time.Now()
 	claims := &JWTClaims{
 		UserID:    userID,
@@ -72,7 +73,7 @@ func (jm *JWTManager) GenerateRefreshToken(userID, email, role string) (string, 
 }
 
 // GenerateTokenPair generates both access and refresh tokens
-func (jm *JWTManager) GenerateTokenPair(userID, email, role string) (accessToken, refreshToken string, err error) {
+func (jm *JWTManager) GenerateTokenPair(userID uuid.UUID, email, role string) (accessToken, refreshToken string, err error) {
 	accessToken, err = jm.GenerateAccessToken(userID, email, role)
 	if err != nil {
 		return "", "", err

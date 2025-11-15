@@ -4,12 +4,11 @@ import (
 	"context"
 	"errors"
 
-	"csc13114-bus-ticket-booking-system/template-service/internal/model"
+	"bus-booking/template-service/internal/model"
 
 	"gorm.io/gorm"
 )
 
-// UserRepositoryInterface defines the interface for user repository
 type UserRepositoryInterface interface {
 	Create(ctx context.Context, user *model.User) error
 	GetByID(ctx context.Context, id uint) (*model.User, error)
@@ -24,24 +23,20 @@ type UserRepositoryInterface interface {
 	UsernameExists(ctx context.Context, username string) (bool, error)
 }
 
-// UserRepository implements UserRepositoryInterface
 type UserRepository struct {
 	db *gorm.DB
 }
 
-// NewUserRepository creates a new user repository
 func NewUserRepository(db *gorm.DB) UserRepositoryInterface {
 	return &UserRepository{
 		db: db,
 	}
 }
 
-// Create creates a new user
 func (r *UserRepository) Create(ctx context.Context, user *model.User) error {
 	return r.db.WithContext(ctx).Create(user).Error
 }
 
-// GetByID gets a user by ID
 func (r *UserRepository) GetByID(ctx context.Context, id uint) (*model.User, error) {
 	var user model.User
 	err := r.db.WithContext(ctx).First(&user, id).Error
@@ -54,7 +49,6 @@ func (r *UserRepository) GetByID(ctx context.Context, id uint) (*model.User, err
 	return &user, nil
 }
 
-// GetByEmail gets a user by email
 func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
 	var user model.User
 	err := r.db.WithContext(ctx).Where("email = ?", email).First(&user).Error
@@ -67,7 +61,6 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*model.U
 	return &user, nil
 }
 
-// GetByUsername gets a user by username
 func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*model.User, error) {
 	var user model.User
 	err := r.db.WithContext(ctx).Where("username = ?", username).First(&user).Error
@@ -80,27 +73,22 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*m
 	return &user, nil
 }
 
-// Update updates a user
 func (r *UserRepository) Update(ctx context.Context, user *model.User) error {
 	return r.db.WithContext(ctx).Save(user).Error
 }
 
-// Delete soft deletes a user
 func (r *UserRepository) Delete(ctx context.Context, id uint) error {
 	return r.db.WithContext(ctx).Delete(&model.User{}, id).Error
 }
 
-// List gets a paginated list of users
 func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]*model.User, int64, error) {
 	var users []*model.User
 	var total int64
 
-	// Count total records
 	if err := r.db.WithContext(ctx).Model(&model.User{}).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// Get paginated records
 	err := r.db.WithContext(ctx).
 		Limit(limit).
 		Offset(offset).
@@ -110,17 +98,14 @@ func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]*model.
 	return users, total, err
 }
 
-// ListByRole gets a paginated list of users by role
 func (r *UserRepository) ListByRole(ctx context.Context, role string, limit, offset int) ([]*model.User, int64, error) {
 	var users []*model.User
 	var total int64
 
-	// Count total records
 	if err := r.db.WithContext(ctx).Model(&model.User{}).Where("role = ?", role).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// Get paginated records
 	err := r.db.WithContext(ctx).
 		Where("role = ?", role).
 		Limit(limit).
@@ -131,7 +116,6 @@ func (r *UserRepository) ListByRole(ctx context.Context, role string, limit, off
 	return users, total, err
 }
 
-// UpdateStatus updates user status
 func (r *UserRepository) UpdateStatus(ctx context.Context, id uint, status string) error {
 	return r.db.WithContext(ctx).
 		Model(&model.User{}).
@@ -139,7 +123,6 @@ func (r *UserRepository) UpdateStatus(ctx context.Context, id uint, status strin
 		Update("status", status).Error
 }
 
-// EmailExists checks if email already exists
 func (r *UserRepository) EmailExists(ctx context.Context, email string) (bool, error) {
 	var count int64
 	err := r.db.WithContext(ctx).
@@ -149,7 +132,6 @@ func (r *UserRepository) EmailExists(ctx context.Context, email string) (bool, e
 	return count > 0, err
 }
 
-// UsernameExists checks if username already exists
 func (r *UserRepository) UsernameExists(ctx context.Context, username string) (bool, error) {
 	var count int64
 	err := r.db.WithContext(ctx).

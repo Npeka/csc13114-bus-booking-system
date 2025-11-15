@@ -7,12 +7,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 
-	"csc13114-bus-ticket-booking-system/shared/constants"
-	sharedcontext "csc13114-bus-ticket-booking-system/shared/context"
-	"csc13114-bus-ticket-booking-system/shared/response"
-	"csc13114-bus-ticket-booking-system/shared/validator"
-	"csc13114-bus-ticket-booking-system/template-service/internal/model"
-	"csc13114-bus-ticket-booking-system/template-service/internal/service"
+	"bus-booking/shared/constants"
+	sharedcontext "bus-booking/shared/context"
+	"bus-booking/shared/response"
+	"bus-booking/shared/validator"
+	"bus-booking/template-service/internal/model"
+	"bus-booking/template-service/internal/service"
 )
 
 // AuthHandler handles authentication-related HTTP requests

@@ -3,7 +3,7 @@ package middleware
 import (
 	"time"
 
-	"csc13114-bus-ticket-booking-system/shared/config"
+	"bus-booking/shared/config"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"

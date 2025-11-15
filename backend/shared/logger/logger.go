@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"csc13114-bus-ticket-booking-system/shared/config"
+	"bus-booking/shared/config"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"

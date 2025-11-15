@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"time"
 
-	"csc13114-bus-ticket-booking-system/shared/constants"
-	sharedcontext "csc13114-bus-ticket-booking-system/shared/context"
+	"bus-booking/shared/constants"
+	sharedcontext "bus-booking/shared/context"
 
 	"github.com/rs/zerolog/log"
 )

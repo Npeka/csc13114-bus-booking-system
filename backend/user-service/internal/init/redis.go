@@ -1,0 +1,19 @@
+package appinit
+
+import (
+	"fmt"
+
+	sharedDB "bus-booking/shared/db"
+	"bus-booking/user-service/config"
+	"bus-booking/user-service/internal/db"
+)
+
+// InitRedis initializes Redis connection
+func InitRedis(cfg *config.Config) (*sharedDB.RedisManager, error) {
+	redisManager, err := db.NewRedisConnection(&cfg.Redis)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to Redis: %w", err)
+	}
+
+	return redisManager, nil
+}

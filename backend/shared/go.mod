@@ -1,4 +1,4 @@
-module csc13114-bus-ticket-booking-system/shared
+module bus-booking/shared
 
 go 1.23.3
 

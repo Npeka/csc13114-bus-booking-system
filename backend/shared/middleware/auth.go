@@ -4,8 +4,8 @@ import (
 	"strings"
 	"time"
 
-	"csc13114-bus-ticket-booking-system/shared/config"
-	"csc13114-bus-ticket-booking-system/shared/response"
+	"bus-booking/shared/config"
+	"bus-booking/shared/response"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
