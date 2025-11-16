@@ -1,8 +1,12 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, startTransition } from "react";
 import { useSearchParams } from "next/navigation";
-import { TripCard, TripCardSkeleton, type Trip } from "@/components/trips/trip-card";
+import {
+  TripCard,
+  TripCardSkeleton,
+  type Trip,
+} from "@/components/trips/trip-card";
 import { TripFilters, type Filters } from "@/components/trips/trip-filters";
 import { TripSearchForm } from "@/components/search/trip-search-form";
 import { Button } from "@/components/ui/button";
@@ -14,7 +18,9 @@ function TripsContent() {
   const searchParams = useSearchParams();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState<"price" | "departure" | "duration">("price");
+  const [sortBy, setSortBy] = useState<"price" | "departure" | "duration">(
+    "price",
+  );
 
   const origin = searchParams.get("from") || "";
   const destination = searchParams.get("to") || "";
@@ -30,12 +36,23 @@ function TripsContent() {
   });
 
   useEffect(() => {
-    // Simulate API call
-    setLoading(true);
-    setTimeout(() => {
-      setTrips(mockTrips);
-      setLoading(false);
+    let isSubscribed = true;
+    startTransition(() => {
+      setLoading(true);
+    });
+
+    const timeoutId = window.setTimeout(() => {
+      if (!isSubscribed) return;
+      startTransition(() => {
+        setTrips(mockTrips);
+        setLoading(false);
+      });
     }, 1000);
+
+    return () => {
+      isSubscribed = false;
+      window.clearTimeout(timeoutId);
+    };
   }, [origin, destination, date]);
 
   const handleClearFilters = () => {
@@ -55,15 +72,21 @@ function TripsContent() {
 
   const filteredTrips = trips.filter((trip) => {
     // Apply filters
-    if (trip.price < filters.priceRange[0] || trip.price > filters.priceRange[1]) {
+    if (
+      trip.price < filters.priceRange[0] ||
+      trip.price > filters.priceRange[1]
+    ) {
       return false;
     }
-    if (filters.busTypes.length > 0 && !filters.busTypes.includes(trip.busType)) {
+    if (
+      filters.busTypes.length > 0 &&
+      !filters.busTypes.includes(trip.busType)
+    ) {
       return false;
     }
     if (filters.amenities.length > 0) {
       const hasAllAmenities = filters.amenities.every((amenity) =>
-        trip.amenities.includes(amenity)
+        trip.amenities.includes(amenity),
       );
       if (!hasAllAmenities) return false;
     }
@@ -90,34 +113,18 @@ function TripsContent() {
     filters.busTypes.length +
     filters.amenities.length;
 
+  const handleToggleSort = () => {
+    setSortBy((prev) =>
+      prev === "price"
+        ? "departure"
+        : prev === "departure"
+          ? "duration"
+          : "price",
+    );
+  };
+
   return (
     <div className="min-h-screen bg-neutral-50">
-      {/* Search Summary Bar */}
-      <div className="bg-white border-b">
-        <div className="container py-4">
-          <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
-            <div>
-              <h1 className="text-2xl font-bold">
-                {origin} → {destination}
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                {date} • {passengers} hành khách • {sortedTrips.length} chuyến xe
-              </p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSortBy(sortBy === "price" ? "departure" : "price")}
-              >
-                <ArrowUpDown className="mr-2 h-4 w-4" />
-                Sắp xếp: {sortBy === "price" ? "Giá" : sortBy === "departure" ? "Giờ đi" : "Thời gian"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Update Search Form */}
       <div className="bg-white border-b py-6">
         <div className="container">
@@ -165,30 +172,21 @@ function TripsContent() {
 
           {/* Trip List */}
           <div className="space-y-4">
-            {loading ? (
-              <>
-                {[...Array(5)].map((_, i) => (
-                  <TripCardSkeleton key={i} />
-                ))}
-              </>
-            ) : sortedTrips.length > 0 ? (
-              sortedTrips.map((trip) => (
-                <TripCard key={trip.id} trip={trip} onSelect={handleSelectTrip} />
-              ))
-            ) : (
-              <div className="text-center py-12">
-                <p className="text-lg text-muted-foreground">
-                  Không tìm thấy chuyến xe phù hợp
-                </p>
-                <Button
-                  variant="outline"
-                  className="mt-4"
-                  onClick={handleClearFilters}
-                >
-                  Xóa bộ lọc
-                </Button>
-              </div>
-            )}
+            <TripSummaryHeader
+              origin={origin}
+              destination={destination}
+              date={date}
+              passengers={passengers}
+              resultsCount={sortedTrips.length}
+              sortBy={sortBy}
+              onToggleSort={handleToggleSort}
+            />
+            <TripResults
+              loading={loading}
+              trips={sortedTrips}
+              onSelect={handleSelectTrip}
+              onClearFilters={handleClearFilters}
+            />
           </div>
         </div>
       </div>
@@ -278,3 +276,97 @@ const mockTrips: Trip[] = [
   },
 ];
 
+type TripSummaryHeaderProps = {
+  origin: string;
+  destination: string;
+  date: string;
+  passengers: string;
+  resultsCount: number;
+  sortBy: "price" | "departure" | "duration";
+  onToggleSort: () => void;
+};
+
+function TripSummaryHeader({
+  origin,
+  destination,
+  date,
+  passengers,
+  resultsCount,
+  sortBy,
+  onToggleSort,
+}: TripSummaryHeaderProps) {
+  const sortLabel =
+    sortBy === "price"
+      ? "Giá"
+      : sortBy === "departure"
+        ? "Giờ đi"
+        : "Thời gian";
+
+  return (
+    <div className="rounded-2xl border bg-white p-4 shadow-sm">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-muted-foreground">
+            Tuyến đường
+          </p>
+          <h1 className="text-2xl font-bold">
+            {origin || "Điểm đi"} → {destination || "Điểm đến"}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {date || "Chưa chọn ngày"} • {passengers} hành khách •{" "}
+            {resultsCount} chuyến xe
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={onToggleSort}>
+          <ArrowUpDown className="mr-2 h-4 w-4" />
+          Sắp xếp: {sortLabel}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+type TripResultsProps = {
+  loading: boolean;
+  trips: Trip[];
+  onSelect: (tripId: string) => void;
+  onClearFilters: () => void;
+};
+
+function TripResults({
+  loading,
+  trips,
+  onSelect,
+  onClearFilters,
+}: TripResultsProps) {
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[...Array(5)].map((_, i) => (
+          <TripCardSkeleton key={i} />
+        ))}
+      </div>
+    );
+  }
+
+  if (trips.length === 0) {
+    return (
+      <div className="rounded-2xl border bg-white py-12 text-center shadow-sm">
+        <p className="text-lg text-muted-foreground">
+          Không tìm thấy chuyến xe phù hợp
+        </p>
+        <Button variant="outline" className="mt-4" onClick={onClearFilters}>
+          Xóa bộ lọc
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {trips.map((trip) => (
+        <TripCard key={trip.id} trip={trip} onSelect={onSelect} />
+      ))}
+    </div>
+  );
+}

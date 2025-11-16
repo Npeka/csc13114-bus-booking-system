@@ -49,7 +49,7 @@ export function ChatBot() {
     if (!message.trim()) return;
 
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: new Date().getTime().toString(),
       role: "user",
       content: message,
       timestamp: new Date(),
@@ -126,21 +126,23 @@ export function ChatBot() {
                 <div
                   className={cn(
                     "flex",
-                    message.role === "user" ? "justify-end" : "justify-start"
+                    message.role === "user" ? "justify-end" : "justify-start",
                   )}
                 >
                   <div
                     className={cn(
                       "flex max-w-[80%] space-x-2",
-                      message.role === "user" ? "flex-row-reverse space-x-reverse" : ""
+                      message.role === "user"
+                        ? "flex-row-reverse space-x-reverse"
+                        : "",
                     )}
                   >
                     <div
                       className={cn(
-                        "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full",
+                        "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
                         message.role === "user"
                           ? "bg-brand-primary"
-                          : "bg-white border"
+                          : "bg-white border",
                       )}
                     >
                       {message.role === "user" ? (
@@ -155,7 +157,7 @@ export function ChatBot() {
                           "rounded-lg p-3",
                           message.role === "user"
                             ? "bg-brand-primary text-white"
-                            : "bg-white border"
+                            : "bg-white border",
                         )}
                       >
                         <p className="text-sm">{message.content}</p>
@@ -191,7 +193,7 @@ export function ChatBot() {
             {isTyping && (
               <div className="flex justify-start">
                 <div className="flex space-x-2">
-                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white border">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white border">
                     <Bot className="h-4 w-4 text-brand-primary" />
                   </div>
                   <div className="rounded-lg bg-white border p-3">
@@ -282,11 +284,7 @@ function generateResponse(message: string): {
     return {
       message:
         "Chính sách hoàn/hủy vé:\n• Hủy trước 24h: hoàn 70% giá vé\n• Hủy từ 12-24h: hoàn 50%\n• Hủy dưới 12h: không hoàn\n\nLưu ý: Mỗi nhà xe có thể có chính sách khác nhau. Vui lòng kiểm tra kỹ khi đặt vé.",
-      suggestions: [
-        "Cách hủy vé",
-        "Đổi chuyến",
-        "Thời gian hoàn tiền",
-      ],
+      suggestions: ["Cách hủy vé", "Đổi chuyến", "Thời gian hoàn tiền"],
     };
   }
 
@@ -313,4 +311,3 @@ function generateResponse(message: string): {
     ],
   };
 }
-

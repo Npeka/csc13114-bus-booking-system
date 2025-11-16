@@ -9,12 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { 
-  CreditCard, 
-  Smartphone, 
-  Shield, 
+import {
+  CreditCard,
+  Smartphone,
+  Shield,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
 } from "lucide-react";
 
 function CheckoutContent() {
@@ -118,10 +118,7 @@ function CheckoutContent() {
 
                   <div className="space-y-2">
                     <Label htmlFor="notes">Ghi chú (không bắt buộc)</Label>
-                    <Input
-                      id="notes"
-                      placeholder="Yêu cầu đặc biệt..."
-                    />
+                    <Input id="notes" placeholder="Yêu cầu đặc biệt..." />
                   </div>
                 </CardContent>
               </Card>
@@ -268,6 +265,21 @@ function CheckoutContent() {
                     <CardTitle>Thông tin chuyến đi</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {tripId && (
+                      <>
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-1">
+                            Mã chuyến
+                          </p>
+                          <p className="font-semibold tracking-wide uppercase">
+                            {tripId}
+                          </p>
+                        </div>
+
+                        <Separator />
+                      </>
+                    )}
+
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">
                         Nhà xe
@@ -370,7 +382,7 @@ function CheckoutContent() {
                 <Card className="border-warning/50 bg-warning/5">
                   <CardContent className="pt-6">
                     <div className="flex items-start space-x-3">
-                      <AlertCircle className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
+                      <AlertCircle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
                       <div className="text-sm">
                         <p className="font-semibold mb-1">Lưu ý quan trọng</p>
                         <ul className="space-y-1 text-muted-foreground">
@@ -398,4 +410,3 @@ export default function CheckoutPage() {
     </Suspense>
   );
 }
-

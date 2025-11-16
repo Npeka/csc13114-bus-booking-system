@@ -4,7 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { SeatMap, SeatSelectionSummary, type Seat } from "@/components/trips/seat-map";
+import {
+  SeatMap,
+  SeatSelectionSummary,
+  type Seat,
+} from "@/components/trips/seat-map";
 import { Clock, MapPin, Star, Bus } from "lucide-react";
 
 export default function SeatSelectionPage({
@@ -36,9 +40,8 @@ export default function SeatSelectionPage({
       const row = Math.floor(i / 4) + 1;
       const column = (i % 4) + 1;
       const seatNumber = i + 1;
-
-      // Randomly assign some seats as booked
-      const isBooked = Math.random() < 0.3;
+      // Assign seat status deterministically to avoid impure functions
+      const isBooked = (i * 17 + 7) % 10 < 3;
 
       // Assign seat types based on position
       let type: "standard" | "premium" | "vip" = "standard";
@@ -61,14 +64,14 @@ export default function SeatSelectionPage({
         price,
         label: seatNumber.toString().padStart(2, "0"),
       };
-    })
+    }),
   );
 
   const handleSeatSelect = (seatId: string) => {
     setSelectedSeats((prev) =>
       prev.includes(seatId)
         ? prev.filter((id) => id !== seatId)
-        : [...prev, seatId]
+        : [...prev, seatId],
     );
   };
 
@@ -78,11 +81,13 @@ export default function SeatSelectionPage({
 
   const handleProceed = () => {
     // Navigate to checkout with selected seats
-    router.push(`/checkout?tripId=${params.id}&seats=${selectedSeats.join(",")}`);
+    router.push(
+      `/checkout?tripId=${params.id}&seats=${selectedSeats.join(",")}`,
+    );
   };
 
   const selectedSeatObjects = seats.filter((seat) =>
-    selectedSeats.includes(seat.id)
+    selectedSeats.includes(seat.id),
   );
 
   return (
@@ -190,4 +195,3 @@ export default function SeatSelectionPage({
     </div>
   );
 }
-

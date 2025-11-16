@@ -30,7 +30,8 @@ export function Footer() {
               </span>
             </div>
             <p className="text-sm text-neutral-400">
-              Nền tảng đặt vé xe khách hàng đầu Việt Nam. Đặt vé nhanh, an toàn và tiện lợi.
+              Nền tảng đặt vé xe khách hàng đầu Việt Nam. Đặt vé nhanh, an toàn
+              và tiện lợi.
             </p>
             <div className="flex space-x-4">
               <a
@@ -52,22 +53,34 @@ export function Footer() {
             </h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/about" className="hover:text-brand-primary transition-colors">
+                <Link
+                  href="/about"
+                  className="hover:text-brand-primary transition-colors"
+                >
                   Về chúng tôi
                 </Link>
               </li>
               <li>
-                <Link href="/routes" className="hover:text-brand-primary transition-colors">
+                <Link
+                  href="/routes"
+                  className="hover:text-brand-primary transition-colors"
+                >
                   Tuyến đường phổ biến
                 </Link>
               </li>
               <li>
-                <Link href="/operators" className="hover:text-brand-primary transition-colors">
+                <Link
+                  href="/operators"
+                  className="hover:text-brand-primary transition-colors"
+                >
                   Nhà xe
                 </Link>
               </li>
               <li>
-                <Link href="/blog" className="hover:text-brand-primary transition-colors">
+                <Link
+                  href="/blog"
+                  className="hover:text-brand-primary transition-colors"
+                >
                   Blog
                 </Link>
               </li>
@@ -81,32 +94,50 @@ export function Footer() {
             </h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/help" className="hover:text-brand-primary transition-colors">
+                <Link
+                  href="/help"
+                  className="hover:text-brand-primary transition-colors"
+                >
                   Trung tâm trợ giúp
                 </Link>
               </li>
               <li>
-                <Link href="/faq" className="hover:text-brand-primary transition-colors">
+                <Link
+                  href="/faq"
+                  className="hover:text-brand-primary transition-colors"
+                >
                   Câu hỏi thường gặp
                 </Link>
               </li>
               <li>
-                <Link href="/booking-policy" className="hover:text-brand-primary transition-colors">
+                <Link
+                  href="/booking-policy"
+                  className="hover:text-brand-primary transition-colors"
+                >
                   Chính sách đặt vé
                 </Link>
               </li>
               <li>
-                <Link href="/refund-policy" className="hover:text-brand-primary transition-colors">
+                <Link
+                  href="/refund-policy"
+                  className="hover:text-brand-primary transition-colors"
+                >
                   Chính sách hoàn tiền
                 </Link>
               </li>
               <li>
-                <Link href="/terms" className="hover:text-brand-primary transition-colors">
+                <Link
+                  href="/terms"
+                  className="hover:text-brand-primary transition-colors"
+                >
                   Điều khoản dịch vụ
                 </Link>
               </li>
               <li>
-                <Link href="/privacy" className="hover:text-brand-primary transition-colors">
+                <Link
+                  href="/privacy"
+                  className="hover:text-brand-primary transition-colors"
+                >
                   Chính sách bảo mật
                 </Link>
               </li>
@@ -120,16 +151,19 @@ export function Footer() {
             </h3>
             <ul className="space-y-3 text-sm">
               <li className="flex items-start space-x-3">
-                <Phone className="h-5 w-5 mt-0.5 flex-shrink-0 text-brand-primary" />
+                <Phone className="h-5 w-5 mt-0.5 shrink-0 text-brand-primary" />
                 <div>
                   <p className="font-medium text-white">Hotline</p>
-                  <a href="tel:1900989901" className="hover:text-brand-primary transition-colors">
+                  <a
+                    href="tel:1900989901"
+                    className="hover:text-brand-primary transition-colors"
+                  >
                     1900 989 901
                   </a>
                 </div>
               </li>
               <li className="flex items-start space-x-3">
-                <Mail className="h-5 w-5 mt-0.5 flex-shrink-0 text-brand-primary" />
+                <Mail className="h-5 w-5 mt-0.5 shrink-0 text-brand-primary" />
                 <div>
                   <p className="font-medium text-white">Email</p>
                   <a
@@ -141,7 +175,7 @@ export function Footer() {
                 </div>
               </li>
               <li className="flex items-start space-x-3">
-                <MapPin className="h-5 w-5 mt-0.5 flex-shrink-0 text-brand-primary" />
+                <MapPin className="h-5 w-5 mt-0.5 shrink-0 text-brand-primary" />
                 <div>
                   <p className="font-medium text-white">Địa chỉ</p>
                   <p className="text-neutral-400">
@@ -162,7 +196,9 @@ export function Footer() {
               </p>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-xs text-neutral-400">Phương thức thanh toán:</span>
+              <span className="text-xs text-neutral-400">
+                Phương thức thanh toán:
+              </span>
               <div className="flex items-center space-x-2">
                 <div className="flex h-8 w-12 items-center justify-center rounded border border-neutral-700 bg-white text-xs font-bold">
                   MOMO
@@ -181,4 +217,3 @@ export function Footer() {
     </footer>
   );
 }
-

@@ -164,7 +164,7 @@
 /* Custom Container Utility */
 @utility container {
   margin-inline: auto;
-  max-width: 1280px;
+  max-width: 1128px;
   padding-inline: 1rem;
   
   @media (width >= 640px) {
@@ -207,5 +207,23 @@
       box-shadow: var(--shadow-card-hover);
       transform: translateY(-2px);
     }
+  }
+}
+
+.custom-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-brand-primary) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--color-brand-primary);
+    border-radius: 999px;
   }
 }

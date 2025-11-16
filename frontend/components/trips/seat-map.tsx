@@ -1,9 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 
 export type SeatStatus = "available" | "selected" | "booked" | "driver";
 export type SeatType = "standard" | "premium" | "vip";
@@ -42,13 +40,16 @@ export function SeatMap({
   };
 
   // Group seats by row
-  const rows = seats.reduce((acc, seat) => {
-    if (!acc[seat.row]) {
-      acc[seat.row] = [];
-    }
-    acc[seat.row].push(seat);
-    return acc;
-  }, {} as Record<number, Seat[]>);
+  const rows = seats.reduce(
+    (acc, seat) => {
+      if (!acc[seat.row]) {
+        acc[seat.row] = [];
+      }
+      acc[seat.row].push(seat);
+      return acc;
+    },
+    {} as Record<number, Seat[]>,
+  );
 
   const getSeatColor = (seat: Seat) => {
     if (seat.status === "driver") {
@@ -60,7 +61,7 @@ export function SeatMap({
     if (selectedSeats.includes(seat.id)) {
       return "bg-brand-primary text-white";
     }
-    
+
     switch (seat.type) {
       case "vip":
         return "bg-warning/20 hover:bg-warning/30 border-warning";
@@ -124,7 +125,7 @@ export function SeatMap({
                         getSeatColor(seat),
                         seat.status === "booked" || seat.status === "driver"
                           ? "cursor-not-allowed"
-                          : "cursor-pointer"
+                          : "cursor-pointer",
                       )}
                       onClick={() => handleSeatClick(seat)}
                       disabled={
@@ -185,8 +186,8 @@ export function SeatSelectionSummary({
                       {seat.type === "vip"
                         ? "VIP"
                         : seat.type === "premium"
-                        ? "Premium"
-                        : "Thường"}
+                          ? "Premium"
+                          : "Thường"}
                     </p>
                   </div>
                 </div>
@@ -240,4 +241,3 @@ export function SeatSelectionSummary({
     </div>
   );
 }
-

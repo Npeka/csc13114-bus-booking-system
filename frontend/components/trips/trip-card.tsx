@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Star, Clock, Users, MapPin } from "lucide-react";
+import { Star, Clock, Users } from "lucide-react";
 
 export interface Trip {
   id: string;
@@ -29,11 +29,14 @@ interface TripCardProps {
 
 export function TripCard({ trip, onSelect }: TripCardProps) {
   return (
-    <Card className="card-hover cursor-pointer" onClick={() => onSelect(trip.id)}>
+    <Card
+      className="card-hover cursor-pointer"
+      onClick={() => onSelect(trip.id)}
+    >
       <CardContent className="p-6">
         <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
           {/* Operator Info */}
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <div className="flex items-center space-x-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-neutral-100">
                 <span className="text-xl">🚌</span>
@@ -56,16 +59,20 @@ export function TripCard({ trip, onSelect }: TripCardProps) {
               <div className="text-2xl font-bold">{trip.departureTime}</div>
               <div className="text-sm text-muted-foreground">{trip.origin}</div>
             </div>
-            
+
             <div className="flex flex-col items-center px-4">
               <Clock className="h-4 w-4 text-muted-foreground mb-1" />
-              <div className="text-xs text-muted-foreground">{trip.duration}</div>
+              <div className="text-xs text-muted-foreground">
+                {trip.duration}
+              </div>
               <div className="w-20 border-t-2 border-dashed my-1"></div>
             </div>
 
             <div className="text-center">
               <div className="text-2xl font-bold">{trip.arrivalTime}</div>
-              <div className="text-sm text-muted-foreground">{trip.destination}</div>
+              <div className="text-sm text-muted-foreground">
+                {trip.destination}
+              </div>
             </div>
           </div>
 
@@ -81,7 +88,7 @@ export function TripCard({ trip, onSelect }: TripCardProps) {
                 <span>{trip.availableSeats} chỗ trống</span>
               </div>
             </div>
-            <Button 
+            <Button
               className="bg-brand-primary hover:bg-brand-primary-hover text-white h-10 md:w-full"
               onClick={(e) => {
                 e.stopPropagation();
@@ -134,4 +141,3 @@ export function TripCardSkeleton() {
     </Card>
   );
 }
-

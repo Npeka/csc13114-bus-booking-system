@@ -2,7 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, MapPin, Clock, Download, X } from "lucide-react";
+import { Calendar, MapPin, Download, X } from "lucide-react";
+import Link from "next/link";
 
 export default function MyBookingsPage() {
   // Mock bookings data
@@ -100,7 +101,7 @@ export default function MyBookingsPage() {
                     Bạn chưa có chuyến đi nào sắp tới
                   </p>
                   <Button asChild className="mt-4">
-                    <a href="/">Đặt vé ngay</a>
+                    <Link href="/">Đặt vé ngay</Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -162,9 +163,7 @@ export default function MyBookingsPage() {
             {cancelledBookings.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center">
-                  <p className="text-muted-foreground">
-                    Chưa có vé nào bị hủy
-                  </p>
+                  <p className="text-muted-foreground">Chưa có vé nào bị hủy</p>
                 </CardContent>
               </Card>
             ) : (
@@ -191,7 +190,7 @@ function BookingCard({
   booking,
   actions,
 }: {
-  booking: any;
+  booking: Booking;
   actions: React.ReactNode;
 }) {
   const getStatusBadge = (status: string) => {
@@ -224,9 +223,7 @@ function BookingCard({
       <CardHeader>
         <div className="flex items-start justify-between">
           <div>
-            <CardTitle className="text-lg">
-              {booking.trip.operator}
-            </CardTitle>
+            <CardTitle className="text-lg">{booking.trip.operator}</CardTitle>
             <p className="text-sm text-muted-foreground">
               Mã đặt vé: {booking.id}
             </p>
@@ -290,4 +287,3 @@ function BookingCard({
     </Card>
   );
 }
-

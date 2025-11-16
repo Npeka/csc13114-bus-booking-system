@@ -1,35 +1,32 @@
 import { TripSearchForm } from "@/components/search/trip-search-form";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { 
-  Shield, 
-  Clock, 
-  CreditCard, 
-  HeadphonesIcon, 
-  Star, 
+import {
+  Shield,
+  Clock,
+  CreditCard,
+  HeadphonesIcon,
+  Star,
   TrendingUp,
   Users,
-  Bus
+  Bus,
 } from "lucide-react";
 
 export default function Home() {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-brand-primary/10 via-brand-primary-light/20 to-background py-16 md:py-24">
+      <section className="relative bg-linear-to-br from-brand-primary/10 via-brand-primary-light/20 to-background py-12 md:py-20">
         <div className="container">
-          <div className="mx-auto max-w-3xl text-center mb-12">
-            <Badge variant="secondary" className="mb-4">
-              🚌 Nền tảng đặt vé #1 Việt Nam
-            </Badge>
-            <h1 className="text-4xl font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl">
+          <div className="mx-auto max-w-3xl text-center mb-8">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl lg:text-5xl">
               Đặt vé xe khách
               <br />
               <span className="text-brand-primary">nhanh chóng & tiện lợi</span>
             </h1>
-            <p className="mt-6 text-lg text-muted-foreground md:text-xl">
-              Hàng trăm tuyến đường khắp Việt Nam. Đặt vé online, thanh toán an toàn, 
-              lên xe không lo.
+            <p className="mt-4 text-base text-muted-foreground md:text-lg">
+              Hàng trăm tuyến đường khắp Việt Nam. Đặt vé online, thanh toán an
+              toàn, lên xe không lo.
             </p>
           </div>
 
@@ -39,7 +36,7 @@ export default function Home() {
           </div>
 
           {/* Trust Indicators */}
-          <div className="mt-12 grid grid-cols-2 gap-6 text-center md:grid-cols-4">
+          <div className="mt-8 grid grid-cols-2 gap-6 text-center md:grid-cols-4">
             <div className="space-y-2">
               <div className="text-3xl font-bold text-brand-primary">500K+</div>
               <div className="text-sm text-muted-foreground">Vé đã đặt</div>
@@ -60,72 +57,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-16 md:py-24">
-        <div className="container">
-          <div className="mx-auto max-w-2xl text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-              Tại sao chọn BusTicket.vn?
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              Chúng tôi cam kết mang đến trải nghiệm đặt vé tốt nhất cho bạn
-            </p>
-          </div>
-
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-            <Card className="border-2 hover:border-brand-primary transition-colors">
-              <CardContent className="pt-6">
-                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-brand-primary/10">
-                  <Shield className="h-6 w-6 text-brand-primary" />
-                </div>
-                <h3 className="mb-2 text-xl font-semibold">An toàn & Bảo mật</h3>
-                <p className="text-sm text-muted-foreground">
-                  Thanh toán được mã hóa SSL. Thông tin cá nhân được bảo vệ tuyệt đối.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 hover:border-brand-primary transition-colors">
-              <CardContent className="pt-6">
-                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-success/10">
-                  <Clock className="h-6 w-6 text-success" />
-                </div>
-                <h3 className="mb-2 text-xl font-semibold">Đặt vé nhanh</h3>
-                <p className="text-sm text-muted-foreground">
-                  Chỉ 3 bước đơn giản. Nhận vé điện tử ngay lập tức qua email và SMS.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 hover:border-brand-primary transition-colors">
-              <CardContent className="pt-6">
-                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-info/10">
-                  <CreditCard className="h-6 w-6 text-info" />
-                </div>
-                <h3 className="mb-2 text-xl font-semibold">Thanh toán linh hoạt</h3>
-                <p className="text-sm text-muted-foreground">
-                  Hỗ trợ MoMo, ZaloPay, PayOS và các phương thức phổ biến khác.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 hover:border-brand-primary transition-colors">
-              <CardContent className="pt-6">
-                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-warning/10">
-                  <HeadphonesIcon className="h-6 w-6 text-warning" />
-                </div>
-                <h3 className="mb-2 text-xl font-semibold">Hỗ trợ 24/7</h3>
-                <p className="text-sm text-muted-foreground">
-                  Đội ngũ CSKH luôn sẵn sàng hỗ trợ bạn mọi lúc mọi nơi.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
       {/* Popular Routes Section */}
-      <section className="bg-neutral-50 py-16 md:py-24">
+      <section className=" py-16 md:py-24">
         <div className="container">
           <div className="mx-auto max-w-2xl text-center mb-12">
             <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">
@@ -165,6 +98,76 @@ export default function Home() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="bg-neutral-50 py-16 md:py-24">
+        <div className="container">
+          <div className="mx-auto max-w-2xl text-center mb-12">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+              Tại sao chọn BusTicket.vn?
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Chúng tôi cam kết mang đến trải nghiệm đặt vé tốt nhất cho bạn
+            </p>
+          </div>
+
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+            <Card className="border-2 hover:border-brand-primary transition-colors">
+              <CardContent className="pt-6">
+                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-brand-primary/10">
+                  <Shield className="h-6 w-6 text-brand-primary" />
+                </div>
+                <h3 className="mb-2 text-xl font-semibold">
+                  An toàn & Bảo mật
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Thanh toán được mã hóa SSL. Thông tin cá nhân được bảo vệ
+                  tuyệt đối.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 hover:border-brand-primary transition-colors">
+              <CardContent className="pt-6">
+                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-success/10">
+                  <Clock className="h-6 w-6 text-success" />
+                </div>
+                <h3 className="mb-2 text-xl font-semibold">Đặt vé nhanh</h3>
+                <p className="text-sm text-muted-foreground">
+                  Chỉ 3 bước đơn giản. Nhận vé điện tử ngay lập tức qua email và
+                  SMS.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 hover:border-brand-primary transition-colors">
+              <CardContent className="pt-6">
+                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-info/10">
+                  <CreditCard className="h-6 w-6 text-info" />
+                </div>
+                <h3 className="mb-2 text-xl font-semibold">
+                  Thanh toán linh hoạt
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Hỗ trợ MoMo, ZaloPay, PayOS và các phương thức phổ biến khác.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 hover:border-brand-primary transition-colors">
+              <CardContent className="pt-6">
+                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-warning/10">
+                  <HeadphonesIcon className="h-6 w-6 text-warning" />
+                </div>
+                <h3 className="mb-2 text-xl font-semibold">Hỗ trợ 24/7</h3>
+                <p className="text-sm text-muted-foreground">
+                  Đội ngũ CSKH luôn sẵn sàng hỗ trợ bạn mọi lúc mọi nơi.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
@@ -213,45 +216,35 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* CTA Section */}
-      <section className="bg-brand-primary py-16 text-white">
-        <div className="container text-center">
-          <h2 className="text-3xl font-bold md:text-4xl">
-            Sẵn sàng cho chuyến đi tiếp theo?
-          </h2>
-          <p className="mt-4 text-lg text-white/90">
-            Tải app ngay để nhận ưu đãi độc quyền và trải nghiệm tốt hơn
-          </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <div className="flex h-14 items-center space-x-2 rounded-lg bg-white px-6 text-foreground">
-              <span className="text-2xl">📱</span>
-              <div className="text-left">
-                <div className="text-xs">Tải về trên</div>
-                <div className="text-sm font-semibold">App Store</div>
-              </div>
-            </div>
-            <div className="flex h-14 items-center space-x-2 rounded-lg bg-white px-6 text-foreground">
-              <span className="text-2xl">🤖</span>
-              <div className="text-left">
-                <div className="text-xs">Tải về trên</div>
-                <div className="text-sm font-semibold">Google Play</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }
 
 const popularDestinations = [
   { id: 1, from: "Hà Nội", to: "Đà Nẵng", operators: 25, priceFrom: 350000 },
-  { id: 2, from: "TP. Hồ Chí Minh", to: "Đà Lạt", operators: 30, priceFrom: 180000 },
+  {
+    id: 2,
+    from: "TP. Hồ Chí Minh",
+    to: "Đà Lạt",
+    operators: 30,
+    priceFrom: 180000,
+  },
   { id: 3, from: "Hà Nội", to: "Sa Pa", operators: 15, priceFrom: 250000 },
-  { id: 4, from: "TP. Hồ Chí Minh", to: "Nha Trang", operators: 28, priceFrom: 220000 },
+  {
+    id: 4,
+    from: "TP. Hồ Chí Minh",
+    to: "Nha Trang",
+    operators: 28,
+    priceFrom: 220000,
+  },
   { id: 5, from: "Hà Nội", to: "Hạ Long", operators: 20, priceFrom: 150000 },
-  { id: 6, from: "TP. Hồ Chí Minh", to: "Phan Thiết", operators: 22, priceFrom: 120000 },
+  {
+    id: 6,
+    from: "TP. Hồ Chí Minh",
+    to: "Phan Thiết",
+    operators: 22,
+    priceFrom: 120000,
+  },
 ];
 
 const reviews = [
