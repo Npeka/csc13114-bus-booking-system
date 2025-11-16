@@ -1,0 +1,41 @@
+service: "bookings"
+routes:
+  # Booking routes - all require authentication
+  - path: "/api/v1/bookings"
+    methods: ["GET", "POST"]
+    auth:
+      required: true
+
+  - path: "/api/v1/bookings/:id"
+    methods: ["GET", "PUT", "DELETE"]
+    auth:
+      required: true
+
+  - path: "/api/v1/bookings/:id/cancel"
+    methods: ["POST"]
+    auth:
+      required: true
+
+  - path: "/api/v1/bookings/:id/confirm"
+    methods: ["POST"]
+    auth:
+      required: true
+
+  # Admin booking management routes
+  - path: "/api/v1/admin/bookings"
+    methods: ["GET"]
+    auth:
+      required: true
+      roles: ["admin"]
+
+  - path: "/api/v1/admin/bookings/:id"
+    methods: ["GET", "PUT", "DELETE"]
+    auth:
+      required: true
+      roles: ["admin"]
+
+  - path: "/api/v1/admin/bookings/:id/status"
+    methods: ["PATCH"]
+    auth:
+      required: true
+      roles: ["admin"]

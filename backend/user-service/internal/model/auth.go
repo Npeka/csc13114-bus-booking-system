@@ -33,9 +33,11 @@ type TokenVerifyRequest struct {
 }
 
 type TokenVerifyResponse struct {
-	Valid  bool     `json:"valid"`
-	UserID string   `json:"user_id,omitempty"`
-	Role   UserRole `json:"role,omitempty"`
+	Valid  bool   `json:"valid"`
+	UserID string `json:"user_id,omitempty"`
+	Email  string `json:"email,omitempty"`
+	Role   string `json:"role,omitempty"`
+	Name   string `json:"name,omitempty"`
 }
 
 type RefreshTokenRequest struct {

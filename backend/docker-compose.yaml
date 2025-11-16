@@ -1,4 +1,11 @@
+version: "3.8"
+
+networks:
+  bus-booking-network:
+    driver: bridge
+
 services:
+  # Database services
   postgres:
     image: postgres:17-alpine
     container_name: postgres
@@ -9,9 +16,16 @@ services:
       POSTGRES_DB: postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./docker:/docker-entrypoint-initdb.d
+      - ./infra/docker/db:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
+    networks:
+      - bus-booking-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
@@ -19,7 +33,268 @@ services:
     restart: unless-stopped
     ports:
       - "6379:6379"
-    command: ["redis-server", "--appendonly", "no"]
+    networks:
+      - bus-booking-network
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Microservices
+  user-service:
+    build:
+      context: .
+      dockerfile: ./user-service/Dockerfile
+    container_name: user-service
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    networks:
+      bus-booking-network:
+        aliases:
+          - user-internal.cluster.local
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=postgres
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=your-jwt-secret-key
+      - PORT=8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8080/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  trip-service:
+    build:
+      context: .
+      dockerfile: ./trip-service/Dockerfile
+    container_name: trip-service
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    networks:
+      bus-booking-network:
+        aliases:
+          - trips-internal.cluster.local
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=postgres
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PORT=8081
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8081/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  booking-service:
+    build:
+      context: .
+      dockerfile: ./booking-service/Dockerfile
+    container_name: booking-service
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    networks:
+      bus-booking-network:
+        aliases:
+          - bookings-internal.cluster.local
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=postgres
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PORT=8082
+      - USER_SERVICE_URL=http://user-service:8080
+      - TRIP_SERVICE_URL=http://trip-service:8081
+      - PAYMENT_SERVICE_URL=http://payment-service:8084
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+      trip-service:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8082/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  template-service:
+    build:
+      context: .
+      dockerfile: ./template-service/Dockerfile
+    container_name: template-service
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    networks:
+      bus-booking-network:
+        aliases:
+          - templates-internal.cluster.local
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=postgres
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=your-jwt-secret-key
+      - PORT=8083
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8083/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: ./payment-service/Dockerfile
+    container_name: payment-service
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+    networks:
+      bus-booking-network:
+        aliases:
+          - payments-internal.cluster.local
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=postgres
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PORT=8084
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8084/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Gateway service
+  gateway-service:
+    build:
+      context: .
+      dockerfile: ./gateway-service/Dockerfile
+    container_name: gateway-service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    networks:
+      bus-booking-network:
+        aliases:
+          - gateway-internal.cluster.local
+    environment:
+      - PORT=8000
+      - USER_INTERNAL_URL=http://user-internal.cluster.local:8080
+      - TRIPS_INTERNAL_URL=http://trips-internal.cluster.local:8081
+      - BOOKINGS_INTERNAL_URL=http://bookings-internal.cluster.local:8082
+      - TEMPLATES_INTERNAL_URL=http://templates-internal.cluster.local:8083
+      - PAYMENTS_INTERNAL_URL=http://payments-internal.cluster.local:8084
+    depends_on:
+      user-service:
+        condition: service_healthy
+      trip-service:
+        condition: service_healthy
+      booking-service:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8000/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   postgres_data:
+  redis_data:

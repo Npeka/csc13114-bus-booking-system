@@ -1,10 +1,11 @@
 go 1.24.0
 
-toolchain go1.24.10
-
 use (
+	./booking-service
+	./gateway-service
 	./payment-service
 	./shared
 	./template-service
+	./trip-service
 	./user-service
 )

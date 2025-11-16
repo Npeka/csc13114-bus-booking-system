@@ -1,0 +1,188 @@
+# Default values for bus-booking.
+replicaCount: 2
+
+image:
+  registry: docker.io
+  username: your-dockerhub-username # Change this to your Docker Hub username
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  fsGroup: 2000
+
+securityContext:
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 65534
+
+services:
+  userService:
+    enabled: true
+    port: 8080
+    targetPort: 8080
+    type: ClusterIP
+
+  tripService:
+    enabled: true
+    port: 8081
+    targetPort: 8081
+    type: ClusterIP
+
+  bookingService:
+    enabled: true
+    port: 8082
+    targetPort: 8082
+    type: ClusterIP
+
+  templateService:
+    enabled: true
+    port: 8083
+    targetPort: 8083
+    type: ClusterIP
+
+  paymentService:
+    enabled: true
+    port: 8084
+    targetPort: 8084
+    type: ClusterIP
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: bus-booking.your-domain.com # Change this to your domain
+      paths:
+        - path: /api/users
+          pathType: Prefix
+          service: user-service
+        - path: /api/trips
+          pathType: Prefix
+          service: trip-service
+        - path: /api/bookings
+          pathType: Prefix
+          service: booking-service
+        - path: /api/templates
+          pathType: Prefix
+          service: template-service
+        - path: /api/payments
+          pathType: Prefix
+          service: payment-service
+  tls:
+    - secretName: bus-booking-tls
+      hosts:
+        - bus-booking.your-domain.com
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - bus-booking
+          topologyKey: kubernetes.io/hostname
+
+# Database configuration
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "postgres123"
+    username: "bususer"
+    password: "buspass123"
+    database: "busdb"
+  primary:
+    persistence:
+      enabled: true
+      size: 10Gi
+    resources:
+      limits:
+        memory: 512Mi
+        cpu: 500m
+      requests:
+        memory: 256Mi
+        cpu: 250m
+
+redis:
+  enabled: true
+  auth:
+    enabled: false
+  master:
+    persistence:
+      enabled: true
+      size: 5Gi
+    resources:
+      limits:
+        memory: 256Mi
+        cpu: 250m
+      requests:
+        memory: 128Mi
+        cpu: 100m
+
+# Environment variables
+env:
+  global:
+    JWT_SECRET: "your-super-secret-jwt-key-change-this"
+    LOG_LEVEL: "info"
+
+  database:
+    DB_HOST: "bus-booking-postgresql"
+    DB_PORT: "5432"
+    DB_USER: "bususer"
+    DB_PASSWORD: "buspass123"
+    DB_NAME: "busdb"
+
+  redis:
+    REDIS_HOST: "bus-booking-redis-master"
+    REDIS_PORT: "6379"
+
+# Monitoring
+monitoring:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    scrapeTimeout: 10s
+
+# Backup
+backup:
+  enabled: false
+  schedule: "0 2 * * *"
+  retention: "7d"

@@ -1,0 +1,23 @@
+{{- range $service := list "user-service" "trip-service" "booking-service" "template-service" "payment-service" }}
+{{- $serviceConfig := index $.Values.services (printf "%sService" ($service | replace "-" "" | title | untitle)) }}
+{{- if $serviceConfig.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "bus-booking.fullname" $ }}-{{ $service }}
+  labels:
+    {{- include "bus-booking.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $service }}
+spec:
+  type: {{ $serviceConfig.type }}
+  ports:
+    - port: {{ $serviceConfig.port }}
+      targetPort: {{ $serviceConfig.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "bus-booking.selectorLabels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $service }}
+{{- end }}
+{{- end }}

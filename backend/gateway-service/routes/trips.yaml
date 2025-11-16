@@ -1,0 +1,46 @@
+service: "trips"
+routes:
+  # Public trip search routes
+  - path: "/api/v1/trips/search"
+    methods: ["GET", "POST"]
+
+  - path: "/api/v1/trips/:id"
+    methods: ["GET"]
+
+  - path: "/api/v1/routes"
+    methods: ["GET"]
+
+  - path: "/api/v1/routes/:id"
+    methods: ["GET"]
+
+  # Protected trip management routes
+  - path: "/api/v1/trips"
+    methods: ["POST", "PUT", "DELETE"]
+    auth:
+      required: true
+      roles: ["admin", "operator"]
+
+  - path: "/api/v1/trips/:id"
+    methods: ["PUT", "DELETE"]
+    auth:
+      required: true
+      roles: ["admin", "operator"]
+
+  - path: "/api/v1/routes"
+    methods: ["POST", "PUT", "DELETE"]
+    auth:
+      required: true
+      roles: ["admin", "operator"]
+
+  - path: "/api/v1/routes/:id"
+    methods: ["PUT", "DELETE"]
+    auth:
+      required: true
+      roles: ["admin", "operator"]
+
+  # Admin routes
+  - path: "/api/v1/admin/trips/*"
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
+    auth:
+      required: true
+      roles: ["admin"]

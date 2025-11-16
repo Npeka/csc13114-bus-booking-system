@@ -12,6 +12,7 @@ import (
 	"bus-booking/template-service/internal/model"
 	"bus-booking/template-service/internal/repository"
 
+	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -64,7 +65,8 @@ func (s *AuthService) Login(ctx context.Context, req *model.LoginRequest) (*mode
 	}
 
 	// Generate tokens
-	accessToken, err := s.jwtManager.GenerateAccessToken(fmt.Sprintf("%d", user.ID), user.Email, user.Role)
+	userUUID := uuid.MustParse(fmt.Sprintf("00000000-0000-0000-0000-%012d", user.ID))
+	accessToken, err := s.jwtManager.GenerateAccessToken(userUUID, user.Email, user.Role)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to generate access token")
 		return nil, errors.New(constants.ErrInternalServer)
@@ -93,7 +95,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, req *model.RefreshTokenR
 	}
 
 	// Get user
-	userID, err := strconv.ParseUint(claims.UserID, 10, 32)
+	userID, err := strconv.ParseUint(claims.UserID.String()[24:], 10, 32)
 	if err != nil {
 		return nil, errors.New("invalid user ID")
 	}
@@ -112,7 +114,8 @@ func (s *AuthService) RefreshToken(ctx context.Context, req *model.RefreshTokenR
 	}
 
 	// Generate new tokens
-	accessToken, err := s.jwtManager.GenerateAccessToken(fmt.Sprintf("%d", user.ID), user.Email, user.Role)
+	userUUID2 := uuid.MustParse(fmt.Sprintf("00000000-0000-0000-0000-%012d", user.ID))
+	accessToken, err := s.jwtManager.GenerateAccessToken(userUUID2, user.Email, user.Role)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to generate access token")
 		return nil, errors.New(constants.ErrInternalServer)

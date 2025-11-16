@@ -1,0 +1,24 @@
+service: "templates"
+routes:
+  # Public template routes
+  - path: "/api/v1/templates"
+    methods: ["GET"]
+
+  - path: "/api/v1/templates/:id"
+    methods: ["GET"]
+
+  - path: "/api/v1/templates/render"
+    methods: ["POST"]
+
+  # Admin template management routes
+  - path: "/api/v1/admin/templates"
+    methods: ["GET", "POST"]
+    auth:
+      required: true
+      roles: ["admin"]
+
+  - path: "/api/v1/admin/templates/:id"
+    methods: ["GET", "PUT", "DELETE"]
+    auth:
+      required: true
+      roles: ["admin"]

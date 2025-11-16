@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 
 	"firebase.google.com/go/v4/auth"
 
@@ -186,15 +185,22 @@ func (s *AuthService) VerifyToken(ctx context.Context, token string) (*model.Tok
 		return &model.TokenVerifyResponse{Valid: false}, nil
 	}
 
-	roleValue, err := strconv.Atoi(claims.Role)
+	// Get user details from database
+	user, err := s.userRepo.GetByID(ctx, claims.UserID)
 	if err != nil {
+		return &model.TokenVerifyResponse{Valid: false}, nil
+	}
+
+	if user == nil || (user.Status != "active" && user.Status != "verified") {
 		return &model.TokenVerifyResponse{Valid: false}, nil
 	}
 
 	return &model.TokenVerifyResponse{
 		Valid:  true,
 		UserID: claims.UserID.String(),
-		Role:   model.UserRole(roleValue),
+		Email:  user.Email,
+		Role:   string(user.Role),
+		Name:   user.FirstName + " " + user.LastName,
 	}, nil
 }
 

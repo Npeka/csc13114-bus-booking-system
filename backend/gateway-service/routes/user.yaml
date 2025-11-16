@@ -1,0 +1,47 @@
+service: "user"
+routes:
+  # Public authentication routes
+  - path: "/api/v1/auth/signup"
+    methods: ["POST"]
+
+  - path: "/api/v1/auth/signin"
+    methods: ["POST"]
+
+  - path: "/api/v1/auth/oauth2/signin"
+    methods: ["POST"]
+
+  - path: "/api/v1/auth/refresh"
+    methods: ["POST"]
+
+  - path: "/api/v1/auth/signout"
+    methods: ["POST"]
+
+  # Protected user routes
+  - path: "/api/v1/profile"
+    methods: ["GET", "PUT"]
+    auth:
+      required: true
+
+  - path: "/api/v1/users/:id"
+    methods: ["GET"]
+    auth:
+      required: true
+
+  # Admin user management routes
+  - path: "/api/v1/admin/users"
+    methods: ["GET", "POST"]
+    auth:
+      required: true
+      roles: ["admin"]
+
+  - path: "/api/v1/admin/users/:id"
+    methods: ["GET", "PUT", "DELETE"]
+    auth:
+      required: true
+      roles: ["admin"]
+
+  - path: "/api/v1/admin/users/:id/status"
+    methods: ["PATCH"]
+    auth:
+      required: true
+      roles: ["admin"]

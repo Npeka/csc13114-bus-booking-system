@@ -1,0 +1,55 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: bus-booking-system
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: bus-booking
+    app.kubernetes.io/part-of: bus-booking-system
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/your-username/csc13114-bus-ticket-booking-system # Change this to your repo
+    targetRevision: main
+    path: backend/infra/k8s/helm/bus-booking
+    helm:
+      valueFiles:
+        - values.yaml
+      parameters:
+        - name: image.username
+          value: your-dockerhub-username # Change this to your Docker Hub username
+        - name: ingress.hosts[0].host
+          value: bus-booking.your-domain.com # Change this to your domain
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: bus-booking
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  revisionHistoryLimit: 10
+
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+    - group: ""
+      kind: Service
+      jsonPointers:
+        - /spec/clusterIP

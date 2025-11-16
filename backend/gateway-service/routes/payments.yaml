@@ -1,0 +1,40 @@
+service: "payments"
+routes:
+  # Protected payment routes
+  - path: "/api/v1/payments"
+    methods: ["POST"]
+    auth:
+      required: true
+
+  - path: "/api/v1/payments/:id"
+    methods: ["GET"]
+    auth:
+      required: true
+
+  - path: "/api/v1/payments/:id/status"
+    methods: ["GET"]
+    auth:
+      required: true
+
+  - path: "/api/v1/payments/webhook"
+    methods: ["POST"]
+    # Webhook doesn't require auth
+
+  # Admin payment management routes
+  - path: "/api/v1/admin/payments"
+    methods: ["GET"]
+    auth:
+      required: true
+      roles: ["admin"]
+
+  - path: "/api/v1/admin/payments/:id"
+    methods: ["GET"]
+    auth:
+      required: true
+      roles: ["admin"]
+
+  - path: "/api/v1/admin/payments/:id/refund"
+    methods: ["POST"]
+    auth:
+      required: true
+      roles: ["admin"]
