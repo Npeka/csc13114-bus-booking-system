@@ -14,8 +14,8 @@ import (
 )
 
 type ServiceDependencies struct {
-	UserHandler *handler.UserHandler
-	AuthHandler *handler.AuthHandler
+	UserHandler handler.UserHandler
+	AuthHandler handler.AuthHandler
 	UserRepo    repository.UserRepository
 }
 

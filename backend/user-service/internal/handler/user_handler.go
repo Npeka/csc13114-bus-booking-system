@@ -10,21 +10,30 @@ import (
 	"github.com/google/uuid"
 )
 
-type UserHandler struct {
-	userService service.UserService
+type UserHandler interface {
+	CreateUser(r *ginext.Request) (*ginext.Response, error)
+	GetUser(r *ginext.Request) (*ginext.Response, error)
+	UpdateUser(r *ginext.Request) (*ginext.Response, error)
+	DeleteUser(r *ginext.Request) (*ginext.Response, error)
+	ListUsers(r *ginext.Request) (*ginext.Response, error)
+	UpdateUserStatus(r *ginext.Request) (*ginext.Response, error)
 }
 
-func NewUserHandler(userService service.UserService) *UserHandler {
-	return &UserHandler{
-		userService: userService,
+type UserHandlerImpl struct {
+	us service.UserService
+}
+
+func NewUserHandler(us service.UserService) UserHandler {
+	return &UserHandlerImpl{
+		us: us,
 	}
 }
 
-func (h *UserHandler) CreateUser(r *ginext.Request) (*ginext.Response, error) {
+func (h *UserHandlerImpl) CreateUser(r *ginext.Request) (*ginext.Response, error) {
 	var createReq model.UserCreateRequest
 	r.MustBind(&createReq)
 
-	user, err := h.userService.CreateUser(r.Context(), &createReq)
+	user, err := h.us.CreateUser(r.Context(), &createReq)
 	if err != nil {
 		return nil, err
 	}
@@ -32,14 +41,14 @@ func (h *UserHandler) CreateUser(r *ginext.Request) (*ginext.Response, error) {
 	return ginext.NewCreatedResponse(user, "User created successfully"), nil
 }
 
-func (h *UserHandler) GetUser(r *ginext.Request) (*ginext.Response, error) {
+func (h *UserHandlerImpl) GetUser(r *ginext.Request) (*ginext.Response, error) {
 	idStr := r.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		return nil, ginext.NewBadRequestError("invalid user ID")
 	}
 
-	user, err := h.userService.GetUserByID(r.Context(), id)
+	user, err := h.us.GetUserByID(r.Context(), id)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +56,7 @@ func (h *UserHandler) GetUser(r *ginext.Request) (*ginext.Response, error) {
 	return ginext.NewSuccessResponse(user, "User retrieved successfully"), nil
 }
 
-func (h *UserHandler) UpdateUser(r *ginext.Request) (*ginext.Response, error) {
+func (h *UserHandlerImpl) UpdateUser(r *ginext.Request) (*ginext.Response, error) {
 	idStr := r.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -57,7 +66,7 @@ func (h *UserHandler) UpdateUser(r *ginext.Request) (*ginext.Response, error) {
 	var updateReq model.UserUpdateRequest
 	r.MustBind(&updateReq)
 
-	user, err := h.userService.UpdateUser(r.Context(), id, &updateReq)
+	user, err := h.us.UpdateUser(r.Context(), id, &updateReq)
 	if err != nil {
 		return nil, err
 	}
@@ -65,21 +74,21 @@ func (h *UserHandler) UpdateUser(r *ginext.Request) (*ginext.Response, error) {
 	return ginext.NewSuccessResponse(user, "User updated successfully"), nil
 }
 
-func (h *UserHandler) DeleteUser(r *ginext.Request) (*ginext.Response, error) {
+func (h *UserHandlerImpl) DeleteUser(r *ginext.Request) (*ginext.Response, error) {
 	idStr := r.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		return nil, ginext.NewBadRequestError("invalid user ID")
 	}
 
-	if err := h.userService.DeleteUser(r.Context(), id); err != nil {
+	if err := h.us.DeleteUser(r.Context(), id); err != nil {
 		return nil, err
 	}
 
 	return ginext.NewSuccessResponse(nil, "User deleted successfully"), nil
 }
 
-func (h *UserHandler) ListUsers(r *ginext.Request) (*ginext.Response, error) {
+func (h *UserHandlerImpl) ListUsers(r *ginext.Request) (*ginext.Response, error) {
 	limitStr := r.DefaultQuery("limit", "20")
 	offsetStr := r.DefaultQuery("offset", "0")
 
@@ -93,7 +102,7 @@ func (h *UserHandler) ListUsers(r *ginext.Request) (*ginext.Response, error) {
 		return nil, ginext.NewBadRequestError("invalid offset parameter")
 	}
 
-	users, total, err := h.userService.ListUsers(r.Context(), limit, offset)
+	users, total, err := h.us.ListUsers(r.Context(), limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +117,7 @@ func (h *UserHandler) ListUsers(r *ginext.Request) (*ginext.Response, error) {
 	return ginext.NewSuccessResponse(result, "Users retrieved successfully"), nil
 }
 
-func (h *UserHandler) ListUsersByRole(r *ginext.Request) (*ginext.Response, error) {
+func (h *UserHandlerImpl) ListUsersByRole(r *ginext.Request) (*ginext.Response, error) {
 	role := r.Param("role")
 	if role == "" {
 		return nil, ginext.NewBadRequestError("role parameter is required")
@@ -127,7 +136,7 @@ func (h *UserHandler) ListUsersByRole(r *ginext.Request) (*ginext.Response, erro
 		return nil, ginext.NewBadRequestError("invalid offset parameter")
 	}
 
-	users, total, err := h.userService.ListUsersByRole(r.Context(), role, limit, offset)
+	users, total, err := h.us.ListUsersByRole(r.Context(), role, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +152,7 @@ func (h *UserHandler) ListUsersByRole(r *ginext.Request) (*ginext.Response, erro
 	return ginext.NewSuccessResponse(result, "Users retrieved successfully"), nil
 }
 
-func (h *UserHandler) UpdateUserStatus(r *ginext.Request) (*ginext.Response, error) {
+func (h *UserHandlerImpl) UpdateUserStatus(r *ginext.Request) (*ginext.Response, error) {
 	idStr := r.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -158,7 +167,7 @@ func (h *UserHandler) UpdateUserStatus(r *ginext.Request) (*ginext.Response, err
 		return nil, ginext.NewBadRequestError("status is required")
 	}
 
-	if err := h.userService.UpdateUserStatus(r.Context(), id, status); err != nil {
+	if err := h.us.UpdateUserStatus(r.Context(), id, status); err != nil {
 		return nil, err
 	}
 

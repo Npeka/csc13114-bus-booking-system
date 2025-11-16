@@ -3,6 +3,7 @@ package middleware
 import (
 	"bus-booking/shared/constants"
 	sharedcontext "bus-booking/shared/context"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -70,7 +71,7 @@ func RequireRoleMiddleware(allowedRoles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userRole := sharedcontext.GetUserRole(c)
 		if userRole == "" {
-			c.JSON(401, gin.H{
+			c.JSON(http.StatusUnauthorized, gin.H{
 				"success": false,
 				"error": gin.H{
 					"code":    constants.CodeUnauthorized,
@@ -92,7 +93,7 @@ func RequireRoleMiddleware(allowedRoles ...string) gin.HandlerFunc {
 		}
 
 		if !roleAllowed {
-			c.JSON(403, gin.H{
+			c.JSON(http.StatusForbidden, gin.H{
 				"success": false,
 				"error": gin.H{
 					"code":    constants.CodeForbidden,

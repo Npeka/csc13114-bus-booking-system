@@ -11,8 +11,13 @@ import (
 	"bus-booking/user-service/internal/router"
 )
 
-func InitHTTPServer(cfg *config.Config, services *ServiceDependencies, firebaseAuth *auth.Client, serviceName string) *http.Server {
-	if cfg.IsProduction() {
+func InitHTTPServer(
+	cfg *config.Config,
+	serviceName string,
+	firebaseAuth *auth.Client,
+	services *ServiceDependencies,
+) *http.Server {
+	if cfg.Server.IsProduction {
 		gin.SetMode(gin.ReleaseMode)
 	} else {
 		gin.SetMode(gin.DebugMode)
@@ -21,11 +26,11 @@ func InitHTTPServer(cfg *config.Config, services *ServiceDependencies, firebaseA
 	ginRouter := gin.New()
 
 	routerConfig := &router.RouterConfig{
+		Config:       cfg,
+		ServiceName:  serviceName,
+		FirebaseAuth: firebaseAuth,
 		UserHandler:  services.UserHandler,
 		AuthHandler:  services.AuthHandler,
-		ServiceName:  serviceName,
-		Config:       cfg,
-		FirebaseAuth: firebaseAuth,
 		UserRepo:     services.UserRepo,
 	}
 	router.SetupRoutes(ginRouter, routerConfig)

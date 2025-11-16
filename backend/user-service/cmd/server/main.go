@@ -91,7 +91,7 @@ func (app *Application) initDependencies() error {
 
 // setupHTTPServer configures the HTTP server and routes
 func (app *Application) setupHTTPServer() {
-	app.HTTPServer = appinit.InitHTTPServer(app.Config, app.Services, app.FirebaseAuth, ServiceName)
+	app.HTTPServer = appinit.InitHTTPServer(app.Config, ServiceName, app.FirebaseAuth, app.Services)
 }
 
 // start starts the HTTP server with graceful shutdown

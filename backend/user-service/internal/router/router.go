@@ -13,11 +13,11 @@ import (
 )
 
 type RouterConfig struct {
-	UserHandler  *handler.UserHandler
-	AuthHandler  *handler.AuthHandler
 	ServiceName  string
 	Config       *config.Config
 	FirebaseAuth *auth.Client
+	UserHandler  handler.UserHandler
+	AuthHandler  handler.AuthHandler
 	UserRepo     repository.UserRepository
 }
 
