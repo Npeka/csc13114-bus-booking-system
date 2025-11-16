@@ -3,15 +3,15 @@ package appinit
 import (
 	"net/http"
 
+	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 
 	"bus-booking/user-service/config"
-	"bus-booking/user-service/internal/handler"
 	"bus-booking/user-service/internal/router"
 )
 
-func InitHTTPServer(cfg *config.Config, userHandler *handler.UserHandler, authHandler *handler.AuthHandler, serviceName string) *http.Server {
+func InitHTTPServer(cfg *config.Config, services *ServiceDependencies, firebaseAuth *auth.Client, serviceName string) *http.Server {
 	if cfg.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
 	} else {
@@ -21,10 +21,12 @@ func InitHTTPServer(cfg *config.Config, userHandler *handler.UserHandler, authHa
 	ginRouter := gin.New()
 
 	routerConfig := &router.RouterConfig{
-		UserHandler: userHandler,
-		AuthHandler: authHandler,
-		ServiceName: serviceName,
-		Config:      cfg,
+		UserHandler:  services.UserHandler,
+		AuthHandler:  services.AuthHandler,
+		ServiceName:  serviceName,
+		Config:       cfg,
+		FirebaseAuth: firebaseAuth,
+		UserRepo:     services.UserRepo,
 	}
 	router.SetupRoutes(ginRouter, routerConfig)
 

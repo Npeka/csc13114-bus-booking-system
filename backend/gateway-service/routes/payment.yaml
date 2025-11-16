@@ -1,6 +1,5 @@
-service: "payments"
+service: "payment"
 routes:
-  # Protected payment routes
   - path: "/api/v1/payments"
     methods: ["POST"]
     auth:
@@ -18,9 +17,7 @@ routes:
 
   - path: "/api/v1/payments/webhook"
     methods: ["POST"]
-    # Webhook doesn't require auth
 
-  # Admin payment management routes
   - path: "/api/v1/admin/payments"
     methods: ["GET"]
     auth:

@@ -26,17 +26,17 @@ type UserRepositoryInterface interface {
 	UsernameExists(ctx context.Context, username string) (bool, error)
 }
 
-type UserRepository struct {
+type UserRepositoryImpl struct {
 	db *gorm.DB
 }
 
 func NewUserRepository(db *gorm.DB) UserRepositoryInterface {
-	return &UserRepository{
+	return &UserRepositoryImpl{
 		db: db,
 	}
 }
 
-func (r *UserRepository) Create(ctx context.Context, user *model.User) error {
+func (r *UserRepositoryImpl) Create(ctx context.Context, user *model.User) error {
 	if err := r.db.WithContext(ctx).Create(user).Error; err != nil {
 		log.Err(err).Msg("Failed to create user in database")
 		return ginext.NewInternalServerError("Failed to create user")
@@ -44,7 +44,7 @@ func (r *UserRepository) Create(ctx context.Context, user *model.User) error {
 	return nil
 }
 
-func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.User, error) {
+func (r *UserRepositoryImpl) GetByID(ctx context.Context, id uuid.UUID) (*model.User, error) {
 	var user model.User
 	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&user).Error; err != nil {
 		log.Err(err).Msg("Failed to get user by ID")
@@ -53,7 +53,7 @@ func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.User
 	return &user, nil
 }
 
-func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
+func (r *UserRepositoryImpl) GetByEmail(ctx context.Context, email string) (*model.User, error) {
 	var user model.User
 	if err := r.db.WithContext(ctx).Where("email = ?", email).First(&user).Error; err != nil {
 		log.Err(err).Msg("Failed to get user by email")
@@ -62,7 +62,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*model.U
 	return &user, nil
 }
 
-func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*model.User, error) {
+func (r *UserRepositoryImpl) GetByUsername(ctx context.Context, username string) (*model.User, error) {
 	var user model.User
 	if err := r.db.WithContext(ctx).Where("username = ?", username).First(&user).Error; err != nil {
 		log.Err(err).Msg("Failed to get user by username")
@@ -71,7 +71,7 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*m
 	return &user, nil
 }
 
-func (r *UserRepository) GetByFirebaseUID(ctx context.Context, firebaseUID string) (*model.User, error) {
+func (r *UserRepositoryImpl) GetByFirebaseUID(ctx context.Context, firebaseUID string) (*model.User, error) {
 	var user model.User
 	err := r.db.WithContext(ctx).Where("firebase_uid = ?", firebaseUID).First(&user).Error
 	if err != nil {
@@ -81,7 +81,7 @@ func (r *UserRepository) GetByFirebaseUID(ctx context.Context, firebaseUID strin
 	return &user, nil
 }
 
-func (r *UserRepository) Update(ctx context.Context, user *model.User) error {
+func (r *UserRepositoryImpl) Update(ctx context.Context, user *model.User) error {
 	if err := r.db.WithContext(ctx).Save(user).Error; err != nil {
 		log.Err(err).Msg("Failed to update user")
 		return ginext.NewInternalServerError("Failed to update user")
@@ -89,7 +89,7 @@ func (r *UserRepository) Update(ctx context.Context, user *model.User) error {
 	return nil
 }
 
-func (r *UserRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (r *UserRepositoryImpl) Delete(ctx context.Context, id uuid.UUID) error {
 	if err := r.db.WithContext(ctx).Where("id = ?", id).Delete(&model.User{}).Error; err != nil {
 		log.Err(err).Msg("Failed to delete user")
 		return ginext.NewInternalServerError("Failed to delete user")
@@ -97,7 +97,7 @@ func (r *UserRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]*model.User, int64, error) {
+func (r *UserRepositoryImpl) List(ctx context.Context, limit, offset int) ([]*model.User, int64, error) {
 	var users []*model.User
 	var total int64
 
@@ -115,7 +115,7 @@ func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]*model.
 	return users, total, nil
 }
 
-func (r *UserRepository) ListByRole(ctx context.Context, role model.UserRole, limit, offset int) ([]*model.User, int64, error) {
+func (r *UserRepositoryImpl) ListByRole(ctx context.Context, role model.UserRole, limit, offset int) ([]*model.User, int64, error) {
 	var users []*model.User
 	var total int64
 
@@ -133,7 +133,7 @@ func (r *UserRepository) ListByRole(ctx context.Context, role model.UserRole, li
 	return users, total, nil
 }
 
-func (r *UserRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status string) error {
+func (r *UserRepositoryImpl) UpdateStatus(ctx context.Context, id uuid.UUID, status string) error {
 	if err := r.db.WithContext(ctx).
 		Model(&model.User{}).Where("id = ?", id).Update("status", status).Error; err != nil {
 		log.Err(err).Msg("Failed to update user status in database")
@@ -142,7 +142,7 @@ func (r *UserRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status 
 	return nil
 }
 
-func (r *UserRepository) EmailExists(ctx context.Context, email string) (bool, error) {
+func (r *UserRepositoryImpl) EmailExists(ctx context.Context, email string) (bool, error) {
 	var count int64
 	if err := r.db.WithContext(ctx).Model(&model.User{}).
 		Where("email = ?", email).Count(&count).Error; err != nil {
@@ -152,7 +152,7 @@ func (r *UserRepository) EmailExists(ctx context.Context, email string) (bool, e
 	return count > 0, nil
 }
 
-func (r *UserRepository) UsernameExists(ctx context.Context, username string) (bool, error) {
+func (r *UserRepositoryImpl) UsernameExists(ctx context.Context, username string) (bool, error) {
 	var count int64
 	if err := r.db.WithContext(ctx).Model(&model.User{}).
 		Where("username = ?", username).Count(&count).Error; err != nil {

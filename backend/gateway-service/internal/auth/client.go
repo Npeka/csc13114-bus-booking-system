@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"bus-booking/gateway-service/config"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -8,8 +9,6 @@ import (
 	"net/http"
 	"strings"
 	"time"
-
-	"bus-booking/gateway-service/internal/config"
 )
 
 type Client struct {

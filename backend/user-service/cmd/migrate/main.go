@@ -3,34 +3,35 @@ package main
 import (
 	"log"
 
+	sharedDB "bus-booking/shared/db"
 	"bus-booking/user-service/config"
-	"bus-booking/user-service/internal/db"
 	"bus-booking/user-service/internal/model"
 )
 
 func main() {
+	// Load service-specific config
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatal("Failed to load config:", err)
 	}
 
-	database, err := db.NewPostgresConnection(&cfg.Database, cfg.Server.Environment)
+	// Create migration manager
+	migrationManager, err := sharedDB.NewMigrationManager(&cfg.Database, cfg.Server.Environment)
 	if err != nil {
-		log.Fatal("Failed to connect to database:", err)
+		log.Fatal("Failed to create migration manager:", err)
 	}
-	defer database.Close()
+	defer migrationManager.Close()
 
-	log.Println("Starting database migration...")
-
-	// Enable UUID extension
-	if err := database.DB.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"").Error; err != nil {
-		log.Fatal("Failed to create UUID extension:", err)
-	}
-
-	// Auto migrate the schema
-	if err := database.AutoMigrate(&model.User{}); err != nil {
-		log.Fatal("Failed to migrate database:", err)
+	// Define models for user-service
+	models := []interface{}{
+		&model.User{},
+		// Add more user-service models here
 	}
 
-	log.Println("Database migration completed successfully!")
+	// Run migrations
+	if err := migrationManager.RunMigrations(models...); err != nil {
+		log.Fatal("Migration failed:", err)
+	}
+
+	log.Println("User-service migration completed successfully!")
 }

@@ -16,7 +16,6 @@ routes:
   - path: "/api/v1/auth/signout"
     methods: ["POST"]
 
-  # Protected user routes
   - path: "/api/v1/profile"
     methods: ["GET", "PUT"]
     auth:
@@ -27,7 +26,6 @@ routes:
     auth:
       required: true
 
-  # Admin user management routes
   - path: "/api/v1/admin/users"
     methods: ["GET", "POST"]
     auth:

@@ -11,8 +11,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"bus-booking/gateway-service/config"
 	"bus-booking/gateway-service/internal/auth"
-	"bus-booking/gateway-service/internal/config"
 )
 
 type Gateway struct {
@@ -33,9 +33,7 @@ func NewGateway(cfg *config.Config, routes *config.RouteConfig) *Gateway {
 	}
 }
 
-// SetupRoutes configures all gateway routes
 func (g *Gateway) SetupRoutes(router *gin.Engine) {
-	// Health check
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status":  "ok",

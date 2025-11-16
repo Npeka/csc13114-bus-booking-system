@@ -4,22 +4,19 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
+	"time"
+
+	sharedConfig "bus-booking/shared/config"
 
 	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
-	Server   ServerConfig             `yaml:"server"`
-	Services map[string]ServiceConfig `yaml:"services"`
-	Auth     AuthConfig               `yaml:"auth"`
-	CORS     CORSConfig               `yaml:"cors"`
-}
-
-type ServerConfig struct {
-	Port         string `yaml:"port" env:"PORT" default:"8000"`
-	Host         string `yaml:"host" env:"HOST" default:"0.0.0.0"`
-	ReadTimeout  int    `yaml:"read_timeout" default:"30"`
-	WriteTimeout int    `yaml:"write_timeout" default:"30"`
+	Server   sharedConfig.ServerConfig `yaml:"server"`
+	Services map[string]ServiceConfig  `yaml:"services"`
+	Auth     AuthConfig                `yaml:"auth"`
+	CORS     sharedConfig.CORSConfig   `yaml:"cors"`
 }
 
 type ServiceConfig struct {
@@ -32,15 +29,6 @@ type AuthConfig struct {
 	UserServiceURL string `yaml:"user_service_url" env:"USER_SERVICE_URL"`
 	VerifyEndpoint string `yaml:"verify_endpoint" default:"/api/v1/auth/verify-token"`
 	Timeout        int    `yaml:"timeout" default:"5"`
-}
-
-type CORSConfig struct {
-	AllowOrigins     []string `yaml:"allow_origins"`
-	AllowMethods     []string `yaml:"allow_methods"`
-	AllowHeaders     []string `yaml:"allow_headers"`
-	ExposeHeaders    []string `yaml:"expose_headers"`
-	AllowCredentials bool     `yaml:"allow_credentials"`
-	MaxAge           int      `yaml:"max_age"`
 }
 
 type RouteConfig struct {
@@ -71,18 +59,20 @@ type RewriteRule struct {
 // LoadConfig loads configuration from file and environment
 func LoadConfig(configPath string) (*Config, error) {
 	config := &Config{
-		Server: ServerConfig{
-			Port:         getEnvOrDefault("PORT", "8000"),
+		Server: sharedConfig.ServerConfig{
+			Port:         parsePort(getEnvOrDefault("PORT", "8000")),
 			Host:         getEnvOrDefault("HOST", "0.0.0.0"),
-			ReadTimeout:  30,
-			WriteTimeout: 30,
+			Environment:  getEnvOrDefault("ENVIRONMENT", "development"),
+			ReadTimeout:  30 * time.Second,
+			WriteTimeout: 30 * time.Second,
+			IdleTimeout:  120 * time.Second,
 		},
 		Auth: AuthConfig{
 			UserServiceURL: getEnvOrDefault("USER_INTERNAL_URL", "http://user-internal.cluster.local"),
 			VerifyEndpoint: "/api/v1/auth/verify-token",
 			Timeout:        5,
 		},
-		CORS: CORSConfig{
+		CORS: sharedConfig.CORSConfig{
 			AllowOrigins:     []string{"*"},
 			AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 			AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"},
@@ -178,4 +168,12 @@ func getEnvOrDefault(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+func parsePort(portStr string) int {
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		return 8000 // default port
+	}
+	return port
 }

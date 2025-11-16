@@ -1,31 +1,35 @@
 package router
 
 import (
-	"time"
-
-	"github.com/gin-contrib/cors"
+	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
 
 	"bus-booking/shared/ginext"
 	"bus-booking/shared/middleware"
 	"bus-booking/user-service/config"
 	"bus-booking/user-service/internal/handler"
+	localMiddleware "bus-booking/user-service/internal/middleware"
+	"bus-booking/user-service/internal/repository"
 )
 
-// RouterConfig holds router dependencies
 type RouterConfig struct {
-	UserHandler *handler.UserHandler
-	AuthHandler *handler.AuthHandler
-	ServiceName string
-	Config      *config.Config
+	UserHandler  *handler.UserHandler
+	AuthHandler  *handler.AuthHandler
+	ServiceName  string
+	Config       *config.Config
+	FirebaseAuth *auth.Client
+	UserRepo     repository.UserRepositoryInterface
 }
 
-// SetupRoutes configures all routes for the service
 func SetupRoutes(router *gin.Engine, config *RouterConfig) {
-	// Apply global middleware
 	router.Use(middleware.RequestContextMiddleware(config.ServiceName))
-	router.Use(setupLocalCORS(&config.Config.CORS))
+	router.Use(middleware.SetupCORS(&config.Config.CORS))
 	router.Use(middleware.Logger())
+
+	var firebaseMiddleware *localMiddleware.FirebaseAuthMiddleware
+	if config.FirebaseAuth != nil {
+		firebaseMiddleware = localMiddleware.NewFirebaseAuthMiddleware(config.FirebaseAuth, config.UserRepo)
+	}
 
 	// Health check endpoint
 	router.GET("/health", func(c *gin.Context) {
@@ -35,10 +39,8 @@ func SetupRoutes(router *gin.Engine, config *RouterConfig) {
 		})
 	})
 
-	// API v1 routes
 	v1 := router.Group("/api/v1")
 	{
-		// Public auth routes
 		auth := v1.Group("/auth")
 		{
 			auth.POST("/signup", ginext.WrapHandler(config.AuthHandler.Signup))
@@ -49,35 +51,41 @@ func SetupRoutes(router *gin.Engine, config *RouterConfig) {
 			auth.POST("/verify-token", ginext.WrapHandler(config.AuthHandler.VerifyToken))
 		}
 
-		// Protected routes (require authentication)
+		if firebaseMiddleware != nil {
+			firebase := v1.Group("/firebase")
+			firebase.Use(firebaseMiddleware.FirebaseAuth())
+			{
+				firebase.GET("/profile", func(c *gin.Context) {
+					user, exists := c.Get("user")
+					if !exists {
+						c.JSON(500, gin.H{"error": "User not found in context"})
+						return
+					}
+					c.JSON(200, gin.H{"data": user, "message": "Profile retrieved successfully"})
+				})
+			}
+		}
+
 		protected := v1.Group("")
 		protected.Use(middleware.RequireAuthMiddleware())
 		{
-			// User profile routes
 			protected.GET("/profile", func(c *gin.Context) {
-				// Get current user's profile
-				// Implementation would get user ID from context and call user service
 				c.JSON(200, gin.H{"message": "Profile endpoint - TODO: implement"})
 			})
 			protected.PUT("/profile", func(c *gin.Context) {
-				// Update current user's profile
 				c.JSON(200, gin.H{"message": "Update profile endpoint - TODO: implement"})
 			})
-			// Note: Change password would be implemented in user service if needed
 
-			// User management routes (for users to manage themselves)
 			users := protected.Group("/users")
 			{
 				users.GET("/:id", ginext.WrapHandler(config.UserHandler.GetUser))
 			}
 		}
 
-		// Admin routes (require admin role)
 		admin := v1.Group("/admin")
 		admin.Use(middleware.RequireAuthMiddleware())
 		admin.Use(middleware.RequireRoleMiddleware("admin"))
 		{
-			// Admin user management
 			adminUsers := admin.Group("/users")
 			{
 				adminUsers.POST("", ginext.WrapHandler(config.UserHandler.CreateUser))
@@ -89,27 +97,4 @@ func SetupRoutes(router *gin.Engine, config *RouterConfig) {
 			}
 		}
 	}
-}
-
-// setupLocalCORS creates CORS middleware from local config
-func setupLocalCORS(cfg *config.CORSConfig) gin.HandlerFunc {
-	corsConfig := cors.Config{
-		AllowOrigins:     cfg.AllowOrigins,
-		AllowMethods:     cfg.AllowMethods,
-		AllowHeaders:     cfg.AllowHeaders,
-		ExposeHeaders:    cfg.ExposeHeaders,
-		AllowCredentials: cfg.AllowCredentials,
-		MaxAge:           time.Duration(cfg.MaxAge) * time.Second,
-	}
-
-	// If allow origins contains "*", use AllowAllOrigins
-	for _, origin := range cfg.AllowOrigins {
-		if origin == "*" {
-			corsConfig.AllowAllOrigins = true
-			corsConfig.AllowOrigins = nil
-			break
-		}
-	}
-
-	return cors.New(corsConfig)
 }

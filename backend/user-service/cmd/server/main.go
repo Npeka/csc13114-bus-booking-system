@@ -14,14 +14,11 @@ import (
 	sharedDB "bus-booking/shared/db"
 	"bus-booking/shared/validator"
 	"bus-booking/user-service/config"
-	"bus-booking/user-service/internal/handler"
 	appinit "bus-booking/user-service/internal/init"
-	"bus-booking/user-service/internal/logger"
 )
 
 const ServiceName = "user-service"
 
-// Application holds the application dependencies
 type Application struct {
 	Config       *config.Config
 	Database     *sharedDB.DatabaseManager
@@ -29,20 +26,16 @@ type Application struct {
 	FirebaseAuth *auth.Client
 	HTTPServer   *http.Server
 
-	// Handlers
-	UserHandler *handler.UserHandler
-	AuthHandler *handler.AuthHandler
+	Services *appinit.ServiceDependencies
 }
 
 func main() {
-	// Load configuration
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load configuration")
 	}
 
-	// Setup logger
-	if err := logger.SetupLogger(&cfg.Log); err != nil {
+	if err := appinit.SetupLogger(cfg); err != nil {
 		log.Fatal().Err(err).Msg("Failed to setup logger")
 	}
 
@@ -84,13 +77,13 @@ func (app *Application) initDependencies() error {
 	}
 
 	// Initialize Firebase Auth client
-	app.FirebaseAuth, err = appinit.InitFirebase()
+	app.FirebaseAuth, err = appinit.InitFirebase(app.Config)
 	if err != nil {
 		return err
 	}
 
 	// Initialize services and handlers
-	app.UserHandler, app.AuthHandler = appinit.InitServices(app.Config, app.Database, app.FirebaseAuth)
+	app.Services = appinit.InitServices(app.Config, app.Database, app.FirebaseAuth)
 
 	log.Info().Msg("All dependencies initialized successfully")
 	return nil
@@ -98,7 +91,7 @@ func (app *Application) initDependencies() error {
 
 // setupHTTPServer configures the HTTP server and routes
 func (app *Application) setupHTTPServer() {
-	app.HTTPServer = appinit.InitHTTPServer(app.Config, app.UserHandler, app.AuthHandler, ServiceName)
+	app.HTTPServer = appinit.InitHTTPServer(app.Config, app.Services, app.FirebaseAuth, ServiceName)
 }
 
 // start starts the HTTP server with graceful shutdown

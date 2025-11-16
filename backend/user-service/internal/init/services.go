@@ -13,7 +13,13 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func InitServices(cfg *config.Config, database *sharedDB.DatabaseManager, firebaseAuth *auth.Client) (*handler.UserHandler, *handler.AuthHandler) {
+type ServiceDependencies struct {
+	UserHandler *handler.UserHandler
+	AuthHandler *handler.AuthHandler
+	UserRepo    repository.UserRepositoryInterface
+}
+
+func InitServices(cfg *config.Config, database *sharedDB.DatabaseManager, firebaseAuth *auth.Client) *ServiceDependencies {
 	jwtManager := utils.NewJWTManager(&cfg.JWT)
 
 	userRepo := repository.NewUserRepository(database.DB)
@@ -25,5 +31,10 @@ func InitServices(cfg *config.Config, database *sharedDB.DatabaseManager, fireba
 	authHandler := handler.NewAuthHandler(authService)
 
 	log.Info().Msg("All services and handlers initialized successfully")
-	return userHandler, authHandler
+
+	return &ServiceDependencies{
+		UserHandler: userHandler,
+		AuthHandler: authHandler,
+		UserRepo:    userRepo,
+	}
 }

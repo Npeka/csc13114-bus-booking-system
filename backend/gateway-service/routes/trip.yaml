@@ -1,6 +1,5 @@
-service: "trips"
+service: "trip"
 routes:
-  # Public trip search routes
   - path: "/api/v1/trips/search"
     methods: ["GET", "POST"]
 
@@ -13,7 +12,6 @@ routes:
   - path: "/api/v1/routes/:id"
     methods: ["GET"]
 
-  # Protected trip management routes
   - path: "/api/v1/trips"
     methods: ["POST", "PUT", "DELETE"]
     auth:
@@ -38,7 +36,6 @@ routes:
       required: true
       roles: ["admin", "operator"]
 
-  # Admin routes
   - path: "/api/v1/admin/trips/*"
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
     auth:

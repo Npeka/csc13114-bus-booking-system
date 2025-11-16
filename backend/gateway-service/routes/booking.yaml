@@ -1,4 +1,4 @@
-service: "bookings"
+service: "booking"
 routes:
   # Booking routes - all require authentication
   - path: "/api/v1/bookings"
@@ -21,7 +21,6 @@ routes:
     auth:
       required: true
 
-  # Admin booking management routes
   - path: "/api/v1/admin/bookings"
     methods: ["GET"]
     auth:

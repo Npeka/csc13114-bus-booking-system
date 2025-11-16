@@ -1,4 +1,4 @@
-package handler
+package constants
 
 // Common message constants for handlers
 const (

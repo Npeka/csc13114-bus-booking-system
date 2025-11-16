@@ -129,6 +129,7 @@ func (dm *DatabaseManager) GetStats() sql.DBStats {
 }
 
 // AutoMigrate runs database migrations for given models
+// This method is kept for backward compatibility, but prefer using MigrationManager
 func (dm *DatabaseManager) AutoMigrate(models ...interface{}) error {
 	if err := dm.DB.AutoMigrate(models...); err != nil {
 		return fmt.Errorf("failed to run database migrations: %w", err)
