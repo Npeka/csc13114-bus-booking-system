@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
-	"time"
 
 	sharedConfig "bus-booking/shared/config"
 
@@ -13,22 +11,21 @@ import (
 )
 
 type Config struct {
-	Server   sharedConfig.ServerConfig `yaml:"server"`
-	Services map[string]ServiceConfig  `yaml:"services"`
-	Auth     AuthConfig                `yaml:"auth"`
-	CORS     sharedConfig.CORSConfig   `yaml:"cors"`
+	*sharedConfig.BaseConfig
+	Services map[string]ServiceConfig `envPrefix:"SERVICES_"`
+	Auth     AuthConfig               `envPrefix:"AUTH_"`
 }
 
 type ServiceConfig struct {
-	URL     string `yaml:"url"`
-	Timeout int    `yaml:"timeout" default:"30"`
-	Retries int    `yaml:"retries" default:"3"`
+	URL     string `env:"URL"`
+	Timeout int    `env:"TIMEOUT" envDefault:"30"`
+	Retries int    `env:"RETRIES" envDefault:"3"`
 }
 
 type AuthConfig struct {
-	UserServiceURL string `yaml:"user_service_url" env:"USER_SERVICE_URL"`
-	VerifyEndpoint string `yaml:"verify_endpoint" default:"/api/v1/auth/verify-token"`
-	Timeout        int    `yaml:"timeout" default:"5"`
+	UserServiceURL string `env:"USER_SERVICE_URL" envDefault:"http://localhost:8081"`
+	VerifyEndpoint string `env:"VERIFY_ENDPOINT" envDefault:"/api/v1/auth/verify-token"`
+	Timeout        int    `env:"TIMEOUT" envDefault:"5"`
 }
 
 type RouteConfig struct {
@@ -56,67 +53,46 @@ type RewriteRule struct {
 	To   string `yaml:"to"`
 }
 
-// LoadConfig loads configuration from file and environment
+// LoadConfig loads configuration from environment variables and file
 func LoadConfig(configPath string) (*Config, error) {
-	config := &Config{
-		Server: sharedConfig.ServerConfig{
-			Port:         parsePort(getEnvOrDefault("PORT", "8000")),
-			Host:         getEnvOrDefault("HOST", "0.0.0.0"),
-			Environment:  getEnvOrDefault("ENVIRONMENT", "development"),
-			ReadTimeout:  30 * time.Second,
-			WriteTimeout: 30 * time.Second,
-			IdleTimeout:  120 * time.Second,
-		},
-		Auth: AuthConfig{
-			UserServiceURL: getEnvOrDefault("USER_INTERNAL_URL", "http://user-internal.cluster.local"),
-			VerifyEndpoint: "/api/v1/auth/verify-token",
-			Timeout:        5,
-		},
-		CORS: sharedConfig.CORSConfig{
-			AllowOrigins:     []string{"*"},
-			AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
-			AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"},
-			ExposeHeaders:    []string{"Content-Length"},
-			AllowCredentials: true,
-			MaxAge:           86400,
-		},
-		Services: map[string]ServiceConfig{
-			"user": {
-				URL:     getEnvOrDefault("USER_INTERNAL_URL", "http://user-internal.cluster.local"),
-				Timeout: 30,
-				Retries: 3,
-			},
-			"trips": {
-				URL:     getEnvOrDefault("TRIPS_INTERNAL_URL", "http://trips-internal.cluster.local"),
-				Timeout: 30,
-				Retries: 3,
-			},
-			"bookings": {
-				URL:     getEnvOrDefault("BOOKINGS_INTERNAL_URL", "http://bookings-internal.cluster.local"),
-				Timeout: 30,
-				Retries: 3,
-			},
-			"templates": {
-				URL:     getEnvOrDefault("TEMPLATES_INTERNAL_URL", "http://templates-internal.cluster.local"),
-				Timeout: 30,
-				Retries: 3,
-			},
-			"payments": {
-				URL:     getEnvOrDefault("PAYMENTS_INTERNAL_URL", "http://payments-internal.cluster.local"),
-				Timeout: 30,
-				Retries: 3,
-			},
-		},
+	// Load config using shared pattern
+	config, err := sharedConfig.LoadConfig[Config]()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load config: %w", err)
 	}
 
-	// Load from config file if exists
+	// Load routes from YAML (only routes, not config)
 	if configPath != "" {
-		if err := loadFromFile(config, configPath); err != nil {
-			return nil, fmt.Errorf("failed to load config from file: %w", err)
+		if err := loadRoutes(config, configPath); err != nil {
+			return nil, fmt.Errorf("failed to load routes: %w", err)
 		}
 	}
 
 	return config, nil
+}
+
+func loadRoutes(config *Config, configPath string) error {
+	// Read YAML file for services configuration only
+	yamlData, err := os.ReadFile(configPath)
+	if err != nil {
+		return fmt.Errorf("failed to read config file: %w", err)
+	}
+
+	// Parse YAML to get services configuration
+	var yamlConfig struct {
+		Services map[string]ServiceConfig `yaml:"services"`
+	}
+
+	if err := yaml.Unmarshal(yamlData, &yamlConfig); err != nil {
+		return fmt.Errorf("failed to parse YAML config: %w", err)
+	}
+
+	// Use YAML services if env config is empty
+	if len(config.Services) == 0 && len(yamlConfig.Services) > 0 {
+		config.Services = yamlConfig.Services
+	}
+
+	return nil
 }
 
 // LoadRoutes loads route configurations from directory
@@ -161,19 +137,4 @@ func loadFromFile(config interface{}, path string) error {
 	}
 
 	return yaml.Unmarshal(data, config)
-}
-
-func getEnvOrDefault(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
-}
-
-func parsePort(portStr string) int {
-	port, err := strconv.Atoi(portStr)
-	if err != nil {
-		return 8000 // default port
-	}
-	return port
 }
