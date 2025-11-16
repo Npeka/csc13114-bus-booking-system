@@ -6,23 +6,21 @@ import (
 	"github.com/google/uuid"
 )
 
-// TripSearchRequest represents trip search parameters
 type TripSearchRequest struct {
-	Origin        string    `json:"origin" validate:"required"`
-	Destination   string    `json:"destination" validate:"required"`
-	DepartureDate time.Time `json:"departure_date" validate:"required"`
-	Passengers    int       `json:"passengers" validate:"required,min=1,max=10"`
-	SeatType      string    `json:"seat_type,omitempty" validate:"omitempty,oneof=standard premium vip"`
-	PriceMin      *float64  `json:"price_min,omitempty" validate:"omitempty,min=0"`
-	PriceMax      *float64  `json:"price_max,omitempty" validate:"omitempty,min=0"`
+	Origin        string     `json:"origin" validate:"required"`
+	Destination   string     `json:"destination" validate:"required"`
+	DepartureDate time.Time  `json:"departure_date" validate:"required"`
+	Passengers    int        `json:"passengers" validate:"required,min=1,max=10"`
+	SeatType      string     `json:"seat_type,omitempty" validate:"omitempty,oneof=standard premium vip"`
+	PriceMin      *float64   `json:"price_min,omitempty" validate:"omitempty,min=0"`
+	PriceMax      *float64   `json:"price_max,omitempty" validate:"omitempty,min=0"`
 	OperatorID    *uuid.UUID `json:"operator_id,omitempty"`
-	SortBy        string    `json:"sort_by,omitempty" validate:"omitempty,oneof=price departure_time arrival_time"`
-	SortOrder     string    `json:"sort_order,omitempty" validate:"omitempty,oneof=asc desc"`
-	Page          int       `json:"page,omitempty" validate:"omitempty,min=1"`
-	Limit         int       `json:"limit,omitempty" validate:"omitempty,min=1,max=100"`
+	SortBy        string     `json:"sort_by,omitempty" validate:"omitempty,oneof=price departure_time arrival_time"`
+	SortOrder     string     `json:"sort_order,omitempty" validate:"omitempty,oneof=asc desc"`
+	Page          int        `json:"page,omitempty" validate:"omitempty,min=1"`
+	Limit         int        `json:"limit,omitempty" validate:"omitempty,min=1,max=100"`
 }
 
-// TripSearchResponse represents trip search results
 type TripSearchResponse struct {
 	Trips      []TripDetail `json:"trips"`
 	Total      int64        `json:"total"`
@@ -31,32 +29,31 @@ type TripSearchResponse struct {
 	TotalPages int          `json:"total_pages"`
 }
 
-// TripDetail represents detailed trip information with availability
 type TripDetail struct {
-	ID                uuid.UUID `json:"id"`
-	RouteID           uuid.UUID `json:"route_id"`
-	BusID             uuid.UUID `json:"bus_id"`
-	DepartureTime     time.Time `json:"departure_time"`
-	ArrivalTime       time.Time `json:"arrival_time"`
-	BasePrice         float64   `json:"base_price"`
-	Status            string    `json:"status"`
-	AvailableSeats    int       `json:"available_seats"`
-	TotalSeats        int       `json:"total_seats"`
-	Duration          string    `json:"duration"`
-	
+	ID             uuid.UUID `json:"id"`
+	RouteID        uuid.UUID `json:"route_id"`
+	BusID          uuid.UUID `json:"bus_id"`
+	DepartureTime  time.Time `json:"departure_time"`
+	ArrivalTime    time.Time `json:"arrival_time"`
+	BasePrice      float64   `json:"base_price"`
+	Status         string    `json:"status"`
+	AvailableSeats int       `json:"available_seats"`
+	TotalSeats     int       `json:"total_seats"`
+	Duration       string    `json:"duration"`
+
 	// Route information
-	Origin            string    `json:"origin"`
-	Destination       string    `json:"destination"`
-	DistanceKm        int       `json:"distance_km"`
-	
+	Origin      string `json:"origin"`
+	Destination string `json:"destination"`
+	DistanceKm  int    `json:"distance_km"`
+
 	// Bus information
-	BusModel          string    `json:"bus_model"`
-	BusPlateNumber    string    `json:"bus_plate_number"`
-	BusAmenities      []string  `json:"bus_amenities"`
-	
+	BusModel       string   `json:"bus_model"`
+	BusPlateNumber string   `json:"bus_plate_number"`
+	BusAmenities   []string `json:"bus_amenities"`
+
 	// Operator information
-	OperatorID        uuid.UUID `json:"operator_id"`
-	OperatorName      string    `json:"operator_name"`
+	OperatorID   uuid.UUID `json:"operator_id"`
+	OperatorName string    `json:"operator_name"`
 }
 
 // SeatAvailabilityRequest represents seat availability check request
@@ -74,12 +71,12 @@ type SeatAvailabilityResponse struct {
 
 // SeatDetail represents detailed seat information with availability
 type SeatDetail struct {
-	ID        uuid.UUID `json:"id"`
-	SeatCode  string    `json:"seat_code"`
-	SeatType  string    `json:"seat_type"`
-	IsBooked  bool      `json:"is_booked"`
-	IsLocked  bool      `json:"is_locked"`
-	Price     float64   `json:"price"`
+	ID       uuid.UUID `json:"id"`
+	SeatCode string    `json:"seat_code"`
+	SeatType string    `json:"seat_type"`
+	IsBooked bool      `json:"is_booked"`
+	IsLocked bool      `json:"is_locked"`
+	Price    float64   `json:"price"`
 }
 
 // OperatorListResponse represents operator listing

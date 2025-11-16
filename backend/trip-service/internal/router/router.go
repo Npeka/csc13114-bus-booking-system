@@ -1,9 +1,6 @@
 package router
 
 import (
-	"time"
-
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
 	"bus-booking/shared/middleware"
@@ -13,21 +10,17 @@ import (
 
 // RouterConfig holds router dependencies
 type RouterConfig struct {
+	ServiceName  string
+	Config       *config.Config
 	TripHandler  *handler.TripHandler
 	RouteHandler *handler.RouteHandler
 	BusHandler   *handler.BusHandler
-	ServiceName  string
-	Config       *config.Config
 }
 
-// SetupRoutes configures all routes for the trip service
 func SetupRoutes(router *gin.Engine, config *RouterConfig) {
-	// Apply global middleware
 	router.Use(middleware.RequestContextMiddleware(config.ServiceName))
-	router.Use(setupLocalCORS(&config.Config.CORS))
 	router.Use(middleware.Logger())
 
-	// Health check endpoint
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status":  "ok",
@@ -35,7 +28,6 @@ func SetupRoutes(router *gin.Engine, config *RouterConfig) {
 		})
 	})
 
-	// API v1 routes
 	v1 := router.Group("/api/v1")
 	{
 		// Trip routes
@@ -71,27 +63,4 @@ func SetupRoutes(router *gin.Engine, config *RouterConfig) {
 			buses.GET("/:id/seats", config.BusHandler.GetBusSeats)
 		}
 	}
-}
-
-// setupLocalCORS creates CORS middleware from local config
-func setupLocalCORS(cfg *config.CORSConfig) gin.HandlerFunc {
-	corsConfig := cors.Config{
-		AllowOrigins:     cfg.AllowOrigins,
-		AllowMethods:     cfg.AllowMethods,
-		AllowHeaders:     cfg.AllowHeaders,
-		ExposeHeaders:    cfg.ExposeHeaders,
-		AllowCredentials: cfg.AllowCredentials,
-		MaxAge:           time.Duration(cfg.MaxAge) * time.Second,
-	}
-
-	// If allow origins contains "*", use AllowAllOrigins
-	for _, origin := range cfg.AllowOrigins {
-		if origin == "*" {
-			corsConfig.AllowAllOrigins = true
-			corsConfig.AllowOrigins = nil
-			break
-		}
-	}
-
-	return cors.New(corsConfig)
 }

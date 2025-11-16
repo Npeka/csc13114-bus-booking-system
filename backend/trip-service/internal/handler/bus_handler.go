@@ -12,10 +12,10 @@ import (
 )
 
 type BusHandler struct {
-	busService service.BusServiceInterface
+	busService service.BusService
 }
 
-func NewBusHandler(busService service.BusServiceInterface) *BusHandler {
+func NewBusHandler(busService service.BusService) *BusHandler {
 	return &BusHandler{
 		busService: busService,
 	}

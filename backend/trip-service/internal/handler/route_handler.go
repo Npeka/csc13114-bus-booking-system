@@ -12,10 +12,10 @@ import (
 )
 
 type RouteHandler struct {
-	routeService service.RouteServiceInterface
+	routeService service.RouteService
 }
 
-func NewRouteHandler(routeService service.RouteServiceInterface) *RouteHandler {
+func NewRouteHandler(routeService service.RouteService) *RouteHandler {
 	return &RouteHandler{
 		routeService: routeService,
 	}

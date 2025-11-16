@@ -12,7 +12,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type BusServiceInterface interface {
+type BusService interface {
 	CreateBus(ctx context.Context, req *model.CreateBusRequest) (*model.Bus, error)
 	GetBusByID(ctx context.Context, id uuid.UUID) (*model.Bus, error)
 	UpdateBus(ctx context.Context, id uuid.UUID, req *model.UpdateBusRequest) (*model.Bus, error)
@@ -21,17 +21,17 @@ type BusServiceInterface interface {
 	GetBusSeats(ctx context.Context, busID uuid.UUID) ([]model.Seat, error)
 }
 
-type BusService struct {
-	repo repository.TripRepositoryInterface
+type BusServiceImpl struct {
+	repositories *repository.Repositories
 }
 
-func NewBusService(repo repository.TripRepositoryInterface) BusServiceInterface {
-	return &BusService{
-		repo: repo,
+func NewBusService(repositories *repository.Repositories) BusService {
+	return &BusServiceImpl{
+		repositories: repositories,
 	}
 }
 
-func (s *BusService) CreateBus(ctx context.Context, req *model.CreateBusRequest) (*model.Bus, error) {
+func (s *BusServiceImpl) CreateBus(ctx context.Context, req *model.CreateBusRequest) (*model.Bus, error) {
 	log.Info().Msg("Creating new bus")
 
 	// Validate request
@@ -44,7 +44,7 @@ func (s *BusService) CreateBus(ctx context.Context, req *model.CreateBusRequest)
 	}
 
 	// Check if plate number already exists
-	existing, err := s.repo.GetBusByPlateNumber(ctx, req.PlateNumber)
+	existing, err := s.repositories.Bus.GetBusByPlateNumber(ctx, req.PlateNumber)
 	if err == nil && existing != nil {
 		return nil, errors.New("plate number already exists")
 	}
@@ -58,7 +58,7 @@ func (s *BusService) CreateBus(ctx context.Context, req *model.CreateBusRequest)
 		IsActive:     true,
 	}
 
-	if err := s.repo.CreateBus(ctx, bus); err != nil {
+	if err := s.repositories.Bus.CreateBus(ctx, bus); err != nil {
 		log.Error().Err(err).Msg("Failed to create bus")
 		return nil, fmt.Errorf("failed to create bus: %w", err)
 	}
@@ -73,8 +73,8 @@ func (s *BusService) CreateBus(ctx context.Context, req *model.CreateBusRequest)
 	return bus, nil
 }
 
-func (s *BusService) GetBusByID(ctx context.Context, id uuid.UUID) (*model.Bus, error) {
-	bus, err := s.repo.GetBusByID(ctx, id)
+func (s *BusServiceImpl) GetBusByID(ctx context.Context, id uuid.UUID) (*model.Bus, error) {
+	bus, err := s.repositories.Bus.GetBusByID(ctx, id)
 	if err != nil {
 		log.Error().Err(err).Str("bus_id", id.String()).Msg("Failed to get bus")
 		return nil, fmt.Errorf("failed to get bus: %w", err)
@@ -83,11 +83,11 @@ func (s *BusService) GetBusByID(ctx context.Context, id uuid.UUID) (*model.Bus, 
 	return bus, nil
 }
 
-func (s *BusService) UpdateBus(ctx context.Context, id uuid.UUID, req *model.UpdateBusRequest) (*model.Bus, error) {
+func (s *BusServiceImpl) UpdateBus(ctx context.Context, id uuid.UUID, req *model.UpdateBusRequest) (*model.Bus, error) {
 	log.Info().Str("bus_id", id.String()).Msg("Updating bus")
 
 	// Get existing bus
-	bus, err := s.repo.GetBusByID(ctx, id)
+	bus, err := s.repositories.Bus.GetBusByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("bus not found: %w", err)
 	}
@@ -95,7 +95,7 @@ func (s *BusService) UpdateBus(ctx context.Context, id uuid.UUID, req *model.Upd
 	// Update fields
 	if req.PlateNumber != nil {
 		// Check if new plate number already exists (and it's not the same bus)
-		existing, err := s.repo.GetBusByPlateNumber(ctx, *req.PlateNumber)
+		existing, err := s.repositories.Bus.GetBusByPlateNumber(ctx, *req.PlateNumber)
 		if err == nil && existing != nil && existing.ID != id {
 			return nil, errors.New("plate number already exists")
 		}
@@ -117,7 +117,7 @@ func (s *BusService) UpdateBus(ctx context.Context, id uuid.UUID, req *model.Upd
 		bus.IsActive = *req.IsActive
 	}
 
-	if err := s.repo.UpdateBus(ctx, bus); err != nil {
+	if err := s.repositories.Bus.UpdateBus(ctx, bus); err != nil {
 		log.Error().Err(err).Str("bus_id", id.String()).Msg("Failed to update bus")
 		return nil, fmt.Errorf("failed to update bus: %w", err)
 	}
@@ -126,10 +126,10 @@ func (s *BusService) UpdateBus(ctx context.Context, id uuid.UUID, req *model.Upd
 	return bus, nil
 }
 
-func (s *BusService) DeleteBus(ctx context.Context, id uuid.UUID) error {
+func (s *BusServiceImpl) DeleteBus(ctx context.Context, id uuid.UUID) error {
 	log.Info().Str("bus_id", id.String()).Msg("Deleting bus")
 
-	if err := s.repo.DeleteBus(ctx, id); err != nil {
+	if err := s.repositories.Bus.DeleteBus(ctx, id); err != nil {
 		log.Error().Err(err).Str("bus_id", id.String()).Msg("Failed to delete bus")
 		return fmt.Errorf("failed to delete bus: %w", err)
 	}
@@ -138,7 +138,7 @@ func (s *BusService) DeleteBus(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (s *BusService) ListBuses(ctx context.Context, operatorID *uuid.UUID, page, limit int) ([]model.Bus, int64, error) {
+func (s *BusServiceImpl) ListBuses(ctx context.Context, operatorID *uuid.UUID, page, limit int) ([]model.Bus, int64, error) {
 	if page <= 0 {
 		page = 1
 	}
@@ -146,7 +146,7 @@ func (s *BusService) ListBuses(ctx context.Context, operatorID *uuid.UUID, page,
 		limit = 20
 	}
 
-	buses, total, err := s.repo.ListBuses(ctx, operatorID, page, limit)
+	buses, total, err := s.repositories.Bus.ListBuses(ctx, operatorID, page, limit)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to list buses")
 		return nil, 0, fmt.Errorf("failed to list buses: %w", err)
@@ -155,8 +155,8 @@ func (s *BusService) ListBuses(ctx context.Context, operatorID *uuid.UUID, page,
 	return buses, total, nil
 }
 
-func (s *BusService) GetBusSeats(ctx context.Context, busID uuid.UUID) ([]model.Seat, error) {
-	seats, err := s.repo.GetSeatsByBusID(ctx, busID)
+func (s *BusServiceImpl) GetBusSeats(ctx context.Context, busID uuid.UUID) ([]model.Seat, error) {
+	seats, err := s.repositories.Seat.GetSeatsByBusID(ctx, busID)
 	if err != nil {
 		log.Error().Err(err).Str("bus_id", busID.String()).Msg("Failed to get bus seats")
 		return nil, fmt.Errorf("failed to get bus seats: %w", err)
@@ -166,7 +166,7 @@ func (s *BusService) GetBusSeats(ctx context.Context, busID uuid.UUID) ([]model.
 }
 
 // createSeatsForBus creates standard seats for a new bus
-func (s *BusService) createSeatsForBus(ctx context.Context, bus *model.Bus) error {
+func (s *BusServiceImpl) createSeatsForBus(ctx context.Context, bus *model.Bus) error {
 	seats := make([]model.Seat, 0, bus.SeatCapacity)
 
 	// Create seats with standard naming (A1, A2, B1, B2, etc.)
@@ -198,5 +198,5 @@ func (s *BusService) createSeatsForBus(ctx context.Context, bus *model.Bus) erro
 		}
 	}
 
-	return s.repo.CreateSeats(ctx, seats)
+	return s.repositories.Seat.CreateSeats(ctx, seats)
 }

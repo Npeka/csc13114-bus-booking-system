@@ -13,7 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type TripServiceInterface interface {
+type TripService interface {
 	// Trip operations
 	SearchTrips(ctx context.Context, req *model.TripSearchRequest) ([]model.Trip, int64, error)
 	GetTripByID(ctx context.Context, id uuid.UUID) (*model.Trip, error)
@@ -45,16 +45,16 @@ type TripServiceInterface interface {
 	DeleteOperator(ctx context.Context, id uuid.UUID) error
 }
 
-type TripService struct {
-	repo repository.TripRepositoryInterface
+type TripServiceImpl struct {
+	repositories *repository.Repositories
 }
 
-func NewTripService(repo repository.TripRepositoryInterface) TripServiceInterface {
-	return &TripService{repo: repo}
+func NewTripService(repositories *repository.Repositories) TripService {
+	return &TripServiceImpl{repositories: repositories}
 }
 
 // Trip operations
-func (s *TripService) SearchTrips(ctx context.Context, req *model.TripSearchRequest) ([]model.Trip, int64, error) {
+func (s *TripServiceImpl) SearchTrips(ctx context.Context, req *model.TripSearchRequest) ([]model.Trip, int64, error) {
 	// Validate search request
 	if req.Origin == "" || req.Destination == "" {
 		return nil, 0, errors.New("origin and destination are required")
@@ -79,7 +79,7 @@ func (s *TripService) SearchTrips(ctx context.Context, req *model.TripSearchRequ
 		req.Limit = 100
 	}
 
-	trips, total, err := s.repo.SearchTrips(ctx, req)
+	trips, total, err := s.repositories.Trip.SearchTrips(ctx, req)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to search trips")
 		return nil, 0, fmt.Errorf("failed to search trips: %w", err)
@@ -103,8 +103,8 @@ func (s *TripService) SearchTrips(ctx context.Context, req *model.TripSearchRequ
 	return result, total, nil
 }
 
-func (s *TripService) GetTripByID(ctx context.Context, id uuid.UUID) (*model.Trip, error) {
-	trip, err := s.repo.GetTripByID(ctx, id)
+func (s *TripServiceImpl) GetTripByID(ctx context.Context, id uuid.UUID) (*model.Trip, error) {
+	trip, err := s.repositories.Trip.GetTripByID(ctx, id)
 	if err != nil {
 		log.Error().Err(err).Str("trip_id", id.String()).Msg("Failed to get trip by ID")
 		return nil, fmt.Errorf("failed to get trip: %w", err)
@@ -112,7 +112,7 @@ func (s *TripService) GetTripByID(ctx context.Context, id uuid.UUID) (*model.Tri
 	return trip, nil
 }
 
-func (s *TripService) CreateTrip(ctx context.Context, req *model.CreateTripRequest) (*model.Trip, error) {
+func (s *TripServiceImpl) CreateTrip(ctx context.Context, req *model.CreateTripRequest) (*model.Trip, error) {
 	// Validate trip times
 	if req.ArrivalTime.Before(req.DepartureTime) {
 		return nil, errors.New("arrival time must be after departure time")
@@ -123,13 +123,13 @@ func (s *TripService) CreateTrip(ctx context.Context, req *model.CreateTripReque
 	}
 
 	// Check if route exists
-	_, err := s.repo.GetRouteByID(ctx, req.RouteID)
+	_, err := s.repositories.Route.GetRouteByID(ctx, req.RouteID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid route: %w", err)
 	}
 
 	// Check if bus exists and is available
-	bus, err := s.repo.GetBusByID(ctx, req.BusID)
+	bus, err := s.repositories.Bus.GetBusByID(ctx, req.BusID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid bus: %w", err)
 	}
@@ -139,7 +139,7 @@ func (s *TripService) CreateTrip(ctx context.Context, req *model.CreateTripReque
 	}
 
 	// Check for bus conflicts (same bus cannot have overlapping trips)
-	conflictTrips, err := s.repo.GetTripsByBusAndDateRange(ctx, req.BusID,
+	conflictTrips, err := s.repositories.Trip.GetTripsByBusAndDateRange(ctx, req.BusID,
 		req.DepartureTime.Add(-4*time.Hour), req.ArrivalTime.Add(4*time.Hour))
 	if err != nil {
 		return nil, fmt.Errorf("failed to check bus availability: %w", err)
@@ -161,7 +161,7 @@ func (s *TripService) CreateTrip(ctx context.Context, req *model.CreateTripReque
 		IsActive:      true,
 	}
 
-	if err := s.repo.CreateTrip(ctx, trip); err != nil {
+	if err := s.repositories.Trip.CreateTrip(ctx, trip); err != nil {
 		log.Error().Err(err).Msg("Failed to create trip")
 		return nil, fmt.Errorf("failed to create trip: %w", err)
 	}
@@ -170,8 +170,8 @@ func (s *TripService) CreateTrip(ctx context.Context, req *model.CreateTripReque
 	return s.GetTripByID(ctx, trip.ID)
 }
 
-func (s *TripService) UpdateTrip(ctx context.Context, id uuid.UUID, req *model.UpdateTripRequest) (*model.Trip, error) {
-	trip, err := s.repo.GetTripByID(ctx, id)
+func (s *TripServiceImpl) UpdateTrip(ctx context.Context, id uuid.UUID, req *model.UpdateTripRequest) (*model.Trip, error) {
+	trip, err := s.repositories.Trip.GetTripByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("trip not found: %w", err)
 	}
@@ -206,7 +206,7 @@ func (s *TripService) UpdateTrip(ctx context.Context, id uuid.UUID, req *model.U
 		trip.IsActive = *req.IsActive
 	}
 
-	if err := s.repo.UpdateTrip(ctx, trip); err != nil {
+	if err := s.repositories.Trip.UpdateTrip(ctx, trip); err != nil {
 		log.Error().Err(err).Str("trip_id", id.String()).Msg("Failed to update trip")
 		return nil, fmt.Errorf("failed to update trip: %w", err)
 	}
@@ -214,8 +214,8 @@ func (s *TripService) UpdateTrip(ctx context.Context, id uuid.UUID, req *model.U
 	return s.GetTripByID(ctx, id)
 }
 
-func (s *TripService) DeleteTrip(ctx context.Context, id uuid.UUID) error {
-	trip, err := s.repo.GetTripByID(ctx, id)
+func (s *TripServiceImpl) DeleteTrip(ctx context.Context, id uuid.UUID) error {
+	trip, err := s.repositories.Trip.GetTripByID(ctx, id)
 	if err != nil {
 		return fmt.Errorf("trip not found: %w", err)
 	}
@@ -229,7 +229,7 @@ func (s *TripService) DeleteTrip(ctx context.Context, id uuid.UUID) error {
 		return errors.New("cannot delete trip within 24 hours of departure")
 	}
 
-	if err := s.repo.DeleteTrip(ctx, id); err != nil {
+	if err := s.repositories.Trip.DeleteTrip(ctx, id); err != nil {
 		log.Error().Err(err).Str("trip_id", id.String()).Msg("Failed to delete trip")
 		return fmt.Errorf("failed to delete trip: %w", err)
 	}
@@ -237,13 +237,13 @@ func (s *TripService) DeleteTrip(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (s *TripService) GetSeatAvailability(ctx context.Context, tripID uuid.UUID) (*model.SeatAvailabilityResponse, error) {
-	trip, err := s.repo.GetTripByID(ctx, tripID)
+func (s *TripServiceImpl) GetSeatAvailability(ctx context.Context, tripID uuid.UUID) (*model.SeatAvailabilityResponse, error) {
+	trip, err := s.repositories.Trip.GetTripByID(ctx, tripID)
 	if err != nil {
 		return nil, fmt.Errorf("trip not found: %w", err)
 	}
 
-	seats, err := s.repo.GetSeatsByBusID(ctx, trip.BusID)
+	seats, err := s.repositories.Seat.GetSeatsByBusID(ctx, trip.BusID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get seats: %w", err)
 	}
@@ -278,7 +278,7 @@ func (s *TripService) GetSeatAvailability(ctx context.Context, tripID uuid.UUID)
 }
 
 // Route operations
-func (s *TripService) ListRoutes(ctx context.Context, operatorID *uuid.UUID, page, limit int) (*model.RouteListResponse, error) {
+func (s *TripServiceImpl) ListRoutes(ctx context.Context, operatorID *uuid.UUID, page, limit int) (*model.RouteListResponse, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -289,7 +289,7 @@ func (s *TripService) ListRoutes(ctx context.Context, operatorID *uuid.UUID, pag
 		limit = 100
 	}
 
-	routes, total, err := s.repo.ListRoutes(ctx, operatorID, page, limit)
+	routes, total, err := s.repositories.Route.ListRoutes(ctx, operatorID, page, limit)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to list routes")
 		return nil, fmt.Errorf("failed to list routes: %w", err)
@@ -306,17 +306,17 @@ func (s *TripService) ListRoutes(ctx context.Context, operatorID *uuid.UUID, pag
 	}, nil
 }
 
-func (s *TripService) GetRouteByID(ctx context.Context, id uuid.UUID) (*model.Route, error) {
-	route, err := s.repo.GetRouteByID(ctx, id)
+func (s *TripServiceImpl) GetRouteByID(ctx context.Context, id uuid.UUID) (*model.Route, error) {
+	route, err := s.repositories.Route.GetRouteByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("route not found: %w", err)
 	}
 	return route, nil
 }
 
-func (s *TripService) CreateRoute(ctx context.Context, req *model.CreateRouteRequest) (*model.Route, error) {
+func (s *TripServiceImpl) CreateRoute(ctx context.Context, req *model.CreateRouteRequest) (*model.Route, error) {
 	// Validate operator exists
-	_, err := s.repo.GetOperatorByID(ctx, req.OperatorID)
+	_, err := s.repositories.Operator.GetOperatorByID(ctx, req.OperatorID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid operator: %w", err)
 	}
@@ -334,7 +334,7 @@ func (s *TripService) CreateRoute(ctx context.Context, req *model.CreateRouteReq
 		IsActive:         true,
 	}
 
-	if err := s.repo.CreateRoute(ctx, route); err != nil {
+	if err := s.repositories.Route.CreateRoute(ctx, route); err != nil {
 		log.Error().Err(err).Msg("Failed to create route")
 		return nil, fmt.Errorf("failed to create route: %w", err)
 	}
@@ -342,8 +342,8 @@ func (s *TripService) CreateRoute(ctx context.Context, req *model.CreateRouteReq
 	return s.GetRouteByID(ctx, route.ID)
 }
 
-func (s *TripService) UpdateRoute(ctx context.Context, id uuid.UUID, req *model.UpdateRouteRequest) (*model.Route, error) {
-	route, err := s.repo.GetRouteByID(ctx, id)
+func (s *TripServiceImpl) UpdateRoute(ctx context.Context, id uuid.UUID, req *model.UpdateRouteRequest) (*model.Route, error) {
+	route, err := s.repositories.Route.GetRouteByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("route not found: %w", err)
 	}
@@ -370,7 +370,7 @@ func (s *TripService) UpdateRoute(ctx context.Context, id uuid.UUID, req *model.
 		return nil, errors.New("origin and destination must be different")
 	}
 
-	if err := s.repo.UpdateRoute(ctx, route); err != nil {
+	if err := s.repositories.Route.UpdateRoute(ctx, route); err != nil {
 		log.Error().Err(err).Str("route_id", id.String()).Msg("Failed to update route")
 		return nil, fmt.Errorf("failed to update route: %w", err)
 	}
@@ -378,16 +378,16 @@ func (s *TripService) UpdateRoute(ctx context.Context, id uuid.UUID, req *model.
 	return s.GetRouteByID(ctx, id)
 }
 
-func (s *TripService) DeleteRoute(ctx context.Context, id uuid.UUID) error {
+func (s *TripServiceImpl) DeleteRoute(ctx context.Context, id uuid.UUID) error {
 	// Check if route has active trips
-	_, err := s.repo.GetRouteByID(ctx, id)
+	_, err := s.repositories.Route.GetRouteByID(ctx, id)
 	if err != nil {
 		return fmt.Errorf("route not found: %w", err)
 	}
 
 	// TODO: Check if route has active trips in the future
 
-	if err := s.repo.DeleteRoute(ctx, id); err != nil {
+	if err := s.repositories.Route.DeleteRoute(ctx, id); err != nil {
 		log.Error().Err(err).Str("route_id", id.String()).Msg("Failed to delete route")
 		return fmt.Errorf("failed to delete route: %w", err)
 	}
@@ -396,7 +396,7 @@ func (s *TripService) DeleteRoute(ctx context.Context, id uuid.UUID) error {
 }
 
 // Bus operations
-func (s *TripService) ListBuses(ctx context.Context, operatorID *uuid.UUID, page, limit int) ([]model.Bus, int64, error) {
+func (s *TripServiceImpl) ListBuses(ctx context.Context, operatorID *uuid.UUID, page, limit int) ([]model.Bus, int64, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -407,7 +407,7 @@ func (s *TripService) ListBuses(ctx context.Context, operatorID *uuid.UUID, page
 		limit = 100
 	}
 
-	buses, total, err := s.repo.ListBuses(ctx, operatorID, page, limit)
+	buses, total, err := s.repositories.Bus.ListBuses(ctx, operatorID, page, limit)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to list buses")
 		return nil, 0, fmt.Errorf("failed to list buses: %w", err)
@@ -416,23 +416,23 @@ func (s *TripService) ListBuses(ctx context.Context, operatorID *uuid.UUID, page
 	return buses, total, nil
 }
 
-func (s *TripService) GetBusByID(ctx context.Context, id uuid.UUID) (*model.Bus, error) {
-	bus, err := s.repo.GetBusByID(ctx, id)
+func (s *TripServiceImpl) GetBusByID(ctx context.Context, id uuid.UUID) (*model.Bus, error) {
+	bus, err := s.repositories.Bus.GetBusByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("bus not found: %w", err)
 	}
 	return bus, nil
 }
 
-func (s *TripService) CreateBus(ctx context.Context, req *model.CreateBusRequest) (*model.Bus, error) {
+func (s *TripServiceImpl) CreateBus(ctx context.Context, req *model.CreateBusRequest) (*model.Bus, error) {
 	// Validate operator exists
-	_, err := s.repo.GetOperatorByID(ctx, req.OperatorID)
+	_, err := s.repositories.Operator.GetOperatorByID(ctx, req.OperatorID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid operator: %w", err)
 	}
 
 	// Check plate number uniqueness
-	existingBus, err := s.repo.GetBusByPlateNumber(ctx, req.PlateNumber)
+	existingBus, err := s.repositories.Bus.GetBusByPlateNumber(ctx, req.PlateNumber)
 	if err == nil && existingBus != nil {
 		return nil, errors.New("plate number already exists")
 	}
@@ -446,7 +446,7 @@ func (s *TripService) CreateBus(ctx context.Context, req *model.CreateBusRequest
 		IsActive:     true,
 	}
 
-	if err := s.repo.CreateBus(ctx, bus); err != nil {
+	if err := s.repositories.Bus.CreateBus(ctx, bus); err != nil {
 		log.Error().Err(err).Msg("Failed to create bus")
 		return nil, fmt.Errorf("failed to create bus: %w", err)
 	}
@@ -460,8 +460,8 @@ func (s *TripService) CreateBus(ctx context.Context, req *model.CreateBusRequest
 	return s.GetBusByID(ctx, bus.ID)
 }
 
-func (s *TripService) UpdateBus(ctx context.Context, id uuid.UUID, req *model.UpdateBusRequest) (*model.Bus, error) {
-	bus, err := s.repo.GetBusByID(ctx, id)
+func (s *TripServiceImpl) UpdateBus(ctx context.Context, id uuid.UUID, req *model.UpdateBusRequest) (*model.Bus, error) {
+	bus, err := s.repositories.Bus.GetBusByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("bus not found: %w", err)
 	}
@@ -470,7 +470,7 @@ func (s *TripService) UpdateBus(ctx context.Context, id uuid.UUID, req *model.Up
 	if req.PlateNumber != nil {
 		// Check uniqueness if changing plate number
 		if *req.PlateNumber != bus.PlateNumber {
-			existingBus, err := s.repo.GetBusByPlateNumber(ctx, *req.PlateNumber)
+			existingBus, err := s.repositories.Bus.GetBusByPlateNumber(ctx, *req.PlateNumber)
 			if err == nil && existingBus != nil {
 				return nil, errors.New("plate number already exists")
 			}
@@ -495,7 +495,7 @@ func (s *TripService) UpdateBus(ctx context.Context, id uuid.UUID, req *model.Up
 		bus.IsActive = *req.IsActive
 	}
 
-	if err := s.repo.UpdateBus(ctx, bus); err != nil {
+	if err := s.repositories.Bus.UpdateBus(ctx, bus); err != nil {
 		log.Error().Err(err).Str("bus_id", id.String()).Msg("Failed to update bus")
 		return nil, fmt.Errorf("failed to update bus: %w", err)
 	}
@@ -503,10 +503,10 @@ func (s *TripService) UpdateBus(ctx context.Context, id uuid.UUID, req *model.Up
 	return s.GetBusByID(ctx, id)
 }
 
-func (s *TripService) DeleteBus(ctx context.Context, id uuid.UUID) error {
+func (s *TripServiceImpl) DeleteBus(ctx context.Context, id uuid.UUID) error {
 	// TODO: Check if bus has active trips
 
-	if err := s.repo.DeleteBus(ctx, id); err != nil {
+	if err := s.repositories.Bus.DeleteBus(ctx, id); err != nil {
 		log.Error().Err(err).Str("bus_id", id.String()).Msg("Failed to delete bus")
 		return fmt.Errorf("failed to delete bus: %w", err)
 	}
@@ -515,7 +515,7 @@ func (s *TripService) DeleteBus(ctx context.Context, id uuid.UUID) error {
 }
 
 // Operator operations
-func (s *TripService) ListOperators(ctx context.Context, page, limit int) (*model.OperatorListResponse, error) {
+func (s *TripServiceImpl) ListOperators(ctx context.Context, page, limit int) (*model.OperatorListResponse, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -526,7 +526,7 @@ func (s *TripService) ListOperators(ctx context.Context, page, limit int) (*mode
 		limit = 100
 	}
 
-	operators, total, err := s.repo.ListOperators(ctx, page, limit)
+	operators, total, err := s.repositories.Operator.ListOperators(ctx, page, limit)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to list operators")
 		return nil, fmt.Errorf("failed to list operators: %w", err)
@@ -543,17 +543,17 @@ func (s *TripService) ListOperators(ctx context.Context, page, limit int) (*mode
 	}, nil
 }
 
-func (s *TripService) GetOperatorByID(ctx context.Context, id uuid.UUID) (*model.Operator, error) {
-	operator, err := s.repo.GetOperatorByID(ctx, id)
+func (s *TripServiceImpl) GetOperatorByID(ctx context.Context, id uuid.UUID) (*model.Operator, error) {
+	operator, err := s.repositories.Operator.GetOperatorByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("operator not found: %w", err)
 	}
 	return operator, nil
 }
 
-func (s *TripService) CreateOperator(ctx context.Context, req *model.CreateOperatorRequest) (*model.Operator, error) {
+func (s *TripServiceImpl) CreateOperator(ctx context.Context, req *model.CreateOperatorRequest) (*model.Operator, error) {
 	// Check email uniqueness
-	existingOperator, err := s.repo.GetOperatorByEmail(ctx, req.ContactEmail)
+	existingOperator, err := s.repositories.Operator.GetOperatorByEmail(ctx, req.ContactEmail)
 	if err == nil && existingOperator != nil {
 		return nil, errors.New("email already exists")
 	}
@@ -565,7 +565,7 @@ func (s *TripService) CreateOperator(ctx context.Context, req *model.CreateOpera
 		Status:       "pending",
 	}
 
-	if err := s.repo.CreateOperator(ctx, operator); err != nil {
+	if err := s.repositories.Operator.CreateOperator(ctx, operator); err != nil {
 		log.Error().Err(err).Msg("Failed to create operator")
 		return nil, fmt.Errorf("failed to create operator: %w", err)
 	}
@@ -573,8 +573,8 @@ func (s *TripService) CreateOperator(ctx context.Context, req *model.CreateOpera
 	return s.GetOperatorByID(ctx, operator.ID)
 }
 
-func (s *TripService) UpdateOperator(ctx context.Context, id uuid.UUID, req *model.UpdateOperatorRequest) (*model.Operator, error) {
-	operator, err := s.repo.GetOperatorByID(ctx, id)
+func (s *TripServiceImpl) UpdateOperator(ctx context.Context, id uuid.UUID, req *model.UpdateOperatorRequest) (*model.Operator, error) {
+	operator, err := s.repositories.Operator.GetOperatorByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("operator not found: %w", err)
 	}
@@ -587,7 +587,7 @@ func (s *TripService) UpdateOperator(ctx context.Context, id uuid.UUID, req *mod
 	if req.ContactEmail != nil {
 		// Check uniqueness if changing email
 		if *req.ContactEmail != operator.ContactEmail {
-			existingOperator, err := s.repo.GetOperatorByEmail(ctx, *req.ContactEmail)
+			existingOperator, err := s.repositories.Operator.GetOperatorByEmail(ctx, *req.ContactEmail)
 			if err == nil && existingOperator != nil {
 				return nil, errors.New("email already exists")
 			}
@@ -599,7 +599,7 @@ func (s *TripService) UpdateOperator(ctx context.Context, id uuid.UUID, req *mod
 		operator.ContactPhone = *req.ContactPhone
 	}
 
-	if err := s.repo.UpdateOperator(ctx, operator); err != nil {
+	if err := s.repositories.Operator.UpdateOperator(ctx, operator); err != nil {
 		log.Error().Err(err).Str("operator_id", id.String()).Msg("Failed to update operator")
 		return nil, fmt.Errorf("failed to update operator: %w", err)
 	}
@@ -607,10 +607,10 @@ func (s *TripService) UpdateOperator(ctx context.Context, id uuid.UUID, req *mod
 	return s.GetOperatorByID(ctx, id)
 }
 
-func (s *TripService) DeleteOperator(ctx context.Context, id uuid.UUID) error {
+func (s *TripServiceImpl) DeleteOperator(ctx context.Context, id uuid.UUID) error {
 	// TODO: Check if operator has active routes/buses/trips
 
-	if err := s.repo.DeleteOperator(ctx, id); err != nil {
+	if err := s.repositories.Operator.DeleteOperator(ctx, id); err != nil {
 		log.Error().Err(err).Str("operator_id", id.String()).Msg("Failed to delete operator")
 		return fmt.Errorf("failed to delete operator: %w", err)
 	}
@@ -619,7 +619,7 @@ func (s *TripService) DeleteOperator(ctx context.Context, id uuid.UUID) error {
 }
 
 // Helper functions
-func (s *TripService) calculateSeatPrice(basePrice float64, seatType string) float64 {
+func (s *TripServiceImpl) calculateSeatPrice(basePrice float64, seatType string) float64 {
 	switch seatType {
 	case "premium":
 		return basePrice * 1.2
@@ -630,7 +630,7 @@ func (s *TripService) calculateSeatPrice(basePrice float64, seatType string) flo
 	}
 }
 
-func (s *TripService) generateSeatsForBus(ctx context.Context, busID uuid.UUID, capacity int) error {
+func (s *TripServiceImpl) generateSeatsForBus(ctx context.Context, busID uuid.UUID, capacity int) error {
 	var seats []model.Seat
 
 	// Generate seat codes based on typical bus layout
@@ -659,24 +659,24 @@ func (s *TripService) generateSeatsForBus(ctx context.Context, busID uuid.UUID, 
 		seats = append(seats, seat)
 	}
 
-	return s.repo.CreateSeats(ctx, seats)
+	return s.repositories.Seat.CreateSeats(ctx, seats)
 }
 
 // GetTripsByRouteAndDate gets trips by route and departure date
-func (s *TripService) GetTripsByRouteAndDate(ctx context.Context, routeID uuid.UUID, departureDate time.Time) ([]model.Trip, error) {
+func (s *TripServiceImpl) GetTripsByRouteAndDate(ctx context.Context, routeID uuid.UUID, departureDate time.Time) ([]model.Trip, error) {
 	// Validate inputs
 	if routeID == uuid.Nil {
 		return nil, errors.New("route ID is required")
 	}
 
 	// Check if route exists
-	_, err := s.repo.GetRouteByID(ctx, routeID)
+	_, err := s.repositories.Route.GetRouteByID(ctx, routeID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid route: %w", err)
 	}
 
 	// Get trips by route and date
-	trips, err := s.repo.GetTripsByRouteAndDate(ctx, routeID, departureDate)
+	trips, err := s.repositories.Trip.GetTripsByRouteAndDate(ctx, routeID, departureDate)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get trips: %w", err)
 	}

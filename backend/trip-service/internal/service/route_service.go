@@ -12,7 +12,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type RouteServiceInterface interface {
+type RouteService interface {
 	CreateRoute(ctx context.Context, req *model.CreateRouteRequest) (*model.Route, error)
 	GetRouteByID(ctx context.Context, id uuid.UUID) (*model.Route, error)
 	UpdateRoute(ctx context.Context, id uuid.UUID, req *model.UpdateRouteRequest) (*model.Route, error)
@@ -21,17 +21,17 @@ type RouteServiceInterface interface {
 	GetRoutesByOriginDestination(ctx context.Context, origin, destination string) ([]model.Route, error)
 }
 
-type RouteService struct {
-	repo repository.TripRepositoryInterface
+type RouteServiceImpl struct {
+	repositories *repository.Repositories
 }
 
-func NewRouteService(repo repository.TripRepositoryInterface) RouteServiceInterface {
-	return &RouteService{
-		repo: repo,
+func NewRouteService(repositories *repository.Repositories) RouteService {
+	return &RouteServiceImpl{
+		repositories: repositories,
 	}
 }
 
-func (s *RouteService) CreateRoute(ctx context.Context, req *model.CreateRouteRequest) (*model.Route, error) {
+func (s *RouteServiceImpl) CreateRoute(ctx context.Context, req *model.CreateRouteRequest) (*model.Route, error) {
 	log.Info().Msg("Creating new route")
 
 	// Validate request
@@ -52,7 +52,7 @@ func (s *RouteService) CreateRoute(ctx context.Context, req *model.CreateRouteRe
 		IsActive:         true,
 	}
 
-	if err := s.repo.CreateRoute(ctx, route); err != nil {
+	if err := s.repositories.Route.CreateRoute(ctx, route); err != nil {
 		log.Error().Err(err).Msg("Failed to create route")
 		return nil, fmt.Errorf("failed to create route: %w", err)
 	}
@@ -61,8 +61,8 @@ func (s *RouteService) CreateRoute(ctx context.Context, req *model.CreateRouteRe
 	return route, nil
 }
 
-func (s *RouteService) GetRouteByID(ctx context.Context, id uuid.UUID) (*model.Route, error) {
-	route, err := s.repo.GetRouteByID(ctx, id)
+func (s *RouteServiceImpl) GetRouteByID(ctx context.Context, id uuid.UUID) (*model.Route, error) {
+	route, err := s.repositories.Route.GetRouteByID(ctx, id)
 	if err != nil {
 		log.Error().Err(err).Str("route_id", id.String()).Msg("Failed to get route")
 		return nil, fmt.Errorf("failed to get route: %w", err)
@@ -71,11 +71,11 @@ func (s *RouteService) GetRouteByID(ctx context.Context, id uuid.UUID) (*model.R
 	return route, nil
 }
 
-func (s *RouteService) UpdateRoute(ctx context.Context, id uuid.UUID, req *model.UpdateRouteRequest) (*model.Route, error) {
+func (s *RouteServiceImpl) UpdateRoute(ctx context.Context, id uuid.UUID, req *model.UpdateRouteRequest) (*model.Route, error) {
 	log.Info().Str("route_id", id.String()).Msg("Updating route")
 
 	// Get existing route
-	route, err := s.repo.GetRouteByID(ctx, id)
+	route, err := s.repositories.Route.GetRouteByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("route not found: %w", err)
 	}
@@ -103,7 +103,7 @@ func (s *RouteService) UpdateRoute(ctx context.Context, id uuid.UUID, req *model
 		route.IsActive = *req.IsActive
 	}
 
-	if err := s.repo.UpdateRoute(ctx, route); err != nil {
+	if err := s.repositories.Route.UpdateRoute(ctx, route); err != nil {
 		log.Error().Err(err).Str("route_id", id.String()).Msg("Failed to update route")
 		return nil, fmt.Errorf("failed to update route: %w", err)
 	}
@@ -112,10 +112,10 @@ func (s *RouteService) UpdateRoute(ctx context.Context, id uuid.UUID, req *model
 	return route, nil
 }
 
-func (s *RouteService) DeleteRoute(ctx context.Context, id uuid.UUID) error {
+func (s *RouteServiceImpl) DeleteRoute(ctx context.Context, id uuid.UUID) error {
 	log.Info().Str("route_id", id.String()).Msg("Deleting route")
 
-	if err := s.repo.DeleteRoute(ctx, id); err != nil {
+	if err := s.repositories.Route.DeleteRoute(ctx, id); err != nil {
 		log.Error().Err(err).Str("route_id", id.String()).Msg("Failed to delete route")
 		return fmt.Errorf("failed to delete route: %w", err)
 	}
@@ -124,7 +124,7 @@ func (s *RouteService) DeleteRoute(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (s *RouteService) ListRoutes(ctx context.Context, operatorID *uuid.UUID, page, limit int) ([]model.RouteSummary, int64, error) {
+func (s *RouteServiceImpl) ListRoutes(ctx context.Context, operatorID *uuid.UUID, page, limit int) ([]model.RouteSummary, int64, error) {
 	if page <= 0 {
 		page = 1
 	}
@@ -132,7 +132,7 @@ func (s *RouteService) ListRoutes(ctx context.Context, operatorID *uuid.UUID, pa
 		limit = 20
 	}
 
-	routes, total, err := s.repo.ListRoutes(ctx, operatorID, page, limit)
+	routes, total, err := s.repositories.Route.ListRoutes(ctx, operatorID, page, limit)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to list routes")
 		return nil, 0, fmt.Errorf("failed to list routes: %w", err)
@@ -141,12 +141,12 @@ func (s *RouteService) ListRoutes(ctx context.Context, operatorID *uuid.UUID, pa
 	return routes, total, nil
 }
 
-func (s *RouteService) GetRoutesByOriginDestination(ctx context.Context, origin, destination string) ([]model.Route, error) {
+func (s *RouteServiceImpl) GetRoutesByOriginDestination(ctx context.Context, origin, destination string) ([]model.Route, error) {
 	if origin == "" || destination == "" {
 		return nil, errors.New("origin and destination are required")
 	}
 
-	routes, err := s.repo.GetRoutesByOriginDestination(ctx, origin, destination)
+	routes, err := s.repositories.Route.GetRoutesByOriginDestination(ctx, origin, destination)
 	if err != nil {
 		log.Error().Err(err).Str("origin", origin).Str("destination", destination).Msg("Failed to get routes by origin/destination")
 		return nil, fmt.Errorf("failed to get routes: %w", err)

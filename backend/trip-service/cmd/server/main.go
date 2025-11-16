@@ -6,177 +6,125 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
+	"github.com/rs/zerolog/log"
+
+	sharedDB "bus-booking/shared/db"
+	"bus-booking/shared/validator"
 	"bus-booking/trip-service/config"
 	appinit "bus-booking/trip-service/internal/init"
-	"bus-booking/trip-service/internal/logger"
-	"bus-booking/trip-service/internal/router"
-
-	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
 )
 
-const (
-	serviceName = "trip-service"
-	version     = "1.0.0"
-)
+const ServiceName = "trip-service"
 
 type Application struct {
-	config   *config.Config
-	handlers *appinit.ServiceHandlers
-	server   *http.Server
+	Config     *config.Config
+	Database   *sharedDB.DatabaseManager
+	Redis      *sharedDB.RedisManager
+	HTTPServer *http.Server
+
+	Services *appinit.ServiceDependencies
 }
 
 func main() {
-	app := &Application{}
-
-	if err := app.initialize(); err != nil {
-		log.Fatal().Err(err).Msg("Failed to initialize application")
-	}
-
-	if err := app.run(); err != nil {
-		log.Fatal().Err(err).Msg("Failed to run application")
-	}
-}
-
-func (app *Application) initialize() error {
-	// Load configuration
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		return err
-	}
-	app.config = cfg
-
-	// Initialize logger
-	if err := logger.InitLogger(cfg); err != nil {
-		return err
+		log.Fatal().Err(err).Msg("Failed to load configuration")
 	}
 
-	log.Info().
-		Str("service", serviceName).
-		Str("version", version).
-		Msg("Logger initialized successfully")
+	if err := appinit.SetupLogger(cfg); err != nil {
+		log.Fatal().Err(err).Msg("Failed to setup logger")
+	}
 
-	log.Info().
-		Str("service", serviceName).
-		Str("version", version).
-		Str("service", serviceName).
-		Msg("Starting Trip Service...")
+	log.Info().Str("service", ServiceName).Msg("Starting Trip Service...")
+
+	// Initialize validator
+	validator.InitValidator()
+
+	// Create application instance
+	app := &Application{
+		Config: cfg,
+	}
 
 	// Initialize dependencies
-	if err := app.initializeDependencies(); err != nil {
-		log.Error().Err(err).Msg("Failed to initialize dependencies")
-		return err
+	if err := app.initDependencies(); err != nil {
+		log.Fatal().Err(err).Msg("Failed to initialize dependencies")
 	}
 
 	// Setup HTTP server
 	app.setupHTTPServer()
 
-	log.Info().
-		Str("service", serviceName).
-		Str("version", version).
-		Msg("All dependencies initialized successfully")
-
-	return nil
+	// Start server
+	app.start()
 }
 
-func (app *Application) initializeDependencies() error {
+// initDependencies initializes all application dependencies
+func (app *Application) initDependencies() error {
 	// Initialize database
-	database, err := appinit.InitDatabase(app.config)
+	var err error
+	app.Database, err = appinit.InitDatabase(app.Config)
 	if err != nil {
 		return err
 	}
 
-	// Auto-migrate database
-	if err := app.migrateDatabase(database); err != nil {
-		log.Error().Err(err).Msg("Database migration failed")
+	// Initialize Redis
+	app.Redis, err = appinit.InitRedis(app.Config)
+	if err != nil {
 		return err
 	}
 
 	// Initialize services and handlers
-	app.handlers = appinit.InitServices(database)
+	app.Services = appinit.InitServices(app.Config, app.Database)
 
+	log.Info().Msg("All dependencies initialized successfully")
 	return nil
 }
 
-func (app *Application) migrateDatabase(database interface{}) error {
-	log.Info().Msg("Running database migrations...")
-
-	// Import models for auto-migration
-	// Note: In a real application, you might want to use a proper migration tool
-	// For now, we'll just log that migrations would run here
-	log.Info().Msg("Database migrations completed successfully")
-
-	return nil
-}
-
+// setupHTTPServer configures the HTTP server and routes
 func (app *Application) setupHTTPServer() {
-	if app.config.IsProduction() {
-		gin.SetMode(gin.ReleaseMode)
-	} else {
-		gin.SetMode(gin.DebugMode)
-	}
-
-	ginRouter := gin.New()
-
-	routerConfig := &router.RouterConfig{
-		TripHandler:  app.handlers.TripHandler,
-		RouteHandler: app.handlers.RouteHandler,
-		BusHandler:   app.handlers.BusHandler,
-		ServiceName:  serviceName,
-		Config:       app.config,
-	}
-	router.SetupRoutes(ginRouter, routerConfig)
-
-	app.server = &http.Server{
-		Addr:           app.config.GetServerAddr(),
-		Handler:        ginRouter,
-		ReadTimeout:    app.config.Server.ReadTimeout,
-		WriteTimeout:   app.config.Server.WriteTimeout,
-		IdleTimeout:    app.config.Server.IdleTimeout,
-		MaxHeaderBytes: app.config.Server.MaxHeaderBytes,
-	}
-
-	log.Info().Str("address", app.config.GetServerAddr()).Msg("HTTP server configured")
+	app.HTTPServer = appinit.InitHTTPServer(app.Config, ServiceName, app.Services)
 }
 
-func (app *Application) run() error {
-	// Channel to listen for interrupt signals
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-
-	// Start HTTP server in a goroutine
+// start starts the HTTP server with graceful shutdown
+func (app *Application) start() {
+	// Start server in a goroutine
 	go func() {
-		log.Info().
-			Str("service", serviceName).
-			Str("version", version).
-			Str("address", app.config.GetServerAddr()).
-			Msg("Starting HTTP server...")
-
-		if err := app.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatal().Err(err).Msg("HTTP server failed to start")
+		log.Info().Str("address", app.Config.GetServerAddr()).Msg("Starting HTTP server...")
+		if err := app.HTTPServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatal().Err(err).Msg("Failed to start HTTP server")
 		}
 	}()
 
-	log.Info().
-		Str("service", serviceName).
-		Str("version", version).
-		Str("address", app.config.GetServerAddr()).
-		Msg("Trip Service started successfully")
-
-	// Wait for interrupt signal
+	// Wait for interrupt signal to gracefully shutdown the server
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
+
 	log.Info().Msg("Shutting down server...")
 
 	// Graceful shutdown with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), app.config.Server.ShutdownTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	if err := app.server.Shutdown(ctx); err != nil {
+	// Shutdown HTTP server
+	if err := app.HTTPServer.Shutdown(ctx); err != nil {
 		log.Error().Err(err).Msg("Server forced to shutdown")
-		return err
 	}
 
-	log.Info().Msg("Server exited")
-	return nil
+	// Close database connections
+	if app.Database != nil {
+		if err := app.Database.Close(); err != nil {
+			log.Error().Err(err).Msg("Failed to close database connection")
+		}
+	}
+
+	// Close Redis connection
+	if app.Redis != nil {
+		if err := app.Redis.Close(); err != nil {
+			log.Error().Err(err).Msg("Failed to close Redis connection")
+		}
+	}
+
+	log.Info().Msg("Server shutdown complete")
 }

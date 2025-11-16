@@ -2,6 +2,7 @@ package appinit
 
 import (
 	sharedDB "bus-booking/shared/db"
+	"bus-booking/trip-service/config"
 	"bus-booking/trip-service/internal/handler"
 	"bus-booking/trip-service/internal/repository"
 	"bus-booking/trip-service/internal/service"
@@ -9,20 +10,21 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type ServiceHandlers struct {
+type ServiceDependencies struct {
 	TripHandler  *handler.TripHandler
 	RouteHandler *handler.RouteHandler
 	BusHandler   *handler.BusHandler
+	Repositories *repository.Repositories
 }
 
-func InitServices(database *sharedDB.DatabaseManager) *ServiceHandlers {
-	// Initialize repository
-	tripRepo := repository.NewTripRepository(database.DB)
+func InitServices(cfg *config.Config, database *sharedDB.DatabaseManager) *ServiceDependencies {
+	// Initialize repositories
+	repositories := repository.NewRepositories(database.DB)
 
 	// Initialize services
-	tripService := service.NewTripService(tripRepo)
-	routeService := service.NewRouteService(tripRepo)
-	busService := service.NewBusService(tripRepo)
+	tripService := service.NewTripService(repositories)
+	routeService := service.NewRouteService(repositories)
+	busService := service.NewBusService(repositories)
 
 	// Initialize handlers
 	tripHandler := handler.NewTripHandler(tripService)
@@ -31,9 +33,10 @@ func InitServices(database *sharedDB.DatabaseManager) *ServiceHandlers {
 
 	log.Info().Msg("All services and handlers initialized successfully")
 
-	return &ServiceHandlers{
+	return &ServiceDependencies{
 		TripHandler:  tripHandler,
 		RouteHandler: routeHandler,
 		BusHandler:   busHandler,
+		Repositories: repositories,
 	}
 }
