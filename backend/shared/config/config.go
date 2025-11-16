@@ -17,7 +17,6 @@ type BaseConfig struct {
 	RateLimit RateLimitConfig `envPrefix:"RATE_LIMIT_"`
 	CORS      CORSConfig      `envPrefix:"CORS_"`
 	Log       LogConfig       `envPrefix:"LOG_"`
-	External  ExternalConfig  `envPrefix:"EXTERNAL_"`
 }
 
 type ServerConfig struct {
@@ -29,6 +28,7 @@ type ServerConfig struct {
 	IdleTimeout     time.Duration `env:"IDLE_TIMEOUT" envDefault:"120s"`
 	ShutdownTimeout time.Duration `env:"SHUTDOWN_TIMEOUT" envDefault:"30s"`
 	MaxHeaderBytes  int           `env:"MAX_HEADER_BYTES" envDefault:"1048576"`
+	IsProduction    bool          `env:"-"`
 }
 
 type DatabaseConfig struct {
@@ -74,6 +74,17 @@ type CORSConfig struct {
 	MaxAge           int      `env:"MAX_AGE" envDefault:"86400"`
 }
 
+type LogConfig struct {
+	Level      string `env:"LEVEL" envDefault:"info"`
+	Format     string `env:"FORMAT" envDefault:"json"`
+	Output     string `env:"OUTPUT" envDefault:"stdout"`
+	Filename   string `env:"FILENAME" envDefault:"logs/app.log"`
+	MaxSize    int    `env:"MAX_SIZE" envDefault:"100"`
+	MaxBackups int    `env:"MAX_BACKUPS" envDefault:"3"`
+	MaxAge     int    `env:"MAX_AGE" envDefault:"30"`
+	Compress   bool   `env:"COMPRESS" envDefault:"true"`
+}
+
 type JWTConfig struct {
 	SecretKey        string        `env:"SECRET_KEY"`
 	RefreshSecretKey string        `env:"REFRESH_SECRET_KEY"`
@@ -90,15 +101,12 @@ type ExternalConfig struct {
 	RetryAttempts     int           `env:"RETRY_ATTEMPTS" envDefault:"3"`
 }
 
-type LogConfig struct {
-	Level      string `env:"LEVEL" envDefault:"info"`
-	Format     string `env:"FORMAT" envDefault:"json"`
-	Output     string `env:"OUTPUT" envDefault:"stdout"`
-	Filename   string `env:"FILENAME" envDefault:"logs/app.log"`
-	MaxSize    int    `env:"MAX_SIZE" envDefault:"100"`
-	MaxBackups int    `env:"MAX_BACKUPS" envDefault:"3"`
-	MaxAge     int    `env:"MAX_AGE" envDefault:"30"`
-	Compress   bool   `env:"COMPRESS" envDefault:"true"`
+func (c *BaseConfig) GetServerAddr() string {
+	return fmt.Sprintf("%s:%d", c.Server.Host, c.Server.Port)
+}
+
+func IsProduction(environment string) bool {
+	return environment == "production"
 }
 
 func LoadConfig[T any](envFilePath ...string) (*T, error) {
@@ -113,19 +121,18 @@ func LoadConfig[T any](envFilePath ...string) (*T, error) {
 		log.Info().Str("file", envFile).Msg("Loaded configuration from .env file")
 	}
 
-	// First, create and parse BaseConfig
 	baseConfig := &BaseConfig{}
 	if err := env.Parse(baseConfig); err != nil {
 		return nil, fmt.Errorf("failed to parse base config environment variables: %w", err)
 	}
 
-	// Then create and parse the service config
+	baseConfig.Server.IsProduction = IsProduction(baseConfig.Server.Environment)
+
 	cfg := new(T)
 	if err := env.Parse(cfg); err != nil {
 		return nil, fmt.Errorf("failed to parse service config environment variables: %w", err)
 	}
 
-	// Use reflection to set BaseConfig if the struct has an embedded *BaseConfig field
 	if err := setBaseConfig(cfg, baseConfig); err != nil {
 		return nil, fmt.Errorf("failed to set base config: %w", err)
 	}
@@ -133,7 +140,6 @@ func LoadConfig[T any](envFilePath ...string) (*T, error) {
 	return cfg, nil
 }
 
-// setBaseConfig sets the embedded BaseConfig using reflection
 func setBaseConfig(serviceConfig interface{}, baseConfig *BaseConfig) error {
 	v := reflect.ValueOf(serviceConfig).Elem()
 	t := v.Type()
