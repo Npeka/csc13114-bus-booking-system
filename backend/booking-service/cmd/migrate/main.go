@@ -2,27 +2,35 @@ package main
 
 import (
 	"log"
-	"os"
 
 	"bus-booking/booking-service/config"
-	"bus-booking/booking-service/internal/initializer"
+	"bus-booking/booking-service/internal/model"
+	sharedDB "bus-booking/shared/db"
 )
 
 func main() {
-	log.Println("Starting database migration...")
-
-	// Load configuration
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("Failed to load configuration: %v", err)
+		log.Fatal("Failed to load config:", err)
 	}
 
-	// Initialize database and run migrations
-	_, err = initializer.InitDatabase(cfg)
+	migrationManager, err := sharedDB.NewMigrationManager(&cfg.Database, cfg.Server.Environment)
 	if err != nil {
-		log.Fatalf("Failed to run database migrations: %v", err)
-		os.Exit(1)
+		log.Fatal("Failed to create migration manager:", err)
+	}
+	defer migrationManager.Close()
+
+	models := []interface{}{
+		&model.Booking{},
+		&model.BookingSeat{},
+		&model.SeatStatus{},
+		&model.PaymentMethod{},
+		&model.Feedback{},
 	}
 
-	log.Println("Database migration completed successfully")
+	if err := migrationManager.RunMigrations(models...); err != nil {
+		log.Fatal("Migration failed:", err)
+	}
+
+	log.Println("User-service migration completed successfully!")
 }

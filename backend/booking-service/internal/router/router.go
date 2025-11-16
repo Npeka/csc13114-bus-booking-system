@@ -10,9 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// SetupRouter configures and returns the main router
 func SetupRouter(cfg *config.Config, bookingHandler *handler.BookingHandler) *gin.Engine {
-	// Set Gin mode based on environment
 	if cfg.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
 	} else {
@@ -21,11 +19,9 @@ func SetupRouter(cfg *config.Config, bookingHandler *handler.BookingHandler) *gi
 
 	router := gin.New()
 
-	// Middleware
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 
-	// CORS configuration
 	corsConfig := cors.Config{
 		AllowOrigins:     cfg.CORS.AllowOrigins,
 		AllowMethods:     cfg.CORS.AllowMethods,
@@ -36,13 +32,10 @@ func SetupRouter(cfg *config.Config, bookingHandler *handler.BookingHandler) *gi
 	}
 	router.Use(cors.New(corsConfig))
 
-	// Health check endpoint
 	router.GET("/health", bookingHandler.Health)
 
-	// API v1 routes
 	v1 := router.Group("/api/v1")
 	{
-		// Booking routes
 		bookings := v1.Group("/bookings")
 		{
 			bookings.POST("", bookingHandler.CreateBooking)
@@ -53,27 +46,23 @@ func SetupRouter(cfg *config.Config, bookingHandler *handler.BookingHandler) *gi
 			bookings.GET("/trip/:trip_id", bookingHandler.GetTripBookings)
 		}
 
-		// Trip routes (for seat management)
 		trips := v1.Group("/trips")
 		{
 			trips.GET("/:trip_id/seats", bookingHandler.GetSeatAvailability)
 		}
 
-		// Seat management routes
 		seats := v1.Group("/seats")
 		{
 			seats.POST("/reserve", bookingHandler.ReserveSeat)
 			seats.POST("/release", bookingHandler.ReleaseSeat)
 		}
 
-		// Payment routes
 		payment := v1.Group("/payment")
 		{
 			payment.GET("/methods", bookingHandler.GetPaymentMethods)
 			payment.POST("/process", bookingHandler.ProcessPayment)
 		}
 
-		// Feedback routes
 		feedback := v1.Group("/feedback")
 		{
 			feedback.POST("", bookingHandler.CreateFeedback)
@@ -81,7 +70,6 @@ func SetupRouter(cfg *config.Config, bookingHandler *handler.BookingHandler) *gi
 			feedback.GET("/trip/:trip_id", bookingHandler.GetTripFeedbacks)
 		}
 
-		// Statistics routes
 		statistics := v1.Group("/statistics")
 		{
 			statistics.GET("/bookings", bookingHandler.GetBookingStats)

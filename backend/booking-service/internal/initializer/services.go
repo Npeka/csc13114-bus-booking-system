@@ -1,28 +1,34 @@
 package initializer
 
 import (
-	"log"
-
-	"gorm.io/gorm"
-
+	"bus-booking/booking-service/config"
 	"bus-booking/booking-service/internal/handler"
 	"bus-booking/booking-service/internal/repository"
 	"bus-booking/booking-service/internal/service"
+	sharedDB "bus-booking/shared/db"
+
+	"github.com/rs/zerolog/log"
 )
 
-// InitServices initializes all services and dependencies
-func InitServices(db *gorm.DB) (*handler.BookingHandler, error) {
-	log.Println("Initializing services...")
+type ServiceDependencies struct {
+	BookingHandler *handler.BookingHandler
+	Repositories   *repository.Repositories
+}
 
-	// Initialize repository
-	bookingRepo := repository.NewBookingRepository(db)
+func InitServices(cfg *config.Config, database *sharedDB.DatabaseManager) *ServiceDependencies {
+	// Initialize repositories
+	repositories := repository.NewRepositories(database.DB)
 
 	// Initialize service
-	bookingService := service.NewBookingService(bookingRepo)
+	bookingService := service.NewBookingService(repositories)
 
 	// Initialize handler
 	bookingHandler := handler.NewBookingHandler(bookingService)
 
-	log.Println("Services initialized successfully")
-	return bookingHandler, nil
+	log.Info().Msg("All services and handlers initialized successfully")
+
+	return &ServiceDependencies{
+		BookingHandler: bookingHandler,
+		Repositories:   repositories,
+	}
 }

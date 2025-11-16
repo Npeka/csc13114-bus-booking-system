@@ -30,7 +30,6 @@ func SetupRoutes(router *gin.Engine, config *RouterConfig) {
 
 	v1 := router.Group("/api/v1")
 	{
-		// Trip routes
 		trips := v1.Group("/trips")
 		{
 			trips.POST("/search", config.TripHandler.SearchTrips)
@@ -41,7 +40,6 @@ func SetupRoutes(router *gin.Engine, config *RouterConfig) {
 			trips.GET("/route/:route_id", config.TripHandler.ListTripsByRoute)
 		}
 
-		// Route routes
 		routes := v1.Group("/routes")
 		{
 			routes.POST("", config.RouteHandler.CreateRoute)
@@ -52,7 +50,6 @@ func SetupRoutes(router *gin.Engine, config *RouterConfig) {
 			routes.GET("/search", config.RouteHandler.SearchRoutes)
 		}
 
-		// Bus routes
 		buses := v1.Group("/buses")
 		{
 			buses.POST("", config.BusHandler.CreateBus)

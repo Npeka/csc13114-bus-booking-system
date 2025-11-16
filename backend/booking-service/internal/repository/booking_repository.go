@@ -2,61 +2,171 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"time"
 
-	"bus-booking/booking-service/internal/model"
-
 	"github.com/google/uuid"
+	"gorm.io/gorm"
+
+	"bus-booking/booking-service/internal/model"
 )
 
-// BookingRepository defines the interface for booking data operations
 type BookingRepository interface {
-	// Booking operations
 	CreateBooking(ctx context.Context, booking *model.Booking) error
 	GetBookingByID(ctx context.Context, id uuid.UUID) (*model.Booking, error)
 	GetBookingsByUserID(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*model.Booking, int64, error)
 	GetBookingsByTripID(ctx context.Context, tripID uuid.UUID, limit, offset int) ([]*model.Booking, int64, error)
 	UpdateBooking(ctx context.Context, booking *model.Booking) error
 	CancelBooking(ctx context.Context, id uuid.UUID, reason string) error
-
-	// Seat operations
-	GetSeatStatusByTripID(ctx context.Context, tripID uuid.UUID) ([]*model.SeatStatus, error)
-	UpdateSeatStatus(ctx context.Context, seatStatus *model.SeatStatus) error
-	BulkUpdateSeatStatus(ctx context.Context, seatStatuses []*model.SeatStatus) error
-	GetAvailableSeats(ctx context.Context, tripID uuid.UUID) ([]*model.SeatStatus, error)
-	ReserveSeat(ctx context.Context, tripID, seatID uuid.UUID, userID uuid.UUID, reservationTime time.Duration) error
-	ReleaseSeat(ctx context.Context, tripID, seatID uuid.UUID) error
-
-	// Payment methods
-	GetPaymentMethods(ctx context.Context) ([]*model.PaymentMethod, error)
-	GetPaymentMethodByID(ctx context.Context, id uuid.UUID) (*model.PaymentMethod, error)
-	GetPaymentMethodByCode(ctx context.Context, code string) (*model.PaymentMethod, error)
-
-	// Feedback operations
-	CreateFeedback(ctx context.Context, feedback *model.Feedback) error
-	GetFeedbackByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.Feedback, error)
-	GetFeedbacksByTripID(ctx context.Context, tripID uuid.UUID, limit, offset int) ([]*model.Feedback, int64, error)
-	UpdateFeedback(ctx context.Context, feedback *model.Feedback) error
-	DeleteFeedback(ctx context.Context, id uuid.UUID) error
-
-	// Statistics
-	GetBookingStatsByDateRange(ctx context.Context, startDate, endDate time.Time) (*model.BookingStats, error)
-	GetPopularTrips(ctx context.Context, limit int, days int) ([]*model.TripBookingStats, error)
 }
 
-// BookingStats represents booking statistics
-type BookingStats struct {
-	TotalBookings     int64   `json:"total_bookings"`
-	TotalRevenue      float64 `json:"total_revenue"`
-	CancelledBookings int64   `json:"cancelled_bookings"`
-	CompletedBookings int64   `json:"completed_bookings"`
-	AverageRating     float64 `json:"average_rating"`
+type bookingRepositoryImpl struct {
+	db *gorm.DB
 }
 
-// TripBookingStats represents trip booking statistics
-type TripBookingStats struct {
-	TripID        uuid.UUID `json:"trip_id"`
-	TotalBookings int64     `json:"total_bookings"`
-	TotalRevenue  float64   `json:"total_revenue"`
-	AverageRating float64   `json:"average_rating"`
+func NewBookingRepository(db *gorm.DB) BookingRepository {
+	return &bookingRepositoryImpl{db: db}
+}
+
+func (r *bookingRepositoryImpl) CreateBooking(ctx context.Context, booking *model.Booking) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Create booking
+		if err := tx.Create(booking).Error; err != nil {
+			return fmt.Errorf("failed to create booking: %w", err)
+		}
+
+		// Update seat statuses to booked
+		for _, seat := range booking.BookingSeats {
+			if err := tx.Model(&model.SeatStatus{}).
+				Where("trip_id = ? AND seat_id = ?", booking.TripID, seat.SeatID).
+				Updates(map[string]interface{}{
+					"status":     "booked",
+					"user_id":    booking.UserID,
+					"booking_id": booking.ID,
+					"updated_at": time.Now().UTC(),
+				}).Error; err != nil {
+				return fmt.Errorf("failed to update seat status: %w", err)
+			}
+		}
+
+		return nil
+	})
+}
+
+func (r *bookingRepositoryImpl) GetBookingByID(ctx context.Context, id uuid.UUID) (*model.Booking, error) {
+	var booking model.Booking
+	err := r.db.WithContext(ctx).
+		Preload("BookingSeats").
+		Preload("PaymentMethod").
+		First(&booking, "id = ?", id).Error
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("booking not found")
+		}
+		return nil, fmt.Errorf("failed to get booking: %w", err)
+	}
+
+	return &booking, nil
+}
+
+func (r *bookingRepositoryImpl) GetBookingsByUserID(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*model.Booking, int64, error) {
+	var bookings []*model.Booking
+	var total int64
+
+	// Count total
+	if err := r.db.WithContext(ctx).
+		Model(&model.Booking{}).
+		Where("user_id = ?", userID).
+		Count(&total).Error; err != nil {
+		return nil, 0, fmt.Errorf("failed to count bookings: %w", err)
+	}
+
+	// Get bookings
+	err := r.db.WithContext(ctx).
+		Preload("BookingSeats").
+		Preload("PaymentMethod").
+		Where("user_id = ?", userID).
+		Order("created_at DESC").
+		Limit(limit).
+		Offset(offset).
+		Find(&bookings).Error
+
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get bookings: %w", err)
+	}
+
+	return bookings, total, nil
+}
+
+func (r *bookingRepositoryImpl) GetBookingsByTripID(ctx context.Context, tripID uuid.UUID, limit, offset int) ([]*model.Booking, int64, error) {
+	var bookings []*model.Booking
+	var total int64
+
+	// Count total
+	if err := r.db.WithContext(ctx).
+		Model(&model.Booking{}).
+		Where("trip_id = ?", tripID).
+		Count(&total).Error; err != nil {
+		return nil, 0, fmt.Errorf("failed to count bookings: %w", err)
+	}
+
+	// Get bookings
+	err := r.db.WithContext(ctx).
+		Preload("BookingSeats").
+		Preload("PaymentMethod").
+		Where("trip_id = ?", tripID).
+		Order("created_at DESC").
+		Limit(limit).
+		Offset(offset).
+		Find(&bookings).Error
+
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get bookings: %w", err)
+	}
+
+	return bookings, total, nil
+}
+
+func (r *bookingRepositoryImpl) UpdateBooking(ctx context.Context, booking *model.Booking) error {
+	if err := r.db.WithContext(ctx).Save(booking).Error; err != nil {
+		return fmt.Errorf("failed to update booking: %w", err)
+	}
+	return nil
+}
+
+func (r *bookingRepositoryImpl) CancelBooking(ctx context.Context, id uuid.UUID, reason string) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Get booking
+		var booking model.Booking
+		if err := tx.Preload("BookingSeats").First(&booking, "id = ?", id).Error; err != nil {
+			return fmt.Errorf("failed to get booking: %w", err)
+		}
+
+		// Update booking status
+		if err := tx.Model(&booking).Updates(map[string]interface{}{
+			"status":              "cancelled",
+			"cancellation_reason": reason,
+			"cancelled_at":        time.Now().UTC(),
+			"updated_at":          time.Now().UTC(),
+		}).Error; err != nil {
+			return fmt.Errorf("failed to update booking status: %w", err)
+		}
+
+		// Release seats
+		for _, seat := range booking.BookingSeats {
+			if err := tx.Model(&model.SeatStatus{}).
+				Where("trip_id = ? AND seat_id = ?", booking.TripID, seat.SeatID).
+				Updates(map[string]interface{}{
+					"status":     "available",
+					"user_id":    nil,
+					"booking_id": nil,
+					"updated_at": time.Now().UTC(),
+				}).Error; err != nil {
+				return fmt.Errorf("failed to release seat: %w", err)
+			}
+		}
+
+		return nil
+	})
 }

@@ -44,13 +44,13 @@ type BookingService interface {
 
 // bookingServiceImpl implements BookingService
 type bookingServiceImpl struct {
-	bookingRepo repository.BookingRepository
+	repositories *repository.Repositories
 }
 
 // NewBookingService creates a new booking service
-func NewBookingService(bookingRepo repository.BookingRepository) BookingService {
+func NewBookingService(repositories *repository.Repositories) BookingService {
 	return &bookingServiceImpl{
-		bookingRepo: bookingRepo,
+		repositories: repositories,
 	}
 }
 
@@ -68,7 +68,7 @@ func (s *bookingServiceImpl) CreateBooking(ctx context.Context, req *model.Creat
 	}
 
 	// Get payment method
-	paymentMethod, err := s.bookingRepo.GetPaymentMethodByID(ctx, req.PaymentMethodID)
+	paymentMethod, err := s.repositories.PaymentMethod.GetPaymentMethodByID(ctx, req.PaymentMethodID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid payment method: %w", err)
 	}
@@ -102,7 +102,7 @@ func (s *bookingServiceImpl) CreateBooking(ctx context.Context, req *model.Creat
 	}
 
 	// Create booking in database
-	if err := s.bookingRepo.CreateBooking(ctx, booking); err != nil {
+	if err := s.repositories.Booking.CreateBooking(ctx, booking); err != nil {
 		return nil, fmt.Errorf("failed to create booking: %w", err)
 	}
 
@@ -118,7 +118,7 @@ func (s *bookingServiceImpl) CreateBooking(ctx context.Context, req *model.Creat
 
 // GetBookingByID retrieves a booking by ID
 func (s *bookingServiceImpl) GetBookingByID(ctx context.Context, id uuid.UUID) (*model.BookingResponse, error) {
-	booking, err := s.bookingRepo.GetBookingByID(ctx, id)
+	booking, err := s.repositories.Booking.GetBookingByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +129,7 @@ func (s *bookingServiceImpl) GetBookingByID(ctx context.Context, id uuid.UUID) (
 // GetUserBookings retrieves bookings for a user with pagination
 func (s *bookingServiceImpl) GetUserBookings(ctx context.Context, userID uuid.UUID, page, limit int) (*model.PaginatedBookingResponse, error) {
 	offset := (page - 1) * limit
-	bookings, total, err := s.bookingRepo.GetBookingsByUserID(ctx, userID, limit, offset)
+	bookings, total, err := s.repositories.Booking.GetBookingsByUserID(ctx, userID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +152,7 @@ func (s *bookingServiceImpl) GetUserBookings(ctx context.Context, userID uuid.UU
 // GetTripBookings retrieves bookings for a trip with pagination
 func (s *bookingServiceImpl) GetTripBookings(ctx context.Context, tripID uuid.UUID, page, limit int) (*model.PaginatedBookingResponse, error) {
 	offset := (page - 1) * limit
-	bookings, total, err := s.bookingRepo.GetBookingsByTripID(ctx, tripID, limit, offset)
+	bookings, total, err := s.repositories.Booking.GetBookingsByTripID(ctx, tripID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +175,7 @@ func (s *bookingServiceImpl) GetTripBookings(ctx context.Context, tripID uuid.UU
 // CancelBooking cancels a booking and releases seats
 func (s *bookingServiceImpl) CancelBooking(ctx context.Context, id uuid.UUID, userID uuid.UUID, reason string) error {
 	// Get booking to verify ownership
-	booking, err := s.bookingRepo.GetBookingByID(ctx, id)
+	booking, err := s.repositories.Booking.GetBookingByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -192,12 +192,12 @@ func (s *bookingServiceImpl) CancelBooking(ctx context.Context, id uuid.UUID, us
 		return fmt.Errorf("cannot cancel completed booking")
 	}
 
-	return s.bookingRepo.CancelBooking(ctx, id, reason)
+	return s.repositories.Booking.CancelBooking(ctx, id, reason)
 }
 
 // UpdateBookingStatus updates the status of a booking
 func (s *bookingServiceImpl) UpdateBookingStatus(ctx context.Context, id uuid.UUID, status string) error {
-	booking, err := s.bookingRepo.GetBookingByID(ctx, id)
+	booking, err := s.repositories.Booking.GetBookingByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -210,12 +210,12 @@ func (s *bookingServiceImpl) UpdateBookingStatus(ctx context.Context, id uuid.UU
 		booking.CompletedAt = &completedAt
 	}
 
-	return s.bookingRepo.UpdateBooking(ctx, booking)
+	return s.repositories.Booking.UpdateBooking(ctx, booking)
 }
 
 // GetSeatAvailability retrieves seat availability for a trip
 func (s *bookingServiceImpl) GetSeatAvailability(ctx context.Context, tripID uuid.UUID) (*model.SeatAvailabilityResponse, error) {
-	seatStatuses, err := s.bookingRepo.GetSeatStatusByTripID(ctx, tripID)
+	seatStatuses, err := s.repositories.SeatStatus.GetSeatStatusByTripID(ctx, tripID)
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +233,7 @@ func (s *bookingServiceImpl) GetSeatAvailability(ctx context.Context, tripID uui
 			// Check if reservation has expired
 			if seatStatus.ReservedUntil != nil && time.Now().UTC().After(*seatStatus.ReservedUntil) {
 				// Release expired reservation
-				if err := s.bookingRepo.ReleaseSeat(ctx, tripID, seatStatus.SeatID); err != nil {
+				if err := s.repositories.SeatStatus.ReleaseSeat(ctx, tripID, seatStatus.SeatID); err != nil {
 					log.Error().Err(err).Msg("Failed to release expired seat reservation")
 				} else {
 					availableSeats = append(availableSeats, seatStatus.SeatID)
@@ -258,7 +258,7 @@ func (s *bookingServiceImpl) GetSeatAvailability(ctx context.Context, tripID uui
 // ReserveSeat reserves a seat for a user
 func (s *bookingServiceImpl) ReserveSeat(ctx context.Context, req *model.ReserveSeatRequest) error {
 	// Check if seat is available
-	seatStatuses, err := s.bookingRepo.GetSeatStatusByTripID(ctx, req.TripID)
+	seatStatuses, err := s.repositories.SeatStatus.GetSeatStatusByTripID(ctx, req.TripID)
 	if err != nil {
 		return err
 	}
@@ -278,12 +278,12 @@ func (s *bookingServiceImpl) ReserveSeat(ctx context.Context, req *model.Reserve
 		reservationTime = time.Duration(req.ReservationMinutes) * time.Minute
 	}
 
-	return s.bookingRepo.ReserveSeat(ctx, req.TripID, req.SeatID, req.UserID, reservationTime)
+	return s.repositories.SeatStatus.ReserveSeat(ctx, req.TripID, req.SeatID, req.UserID, reservationTime)
 }
 
 // ReleaseSeat releases a reserved seat
 func (s *bookingServiceImpl) ReleaseSeat(ctx context.Context, tripID, seatID uuid.UUID) error {
-	return s.bookingRepo.ReleaseSeat(ctx, tripID, seatID)
+	return s.repositories.SeatStatus.ReleaseSeat(ctx, tripID, seatID)
 }
 
 // CheckReservationExpiry checks and releases expired seat reservations
@@ -302,7 +302,7 @@ func (s *bookingServiceImpl) CheckReservationExpiry(ctx context.Context) error {
 
 // GetPaymentMethods retrieves all available payment methods
 func (s *bookingServiceImpl) GetPaymentMethods(ctx context.Context) ([]*model.PaymentMethodResponse, error) {
-	paymentMethods, err := s.bookingRepo.GetPaymentMethods(ctx)
+	paymentMethods, err := s.repositories.PaymentMethod.GetPaymentMethods(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -325,7 +325,7 @@ func (s *bookingServiceImpl) GetPaymentMethods(ctx context.Context) ([]*model.Pa
 // ProcessPayment processes payment for a booking
 func (s *bookingServiceImpl) ProcessPayment(ctx context.Context, req *model.ProcessPaymentRequest) (*model.PaymentResponse, error) {
 	// Get booking
-	booking, err := s.bookingRepo.GetBookingByID(ctx, req.BookingID)
+	booking, err := s.repositories.Booking.GetBookingByID(ctx, req.BookingID)
 	if err != nil {
 		return nil, err
 	}
@@ -357,7 +357,7 @@ func (s *bookingServiceImpl) ProcessPayment(ctx context.Context, req *model.Proc
 // CreateFeedback creates feedback for a booking
 func (s *bookingServiceImpl) CreateFeedback(ctx context.Context, req *model.CreateFeedbackRequest) (*model.FeedbackResponse, error) {
 	// Verify booking exists and belongs to user
-	booking, err := s.bookingRepo.GetBookingByID(ctx, req.BookingID)
+	booking, err := s.repositories.Booking.GetBookingByID(ctx, req.BookingID)
 	if err != nil {
 		return nil, err
 	}
@@ -371,7 +371,7 @@ func (s *bookingServiceImpl) CreateFeedback(ctx context.Context, req *model.Crea
 	}
 
 	// Check if feedback already exists
-	if _, err := s.bookingRepo.GetFeedbackByBookingID(ctx, req.BookingID); err == nil {
+	if _, err := s.repositories.Feedback.GetFeedbackByBookingID(ctx, req.BookingID); err == nil {
 		return nil, fmt.Errorf("feedback already exists for this booking")
 	}
 
@@ -386,7 +386,7 @@ func (s *bookingServiceImpl) CreateFeedback(ctx context.Context, req *model.Crea
 		UpdatedAt: time.Now().UTC(),
 	}
 
-	if err := s.bookingRepo.CreateFeedback(ctx, feedback); err != nil {
+	if err := s.repositories.Feedback.CreateFeedback(ctx, feedback); err != nil {
 		return nil, err
 	}
 
@@ -403,7 +403,7 @@ func (s *bookingServiceImpl) CreateFeedback(ctx context.Context, req *model.Crea
 
 // GetBookingFeedback retrieves feedback for a booking
 func (s *bookingServiceImpl) GetBookingFeedback(ctx context.Context, bookingID uuid.UUID) (*model.FeedbackResponse, error) {
-	feedback, err := s.bookingRepo.GetFeedbackByBookingID(ctx, bookingID)
+	feedback, err := s.repositories.Feedback.GetFeedbackByBookingID(ctx, bookingID)
 	if err != nil {
 		return nil, err
 	}
@@ -422,7 +422,7 @@ func (s *bookingServiceImpl) GetBookingFeedback(ctx context.Context, bookingID u
 // GetTripFeedbacks retrieves feedbacks for a trip with pagination
 func (s *bookingServiceImpl) GetTripFeedbacks(ctx context.Context, tripID uuid.UUID, page, limit int) (*model.PaginatedFeedbackResponse, error) {
 	offset := (page - 1) * limit
-	feedbacks, total, err := s.bookingRepo.GetFeedbacksByTripID(ctx, tripID, limit, offset)
+	feedbacks, total, err := s.repositories.Feedback.GetFeedbacksByTripID(ctx, tripID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -452,7 +452,7 @@ func (s *bookingServiceImpl) GetTripFeedbacks(ctx context.Context, tripID uuid.U
 
 // GetBookingStats retrieves booking statistics for a date range
 func (s *bookingServiceImpl) GetBookingStats(ctx context.Context, startDate, endDate time.Time) (*model.BookingStatsResponse, error) {
-	stats, err := s.bookingRepo.GetBookingStatsByDateRange(ctx, startDate, endDate)
+	stats, err := s.repositories.BookingStats.GetBookingStatsByDateRange(ctx, startDate, endDate)
 	if err != nil {
 		return nil, err
 	}
@@ -470,7 +470,7 @@ func (s *bookingServiceImpl) GetBookingStats(ctx context.Context, startDate, end
 
 // GetPopularTrips retrieves popular trips based on booking statistics
 func (s *bookingServiceImpl) GetPopularTrips(ctx context.Context, limit, days int) ([]*model.TripStatsResponse, error) {
-	stats, err := s.bookingRepo.GetPopularTrips(ctx, limit, days)
+	stats, err := s.repositories.BookingStats.GetPopularTrips(ctx, limit, days)
 	if err != nil {
 		return nil, err
 	}
@@ -514,7 +514,7 @@ func (s *bookingServiceImpl) validateBookingRequest(ctx context.Context, req *mo
 
 	// Check if all seats are available
 	for _, seatID := range req.SeatIDs {
-		seatStatuses, err := s.bookingRepo.GetSeatStatusByTripID(ctx, req.TripID)
+		seatStatuses, err := s.repositories.SeatStatus.GetSeatStatusByTripID(ctx, req.TripID)
 		if err != nil {
 			return fmt.Errorf("failed to check seat availability: %w", err)
 		}

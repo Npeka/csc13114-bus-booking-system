@@ -1,35 +1,15 @@
 package initializer
 
 import (
+	sharedDB "bus-booking/shared/db"
+	"bus-booking/trip-service/config"
 	"fmt"
-	"log"
-
-	"gorm.io/gorm"
-
-	"bus-booking/booking-service/config"
-	"bus-booking/booking-service/internal/db"
 )
 
-// InitDatabase initializes the database connection and runs migrations
-func InitDatabase(cfg *config.Config) (*gorm.DB, error) {
-	log.Println("Initializing database connection...")
-
-	// Create database connection
-	database, err := db.NewDB(cfg)
+func InitDatabase(cfg *config.Config) (*sharedDB.DatabaseManager, error) {
+	dbManager, err := sharedDB.NewPostgresConnection(&cfg.BaseConfig.Database, cfg.BaseConfig.Server.Environment)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create database connection: %w", err)
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
-
-	// Run migrations
-	if err := database.Migrate(); err != nil {
-		return nil, fmt.Errorf("failed to run database migrations: %w", err)
-	}
-
-	// Run seeders
-	if err := database.Seed(); err != nil {
-		return nil, fmt.Errorf("failed to run database seeders: %w", err)
-	}
-
-	log.Println("Database initialized successfully")
-	return database.DB, nil
+	return dbManager, nil
 }
