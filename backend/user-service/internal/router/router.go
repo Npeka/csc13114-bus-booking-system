@@ -18,7 +18,7 @@ type RouterConfig struct {
 	ServiceName  string
 	Config       *config.Config
 	FirebaseAuth *auth.Client
-	UserRepo     repository.UserRepositoryInterface
+	UserRepo     repository.UserRepository
 }
 
 func SetupRoutes(router *gin.Engine, config *RouterConfig) {
@@ -31,7 +31,6 @@ func SetupRoutes(router *gin.Engine, config *RouterConfig) {
 		firebaseMiddleware = localMiddleware.NewFirebaseAuthMiddleware(config.FirebaseAuth, config.UserRepo)
 	}
 
-	// Health check endpoint
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status":  "ok",

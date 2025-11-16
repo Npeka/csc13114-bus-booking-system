@@ -16,7 +16,7 @@ import (
 type ServiceDependencies struct {
 	UserHandler *handler.UserHandler
 	AuthHandler *handler.AuthHandler
-	UserRepo    repository.UserRepositoryInterface
+	UserRepo    repository.UserRepository
 }
 
 func InitServices(cfg *config.Config, database *sharedDB.DatabaseManager, firebaseAuth *auth.Client) *ServiceDependencies {

@@ -17,7 +17,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type AuthServiceInterface interface {
+type AuthService interface {
 	Signup(ctx context.Context, req *model.SignupRequest) (*model.AuthResponse, error)
 	Signin(ctx context.Context, req *model.SigninRequest) (*model.AuthResponse, error)
 	OAuth2Signin(ctx context.Context, req *model.OAuth2SigninRequest) (*model.AuthResponse, error)
@@ -26,8 +26,8 @@ type AuthServiceInterface interface {
 	RefreshToken(ctx context.Context, req *model.RefreshTokenRequest) (*model.AuthResponse, error)
 }
 
-type AuthService struct {
-	userRepo     repository.UserRepositoryInterface
+type AuthServiceImpl struct {
+	userRepo     repository.UserRepository
 	jwtManager   *utils.JWTManager
 	firebaseAuth *auth.Client
 	config       *config.Config
@@ -35,12 +35,12 @@ type AuthService struct {
 
 // NewAuthService creates a new auth service
 func NewAuthService(
-	userRepo repository.UserRepositoryInterface,
+	userRepo repository.UserRepository,
 	jwtManager *utils.JWTManager,
 	firebaseAuth *auth.Client,
 	config *config.Config,
-) AuthServiceInterface {
-	return &AuthService{
+) AuthService {
+	return &AuthServiceImpl{
 		userRepo:     userRepo,
 		jwtManager:   jwtManager,
 		firebaseAuth: firebaseAuth,
@@ -49,7 +49,7 @@ func NewAuthService(
 }
 
 // Signup handles user registration
-func (s *AuthService) Signup(ctx context.Context, req *model.SignupRequest) (*model.AuthResponse, error) {
+func (s *AuthServiceImpl) Signup(ctx context.Context, req *model.SignupRequest) (*model.AuthResponse, error) {
 	emailExists, err := s.userRepo.EmailExists(ctx, req.Email)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to check email existence")
@@ -99,7 +99,7 @@ func (s *AuthService) Signup(ctx context.Context, req *model.SignupRequest) (*mo
 	return s.generateAuthResponse(user)
 }
 
-func (s *AuthService) Signin(ctx context.Context, req *model.SigninRequest) (*model.AuthResponse, error) {
+func (s *AuthServiceImpl) Signin(ctx context.Context, req *model.SigninRequest) (*model.AuthResponse, error) {
 	user, err := s.userRepo.GetByEmail(ctx, req.Email)
 	if err != nil {
 		log.Err(err).Msg("Failed to get user by email")
@@ -121,7 +121,7 @@ func (s *AuthService) Signin(ctx context.Context, req *model.SigninRequest) (*mo
 	return s.generateAuthResponse(user)
 }
 
-func (s *AuthService) OAuth2Signin(ctx context.Context, req *model.OAuth2SigninRequest) (*model.AuthResponse, error) {
+func (s *AuthServiceImpl) OAuth2Signin(ctx context.Context, req *model.OAuth2SigninRequest) (*model.AuthResponse, error) {
 	if req.Provider != "firebase" {
 		return nil, errors.New("unsupported OAuth2 provider")
 	}
@@ -168,7 +168,7 @@ func (s *AuthService) OAuth2Signin(ctx context.Context, req *model.OAuth2SigninR
 }
 
 // Signout handles user logout
-func (s *AuthService) Signout(ctx context.Context, userID string) error {
+func (s *AuthServiceImpl) Signout(ctx context.Context, userID string) error {
 	// In a real implementation, you might want to:
 	// 1. Blacklist the current access token
 	// 2. Revoke refresh tokens for the user
@@ -179,7 +179,7 @@ func (s *AuthService) Signout(ctx context.Context, userID string) error {
 	return nil
 }
 
-func (s *AuthService) VerifyToken(ctx context.Context, token string) (*model.TokenVerifyResponse, error) {
+func (s *AuthServiceImpl) VerifyToken(ctx context.Context, token string) (*model.TokenVerifyResponse, error) {
 	claims, err := s.jwtManager.ValidateAccessToken(token)
 	if err != nil {
 		return &model.TokenVerifyResponse{Valid: false}, nil
@@ -204,7 +204,7 @@ func (s *AuthService) VerifyToken(ctx context.Context, token string) (*model.Tok
 	}, nil
 }
 
-func (s *AuthService) RefreshToken(ctx context.Context, req *model.RefreshTokenRequest) (*model.AuthResponse, error) {
+func (s *AuthServiceImpl) RefreshToken(ctx context.Context, req *model.RefreshTokenRequest) (*model.AuthResponse, error) {
 	claims, err := s.jwtManager.ValidateRefreshToken(req.RefreshToken)
 	if err != nil {
 		return nil, errors.New("invalid refresh token")
@@ -225,7 +225,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, req *model.RefreshTokenR
 	return s.generateAuthResponse(user)
 }
 
-func (s *AuthService) generateAuthResponse(user *model.User) (*model.AuthResponse, error) {
+func (s *AuthServiceImpl) generateAuthResponse(user *model.User) (*model.AuthResponse, error) {
 	accessToken, err := s.jwtManager.GenerateAccessToken(user.ID, user.Email, fmt.Sprintf("%d", user.Role))
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to generate access token")

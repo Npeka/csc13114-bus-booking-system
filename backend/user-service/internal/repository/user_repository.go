@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type UserRepositoryInterface interface {
+type UserRepository interface {
 	Create(ctx context.Context, user *model.User) error
 	GetByID(ctx context.Context, id uuid.UUID) (*model.User, error)
 	GetByEmail(ctx context.Context, email string) (*model.User, error)
@@ -30,7 +30,7 @@ type UserRepositoryImpl struct {
 	db *gorm.DB
 }
 
-func NewUserRepository(db *gorm.DB) UserRepositoryInterface {
+func NewUserRepository(db *gorm.DB) UserRepository {
 	return &UserRepositoryImpl{
 		db: db,
 	}

@@ -14,8 +14,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// UserServiceInterface defines the interface for user service
-type UserServiceInterface interface {
+type UserService interface {
 	CreateUser(ctx context.Context, req *model.UserCreateRequest) (*model.UserResponse, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (*model.UserResponse, error)
 	UpdateUser(ctx context.Context, id uuid.UUID, req *model.UserUpdateRequest) (*model.UserResponse, error)
@@ -25,21 +24,19 @@ type UserServiceInterface interface {
 	UpdateUserStatus(ctx context.Context, id uuid.UUID, status string) error
 }
 
-// UserService implements UserServiceInterface
-type UserService struct {
-	userRepo repository.UserRepositoryInterface
+type UserServiceImpl struct {
+	userRepo repository.UserRepository
 	logger   *contextlogger.ContextLogger
 }
 
-// NewUserService creates a new user service
-func NewUserService(userRepo repository.UserRepositoryInterface) UserServiceInterface {
-	return &UserService{
+func NewUserService(userRepo repository.UserRepository) UserService {
+	return &UserServiceImpl{
 		userRepo: userRepo,
 		logger:   contextlogger.NewContextLogger("user-service", "UserService", ""),
 	}
 }
 
-func (s *UserService) CreateUser(ctx context.Context, req *model.UserCreateRequest) (*model.UserResponse, error) {
+func (s *UserServiceImpl) CreateUser(ctx context.Context, req *model.UserCreateRequest) (*model.UserResponse, error) {
 	if emailExists, err := s.userRepo.EmailExists(ctx, req.Email); err != nil {
 		s.logger.Error(err, "Failed to check email existence")
 		return nil, ginext.NewInternalServerError("Failed to validate email")
@@ -86,7 +83,7 @@ func (s *UserService) CreateUser(ctx context.Context, req *model.UserCreateReque
 	return user.ToResponse(), nil
 }
 
-func (s *UserService) GetUserByID(ctx context.Context, id uuid.UUID) (*model.UserResponse, error) {
+func (s *UserServiceImpl) GetUserByID(ctx context.Context, id uuid.UUID) (*model.UserResponse, error) {
 	user, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -94,7 +91,7 @@ func (s *UserService) GetUserByID(ctx context.Context, id uuid.UUID) (*model.Use
 	return user.ToResponse(), nil
 }
 
-func (s *UserService) UpdateUser(ctx context.Context, id uuid.UUID, req *model.UserUpdateRequest) (*model.UserResponse, error) {
+func (s *UserServiceImpl) UpdateUser(ctx context.Context, id uuid.UUID, req *model.UserUpdateRequest) (*model.UserResponse, error) {
 	// Get existing user
 	user, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
@@ -150,7 +147,7 @@ func (s *UserService) UpdateUser(ctx context.Context, id uuid.UUID, req *model.U
 }
 
 // DeleteUser soft deletes a user
-func (s *UserService) DeleteUser(ctx context.Context, id uuid.UUID) error {
+func (s *UserServiceImpl) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	// Check if user exists
 	if _, err := s.userRepo.GetByID(ctx, id); err != nil {
 		return err // Repository already returns proper ginext errors
@@ -166,7 +163,7 @@ func (s *UserService) DeleteUser(ctx context.Context, id uuid.UUID) error {
 }
 
 // ListUsers gets a paginated list of users
-func (s *UserService) ListUsers(ctx context.Context, limit, offset int) ([]*model.UserResponse, int64, error) {
+func (s *UserServiceImpl) ListUsers(ctx context.Context, limit, offset int) ([]*model.UserResponse, int64, error) {
 	users, total, err := s.userRepo.List(ctx, limit, offset)
 	if err != nil {
 		return nil, 0, ginext.NewInternalServerError("Failed to list users")
@@ -181,7 +178,7 @@ func (s *UserService) ListUsers(ctx context.Context, limit, offset int) ([]*mode
 }
 
 // ListUsersByRole gets a paginated list of users by role
-func (s *UserService) ListUsersByRole(ctx context.Context, role string, limit, offset int) ([]*model.UserResponse, int64, error) {
+func (s *UserServiceImpl) ListUsersByRole(ctx context.Context, role string, limit, offset int) ([]*model.UserResponse, int64, error) {
 	// Convert string role to UserRole
 	var userRole model.UserRole
 	if roleValue, err := strconv.Atoi(role); err == nil {
@@ -215,7 +212,7 @@ func (s *UserService) ListUsersByRole(ctx context.Context, role string, limit, o
 }
 
 // UpdateUserStatus updates user status
-func (s *UserService) UpdateUserStatus(ctx context.Context, id uuid.UUID, status string) error {
+func (s *UserServiceImpl) UpdateUserStatus(ctx context.Context, id uuid.UUID, status string) error {
 	if _, err := s.userRepo.GetByID(ctx, id); err != nil {
 		return err
 	}

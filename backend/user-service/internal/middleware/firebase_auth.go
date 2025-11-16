@@ -14,12 +14,12 @@ import (
 
 type FirebaseAuthMiddleware struct {
 	firebaseAuth *auth.Client
-	userRepo     repository.UserRepositoryInterface
+	userRepo     repository.UserRepository
 }
 
 func NewFirebaseAuthMiddleware(
 	firebaseAuth *auth.Client,
-	userRepo repository.UserRepositoryInterface,
+	userRepo repository.UserRepository,
 ) *FirebaseAuthMiddleware {
 	return &FirebaseAuthMiddleware{
 		firebaseAuth: firebaseAuth,
