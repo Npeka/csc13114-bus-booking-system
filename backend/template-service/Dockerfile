@@ -1,55 +1,39 @@
-# Multi-stage build for template-service
-FROM golang:1.21-alpine AS builder
+# Template Service Dockerfile
+FROM golang:1.24-alpine AS builder
 
-# Install git and ca-certificates for go modules
 RUN apk add --no-cache git ca-certificates tzdata
+RUN adduser -D -g '' appuser
 
-# Set working directory
-WORKDIR /app
+WORKDIR /build
 
-# Copy go.work and shared module first for better layer caching
-COPY go.work go.work.sum ./
+# Copy only required modules (no go.work dependency)
 COPY shared/ ./shared/
+COPY template-service/ ./template-service/
 
-# Copy service-specific files
-COPY template-service/go.mod template-service/go.sum ./template-service/
-WORKDIR /app/template-service
+WORKDIR /build/template-service
 
 # Download dependencies
 RUN go mod download
 
-# Copy service source code
-COPY template-service/ .
-
-# Build the binary with optimizations
+# Build the binary
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
-    -ldflags='-w -s -extldflags "-static"' \
     -a -installsuffix cgo \
-    -o server ./cmd/server
+    -ldflags='-w -s -extldflags "-static"' \
+    -o app ./cmd/server
 
-# Final stage - minimal image
+# Final stage
 FROM scratch
 
-# Import ca-certificates and timezone data
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
-
-# Create non-root user structure
 COPY --from=builder /etc/passwd /etc/passwd
-COPY --from=builder /etc/group /etc/group
+COPY --from=builder /build/template-service/app /app
 
-# Copy the binary
-COPY --from=builder /app/template-service/server /server
+USER appuser
 
-# Set non-root user
-USER 65534:65534
+EXPOSE 8083
 
-# Expose port
-ARG SERVICE_PORT=8083
-EXPOSE ${SERVICE_PORT}
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD ["/app", "--health"] || exit 1
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD ["/server", "--health-check"]
-
-ENTRYPOINT ["/server"]
+ENTRYPOINT ["/app"]

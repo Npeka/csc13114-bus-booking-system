@@ -1,19 +1,14 @@
 # Booking Service Dockerfile
-FROM golang:1.21-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 RUN apk add --no-cache git ca-certificates tzdata
 RUN adduser -D -g '' appuser
 
 WORKDIR /build
 
-# Copy workspace files
-COPY go.work go.work.sum ./
+# Copy only required modules (no go.work dependency)
 COPY shared/ ./shared/
 COPY booking-service/ ./booking-service/
-
-# Copy go.mod files
-COPY booking-service/go.mod booking-service/go.sum ./booking-service/
-COPY shared/go.mod shared/go.sum ./shared/
 
 WORKDIR /build/booking-service
 
@@ -33,6 +28,7 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /build/booking-service/app /app
+COPY --from=builder /build/booking-service/config/.env /.env
 
 USER appuser
 

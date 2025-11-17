@@ -1,58 +1,41 @@
-# Multi-stage build for gateway-service
-FROM golang:1.21-alpine AS builder
+# Gateway Service Dockerfile
+FROM golang:1.24-alpine AS builder
 
-# Install git and ca-certificates for go modules
 RUN apk add --no-cache git ca-certificates tzdata
+RUN adduser -D -g '' appuser
 
-# Set working directory
-WORKDIR /app
+WORKDIR /build
 
-# Copy go.work and shared module first for better layer caching
-COPY go.work go.work.sum ./
+# Copy only required modules (no go.work dependency)
 COPY shared/ ./shared/
+COPY gateway-service/ ./gateway-service/
 
-# Copy service-specific files
-COPY gateway-service/go.mod gateway-service/go.sum ./gateway-service/
-WORKDIR /app/gateway-service
+WORKDIR /build/gateway-service
 
 # Download dependencies
 RUN go mod download
 
-# Copy service source code
-COPY gateway-service/ .
-
-# Build the binary with optimizations
+# Build the binary
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
-    -ldflags='-w -s -extldflags "-static"' \
     -a -installsuffix cgo \
-    -o server ./cmd/server
+    -ldflags='-w -s -extldflags "-static"' \
+    -o app ./cmd/server
 
-# Final stage - minimal image
+# Final stage
 FROM scratch
 
-# Import ca-certificates and timezone data
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
-
-# Create non-root user structure
 COPY --from=builder /etc/passwd /etc/passwd
-COPY --from=builder /etc/group /etc/group
+COPY --from=builder /build/gateway-service/app /app
+COPY --from=builder /build/gateway-service/config/.env /.env
+COPY --from=builder /build/gateway-service/routes /routes
 
-# Copy the binary
-COPY --from=builder /app/gateway-service/server /server
+USER appuser
 
-# Copy route configurations
-COPY --from=builder /app/gateway-service/routes /routes
+EXPOSE 8000
 
-# Set non-root user
-USER 65534:65534
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD ["/app", "--health"] || exit 1
 
-# Expose port
-ARG SERVICE_PORT=8000
-EXPOSE ${SERVICE_PORT}
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD ["/server", "--health-check"]
-
-ENTRYPOINT ["/server"]
+ENTRYPOINT ["/app"]

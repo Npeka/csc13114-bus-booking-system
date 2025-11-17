@@ -1,19 +1,14 @@
 # User Service Dockerfile
-FROM golang:1.21-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 RUN apk add --no-cache git ca-certificates tzdata
 RUN adduser -D -g '' appuser
 
 WORKDIR /build
 
-# Copy workspace files
-COPY go.work go.work.sum ./
+# Copy only required modules (no go.work dependency)
 COPY shared/ ./shared/
 COPY user-service/ ./user-service/
-
-# Copy go.mod files
-COPY user-service/go.mod user-service/go.sum ./user-service/
-COPY shared/go.mod shared/go.sum ./shared/
 
 WORKDIR /build/user-service
 
@@ -33,6 +28,7 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /build/user-service/app /app
+COPY --from=builder /build/user-service/.env /.env
 
 USER appuser
 
