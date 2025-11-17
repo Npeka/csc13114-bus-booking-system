@@ -31,9 +31,7 @@ type UserRepositoryImpl struct {
 }
 
 func NewUserRepository(db *gorm.DB) UserRepository {
-	return &UserRepositoryImpl{
-		db: db,
-	}
+	return &UserRepositoryImpl{db: db}
 }
 
 func (r *UserRepositoryImpl) Create(ctx context.Context, user *model.User) error {
