@@ -22,7 +22,7 @@ jobs:
       booking-service: ${{ steps.changes.outputs.booking-service }}
       trip-service: ${{ steps.changes.outputs.trip-service }}
       user-service: ${{ steps.changes.outputs.user-service }}
-      template-service: ${{ steps.changes.outputs.template-service }}
+
       gateway-service: ${{ steps.changes.outputs.gateway-service }}
       shared: ${{ steps.changes.outputs.shared }}
     steps:
@@ -43,9 +43,7 @@ jobs:
             user-service:
               - 'backend/user-service/**'
               - 'backend/shared/**'
-            template-service:
-              - 'backend/template-service/**'
-              - 'backend/shared/**'
+
             gateway-service:
               - 'backend/gateway-service/**'
               - 'backend/shared/**'
@@ -58,7 +56,6 @@ jobs:
       needs.detect-changes.outputs.booking-service == 'true' ||
       needs.detect-changes.outputs.trip-service == 'true' ||
       needs.detect-changes.outputs.user-service == 'true' ||
-      needs.detect-changes.outputs.template-service == 'true' ||
       needs.detect-changes.outputs.gateway-service == 'true'
     runs-on: ubuntu-latest
     environment: Production
@@ -74,9 +71,7 @@ jobs:
           - name: user-service
             changed: ${{ needs.detect-changes.outputs.user-service }}
             port: 8080
-          - name: template-service
-            changed: ${{ needs.detect-changes.outputs.template-service }}
-            port: 8083
+
           - name: gateway-service
             changed: ${{ needs.detect-changes.outputs.gateway-service }}
             port: 8000
@@ -143,7 +138,6 @@ jobs:
       needs.detect-changes.outputs.booking-service == 'true' ||
       needs.detect-changes.outputs.trip-service == 'true' ||
       needs.detect-changes.outputs.user-service == 'true' ||
-      needs.detect-changes.outputs.template-service == 'true' ||
       needs.detect-changes.outputs.gateway-service == 'true'
     runs-on: ubuntu-latest
     environment: Production
@@ -156,8 +150,7 @@ jobs:
             changed: ${{ needs.detect-changes.outputs.trip-service }}
           - name: user-service
             changed: ${{ needs.detect-changes.outputs.user-service }}
-          - name: template-service
-            changed: ${{ needs.detect-changes.outputs.template-service }}
+
           - name: gateway-service
             changed: ${{ needs.detect-changes.outputs.gateway-service }}
 
@@ -196,7 +189,7 @@ jobs:
           echo "- **booking-service**: ${{ needs.detect-changes.outputs.booking-service }}" >> $GITHUB_STEP_SUMMARY
           echo "- **trip-service**: ${{ needs.detect-changes.outputs.trip-service }}" >> $GITHUB_STEP_SUMMARY
           echo "- **user-service**: ${{ needs.detect-changes.outputs.user-service }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **template-service**: ${{ needs.detect-changes.outputs.template-service }}" >> $GITHUB_STEP_SUMMARY
+
           echo "- **gateway-service**: ${{ needs.detect-changes.outputs.gateway-service }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Pipeline Results:" >> $GITHUB_STEP_SUMMARY
