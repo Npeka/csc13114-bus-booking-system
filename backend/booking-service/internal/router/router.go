@@ -11,14 +11,13 @@ import (
 )
 
 func SetupRouter(cfg *config.Config, bookingHandler *handler.BookingHandler) *gin.Engine {
-	if cfg.IsProduction() {
+	if cfg.Server.IsProduction {
 		gin.SetMode(gin.ReleaseMode)
 	} else {
 		gin.SetMode(gin.DebugMode)
 	}
 
 	router := gin.New()
-
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 

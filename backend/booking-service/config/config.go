@@ -1,8 +1,6 @@
 package config
 
 import (
-	"fmt"
-
 	sharedConfig "bus-booking/shared/config"
 )
 
@@ -14,14 +12,6 @@ type Config struct {
 type ExternalConfig struct {
 	UserServiceURL string `env:"USER_SERVICE_URL" envDefault:"http://localhost:8081"`
 	TripServiceURL string `env:"TRIP_SERVICE_URL" envDefault:"http://localhost:8083"`
-}
-
-func (c *Config) IsProduction() bool {
-	return c.BaseConfig.Server.Environment == "production"
-}
-
-func (c *Config) GetServerAddr() string {
-	return fmt.Sprintf("%s:%d", c.BaseConfig.Server.Host, c.BaseConfig.Server.Port)
 }
 
 func LoadConfig(envFilePath ...string) (*Config, error) {

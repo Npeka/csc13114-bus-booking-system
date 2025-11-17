@@ -15,9 +15,14 @@ type RouterConfig struct {
 }
 
 // SetupRoutes configures all routes for the service
-func SetupRoutes(router *gin.Engine, config *RouterConfig) {
-	// Apply global middleware
-	router.Use(middleware.RequestContextMiddleware(config.ServiceName))
+func SetupRoutes(router *gin.Engine, cfg *RouterConfig) {
+	if cfg.Server.IsProduction {
+		gin.SetMode(gin.ReleaseMode)
+	} else {
+		gin.SetMode(gin.DebugMode)
+	}
+
+	router.Use(middleware.RequestContextMiddleware(cfg.ServiceName))
 	router.Use(middleware.SetupCORS(nil)) // Pass nil for default CORS config
 	router.Use(middleware.Logger())
 
@@ -25,7 +30,7 @@ func SetupRoutes(router *gin.Engine, config *RouterConfig) {
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status":  "ok",
-			"service": config.ServiceName,
+			"service": cfg.ServiceName,
 		})
 	})
 
@@ -35,10 +40,10 @@ func SetupRoutes(router *gin.Engine, config *RouterConfig) {
 		// Public auth routes
 		auth := v1.Group("/auth")
 		{
-			auth.POST("/login", config.AuthHandler.Login)
-			auth.POST("/refresh", config.AuthHandler.RefreshToken)
-			auth.POST("/reset-password", config.AuthHandler.ResetPassword)
-			auth.POST("/confirm-reset-password", config.AuthHandler.ConfirmResetPassword)
+			auth.POST("/login", cfg.AuthHandler.Login)
+			auth.POST("/refresh", cfg.AuthHandler.RefreshToken)
+			auth.POST("/reset-password", cfg.AuthHandler.ResetPassword)
+			auth.POST("/confirm-reset-password", cfg.AuthHandler.ConfirmResetPassword)
 		}
 
 		// Protected routes (require authentication)
@@ -55,12 +60,12 @@ func SetupRoutes(router *gin.Engine, config *RouterConfig) {
 				// Update current user's profile
 				c.JSON(200, gin.H{"message": "Update profile endpoint - TODO: implement"})
 			})
-			protected.POST("/change-password", config.AuthHandler.ChangePassword)
+			protected.POST("/change-password", cfg.AuthHandler.ChangePassword)
 
 			// User management routes (for users to manage themselves)
 			users := protected.Group("/users")
 			{
-				users.GET("/:id", config.UserHandler.GetUser)
+				users.GET("/:id", cfg.UserHandler.GetUser)
 			}
 		}
 
@@ -72,12 +77,12 @@ func SetupRoutes(router *gin.Engine, config *RouterConfig) {
 			// Admin user management
 			adminUsers := admin.Group("/users")
 			{
-				adminUsers.POST("", config.UserHandler.CreateUser)
-				adminUsers.GET("", config.UserHandler.ListUsers)
-				adminUsers.GET("/:id", config.UserHandler.GetUser)
-				adminUsers.PUT("/:id", config.UserHandler.UpdateUser)
-				adminUsers.DELETE("/:id", config.UserHandler.DeleteUser)
-				adminUsers.PATCH("/:id/status", config.UserHandler.UpdateUserStatus)
+				adminUsers.POST("", cfg.UserHandler.CreateUser)
+				adminUsers.GET("", cfg.UserHandler.ListUsers)
+				adminUsers.GET("/:id", cfg.UserHandler.GetUser)
+				adminUsers.PUT("/:id", cfg.UserHandler.UpdateUser)
+				adminUsers.DELETE("/:id", cfg.UserHandler.DeleteUser)
+				adminUsers.PATCH("/:id/status", cfg.UserHandler.UpdateUserStatus)
 			}
 		}
 	}

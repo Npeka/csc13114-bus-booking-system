@@ -60,7 +60,6 @@ func (g *Gateway) SetupRoutes(router *gin.Engine) {
 func (g *Gateway) setupRoute(router *gin.Engine, route config.Route) {
 	handler := g.createProxyHandler(route)
 
-	// Register route for each method
 	for _, method := range route.Methods {
 		switch strings.ToUpper(method) {
 		case "GET":
