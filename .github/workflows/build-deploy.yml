@@ -61,6 +61,7 @@ jobs:
       needs.detect-changes.outputs.template-service == 'true' ||
       needs.detect-changes.outputs.gateway-service == 'true'
     runs-on: ubuntu-latest
+    environment: Production
     strategy:
       matrix:
         service:
@@ -145,6 +146,7 @@ jobs:
       needs.detect-changes.outputs.template-service == 'true' ||
       needs.detect-changes.outputs.gateway-service == 'true'
     runs-on: ubuntu-latest
+    environment: Production
     strategy:
       matrix:
         service:
