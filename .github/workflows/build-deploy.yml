@@ -116,8 +116,8 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # cache-from: type=gha  # Disabled due to GitHub Actions Cache service outage
+          # cache-to: type=gha,mode=max  # Disabled due to GitHub Actions Cache service outage
           build-args: |
             SERVICE_PORT=${{ matrix.service.port }}
 

@@ -51,14 +51,12 @@ func (s *UserServiceImpl) CreateUser(ctx context.Context, req *model.UserCreateR
 		return nil, ginext.NewConflictError("username already exists")
 	}
 
-	// Hash password
 	hashedPassword, err := utils.HashPassword(req.Password)
 	if err != nil {
 		s.logger.Error(err, "Failed to hash password")
 		return nil, ginext.NewInternalServerError("Failed to process password")
 	}
 
-	// Set default role if not provided
 	role := req.Role
 	if role == 0 {
 		role = model.RolePassenger
