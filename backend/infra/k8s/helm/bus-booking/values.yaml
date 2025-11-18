@@ -1,49 +1,133 @@
-# Default values for bus-booking.
-replicaCount: 2
+# Bus Booking System - Production Configuration
+# Domain: bus-booking.site | Memory: 128MB per service | Replicas: 1
 
-# Cluster configuration
-namespace: "bus-booking"
-domain: "cluster.local"
+# Basic Configuration
+replicaCount: 1
 
-# Gateway configuration
-gateway:
-  host: "api.busticket.local"
-  internalDomain: "cluster.local"
+# Ingress Configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: bus-booking.site
+      paths:
+        - path: /
+          pathType: Prefix
+          service: gateway-service
+  tls:
+    - secretName: bus-booking-tls
+      hosts:
+        - bus-booking.site
 
-# Internal service endpoints (for gateway to call services)
-internalServices:
-  user: "http://user-internal.cluster.local"
-  trips: "http://trips-internal.cluster.local"
-  bookings: "http://bookings-internal.cluster.local"
-  payments: "http://payments-internal.cluster.local"
-  templates: "http://templates-internal.cluster.local"
+# Resource Limits (128MB per service)
+resources:
+  limits:
+    cpu: 200m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
 
+# No Autoscaling (Single replica)
+autoscaling:
+  enabled: false
+
+# Docker Configuration
 image:
   registry: docker.io
-  username: your-dockerhub-username # Change this to your Docker Hub username
+  username: npkhang22
   pullPolicy: IfNotPresent
 
-nameOverride: ""
-fullnameOverride: ""
+# External Database Configuration (UPDATE THESE)
+externalDatabase:
+  postgresql:
+    host: "private-bus-booking-database-do-user-29228381-0.d.db.ondigitalocean.com"
+    port: "25060"
+    username: "bus_booking"
+    password: "AVNS_xWZ9Nk2UEBYiI_mGXov"
+    sslMode: "disable" # Change to "require" for production
+    timezone: "Asia/Ho_Chi_Minh"
+    maxOpenConns: "10"
+    maxIdleConns: "2"
+    connMaxLifetime: "300s"
+    connMaxIdleTime: "60s"
 
-serviceAccount:
-  create: true
-  annotations: {}
-  name: ""
+  redis:
+    host: "singapore-keyvalue.render.com" # CHANGE THIS
+    port: "6379"
+    password: "MJm32AjPDJoT1sMS9ug2BwzxOU7aayCZ" # Set if needed
+    poolSize: "5"
+    minIdleConns: "1"
+    maxRetries: "3"
+    dialTimeout: "5s"
+    readTimeout: "3s"
+    writeTimeout: "3s"
 
-podAnnotations: {}
+# Environment Configuration
+env:
+  # JWT Secrets (CHANGE THESE)
+  jwt:
+    JWT_SECRET_KEY: "dbe13e045840e8fa98e7ad3f0996533e71d609decca7d491f4a416b67b313111"
+    JWT_REFRESH_SECRET_KEY: "d9bcfbb01e0914874ca4dcef7b6b8179c51988771e1326fc3a64781265596500"
+    JWT_ACCESS_TOKEN_TTL: "15m"
+    JWT_REFRESH_TOKEN_TTL: "168h"
+    JWT_ISSUER: "bus-booking-system"
+    JWT_AUDIENCE: "bus-booking-users"
 
-podSecurityContext:
-  fsGroup: 2000
+  # Server Configuration
+  global:
+    SERVER_ENVIRONMENT: "production"
+    LOG_LEVEL: "info"
+    SERVER_HOST: "0.0.0.0"
+    SERVER_READ_TIMEOUT: "10s"
+    SERVER_WRITE_TIMEOUT: "10s"
+    SERVER_IDLE_TIMEOUT: "120s"
+    SERVER_SHUTDOWN_TIMEOUT: "30s"
+    SERVER_MAX_HEADER_BYTES: "1048576"
 
-securityContext:
-  capabilities:
-    drop:
-      - ALL
-  readOnlyRootFilesystem: true
-  runAsNonRoot: true
-  runAsUser: 65534
+  # Rate Limiting (Conservative for 128MB)
+  rateLimit:
+    RATE_LIMIT_RPS: "50"
+    RATE_LIMIT_BURST: "100"
+    RATE_LIMIT_PERIOD: "1m"
+    RATE_LIMIT_CLEANUP_AFTER: "5m"
 
+  # CORS Configuration
+  cors:
+    CORS_ALLOWED_ORIGINS: "https://bus-booking.site"
+    CORS_ALLOWED_METHODS: "GET,POST,PUT,DELETE,OPTIONS"
+    CORS_ALLOWED_HEADERS: "*"
+    CORS_ALLOW_CREDENTIALS: "true"
+    CORS_MAX_AGE: "3600"
+
+  # Service Ports
+  ports:
+    USER_SERVICE_PORT: "8080"
+    TRIP_SERVICE_PORT: "8081"
+    BOOKING_SERVICE_PORT: "8082"
+    PAYMENT_SERVICE_PORT: "8084"
+    GATEWAY_SERVICE_PORT: "8000"
+
+  # Database Names
+  databases:
+    USER_DB_NAME: "bus_booking_user"
+    TRIP_DB_NAME: "bus_booking_trip"
+    BOOKING_DB_NAME: "bus_booking_booking"
+    PAYMENT_DB_NAME: "bus_booking_payment"
+    GATEWAY_DB_NAME: ""
+
+  # Redis DB Numbers
+  redisDBs:
+    USER_REDIS_DB: "0"
+    TRIP_REDIS_DB: "1"
+    BOOKING_REDIS_DB: "2"
+    PAYMENT_REDIS_DB: "3"
+    GATEWAY_REDIS_DB: "4"
+
+# Services Configuration
 services:
   userService:
     enabled: true
@@ -63,143 +147,38 @@ services:
     targetPort: 8082
     type: ClusterIP
 
-  templateService:
-    enabled: true
-    port: 8083
-    targetPort: 8083
-    type: ClusterIP
-
   paymentService:
     enabled: true
     port: 8084
     targetPort: 8084
     type: ClusterIP
 
-ingress:
-  enabled: true
-  className: "nginx"
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-  hosts:
-    - host: bus-booking.your-domain.com # Change this to your domain
-      paths:
-        - path: /api/users
-          pathType: Prefix
-          service: user-service
-        - path: /api/trips
-          pathType: Prefix
-          service: trip-service
-        - path: /api/bookings
-          pathType: Prefix
-          service: booking-service
-        - path: /api/templates
-          pathType: Prefix
-          service: template-service
-        - path: /api/payments
-          pathType: Prefix
-          service: payment-service
-  tls:
-    - secretName: bus-booking-tls
-      hosts:
-        - bus-booking.your-domain.com
-
-resources:
-  limits:
-    cpu: 500m
-    memory: 512Mi
-  requests:
-    cpu: 250m
-    memory: 256Mi
-
-autoscaling:
-  enabled: true
-  minReplicas: 2
-  maxReplicas: 10
-  targetCPUUtilizationPercentage: 80
-  targetMemoryUtilizationPercentage: 80
-
-nodeSelector: {}
-
-tolerations: []
-
-affinity:
-  podAntiAffinity:
-    preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 100
-        podAffinityTerm:
-          labelSelector:
-            matchExpressions:
-              - key: app.kubernetes.io/name
-                operator: In
-                values:
-                  - bus-booking
-          topologyKey: kubernetes.io/hostname
-
-# Database configuration
-postgresql:
-  enabled: true
-  auth:
-    postgresPassword: "postgres123"
-    username: "bususer"
-    password: "buspass123"
-    database: "busdb"
-  primary:
-    persistence:
-      enabled: true
-      size: 10Gi
-    resources:
-      limits:
-        memory: 512Mi
-        cpu: 500m
-      requests:
-        memory: 256Mi
-        cpu: 250m
-
-redis:
-  enabled: true
-  auth:
-    enabled: false
-  master:
-    persistence:
-      enabled: true
-      size: 5Gi
-    resources:
-      limits:
-        memory: 256Mi
-        cpu: 250m
-      requests:
-        memory: 128Mi
-        cpu: 100m
-
-# Environment variables
-env:
-  global:
-    JWT_SECRET: "your-super-secret-jwt-key-change-this"
-    LOG_LEVEL: "info"
-
-  database:
-    DB_HOST: "bus-booking-postgresql"
-    DB_PORT: "5432"
-    DB_USER: "bususer"
-    DB_PASSWORD: "buspass123"
-    DB_NAME: "busdb"
-
-  redis:
-    REDIS_HOST: "bus-booking-redis-master"
-    REDIS_PORT: "6379"
-
-# Monitoring
-monitoring:
-  enabled: true
-  serviceMonitor:
+  gatewayService:
     enabled: true
-    interval: 30s
-    scrapeTimeout: 10s
+    port: 8000
+    targetPort: 8000
+    type: ClusterIP
 
-# Backup
-backup:
-  enabled: false
-  schedule: "0 2 * * *"
-  retention: "7d"
+# Security Context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65534
+  fsGroup: 65534
+
+securityContext:
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 65534
+
+# Service Account
+serviceAccount:
+  create: true
+  annotations: {}
+
+# Required fields for Helm template compatibility
+nameOverride: ""
+fullnameOverride: ""
+podAnnotations: {}

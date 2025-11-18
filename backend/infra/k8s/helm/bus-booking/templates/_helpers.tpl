@@ -50,13 +50,7 @@ app.kubernetes.io/name: {{ include "bus-booking.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
-{{/*
-Service-specific labels
-*/}}
-{{- define "bus-booking.serviceLabels" -}}
-{{ include "bus-booking.selectorLabels" . }}
-app.kubernetes.io/component: {{ .component }}
-{{- end }}
+
 
 {{/*
 Create the name of the service account to use
@@ -70,43 +64,51 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
-Environment variables for database
+Common environment variables from ConfigMap
 */}}
-{{- define "bus-booking.databaseEnv" -}}
-- name: DB_HOST
-  value: {{ .Values.env.database.DB_HOST | quote }}
-- name: DB_PORT
-  value: {{ .Values.env.database.DB_PORT | quote }}
-- name: DB_USER
-  value: {{ .Values.env.database.DB_USER | quote }}
-- name: DB_PASSWORD
-  valueFrom:
-    secretKeyRef:
-      name: {{ include "bus-booking.fullname" . }}-db-secret
-      key: password
-- name: DB_NAME
-  value: {{ .Values.env.database.DB_NAME | quote }}
+{{- define "bus-booking.commonEnv" -}}
+envFrom:
+  - configMapRef:
+      name: {{ include "bus-booking.fullname" . }}-config
 {{- end }}
 
 {{/*
-Environment variables for Redis
+Service-specific environment variables
 */}}
-{{- define "bus-booking.redisEnv" -}}
-- name: REDIS_HOST
-  value: {{ .Values.env.redis.REDIS_HOST | quote }}
-- name: REDIS_PORT
-  value: {{ .Values.env.redis.REDIS_PORT | quote }}
-{{- end }}
-
-{{/*
-Environment variables for global config
-*/}}
-{{- define "bus-booking.globalEnv" -}}
-- name: JWT_SECRET
+{{- define "bus-booking.serviceEnv" -}}
+{{- $serviceName := .serviceName -}}
+- name: SERVER_PORT
+  value: {{ index .Values.env.ports (printf "%s_SERVICE_PORT" ($serviceName | upper)) | quote }}
+{{- if ne $serviceName "gateway" }}
+- name: DATABASE_NAME
+  value: {{ index .Values.env.databases (printf "%s_DB_NAME" ($serviceName | upper)) | quote }}
+- name: DATABASE_PASSWORD
   valueFrom:
     secretKeyRef:
       name: {{ include "bus-booking.fullname" . }}-secret
-      key: jwt-secret
-- name: LOG_LEVEL
-  value: {{ .Values.env.global.LOG_LEVEL | quote }}
+      key: database-password
 {{- end }}
+- name: REDIS_DB
+  value: {{ index .Values.env.redisDBs (printf "%s_REDIS_DB" ($serviceName | upper)) | quote }}
+- name: JWT_SECRET_KEY
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "bus-booking.fullname" . }}-secret
+      key: jwt-secret-key
+- name: JWT_REFRESH_SECRET_KEY
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "bus-booking.fullname" . }}-secret
+      key: jwt-refresh-secret-key
+{{- if .Values.externalDatabase.redis.password }}
+- name: REDIS_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "bus-booking.fullname" . }}-secret
+      key: redis-password
+{{- else }}
+- name: REDIS_PASSWORD
+  value: ""
+{{- end }}
+{{- end }}
+

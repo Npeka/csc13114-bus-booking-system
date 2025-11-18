@@ -1,4 +1,4 @@
-{{- range $service := list "user-service" "trip-service" "booking-service" "template-service" "payment-service" }}
+{{- range $service := list "user-service" "trip-service" "booking-service" "payment-service" "gateway-service" }}
 {{- $serviceConfig := index $.Values.services (printf "%sService" ($service | replace "-" "" | title | untitle)) }}
 {{- if $serviceConfig.enabled }}
 ---

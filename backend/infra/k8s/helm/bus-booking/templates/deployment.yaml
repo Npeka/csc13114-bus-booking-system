@@ -1,70 +1,70 @@
+{{- range $serviceName, $serviceConfig := .Values.services }}
+{{- if $serviceConfig.enabled }}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "bus-booking.fullname" . }}-user-service
+  name: {{ include "bus-booking.fullname" $ }}-{{ $serviceName | replace "Service" "" | kebabcase }}
   labels:
-    {{- include "bus-booking.labels" . | nindent 4 }}
-    app.kubernetes.io/component: user-service
+    {{- include "bus-booking.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $serviceName | replace "Service" "" | kebabcase }}
 spec:
-  {{- if not .Values.autoscaling.enabled }}
-  replicas: {{ .Values.replicaCount }}
+  {{- if not $.Values.autoscaling.enabled }}
+  replicas: {{ $.Values.replicaCount }}
   {{- end }}
   selector:
     matchLabels:
-      {{- include "bus-booking.selectorLabels" . | nindent 6 }}
-      app.kubernetes.io/component: user-service
+      {{- include "bus-booking.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: {{ $serviceName | replace "Service" "" | kebabcase }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
+      {{- with $.Values.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "bus-booking.selectorLabels" . | nindent 8 }}
-        app.kubernetes.io/component: user-service
+        {{- include "bus-booking.selectorLabels" $ | nindent 8 }}
+        app.kubernetes.io/component: {{ $serviceName | replace "Service" "" | kebabcase }}
     spec:
-      serviceAccountName: {{ include "bus-booking.serviceAccountName" . }}
+      serviceAccountName: {{ include "bus-booking.serviceAccountName" $ }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml $.Values.podSecurityContext | nindent 8 }}
       containers:
-        - name: user-service
+        - name: {{ $serviceName | replace "Service" "" | kebabcase }}
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.registry }}/{{ .Values.image.username }}/bus-booking-user-service:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+            {{- toYaml $.Values.securityContext | nindent 12 }}
+          image: "{{ $.Values.image.registry }}/{{ $.Values.image.username }}/bus-booking-{{ $serviceName | replace "Service" "" | kebabcase }}:{{ $.Values.image.tag | default $.Chart.AppVersion }}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: 8080
+              containerPort: {{ $serviceConfig.targetPort }}
               protocol: TCP
+          {{- include "bus-booking.commonEnv" $ | nindent 10 }}
           env:
-            {{- include "bus-booking.globalEnv" . | nindent 12 }}
-            {{- include "bus-booking.databaseEnv" . | nindent 12 }}
-            {{- include "bus-booking.redisEnv" . | nindent 12 }}
-            - name: PORT
-              value: "8080"
+            {{- include "bus-booking.serviceEnv" (dict "Values" $.Values "serviceName" ($serviceName | replace "Service" "" | lower)) | nindent 12 }}
           livenessProbe:
             httpGet:
               path: /health
               port: http
             initialDelaySeconds: 30
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
           readinessProbe:
             httpGet:
               path: /health
               port: http
             initialDelaySeconds: 5
             periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-      {{- with .Values.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+            {{- toYaml $.Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+{{- end }}
+{{- end }}
