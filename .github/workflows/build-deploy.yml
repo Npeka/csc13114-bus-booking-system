@@ -10,10 +10,17 @@ on:
     paths:
       - "backend/**"
 
+permissions:
+  contents: write # Required to push to infra branch
+  packages: write # Required for Docker Hub operations
+  actions: read # Required for workflow operations
+  security-events: write # Required for security scan uploads
+
 env:
   REGISTRY: docker.io
   DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
   DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+  INFRA_DEPLOY_TOKEN: ${{ secrets.INFRA_DEPLOY_TOKEN }}
 
 jobs:
   detect-changes:
@@ -28,6 +35,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
 
       - uses: dorny/paths-filter@v2
@@ -75,9 +83,12 @@ jobs:
             changed: ${{ needs.detect-changes.outputs.gateway-service }}
             port: 8000
     steps:
-      - name: Checkout code
+      - name: Checkout main branch for build
         if: matrix.service.changed == 'true'
         uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
 
       - name: Set up Docker Buildx
         if: matrix.service.changed == 'true'
@@ -143,22 +154,29 @@ jobs:
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
 
+          # Set up GitHub token for pushing to infra branch
+          git remote set-url origin https://x-access-token:${{ env.INFRA_DEPLOY_TOKEN }}@github.com/${{ github.repository }}.git
+
           # Switch to infra branch
           git fetch origin infra
           git checkout infra
 
           # Update Helm values with new image tag
-          if [ -f "k8s/helm/bus-booking/values.yaml" ]; then
+          if [ -f "helm/bus-booking/values.yaml" ]; then
             # Update image tag in values.yaml for the specific service
-            sed -i "s|${SERVICE_NAME}:.*|${SERVICE_NAME}:${NEW_TAG}|g" k8s/helm/bus-booking/values.yaml
+            sed -i "s|${SERVICE_NAME}:.*|${SERVICE_NAME}:${NEW_TAG}|g" helm/bus-booking/values.yaml
             
             # Or update in service-specific values if exists
-            if [ -f "k8s/helm/bus-booking/values/${SERVICE_NAME}.yaml" ]; then
-              sed -i "s|tag:.*|tag: ${NEW_TAG}|g" k8s/helm/bus-booking/values/${SERVICE_NAME}.yaml
+            if [ -f "helm/bus-booking/values/${SERVICE_NAME}.yaml" ]; then
+              sed -i "s|tag:.*|tag: ${NEW_TAG}|g" helm/bus-booking/values/${SERVICE_NAME}.yaml
             fi
           fi
 
           # Update ArgoCD application manifest if exists
+          if [ -f "argocd/application.yaml" ]; then
+            sed -i "s|targetRevision:.*|targetRevision: ${NEW_TAG}|g" argocd/application.yaml
+          fi
+
           if [ -f "argocd/applications/${SERVICE_NAME}.yaml" ]; then
             sed -i "s|targetRevision:.*|targetRevision: ${NEW_TAG}|g" argocd/applications/${SERVICE_NAME}.yaml
           fi
