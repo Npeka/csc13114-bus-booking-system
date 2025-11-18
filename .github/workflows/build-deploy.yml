@@ -109,17 +109,19 @@ jobs:
         if: matrix.service.changed == 'true'
         id: meta
         run: |
-          # Generate consistent tag based on commit
-          COMMIT_TAG="${{ github.ref_name }}-${{ github.sha }}"
-          IMAGE_NAME="${{ env.DOCKER_USERNAME }}/bus-booking-${{ matrix.service.name }}"
+          # Generate short commit tag (7 characters)
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          SERVICE_TAG="${{ matrix.service.name }}-${SHORT_SHA}"
+          IMAGE_NAME="${{ env.DOCKER_USERNAME }}/bb-${{ matrix.service.name }}"
 
           # Set output tags
-          echo "tags=${IMAGE_NAME}:${COMMIT_TAG},${IMAGE_NAME}:latest" >> $GITHUB_OUTPUT
+          echo "tags=${IMAGE_NAME}:${SERVICE_TAG},${IMAGE_NAME}:latest" >> $GITHUB_OUTPUT
           echo "image=${IMAGE_NAME}" >> $GITHUB_OUTPUT
-          echo "tag=${COMMIT_TAG}" >> $GITHUB_OUTPUT
+          echo "tag=${SERVICE_TAG}" >> $GITHUB_OUTPUT
+          echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
 
           echo "🏷️  Generated tags:"
-          echo "   - ${IMAGE_NAME}:${COMMIT_TAG}"
+          echo "   - ${IMAGE_NAME}:${SERVICE_TAG}"
           echo "   - ${IMAGE_NAME}:latest"
 
       - name: Build and push Docker image
@@ -144,11 +146,14 @@ jobs:
         if: matrix.service.changed == 'true' && github.ref == 'refs/heads/main'
         run: |
           # Set up variables
-          NEW_TAG="${{ github.ref_name }}-${{ github.sha }}"
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          SERVICE_TAG="${{ matrix.service.name }}-${SHORT_SHA}"
           SERVICE_NAME="${{ matrix.service.name }}"
-          IMAGE_NAME="${{ env.DOCKER_USERNAME }}/bus-booking-${SERVICE_NAME}:${NEW_TAG}"
+          IMAGE_NAME="${{ env.DOCKER_USERNAME }}/bb-${SERVICE_NAME}:${SERVICE_TAG}"
 
           echo "Updating ${SERVICE_NAME} to image: ${IMAGE_NAME}"
+          echo "Short SHA: ${SHORT_SHA}"
+          echo "Service Tag: ${SERVICE_TAG}"
 
           # Configure git
           git config --global user.name "GitHub Actions"
@@ -161,24 +166,24 @@ jobs:
           git fetch origin infra
           git checkout infra
 
-          # Update Helm values with new image tag
+          # Update Helm values with new image tag for specific service
           if [ -f "helm/bus-booking/values.yaml" ]; then
             # Update image tag in values.yaml for the specific service
-            sed -i "s|${SERVICE_NAME}:.*|${SERVICE_NAME}:${NEW_TAG}|g" helm/bus-booking/values.yaml
+            sed -i "s|bb-${SERVICE_NAME}:.*|bb-${SERVICE_NAME}:${SERVICE_TAG}|g" helm/bus-booking/values.yaml
             
             # Or update in service-specific values if exists
             if [ -f "helm/bus-booking/values/${SERVICE_NAME}.yaml" ]; then
-              sed -i "s|tag:.*|tag: ${NEW_TAG}|g" helm/bus-booking/values/${SERVICE_NAME}.yaml
+              sed -i "s|tag:.*|tag: ${SERVICE_TAG}|g" helm/bus-booking/values/${SERVICE_NAME}.yaml
             fi
           fi
 
-          # Update ArgoCD application manifest if exists
+          # Update ArgoCD application manifest - use main branch with short SHA
           if [ -f "argocd/application.yaml" ]; then
-            sed -i "s|targetRevision:.*|targetRevision: ${NEW_TAG}|g" argocd/application.yaml
+            sed -i "s|targetRevision:.*|targetRevision: main-${SHORT_SHA}|g" argocd/application.yaml
           fi
 
           if [ -f "argocd/applications/${SERVICE_NAME}.yaml" ]; then
-            sed -i "s|targetRevision:.*|targetRevision: ${NEW_TAG}|g" argocd/applications/${SERVICE_NAME}.yaml
+            sed -i "s|targetRevision:.*|targetRevision: main-${SHORT_SHA}|g" argocd/applications/${SERVICE_NAME}.yaml
           fi
 
           # Commit and push changes
@@ -186,12 +191,12 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Update ${SERVICE_NAME} image to ${NEW_TAG}
+            git commit -m "Update ${SERVICE_NAME} image to ${SERVICE_TAG}
             
             - Service: ${SERVICE_NAME}
             - Image: ${IMAGE_NAME}
-            - Commit: ${{ github.sha }}
-            - Branch: ${{ github.ref_name }}"
+            - Short SHA: ${SHORT_SHA}
+            - Full Commit: ${{ github.sha }}"
             
             git push origin infra
             echo "✅ Updated infra branch with new image tag"
