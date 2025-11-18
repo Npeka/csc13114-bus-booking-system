@@ -13,7 +13,7 @@ export function PassengerField({ value, onChange }: PassengerFieldProps) {
   return (
     <div className="space-y-2">
       <Label htmlFor="passengers" className="text-sm font-semibold">
-        Số hành khách
+        Số vé
       </Label>
       <div className="relative">
         <Users className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
