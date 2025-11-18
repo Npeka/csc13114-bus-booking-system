@@ -94,17 +94,22 @@ jobs:
           username: ${{ env.DOCKER_USERNAME }}
           password: ${{ env.DOCKER_TOKEN }}
 
-      - name: Extract metadata
+      - name: Generate image tags
         if: matrix.service.changed == 'true'
         id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.DOCKER_USERNAME }}/bus-booking-${{ matrix.service.name }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
+        run: |
+          # Generate consistent tag based on commit
+          COMMIT_TAG="${{ github.ref_name }}-${{ github.sha }}"
+          IMAGE_NAME="${{ env.DOCKER_USERNAME }}/bus-booking-${{ matrix.service.name }}"
+
+          # Set output tags
+          echo "tags=${IMAGE_NAME}:${COMMIT_TAG},${IMAGE_NAME}:latest" >> $GITHUB_OUTPUT
+          echo "image=${IMAGE_NAME}" >> $GITHUB_OUTPUT
+          echo "tag=${COMMIT_TAG}" >> $GITHUB_OUTPUT
+
+          echo "🏷️  Generated tags:"
+          echo "   - ${IMAGE_NAME}:${COMMIT_TAG}"
+          echo "   - ${IMAGE_NAME}:latest"
 
       - name: Build and push Docker image
         if: matrix.service.changed == 'true'
@@ -114,30 +119,64 @@ jobs:
           file: ./backend/${{ matrix.service.name }}/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64
           # cache-from: type=gha  # Disabled due to GitHub Actions Cache service outage
           # cache-to: type=gha,mode=max  # Disabled due to GitHub Actions Cache service outage
           build-args: |
             SERVICE_PORT=${{ matrix.service.port }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ github.event.head_commit.timestamp }}
 
-      - name: Update ArgoCD Application
-        if: matrix.service.changed == 'true' && github.ref == 'refs/heads/main' && vars.ARGOCD_SERVER != ''
+      - name: Update Infrastructure Repository
+        if: matrix.service.changed == 'true' && github.ref == 'refs/heads/main'
         run: |
-          # Update image tag in ArgoCD application
+          # Set up variables
           NEW_TAG="${{ github.ref_name }}-${{ github.sha }}"
-          echo "Updating ${{ matrix.service.name }} to tag: $NEW_TAG"
-          echo "ArgoCD Server: ${{ vars.ARGOCD_SERVER }}"
+          SERVICE_NAME="${{ matrix.service.name }}"
+          IMAGE_NAME="${{ env.DOCKER_USERNAME }}/bus-booking-${SERVICE_NAME}:${NEW_TAG}"
 
-          # Only sync if ArgoCD is configured
-          if [ -n "${{ vars.ARGOCD_SERVER }}" ] && [ -n "${{ secrets.ARGOCD_TOKEN }}" ]; then
-            curl -X POST \
-              -H "Authorization: Bearer ${{ secrets.ARGOCD_TOKEN }}" \
-              -H "Content-Type: application/json" \
-              -d '{"revision": "HEAD"}' \
-              "${{ vars.ARGOCD_SERVER }}/api/v1/applications/bus-booking-${{ matrix.service.name }}/sync"
+          echo "Updating ${SERVICE_NAME} to image: ${IMAGE_NAME}"
+
+          # Configure git
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+          # Switch to infra branch
+          git fetch origin infra
+          git checkout infra
+
+          # Update Helm values with new image tag
+          if [ -f "k8s/helm/bus-booking/values.yaml" ]; then
+            # Update image tag in values.yaml for the specific service
+            sed -i "s|${SERVICE_NAME}:.*|${SERVICE_NAME}:${NEW_TAG}|g" k8s/helm/bus-booking/values.yaml
+            
+            # Or update in service-specific values if exists
+            if [ -f "k8s/helm/bus-booking/values/${SERVICE_NAME}.yaml" ]; then
+              sed -i "s|tag:.*|tag: ${NEW_TAG}|g" k8s/helm/bus-booking/values/${SERVICE_NAME}.yaml
+            fi
+          fi
+
+          # Update ArgoCD application manifest if exists
+          if [ -f "argocd/applications/${SERVICE_NAME}.yaml" ]; then
+            sed -i "s|targetRevision:.*|targetRevision: ${NEW_TAG}|g" argocd/applications/${SERVICE_NAME}.yaml
+          fi
+
+          # Commit and push changes
+          git add .
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
           else
-            echo "ArgoCD not configured, skipping sync"
+            git commit -m "Update ${SERVICE_NAME} image to ${NEW_TAG}
+            
+            - Service: ${SERVICE_NAME}
+            - Image: ${IMAGE_NAME}
+            - Commit: ${{ github.sha }}
+            - Branch: ${{ github.ref_name }}"
+            
+            git push origin infra
+            echo "✅ Updated infra branch with new image tag"
           fi
 
   security-scan:
@@ -187,13 +226,14 @@ jobs:
     steps:
       - name: Generate deployment summary
         run: |
+          COMMIT_TAG="${{ github.ref_name }}-${{ github.sha }}"
+
           echo "## 🚀 Deployment Pipeline Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Services Changed:" >> $GITHUB_STEP_SUMMARY
           echo "- **booking-service**: ${{ needs.detect-changes.outputs.booking-service }}" >> $GITHUB_STEP_SUMMARY
           echo "- **trip-service**: ${{ needs.detect-changes.outputs.trip-service }}" >> $GITHUB_STEP_SUMMARY
           echo "- **user-service**: ${{ needs.detect-changes.outputs.user-service }}" >> $GITHUB_STEP_SUMMARY
-
           echo "- **gateway-service**: ${{ needs.detect-changes.outputs.gateway-service }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Pipeline Results:" >> $GITHUB_STEP_SUMMARY
@@ -201,7 +241,11 @@ jobs:
           echo "- **Security Scan**: ${{ needs.security-scan.result }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Docker Images:" >> $GITHUB_STEP_SUMMARY
-          echo "Tag: \`${{ github.ref_name }}-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Image Tag**: \`${COMMIT_TAG}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Infrastructure Update:" >> $GITHUB_STEP_SUMMARY
+          echo "- Updated **infra** branch with new image tags" >> $GITHUB_STEP_SUMMARY
+          echo "- ArgoCD will detect changes and deploy automatically" >> $GITHUB_STEP_SUMMARY
 
       - name: Notify deployment status
         run: |
