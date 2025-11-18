@@ -2,12 +2,11 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
-	"bus-booking/shared/ginext"
 	"bus-booking/user-service/internal/model"
 
 	"github.com/google/uuid"
-	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
 
@@ -36,8 +35,7 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 
 func (r *UserRepositoryImpl) Create(ctx context.Context, user *model.User) error {
 	if err := r.db.WithContext(ctx).Create(user).Error; err != nil {
-		log.Err(err).Msg("Failed to create user in database")
-		return ginext.NewInternalServerError("Failed to create user")
+		return fmt.Errorf("Failed to create user: %w", err)
 	}
 	return nil
 }
@@ -45,8 +43,7 @@ func (r *UserRepositoryImpl) Create(ctx context.Context, user *model.User) error
 func (r *UserRepositoryImpl) GetByID(ctx context.Context, id uuid.UUID) (*model.User, error) {
 	var user model.User
 	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&user).Error; err != nil {
-		log.Err(err).Msg("Failed to get user by ID")
-		return nil, ginext.NewInternalServerError("Failed to get user by ID")
+		return nil, fmt.Errorf("Failed to get user by ID: %w", err)
 	}
 	return &user, nil
 }
@@ -54,8 +51,7 @@ func (r *UserRepositoryImpl) GetByID(ctx context.Context, id uuid.UUID) (*model.
 func (r *UserRepositoryImpl) GetByEmail(ctx context.Context, email string) (*model.User, error) {
 	var user model.User
 	if err := r.db.WithContext(ctx).Where("email = ?", email).First(&user).Error; err != nil {
-		log.Err(err).Msg("Failed to get user by email")
-		return nil, ginext.NewInternalServerError("Failed to get user by email")
+		return nil, fmt.Errorf("Failed to get user by email: %w", err)
 	}
 	return &user, nil
 }
@@ -63,34 +59,29 @@ func (r *UserRepositoryImpl) GetByEmail(ctx context.Context, email string) (*mod
 func (r *UserRepositoryImpl) GetByUsername(ctx context.Context, username string) (*model.User, error) {
 	var user model.User
 	if err := r.db.WithContext(ctx).Where("username = ?", username).First(&user).Error; err != nil {
-		log.Err(err).Msg("Failed to get user by username")
-		return nil, ginext.NewInternalServerError("Failed to get user by username")
+		return nil, fmt.Errorf("Failed to get user by username: %w", err)
 	}
 	return &user, nil
 }
 
 func (r *UserRepositoryImpl) GetByFirebaseUID(ctx context.Context, firebaseUID string) (*model.User, error) {
 	var user model.User
-	err := r.db.WithContext(ctx).Where("firebase_uid = ?", firebaseUID).First(&user).Error
-	if err != nil {
-		log.Err(err).Msg("Failed to get user by Firebase UID")
-		return nil, ginext.NewInternalServerError("Failed to get user by Firebase UID")
+	if err := r.db.WithContext(ctx).Where("firebase_uid = ?", firebaseUID).First(&user).Error; err != nil {
+		return nil, fmt.Errorf("Failed to get user by Firebase UID: %w", err)
 	}
 	return &user, nil
 }
 
 func (r *UserRepositoryImpl) Update(ctx context.Context, user *model.User) error {
 	if err := r.db.WithContext(ctx).Save(user).Error; err != nil {
-		log.Err(err).Msg("Failed to update user")
-		return ginext.NewInternalServerError("Failed to update user")
+		return fmt.Errorf("Failed to update user: %w", err)
 	}
 	return nil
 }
 
 func (r *UserRepositoryImpl) Delete(ctx context.Context, id uuid.UUID) error {
 	if err := r.db.WithContext(ctx).Where("id = ?", id).Delete(&model.User{}).Error; err != nil {
-		log.Err(err).Msg("Failed to delete user")
-		return ginext.NewInternalServerError("Failed to delete user")
+		return fmt.Errorf("Failed to delete user: %w", err)
 	}
 	return nil
 }
@@ -100,14 +91,12 @@ func (r *UserRepositoryImpl) List(ctx context.Context, limit, offset int) ([]*mo
 	var total int64
 
 	if err := r.db.WithContext(ctx).Model(&model.User{}).Count(&total).Error; err != nil {
-		log.Err(err).Msg("Failed to count users")
-		return nil, 0, ginext.NewInternalServerError("Failed to count users")
+		return nil, 0, fmt.Errorf("Failed to count users: %w", err)
 	}
 
 	if err := r.db.WithContext(ctx).Model(&model.User{}).
 		Limit(limit).Offset(offset).Order("created_at DESC").Find(&users).Error; err != nil {
-		log.Err(err).Msg("Failed to list users")
-		return nil, 0, ginext.NewInternalServerError("Failed to list users")
+		return nil, 0, fmt.Errorf("Failed to list users: %w", err)
 	}
 
 	return users, total, nil
@@ -124,8 +113,7 @@ func (r *UserRepositoryImpl) ListByRole(ctx context.Context, role model.UserRole
 
 	if err := r.db.WithContext(ctx).Model(&model.User{}).
 		Where("role = ?", role).Limit(limit).Offset(offset).Order("created_at DESC").Find(&users).Error; err != nil {
-		log.Err(err).Msg("Failed to list users by role")
-		return nil, 0, ginext.NewInternalServerError("Failed to list users by role")
+		return nil, 0, fmt.Errorf("Failed to list users by role: %w", err)
 	}
 
 	return users, total, nil
@@ -134,8 +122,7 @@ func (r *UserRepositoryImpl) ListByRole(ctx context.Context, role model.UserRole
 func (r *UserRepositoryImpl) UpdateStatus(ctx context.Context, id uuid.UUID, status string) error {
 	if err := r.db.WithContext(ctx).
 		Model(&model.User{}).Where("id = ?", id).Update("status", status).Error; err != nil {
-		log.Err(err).Msg("Failed to update user status in database")
-		return ginext.NewInternalServerError("Failed to update user status")
+		return fmt.Errorf("Failed to update user status: %w", err)
 	}
 	return nil
 }
@@ -144,8 +131,7 @@ func (r *UserRepositoryImpl) EmailExists(ctx context.Context, email string) (boo
 	var count int64
 	if err := r.db.WithContext(ctx).Model(&model.User{}).
 		Where("email = ?", email).Count(&count).Error; err != nil {
-		log.Err(err).Msg("Failed to check email existence")
-		return false, ginext.NewInternalServerError("Failed to check email existence")
+		return false, fmt.Errorf("Failed to check email existence: %w", err)
 	}
 	return count > 0, nil
 }
@@ -154,8 +140,7 @@ func (r *UserRepositoryImpl) UsernameExists(ctx context.Context, username string
 	var count int64
 	if err := r.db.WithContext(ctx).Model(&model.User{}).
 		Where("username = ?", username).Count(&count).Error; err != nil {
-		log.Err(err).Msg("Failed to check username existence")
-		return false, ginext.NewInternalServerError("Failed to check username existence")
+		return false, fmt.Errorf("Failed to check username existence: %w", err)
 	}
 	return count > 0, nil
 }
