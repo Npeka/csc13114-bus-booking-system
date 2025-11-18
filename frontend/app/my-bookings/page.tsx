@@ -5,6 +5,21 @@ import { Button } from "@/components/ui/button";
 import { Calendar, MapPin, Download, X } from "lucide-react";
 import Link from "next/link";
 
+type Booking = {
+  id: string;
+  status: string;
+  trip: {
+    operator: string;
+    origin: string;
+    destination: string;
+    date: string;
+    departureTime: string;
+  };
+  seats: string[];
+  price: number;
+  refundAmount?: number;
+};
+
 export default function MyBookingsPage() {
   // Mock bookings data
   const upcomingBookings = [

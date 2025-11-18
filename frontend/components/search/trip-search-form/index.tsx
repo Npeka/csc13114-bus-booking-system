@@ -9,7 +9,9 @@ import { format } from "date-fns";
 import { LocationField } from "./location-field";
 import { LocationPanel } from "./location-panel";
 import { SwapLocationsButton } from "./swap-locations-button";
-import { DateField } from "./date-field";
+import { DatePickerField } from "./date-picker-field";
+import { ReturnDatePickerField } from "./return-date-picker-field";
+import { SharedDatePicker } from "./shared-date-picker";
 import { PassengerField } from "./passenger-field";
 import { PopularRoutes } from "./popular-routes";
 import { VIETNAM_CITIES } from "./constants";
@@ -19,7 +21,9 @@ export function TripSearchForm() {
   const router = useRouter();
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
-  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [isRoundTrip, setIsRoundTrip] = useState(false);
+  const [returnDate, setReturnDate] = useState<Date | undefined>(undefined);
   const [passengers, setPassengers] = useState(1);
   const [recentLocations, setRecentLocations] = useState<string[]>([
     "Đà Lạt",
@@ -34,17 +38,65 @@ export function TripSearchForm() {
     field: "origin",
     search: "",
   });
+  const [datePicker, setDatePicker] = useState<{
+    open: boolean;
+    activeField: "departure" | "return";
+  }>({
+    open: false,
+    activeField: "departure",
+  });
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const dateFieldsRef = useRef<HTMLDivElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!date) return;
+
     const params = new URLSearchParams({
       from: origin,
       to: destination,
-      date: date,
+      date: format(date, "yyyy-MM-dd"),
       passengers: passengers.toString(),
     });
+    if (isRoundTrip && returnDate) {
+      params.append("returnDate", format(returnDate, "yyyy-MM-dd"));
+    }
     router.push(`/trips?${params.toString()}`);
+  };
+
+  const handleToggleRoundTrip = () => {
+    setIsRoundTrip((prev) => !prev);
+    if (isRoundTrip) {
+      // If turning off round trip, clear return date
+      setReturnDate(undefined);
+    } else {
+      // If turning on, open the date picker immediately
+      setDatePicker({ open: true, activeField: "return" });
+      if (date) {
+        // Set a default return date (e.g., 1 day after departure)
+        const nextDay = new Date(date);
+        nextDay.setDate(nextDay.getDate() + 1);
+        setReturnDate(nextDay);
+      }
+    }
+  };
+
+  const openDatePicker = (field: "departure" | "return") => {
+    // If clicking return date button (not in round trip mode), enable round trip first
+    if (field === "return" && !isRoundTrip) {
+      setIsRoundTrip(true);
+      if (date) {
+        const nextDay = new Date(date);
+        nextDay.setDate(nextDay.getDate() + 1);
+        setReturnDate(nextDay);
+      }
+    }
+    setDatePicker({ open: true, activeField: field });
+  };
+
+  const closeDatePicker = () => {
+    setDatePicker((prev) => ({ ...prev, open: false }));
   };
 
   const handleSwapLocations = () => {
@@ -116,17 +168,43 @@ export function TripSearchForm() {
   return (
     <Card className="w-full p-6 shadow-elevated md:p-8">
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <div className="md:col-span-2 lg:col-span-2">
-            <div className="relative grid grid-cols-1 gap-4 md:grid-cols-2">
-              <LocationField
-                id="origin"
-                label="Điểm đi"
-                placeholder="TP. Hồ Chí Minh"
-                value={origin}
-                onTrigger={() => openLocationPicker("origin")}
-              >
-                {locationPicker.open && locationPicker.field === "origin" && (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {/* First Half: Origin and Destination */}
+          <div className="relative grid grid-cols-1 gap-4 md:grid-cols-2">
+            <LocationField
+              id="origin"
+              label="Điểm đi"
+              placeholder="TP. Hồ Chí Minh"
+              value={origin}
+              onTrigger={() => openLocationPicker("origin")}
+            >
+              {locationPicker.open && locationPicker.field === "origin" && (
+                <LocationPanel
+                  searchInputRef={searchInputRef}
+                  searchValue={locationPicker.search}
+                  onSearchChange={(value) =>
+                    setLocationPicker((prev) => ({
+                      ...prev,
+                      search: value,
+                    }))
+                  }
+                  locations={filteredLocations}
+                  onSelect={handleSelectLocation}
+                  recentLocations={recentLocations}
+                />
+              )}
+            </LocationField>
+
+            <LocationField
+              id="destination"
+              label="Điểm đến"
+              placeholder="Đà Nẵng"
+              value={destination}
+              iconClassName="text-brand-primary"
+              onTrigger={() => openLocationPicker("destination")}
+            >
+              {locationPicker.open &&
+                locationPicker.field === "destination" && (
                   <LocationPanel
                     searchInputRef={searchInputRef}
                     searchValue={locationPicker.search}
@@ -141,44 +219,41 @@ export function TripSearchForm() {
                     recentLocations={recentLocations}
                   />
                 )}
-              </LocationField>
+            </LocationField>
 
-              <LocationField
-                id="destination"
-                label="Điểm đến"
-                placeholder="Đà Nẵng"
-                value={destination}
-                iconClassName="text-brand-primary"
-                onTrigger={() => openLocationPicker("destination")}
-              >
-                {locationPicker.open &&
-                  locationPicker.field === "destination" && (
-                    <LocationPanel
-                      searchInputRef={searchInputRef}
-                      searchValue={locationPicker.search}
-                      onSearchChange={(value) =>
-                        setLocationPicker((prev) => ({
-                          ...prev,
-                          search: value,
-                        }))
-                      }
-                      locations={filteredLocations}
-                      onSelect={handleSelectLocation}
-                      recentLocations={recentLocations}
-                    />
-                  )}
-              </LocationField>
-
-              <SwapLocationsButton onClick={handleSwapLocations} />
-            </div>
+            <SwapLocationsButton onClick={handleSwapLocations} />
           </div>
 
-          <DateField value={date} onChange={setDate} />
+          {/* Second Half: Date, Return Date, Passengers (2-2-1 layout) */}
+          <div className="grid grid-cols-5 gap-4" ref={dateFieldsRef}>
+            <div className="col-span-5 sm:col-span-2">
+              <DatePickerField
+                id="departure-date"
+                label="Ngày đi"
+                value={date}
+                onClick={() => openDatePicker("departure")}
+                isActive={datePicker.open && datePicker.activeField === "departure"}
+                required
+              />
+            </div>
 
-          <PassengerField
-            value={passengers}
-            onChange={(value) => setPassengers(value)}
-          />
+            <div className="col-span-5 sm:col-span-2">
+              <ReturnDatePickerField
+                isRoundTrip={isRoundTrip}
+                returnDate={returnDate}
+                onClick={() => openDatePicker("return")}
+                onToggle={handleToggleRoundTrip}
+                isActive={datePicker.open && datePicker.activeField === "return"}
+              />
+            </div>
+
+            <div className="col-span-5 sm:col-span-1">
+              <PassengerField
+                value={passengers}
+                onChange={(value) => setPassengers(value)}
+              />
+            </div>
+          </div>
         </div>
 
         <Button
@@ -196,6 +271,18 @@ export function TripSearchForm() {
           setOrigin(route.from);
           setDestination(route.to);
         }}
+      />
+
+      {/* Shared Date Picker */}
+      <SharedDatePicker
+        isOpen={datePicker.open}
+        onClose={closeDatePicker}
+        departureDate={date}
+        returnDate={returnDate}
+        onDepartureDateChange={setDate}
+        onReturnDateChange={setReturnDate}
+        activeField={datePicker.activeField}
+        triggerRef={dateFieldsRef}
       />
     </Card>
   );
