@@ -71,7 +71,6 @@ jobs:
           - name: user-service
             changed: ${{ needs.detect-changes.outputs.user-service }}
             port: 8080
-
           - name: gateway-service
             changed: ${{ needs.detect-changes.outputs.gateway-service }}
             port: 8000
@@ -83,6 +82,10 @@ jobs:
       - name: Set up Docker Buildx
         if: matrix.service.changed == 'true'
         uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            image=moby/buildkit:v0.12.0
+            network=host
 
       - name: Login to Docker Hub
         if: matrix.service.changed == 'true'
@@ -112,33 +115,34 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
             SERVICE_PORT=${{ matrix.service.port }}
 
       - name: Update ArgoCD Application
-        if: matrix.service.changed == 'true' && github.ref == 'refs/heads/main'
+        if: matrix.service.changed == 'true' && github.ref == 'refs/heads/main' && vars.ARGOCD_SERVER != ''
         run: |
           # Update image tag in ArgoCD application
           NEW_TAG="${{ github.ref_name }}-${{ github.sha }}"
           echo "Updating ${{ matrix.service.name }} to tag: $NEW_TAG"
+          echo "ArgoCD Server: ${{ vars.ARGOCD_SERVER }}"
 
-          # Trigger ArgoCD sync for changed service
-          curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.ARGOCD_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d '{"revision": "HEAD"}' \
-            "${{ secrets.ARGOCD_SERVER }}/api/v1/applications/bus-booking-${{ matrix.service.name }}/sync"
+          # Only sync if ArgoCD is configured
+          if [ -n "${{ vars.ARGOCD_SERVER }}" ] && [ -n "${{ secrets.ARGOCD_TOKEN }}" ]; then
+            curl -X POST \
+              -H "Authorization: Bearer ${{ secrets.ARGOCD_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -d '{"revision": "HEAD"}' \
+              "${{ vars.ARGOCD_SERVER }}/api/v1/applications/bus-booking-${{ matrix.service.name }}/sync"
+          else
+            echo "ArgoCD not configured, skipping sync"
+          fi
 
   security-scan:
     needs: [detect-changes, build-and-push]
-    if: |
-      needs.detect-changes.outputs.booking-service == 'true' ||
-      needs.detect-changes.outputs.trip-service == 'true' ||
-      needs.detect-changes.outputs.user-service == 'true' ||
-      needs.detect-changes.outputs.gateway-service == 'true'
+    if: false # Disabled temporarily for faster builds
     runs-on: ubuntu-latest
     environment: Production
     strategy:

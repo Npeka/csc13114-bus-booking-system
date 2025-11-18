@@ -8,7 +8,6 @@ import (
 	"bus-booking/trip-service/internal/handler"
 )
 
-// RouterConfig holds router dependencies
 type RouterConfig struct {
 	ServiceName  string
 	Config       *config.Config

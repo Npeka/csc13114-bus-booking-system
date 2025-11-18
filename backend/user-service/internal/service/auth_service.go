@@ -33,7 +33,6 @@ type AuthServiceImpl struct {
 	config       *config.Config
 }
 
-// NewAuthService creates a new auth service
 func NewAuthService(
 	userRepo repository.UserRepository,
 	jwtManager *utils.JWTManager,
