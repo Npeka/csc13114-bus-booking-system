@@ -10,15 +10,15 @@ spec:
   project: default
 
   source:
-    repoURL: https://github.com/your-username/csc13114-bus-ticket-booking-system # Change this to your repo
-    targetRevision: main-248f8890e31a31106cde10f45c4c6b0176a44cb1
-    path: backend/infra/k8s/helm/bus-booking
+    repoURL: https://github.com/Npeka/csc13114-bus-ticket-booking-system
+    targetRevision: main-248f889
+    path: helm/bus-booking
     helm:
       valueFiles:
         - values.yaml
       parameters:
         - name: image.username
-          value: your-dockerhub-username # Change this to your Docker Hub username
+          value: npkhang22
         - name: ingress.hosts[0].host
           value: bus-booking.your-domain.com # Change this to your domain
 

@@ -40,6 +40,13 @@ image:
   registry: docker.io
   username: npkhang22
   pullPolicy: IfNotPresent
+  # Service-specific image tags
+  tags:
+    userService: "user-service-248f889"
+    tripService: "trip-service-248f889"
+    bookingService: "booking-service-248f889"
+    paymentService: "payment-service-248f889"
+    gatewayService: "gateway-service-248f889"
 
 # External Database Configuration (UPDATE THESE)
 externalDatabase:
