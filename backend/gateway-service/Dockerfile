@@ -28,7 +28,6 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /build/gateway-service/app /app
-COPY --from=builder /build/gateway-service/config/.env /.env
 COPY --from=builder /build/gateway-service/routes /routes
 
 USER appuser
