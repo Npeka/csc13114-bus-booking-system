@@ -11,7 +11,7 @@ spec:
 
   source:
     repoURL: https://github.com/your-username/csc13114-bus-ticket-booking-system # Change this to your repo
-    targetRevision: main
+    targetRevision: main-248f8890e31a31106cde10f45c4c6b0176a44cb1
     path: backend/infra/k8s/helm/bus-booking
     helm:
       valueFiles:
