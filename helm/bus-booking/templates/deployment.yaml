@@ -1,0 +1,70 @@
+{{- range $serviceName, $serviceConfig := .Values.services }}
+{{- if $serviceConfig.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "bus-booking.fullname" $ }}-{{ $serviceName | replace "Service" "" | kebabcase }}
+  labels:
+    {{- include "bus-booking.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $serviceName | replace "Service" "" | kebabcase }}
+spec:
+  {{- if not $.Values.autoscaling.enabled }}
+  replicas: {{ $.Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "bus-booking.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: {{ $serviceName | replace "Service" "" | kebabcase }}
+  template:
+    metadata:
+      {{- with $.Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "bus-booking.selectorLabels" $ | nindent 8 }}
+        app.kubernetes.io/component: {{ $serviceName | replace "Service" "" | kebabcase }}
+    spec:
+      serviceAccountName: {{ include "bus-booking.serviceAccountName" $ }}
+      securityContext:
+        {{- toYaml $.Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ $serviceName | replace "Service" "" | kebabcase }}
+          securityContext:
+            {{- toYaml $.Values.securityContext | nindent 12 }}
+          image: "{{ $.Values.image.registry }}/{{ $.Values.image.username }}/bus-booking-{{ $serviceName | replace "Service" "" | kebabcase }}:{{ $.Values.image.tag | default $.Chart.AppVersion }}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ $serviceConfig.targetPort }}
+              protocol: TCP
+          {{- include "bus-booking.commonEnv" $ | nindent 10 }}
+          env:
+            {{- include "bus-booking.serviceEnv" (dict "Values" $.Values "serviceName" ($serviceName | replace "Service" "" | lower)) | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            {{- toYaml $.Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+{{- end }}
+{{- end }}

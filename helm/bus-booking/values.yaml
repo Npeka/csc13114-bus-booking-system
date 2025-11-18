@@ -1,0 +1,184 @@
+# Bus Booking System - Production Configuration
+# Domain: bus-booking.site | Memory: 128MB per service | Replicas: 1
+
+# Basic Configuration
+replicaCount: 1
+
+# Ingress Configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: bus-booking.site
+      paths:
+        - path: /
+          pathType: Prefix
+          service: gateway-service
+  tls:
+    - secretName: bus-booking-tls
+      hosts:
+        - bus-booking.site
+
+# Resource Limits (128MB per service)
+resources:
+  limits:
+    cpu: 200m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# No Autoscaling (Single replica)
+autoscaling:
+  enabled: false
+
+# Docker Configuration
+image:
+  registry: docker.io
+  username: npkhang22
+  pullPolicy: IfNotPresent
+
+# External Database Configuration (UPDATE THESE)
+externalDatabase:
+  postgresql:
+    host: "private-bus-booking-database-do-user-29228381-0.d.db.ondigitalocean.com"
+    port: "25060"
+    username: "bus_booking"
+    password: "AVNS_xWZ9Nk2UEBYiI_mGXov"
+    sslMode: "disable" # Change to "require" for production
+    timezone: "Asia/Ho_Chi_Minh"
+    maxOpenConns: "10"
+    maxIdleConns: "2"
+    connMaxLifetime: "300s"
+    connMaxIdleTime: "60s"
+
+  redis:
+    host: "singapore-keyvalue.render.com" # CHANGE THIS
+    port: "6379"
+    password: "MJm32AjPDJoT1sMS9ug2BwzxOU7aayCZ" # Set if needed
+    poolSize: "5"
+    minIdleConns: "1"
+    maxRetries: "3"
+    dialTimeout: "5s"
+    readTimeout: "3s"
+    writeTimeout: "3s"
+
+# Environment Configuration
+env:
+  # JWT Secrets (CHANGE THESE)
+  jwt:
+    JWT_SECRET_KEY: "dbe13e045840e8fa98e7ad3f0996533e71d609decca7d491f4a416b67b313111"
+    JWT_REFRESH_SECRET_KEY: "d9bcfbb01e0914874ca4dcef7b6b8179c51988771e1326fc3a64781265596500"
+    JWT_ACCESS_TOKEN_TTL: "15m"
+    JWT_REFRESH_TOKEN_TTL: "168h"
+    JWT_ISSUER: "bus-booking-system"
+    JWT_AUDIENCE: "bus-booking-users"
+
+  # Server Configuration
+  global:
+    SERVER_ENVIRONMENT: "production"
+    LOG_LEVEL: "info"
+    SERVER_HOST: "0.0.0.0"
+    SERVER_READ_TIMEOUT: "10s"
+    SERVER_WRITE_TIMEOUT: "10s"
+    SERVER_IDLE_TIMEOUT: "120s"
+    SERVER_SHUTDOWN_TIMEOUT: "30s"
+    SERVER_MAX_HEADER_BYTES: "1048576"
+
+  # Rate Limiting (Conservative for 128MB)
+  rateLimit:
+    RATE_LIMIT_RPS: "50"
+    RATE_LIMIT_BURST: "100"
+    RATE_LIMIT_PERIOD: "1m"
+    RATE_LIMIT_CLEANUP_AFTER: "5m"
+
+  # CORS Configuration
+  cors:
+    CORS_ALLOWED_ORIGINS: "https://bus-booking.site"
+    CORS_ALLOWED_METHODS: "GET,POST,PUT,DELETE,OPTIONS"
+    CORS_ALLOWED_HEADERS: "*"
+    CORS_ALLOW_CREDENTIALS: "true"
+    CORS_MAX_AGE: "3600"
+
+  # Service Ports
+  ports:
+    USER_SERVICE_PORT: "8080"
+    TRIP_SERVICE_PORT: "8081"
+    BOOKING_SERVICE_PORT: "8082"
+    PAYMENT_SERVICE_PORT: "8084"
+    GATEWAY_SERVICE_PORT: "8000"
+
+  # Database Names
+  databases:
+    USER_DB_NAME: "bus_booking_user"
+    TRIP_DB_NAME: "bus_booking_trip"
+    BOOKING_DB_NAME: "bus_booking_booking"
+    PAYMENT_DB_NAME: "bus_booking_payment"
+    GATEWAY_DB_NAME: ""
+
+  # Redis DB Numbers
+  redisDBs:
+    USER_REDIS_DB: "0"
+    TRIP_REDIS_DB: "1"
+    BOOKING_REDIS_DB: "2"
+    PAYMENT_REDIS_DB: "3"
+    GATEWAY_REDIS_DB: "4"
+
+# Services Configuration
+services:
+  userService:
+    enabled: true
+    port: 8080
+    targetPort: 8080
+    type: ClusterIP
+
+  tripService:
+    enabled: true
+    port: 8081
+    targetPort: 8081
+    type: ClusterIP
+
+  bookingService:
+    enabled: true
+    port: 8082
+    targetPort: 8082
+    type: ClusterIP
+
+  paymentService:
+    enabled: true
+    port: 8084
+    targetPort: 8084
+    type: ClusterIP
+
+  gatewayService:
+    enabled: true
+    port: 8000
+    targetPort: 8000
+    type: ClusterIP
+
+# Security Context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65534
+  fsGroup: 65534
+
+securityContext:
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 65534
+
+# Service Account
+serviceAccount:
+  create: true
+  annotations: {}
+
+# Required fields for Helm template compatibility
+nameOverride: ""
+fullnameOverride: ""
+podAnnotations: {}
