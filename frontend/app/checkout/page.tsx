@@ -51,7 +51,6 @@ function CheckoutContent() {
     e.preventDefault();
     setIsProcessing(true);
 
-    // Simulate payment processing
     setTimeout(() => {
       router.push(`/booking-confirmation?bookingId=BK${Date.now()}`);
     }, 2000);
