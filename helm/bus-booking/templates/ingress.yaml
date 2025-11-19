@@ -2,9 +2,8 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: bus-booking-ingress
-  namespace: {{ .Values.namespace }}
-  labels:
-    {{- include "bus-booking.labels" . | nindent 4 }}
+  namespace: { { .Values.namespace } }
+  labels: { { - include "bus-booking.labels" . | nindent 4 } }
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
