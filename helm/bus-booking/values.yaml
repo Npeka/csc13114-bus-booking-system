@@ -128,5 +128,5 @@ env:
   EXTERNAL_RETRY_ATTEMPTS: 3
 
   # Firebase Configuration
-  FIREBASE_SERVICE_ACCOUNT_KEY_PATH: ./config/fbsvc.json
+  FIREBASE_SERVICE_ACCOUNT_KEY_PATH: config/fbsvc.json
   FIREBASE_USE_SERVICE_ACCOUNT_FILE: true
