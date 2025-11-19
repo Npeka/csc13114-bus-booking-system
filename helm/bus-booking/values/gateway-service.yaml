@@ -7,7 +7,7 @@ services:
     targetPort: 8000
     image:
       repository: npkhang22/bb-gateway-service
-      tag: gateway-service-2c309ad
+      tag: gateway-service-c5d0e57
     env:
       SERVER_PORT: "8000"
       SERVICE_NAME: "gateway-service"
