@@ -25,11 +25,17 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: {{ $config.port }}
-          {{- if $.Values.env }}
           env:
+            {{- /* Global env variables */ -}}
             {{- range $key, $value := $.Values.env }}
             - name: {{ $key }}
               value: {{ $value | quote }}
             {{- end }}
-          {{- end }}
+            {{- /* Service-specific env variables */ -}}
+            {{- if $config.env }}
+            {{- range $key, $value := $config.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- end }}
 {{- end }}
