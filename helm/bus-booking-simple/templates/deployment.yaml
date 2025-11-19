@@ -18,6 +18,7 @@ spec:
       labels:
         app: {{ $config.containerName }}
     spec:
+      serviceAccountName: bus-booking
       containers:
         - name: {{ $config.containerName }}
           image: {{ $config.image }}:{{ $config.tag }}
