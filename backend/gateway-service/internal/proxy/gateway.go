@@ -45,22 +45,28 @@ func (g *Gateway) SetupRoutes(router *gin.Engine) {
 	// Setup proxy routes
 	log.Printf("Total routes to setup: %d", len(g.routes.Routes))
 	for i, route := range g.routes.Routes {
-		log.Printf("Route %d: Setting up route: %s %v -> service: %s", i+1, route.Path, route.Methods, route.Service)
+		// Create route with service prefix
+		prefixedPath := "/" + route.Service + route.Path
+		log.Printf("Route %d: Setting up route: %s -> %s %v -> service: %s", i+1, route.Path, prefixedPath, route.Methods, route.Service)
+
+		// Create new route with prefixed path
+		prefixedRoute := route
+		prefixedRoute.Path = prefixedPath
 
 		// Validate route path before setting up
-		if err := g.validateRoutePath(route.Path); err != nil {
-			log.Printf("Skipping invalid route %s: %v", route.Path, err)
+		if err := g.validateRoutePath(prefixedRoute.Path); err != nil {
+			log.Printf("Skipping invalid route %s: %v", prefixedRoute.Path, err)
 			continue
 		}
 
 		// Add extra safety check
-		if strings.HasSuffix(route.Path, "/*") {
-			log.Printf("ERROR: Route %s ends with /* which is invalid for Gin router", route.Path)
+		if strings.HasSuffix(prefixedRoute.Path, "/*") {
+			log.Printf("ERROR: Route %s ends with /* which is invalid for Gin router", prefixedRoute.Path)
 			continue
 		}
 
-		g.setupRoute(router, route)
-		log.Printf("Successfully registered route %d: %s", i+1, route.Path)
+		g.setupRoute(router, prefixedRoute)
+		log.Printf("Successfully registered route %d: %s", i+1, prefixedRoute.Path)
 	} // Catch-all route for unmatched paths
 	router.NoRoute(func(c *gin.Context) {
 		c.JSON(404, gin.H{
@@ -172,8 +178,19 @@ func (g *Gateway) buildTargetURL(serviceConfig config.ServiceConfig, route confi
 	// Start with service base URL
 	baseURL := serviceConfig.URL
 
-	// Use route path as target path (since target field is removed)
-	targetPath := route.Path
+	// Get actual request path
+	actualPath := c.Request.URL.Path
+
+	// Strip service prefix from the actual path to get target path
+	// If route.Path starts with /service/, strip it to get the original API path
+	servicePrefix := "/" + route.Service
+	targetPath := actualPath
+
+	if strings.HasPrefix(actualPath, servicePrefix) {
+		// Strip service prefix: /user/api/v1/auth -> /api/v1/auth
+		targetPath = strings.TrimPrefix(actualPath, servicePrefix)
+		log.Printf("Stripped service prefix: %s -> %s", actualPath, targetPath)
+	}
 
 	// Handle path rewriting
 	if route.Rewrite != nil {
@@ -184,16 +201,9 @@ func (g *Gateway) buildTargetURL(serviceConfig config.ServiceConfig, route confi
 		targetPath = re.ReplaceAllString(targetPath, route.Rewrite.To)
 	}
 
-	// Handle prefix stripping
+	// Handle additional prefix stripping
 	if route.StripPrefix != "" {
 		targetPath = strings.TrimPrefix(targetPath, route.StripPrefix)
-	}
-
-	// For parameterized routes, replace with actual values
-	if strings.Contains(targetPath, ":") {
-		// Extract params from current request
-		actualPath := c.Request.URL.Path
-		targetPath = actualPath
 	}
 
 	// Ensure target path starts with /
