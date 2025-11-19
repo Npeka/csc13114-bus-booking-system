@@ -13,10 +13,22 @@ services:
       TRIP_SERVICE_URL: "http://trip-service"
       BOOKING_SERVICE_URL: "http://booking-service"
       VERIFY_ENDPOINT: "/api/v1/auth/verify-token"
+
       SERVICES_USER_URL: "http://user-service"
+      SERVICES_USER_TIMEOUT: "30"
+      SERVICES_USER_RETRIES: "3"
+
       SERVICES_TRIP_URL: "http://trip-service"
+      SERVICES_TRIP_TIMEOUT: "30"
+      SERVICES_TRIP_RETRIES: "3"
+
       SERVICES_BOOKING_URL: "http://booking-service"
+      SERVICES_BOOKING_TIMEOUT: "30"
+      SERVICES_BOOKING_RETRIES: "3"
+
       SERVICES_PAYMENT_URL: "http://payment-service"
+      SERVICES_PAYMENT_TIMEOUT: "30"
+      SERVICES_PAYMENT_RETRIES: "3"
     ingress:
       enabled: true
       host: bus-booking.site
