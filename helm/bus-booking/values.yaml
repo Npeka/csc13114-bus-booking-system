@@ -4,7 +4,7 @@ services:
   gateway-service:
     containerName: gateway-service
     image: npkhang22/bb-gateway-service
-    tag: gateway-service-c5d0e57
+    tag: gateway-service-f25225b
     port: 8000
     env:
       SERVER_PORT: "8000"
@@ -21,7 +21,7 @@ services:
   user-service:
     containerName: user-service
     image: npkhang22/bb-user-service
-    tag: user-service-3ab4224
+    tag: user-service-f25225b
     port: 8080
     env:
       DATABASE_NAME: "bus_booking_user"
@@ -33,7 +33,7 @@ services:
   trip-service:
     containerName: trip-service
     image: npkhang22/bb-trip-service
-    tag: trip-service-2c309ad
+    tag: trip-service-2094887
     port: 8081
     env:
       DATABASE_NAME: "bus_booking_trip"
@@ -45,7 +45,7 @@ services:
   booking-service:
     containerName: booking-service
     image: npkhang22/bb-booking-service
-    tag: booking-service-248f889
+    tag: booking-service-2094887
     port: 8082
     env:
       DATABASE_NAME: "bus_booking_booking"
