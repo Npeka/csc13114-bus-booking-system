@@ -41,7 +41,7 @@ spec:
               protocol: TCP
           {{- include "bus-booking.commonEnv" $ | nindent 10 }}
           env:
-            {{- include "bus-booking.serviceEnv" (dict "Values" $.Values "serviceName" ($serviceName | replace "Service" "" | lower)) | nindent 12 }}
+            {{- include "bus-booking.serviceEnv" (dict "Values" $.Values "Chart" $.Chart "Release" $.Release "serviceName" ($serviceName | replace "Service" "" | lower)) | nindent 12 }}
           livenessProbe:
             httpGet:
               path: /health
