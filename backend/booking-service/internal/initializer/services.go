@@ -16,13 +16,10 @@ type ServiceDependencies struct {
 }
 
 func InitServices(cfg *config.Config, database *sharedDB.DatabaseManager) *ServiceDependencies {
-	// Initialize repositories
 	repositories := repository.NewRepositories(database.DB)
 
-	// Initialize service
 	bookingService := service.NewBookingService(repositories)
 
-	// Initialize handler
 	bookingHandler := handler.NewBookingHandler(bookingService)
 
 	log.Info().Msg("All services and handlers initialized successfully")
