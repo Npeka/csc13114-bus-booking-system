@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// CreateBookingRequest represents booking creation request
 type CreateBookingRequest struct {
 	TripID          uuid.UUID   `json:"trip_id" validate:"required"`
 	UserID          uuid.UUID   `json:"user_id" validate:"required"`

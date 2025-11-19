@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	sharedConfig "bus-booking/shared/config"
+	"bus-booking/shared/constants"
 
 	"gopkg.in/yaml.v3"
 )
@@ -110,10 +111,19 @@ func LoadRoutes(routesDir string) (*RouteConfig, error) {
 				return fmt.Errorf("failed to load route config from %s: %w", path, err)
 			}
 
-			// Set service name for all routes in this file
+			// Set service name for all routes in this file and validate roles
 			for i := range routeConfig.Routes {
 				if routeConfig.Routes[i].Service == "" && routeConfig.Service != "" {
 					routeConfig.Routes[i].Service = routeConfig.Service
+				}
+
+				// Validate roles if auth is configured
+				if routeConfig.Routes[i].Auth != nil {
+					for _, role := range routeConfig.Routes[i].Auth.Roles {
+						if !constants.IsValidRoleString(role) {
+							return fmt.Errorf("invalid role '%s' in route %s:%v", role, routeConfig.Routes[i].Path, routeConfig.Routes[i].Methods)
+						}
+					}
 				}
 			}
 

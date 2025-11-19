@@ -2,6 +2,7 @@ package auth
 
 import (
 	"bus-booking/gateway-service/config"
+	"bus-booking/shared/constants"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -21,18 +22,19 @@ type VerifyTokenRequest struct {
 }
 
 type VerifyTokenResponse struct {
-	Valid  bool   `json:"valid"`
-	UserID string `json:"user_id,omitempty"`
-	Email  string `json:"email,omitempty"`
-	Role   string `json:"role,omitempty"`
-	Name   string `json:"name,omitempty"`
+	Valid  bool               `json:"valid"`
+	UserID string             `json:"user_id,omitempty"`
+	Email  string             `json:"email,omitempty"`
+	Role   constants.UserRole `json:"role,omitempty"`
+	Name   string             `json:"name,omitempty"`
 }
 
 type UserContext struct {
-	UserID string `json:"user_id"`
-	Email  string `json:"email"`
-	Role   string `json:"role"`
-	Name   string `json:"name"`
+	UserID      string             `json:"user_id"`
+	Email       string             `json:"email"`
+	Role        constants.UserRole `json:"role"`
+	Name        string             `json:"name"`
+	AccessToken string             `json:"access_token"`
 }
 
 func NewClient(config *config.AuthConfig) *Client {
@@ -99,13 +101,11 @@ func (c *Client) VerifyToken(ctx context.Context, token string) (*UserContext, e
 	}, nil
 }
 
-// HasRole checks if user has required role
-func (uc *UserContext) HasRole(role string) bool {
+func (uc *UserContext) HasRole(role constants.UserRole) bool {
 	return uc.Role == role
 }
 
-// HasAnyRole checks if user has any of the required roles
-func (uc *UserContext) HasAnyRole(roles []string) bool {
+func (uc *UserContext) HasAnyRole(roles []constants.UserRole) bool {
 	for _, role := range roles {
 		if uc.Role == role {
 			return true
@@ -114,12 +114,22 @@ func (uc *UserContext) HasAnyRole(roles []string) bool {
 	return false
 }
 
-// ToHeaders converts user context to headers for downstream services
+// HasAnyRoleString checks if user has any of the specified roles (from string slice)
+func (uc *UserContext) HasAnyRoleString(roleStrings []string) bool {
+	for _, roleStr := range roleStrings {
+		if uc.Role == constants.FromString(roleStr) {
+			return true
+		}
+	}
+	return false
+}
+
 func (uc *UserContext) ToHeaders() map[string]string {
 	return map[string]string{
-		"X-User-ID":    uc.UserID,
-		"X-User-Email": uc.Email,
-		"X-User-Role":  uc.Role,
-		"X-User-Name":  uc.Name,
+		"X-User-ID":      uc.UserID,
+		"X-User-Email":   uc.Email,
+		"X-User-Role":    uc.Role.String(),
+		"X-User-Name":    uc.Name,
+		"X-Access-Token": uc.AccessToken,
 	}
 }

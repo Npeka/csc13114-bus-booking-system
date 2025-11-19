@@ -68,39 +68,24 @@ func RequireAuthMiddleware() gin.HandlerFunc {
 	}
 }
 
-func RequireRoleMiddleware(allowedRoles ...int) gin.HandlerFunc {
+func RequireRoleMiddleware(allowedRoles ...constants.UserRole) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userRole := sharedcontext.GetUserRole(c)
 		if userRole == 0 {
 			c.JSON(http.StatusUnauthorized, gin.H{
-				"success": false,
 				"error": gin.H{
-					"code":    constants.CodeUnauthorized,
 					"message": constants.ErrUnauthorized,
 				},
-				"request_id": sharedcontext.GetRequestID(c),
 			})
 			c.Abort()
 			return
 		}
 
-		// Check if user role is in allowed roles
-		roleAllowed := false
-		for _, role := range allowedRoles {
-			if int(userRole) == role {
-				roleAllowed = true
-				break
-			}
-		}
-
-		if !roleAllowed {
+		if !userRole.HasAnyRole(allowedRoles) {
 			c.JSON(http.StatusForbidden, gin.H{
-				"success": false,
 				"error": gin.H{
-					"code":    constants.CodeForbidden,
 					"message": constants.ErrForbidden,
 				},
-				"request_id": sharedcontext.GetRequestID(c),
 			})
 			c.Abort()
 			return

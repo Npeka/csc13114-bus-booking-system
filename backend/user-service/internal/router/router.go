@@ -51,7 +51,7 @@ func SetupRoutes(router *gin.Engine, config *RouterConfig) {
 
 		admin := v1.Group("/admin")
 		admin.Use(middleware.RequireAuthMiddleware())
-		admin.Use(middleware.RequireRoleMiddleware(constants.RoleAdminInt))
+		admin.Use(middleware.RequireRoleMiddleware(constants.RoleAdmin))
 		{
 			adminUsers := admin.Group("/users")
 			{

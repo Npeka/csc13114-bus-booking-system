@@ -96,7 +96,7 @@ func (g *Gateway) createProxyHandler(route config.Route) gin.HandlerFunc {
 			}
 
 			// Check roles if specified
-			if len(route.Auth.Roles) > 0 && !userContext.HasAnyRole(route.Auth.Roles) {
+			if len(route.Auth.Roles) > 0 && !userContext.HasAnyRoleString(route.Auth.Roles) {
 				c.JSON(403, gin.H{
 					"error":   "insufficient permissions",
 					"message": fmt.Sprintf("required roles: %v", route.Auth.Roles),
