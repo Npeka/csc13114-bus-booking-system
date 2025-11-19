@@ -27,7 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Globe, Menu, User } from "lucide-react";
+import { Menu, User } from "lucide-react";
 import { FormEvent, useState } from "react";
 
 export function Header() {
@@ -178,36 +178,12 @@ export function Header() {
             href="/my-bookings"
             className="text-sm font-medium text-foreground/80 transition-colors hover:text-foreground"
           >
-            Đặt vé của tôi
-          </Link>
-          <Link
-            href="/help"
-            className="text-sm font-medium text-foreground/80 transition-colors hover:text-foreground"
-          >
-            Trợ giúp
+            Vé của tôi
           </Link>
         </nav>
 
         {/* Right Actions */}
         <div className="flex items-center space-x-2">
-          {/* Language Selector */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="hidden md:flex">
-                <Globe className="h-5 w-5" />
-                <span className="sr-only">Chọn ngôn ngữ</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>
-                <span className="font-medium">🇻🇳 Tiếng Việt</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <span>🇬🇧 English</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
           {/* Auth Actions */}
           {isAuthenticated ? (
             <DropdownMenu>
@@ -274,13 +250,6 @@ export function Header() {
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Đặt vé của tôi
-                </Link>
-                <Link
-                  href="/help"
-                  className="text-base font-medium"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Trợ giúp
                 </Link>
                 <div className="border-t pt-4 space-y-3">
                   {isAuthenticated ? (

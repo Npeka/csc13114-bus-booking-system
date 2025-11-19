@@ -95,14 +95,6 @@ export function Footer() {
             <ul className="space-y-2 text-sm">
               <li>
                 <Link
-                  href="/help"
-                  className="hover:text-brand-primary transition-colors"
-                >
-                  Trung tâm trợ giúp
-                </Link>
-              </li>
-              <li>
-                <Link
                   href="/faq"
                   className="hover:text-brand-primary transition-colors"
                 >
