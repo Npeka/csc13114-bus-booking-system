@@ -224,30 +224,34 @@ export function TripSearchForm() {
             <SwapLocationsButton onClick={handleSwapLocations} />
           </div>
 
-          {/* Second Half: Date, Return Date, Passengers (2-2-1 layout) */}
-          <div className="grid grid-cols-5 gap-4" ref={dateFieldsRef}>
-            <div className="col-span-5 sm:col-span-2">
+          {/* Second Half: Date, Return Date, Passengers (3-3-2 layout) */}
+          <div className="grid grid-cols-8 gap-4" ref={dateFieldsRef}>
+            <div className="col-span-8 sm:col-span-3">
               <DatePickerField
                 id="departure-date"
                 label="Ngày đi"
                 value={date}
                 onClick={() => openDatePicker("departure")}
-                isActive={datePicker.open && datePicker.activeField === "departure"}
+                isActive={
+                  datePicker.open && datePicker.activeField === "departure"
+                }
                 required
               />
             </div>
 
-            <div className="col-span-5 sm:col-span-2">
+            <div className="col-span-8 sm:col-span-3">
               <ReturnDatePickerField
                 isRoundTrip={isRoundTrip}
                 returnDate={returnDate}
                 onClick={() => openDatePicker("return")}
                 onToggle={handleToggleRoundTrip}
-                isActive={datePicker.open && datePicker.activeField === "return"}
+                isActive={
+                  datePicker.open && datePicker.activeField === "return"
+                }
               />
             </div>
 
-            <div className="col-span-5 sm:col-span-1">
+            <div className="col-span-8 sm:col-span-2">
               <PassengerField
                 value={passengers}
                 onChange={(value) => setPassengers(value)}

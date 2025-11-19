@@ -94,7 +94,7 @@ export function ChatBot() {
 
       {/* Chat Window */}
       {isOpen && (
-        <Card className="fixed bottom-6 right-6 z-50 w-96 max-w-[calc(100vw-3rem)] shadow-elevated">
+        <Card className="fixed bottom-6 right-6 z-50 w-96 max-w-[calc(100vw-3rem)] py-0! shadow-elevated">
           {/* Header */}
           <div className="flex items-center justify-between border-b bg-brand-primary p-4 rounded-t-lg">
             <div className="flex items-center space-x-3">

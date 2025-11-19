@@ -128,11 +128,11 @@ export default function MyBookingsPage() {
                   actions={
                     <>
                       <Button variant="outline" size="sm">
-                        <Download className="mr-2 h-4 w-4" />
+                        <Download className="h-4 w-4" />
                         Tải vé
                       </Button>
                       <Button variant="outline" size="sm">
-                        <X className="mr-2 h-4 w-4" />
+                        <X className="h-4 w-4" />
                         Hủy vé
                       </Button>
                     </>

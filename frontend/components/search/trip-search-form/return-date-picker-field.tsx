@@ -31,7 +31,7 @@ export function ReturnDatePickerField({
           className="h-12 w-full justify-start text-muted-foreground hover:text-foreground hover:border-brand-primary"
           onClick={onClick}
         >
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className="h-4 w-4" />
           Thêm ngày về
         </Button>
       </div>
