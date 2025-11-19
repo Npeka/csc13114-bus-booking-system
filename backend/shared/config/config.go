@@ -112,7 +112,7 @@ func IsProduction(environment string) bool {
 }
 
 func LoadConfig[T any](envFilePath ...string) (*T, error) {
-	envFile := "./config/.env"
+	envFile := "./.env"
 	if len(envFilePath) > 0 && envFilePath[0] != "" {
 		envFile = envFilePath[0]
 	}
