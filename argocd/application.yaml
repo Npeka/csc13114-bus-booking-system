@@ -11,7 +11,7 @@ spec:
 
   source:
     repoURL: https://github.com/Npeka/csc13114-bus-booking-system
-    targetRevision: infra  # Use infra branch for latest updates
+    targetRevision: trip-service-b905274
     path: helm/bus-booking-simple
 
   destination:
