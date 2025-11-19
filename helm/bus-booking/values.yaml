@@ -13,6 +13,10 @@ services:
       TRIP_SERVICE_URL: "http://trip-service"
       BOOKING_SERVICE_URL: "http://booking-service"
       VERIFY_ENDPOINT: "/api/v1/auth/verify-token"
+      SERVICES_USER_URL: "http://user-service"
+      SERVICES_TRIP_URL: "http://trip-service"
+      SERVICES_BOOKING_URL: "http://booking-service"
+      SERVICES_PAYMENT_URL: "http://payment-service"
     ingress:
       enabled: true
       host: bus-booking.site
