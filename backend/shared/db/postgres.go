@@ -16,21 +16,18 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-// DatabaseManager handles database connections and operations
 type DatabaseManager struct {
 	DB     *gorm.DB
 	SqlDB  *sql.DB
 	Config *config.DatabaseConfig
 }
 
-// NewPostgresConnection creates a new PostgreSQL connection with GORM
 func NewPostgresConnection(cfg *config.DatabaseConfig, env string) (*DatabaseManager, error) {
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=%s",
 		cfg.Host, cfg.Username, cfg.Password, cfg.Name, cfg.Port, cfg.SSLMode, cfg.TimeZone,
 	)
 
-	// Configure GORM logger based on environment
 	var logLevel logger.LogLevel
 	switch env {
 	case "development":
@@ -50,7 +47,7 @@ func NewPostgresConnection(cfg *config.DatabaseConfig, env string) (*DatabaseMan
 			LogLevel:                  logLevel,
 			IgnoreRecordNotFoundError: true,
 			Colorful:                  env == "development",
-			ParameterizedQueries:      env == "production", // Hide SQL parameters in production
+			ParameterizedQueries:      env == "production",
 		},
 	)
 
@@ -100,7 +97,6 @@ func NewPostgresConnection(cfg *config.DatabaseConfig, env string) (*DatabaseMan
 	}, nil
 }
 
-// Close closes the database connection
 func (dm *DatabaseManager) Close() error {
 	if dm.SqlDB != nil {
 		return dm.SqlDB.Close()
@@ -108,7 +104,6 @@ func (dm *DatabaseManager) Close() error {
 	return nil
 }
 
-// HealthCheck performs a health check on the database
 func (dm *DatabaseManager) HealthCheck() error {
 	if dm.SqlDB == nil {
 		return fmt.Errorf("database connection is nil")
@@ -120,7 +115,6 @@ func (dm *DatabaseManager) HealthCheck() error {
 	return dm.SqlDB.PingContext(ctx)
 }
 
-// GetStats returns database connection statistics
 func (dm *DatabaseManager) GetStats() sql.DBStats {
 	if dm.SqlDB == nil {
 		return sql.DBStats{}
@@ -128,8 +122,6 @@ func (dm *DatabaseManager) GetStats() sql.DBStats {
 	return dm.SqlDB.Stats()
 }
 
-// AutoMigrate runs database migrations for given models
-// This method is kept for backward compatibility, but prefer using MigrationManager
 func (dm *DatabaseManager) AutoMigrate(models ...interface{}) error {
 	if err := dm.DB.AutoMigrate(models...); err != nil {
 		return fmt.Errorf("failed to run database migrations: %w", err)

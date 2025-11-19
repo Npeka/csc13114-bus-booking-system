@@ -8,7 +8,7 @@ import (
 )
 
 type Route struct {
-	ID               uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID               uuid.UUID      `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
 	OperatorID       uuid.UUID      `gorm:"type:uuid;not null" json:"operator_id" validate:"required"`
 	Origin           string         `gorm:"type:varchar(255);not null" json:"origin" validate:"required"`
 	Destination      string         `gorm:"type:varchar(255);not null" json:"destination" validate:"required"`

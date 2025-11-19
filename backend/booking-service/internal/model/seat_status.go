@@ -8,7 +8,7 @@ import (
 )
 
 type SeatStatus struct {
-	ID            uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID            uuid.UUID  `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
 	TripID        uuid.UUID  `gorm:"type:uuid;not null" json:"trip_id" validate:"required"`
 	SeatID        uuid.UUID  `gorm:"type:uuid;not null" json:"seat_id" validate:"required"`
 	SeatNumber    string     `gorm:"type:varchar(10);not null" json:"seat_number" validate:"required"`

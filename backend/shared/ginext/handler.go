@@ -10,10 +10,8 @@ import (
 	"bus-booking/shared/validator"
 )
 
-// Handler defines the signature for wrapped handlers
 type Handler func(r *Request) (*Response, error)
 
-// WrapHandler wraps a handler function with error handling and response formatting
 func WrapHandler(handler Handler) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var (
@@ -63,36 +61,26 @@ func WrapHandler(handler Handler) gin.HandlerFunc {
 	}
 }
 
-// handleError handles different types of errors and sends appropriate response
 func handleError(c *gin.Context, err error) {
 	switch e := err.(type) {
 	case *Error:
-		// Structured error with known status code
 		c.JSON(e.Code, &GeneralBody{
-			Success:      false,
-			ErrorMessage: e.Message,
-			ErrorCode:    fmt.Sprintf("HTTP_%d", e.Code),
-			Error:        e.Details,
+			Error: &ErrorBody{Message: e.Message},
 		})
 	default:
-		// Unknown error - treat as internal server error
 		log.Error().Err(err).Msg("Unhandled error in handler")
 		c.JSON(http.StatusInternalServerError, &GeneralBody{
-			Success:      false,
-			ErrorMessage: "Internal server error",
-			ErrorCode:    "INTERNAL_SERVER_ERROR",
+			Error: &ErrorBody{Message: "Internal server error"},
 		})
 	}
 }
 
-// ValidateRequest validates a request struct using the global validator
 func ValidateRequest(req interface{}) error {
 	if validator.ValidatorInstance == nil {
 		return NewInternalServerError("Validator not initialized")
 	}
 
 	if validationErrors := validator.ValidatorInstance.ValidateStructDetailed(req); len(validationErrors) > 0 {
-		// Format validation errors into a readable message
 		var errorMsg string
 		for i, ve := range validationErrors {
 			if i > 0 {

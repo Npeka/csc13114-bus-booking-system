@@ -2,8 +2,10 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"bus-booking/shared/constants"
 	"bus-booking/user-service/internal/model"
 
 	"github.com/google/uuid"
@@ -14,15 +16,13 @@ type UserRepository interface {
 	Create(ctx context.Context, user *model.User) error
 	GetByID(ctx context.Context, id uuid.UUID) (*model.User, error)
 	GetByEmail(ctx context.Context, email string) (*model.User, error)
-	GetByUsername(ctx context.Context, username string) (*model.User, error)
 	GetByFirebaseUID(ctx context.Context, firebaseUID string) (*model.User, error)
 	Update(ctx context.Context, user *model.User) error
 	Delete(ctx context.Context, id uuid.UUID) error
 	List(ctx context.Context, limit, offset int) ([]*model.User, int64, error)
-	ListByRole(ctx context.Context, role model.UserRole, limit, offset int) ([]*model.User, int64, error)
+	ListByRole(ctx context.Context, role constants.UserRole, limit, offset int) ([]*model.User, int64, error)
 	UpdateStatus(ctx context.Context, id uuid.UUID, status string) error
 	EmailExists(ctx context.Context, email string) (bool, error)
-	UsernameExists(ctx context.Context, username string) (bool, error)
 }
 
 type UserRepositoryImpl struct {
@@ -35,6 +35,9 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 
 func (r *UserRepositoryImpl) Create(ctx context.Context, user *model.User) error {
 	if err := r.db.WithContext(ctx).Create(user).Error; err != nil {
+		if errors.Is(gorm.ErrDuplicatedKey, err) {
+			return fmt.Errorf("User already exists: %w", err)
+		}
 		return fmt.Errorf("Failed to create user: %w", err)
 	}
 	return nil
@@ -52,14 +55,6 @@ func (r *UserRepositoryImpl) GetByEmail(ctx context.Context, email string) (*mod
 	var user model.User
 	if err := r.db.WithContext(ctx).Where("email = ?", email).First(&user).Error; err != nil {
 		return nil, fmt.Errorf("Failed to get user by email: %w", err)
-	}
-	return &user, nil
-}
-
-func (r *UserRepositoryImpl) GetByUsername(ctx context.Context, username string) (*model.User, error) {
-	var user model.User
-	if err := r.db.WithContext(ctx).Where("username = ?", username).First(&user).Error; err != nil {
-		return nil, fmt.Errorf("Failed to get user by username: %w", err)
 	}
 	return &user, nil
 }
@@ -102,7 +97,7 @@ func (r *UserRepositoryImpl) List(ctx context.Context, limit, offset int) ([]*mo
 	return users, total, nil
 }
 
-func (r *UserRepositoryImpl) ListByRole(ctx context.Context, role model.UserRole, limit, offset int) ([]*model.User, int64, error) {
+func (r *UserRepositoryImpl) ListByRole(ctx context.Context, role constants.UserRole, limit, offset int) ([]*model.User, int64, error) {
 	var users []*model.User
 	var total int64
 

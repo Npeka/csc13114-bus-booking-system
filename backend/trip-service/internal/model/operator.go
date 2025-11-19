@@ -8,7 +8,7 @@ import (
 )
 
 type Operator struct {
-	ID           uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID           uuid.UUID      `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
 	Name         string         `gorm:"type:varchar(255);not null" json:"name" validate:"required"`
 	ContactEmail string         `gorm:"type:varchar(255);unique;not null" json:"contact_email" validate:"required,email"`
 	ContactPhone string         `gorm:"type:varchar(20)" json:"contact_phone"`

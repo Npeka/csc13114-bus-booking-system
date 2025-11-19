@@ -83,7 +83,7 @@ func (app *Application) initDependencies() error {
 	}
 
 	// Initialize services and handlers
-	app.Services = appinit.InitServices(app.Config, app.Database, app.FirebaseAuth)
+	app.Services = appinit.InitServices(app.Config, app.Database, app.Redis, app.FirebaseAuth)
 
 	log.Info().Msg("All dependencies initialized successfully")
 	return nil

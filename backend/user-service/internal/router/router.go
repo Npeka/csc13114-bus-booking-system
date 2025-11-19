@@ -4,11 +4,11 @@ import (
 	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
 
+	"bus-booking/shared/constants"
 	"bus-booking/shared/ginext"
 	"bus-booking/shared/middleware"
 	"bus-booking/user-service/config"
 	"bus-booking/user-service/internal/handler"
-	localMiddleware "bus-booking/user-service/internal/middleware"
 	"bus-booking/user-service/internal/repository"
 )
 
@@ -26,11 +26,6 @@ func SetupRoutes(router *gin.Engine, config *RouterConfig) {
 	router.Use(middleware.SetupCORS(&config.Config.CORS))
 	router.Use(middleware.Logger())
 
-	var firebaseMiddleware *localMiddleware.FirebaseAuthMiddleware
-	if config.FirebaseAuth != nil {
-		firebaseMiddleware = localMiddleware.NewFirebaseAuthMiddleware(config.FirebaseAuth, config.UserRepo)
-	}
-
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status":  "ok",
@@ -42,48 +37,21 @@ func SetupRoutes(router *gin.Engine, config *RouterConfig) {
 	{
 		auth := v1.Group("/auth")
 		{
-			auth.POST("/signup", ginext.WrapHandler(config.AuthHandler.Signup))
-			auth.POST("/signin", ginext.WrapHandler(config.AuthHandler.Signin))
-			auth.POST("/oauth2/signin", ginext.WrapHandler(config.AuthHandler.OAuth2Signin))
-			auth.POST("/refresh", ginext.WrapHandler(config.AuthHandler.RefreshToken))
-			auth.POST("/signout", ginext.WrapHandler(config.AuthHandler.Signout))
 			auth.POST("/verify-token", ginext.WrapHandler(config.AuthHandler.VerifyToken))
+			auth.POST("/firebase/auth", ginext.WrapHandler(config.AuthHandler.FirebaseAuth))
+			auth.POST("/refresh-token", middleware.RequireAuthMiddleware(), ginext.WrapHandler(config.AuthHandler.RefreshToken))
+			auth.POST("/logout", middleware.RequireAuthMiddleware(), ginext.WrapHandler(config.AuthHandler.Logout))
 		}
 
-		if firebaseMiddleware != nil {
-			firebase := v1.Group("/firebase")
-			firebase.Use(firebaseMiddleware.FirebaseAuth())
-			{
-				firebase.GET("/profile", func(c *gin.Context) {
-					user, exists := c.Get("user")
-					if !exists {
-						c.JSON(500, gin.H{"error": "User not found in context"})
-						return
-					}
-					c.JSON(200, gin.H{"data": user, "message": "Profile retrieved successfully"})
-				})
-			}
-		}
-
-		protected := v1.Group("")
-		protected.Use(middleware.RequireAuthMiddleware())
+		users := v1.Group("/users")
+		users.Use(middleware.RequireAuthMiddleware())
 		{
-			protected.GET("/profile", func(c *gin.Context) {
-				c.JSON(200, gin.H{"message": "Profile endpoint - TODO: implement"})
-			})
-			protected.PUT("/profile", func(c *gin.Context) {
-				c.JSON(200, gin.H{"message": "Update profile endpoint - TODO: implement"})
-			})
-
-			users := protected.Group("/users")
-			{
-				users.GET("/:id", ginext.WrapHandler(config.UserHandler.GetUser))
-			}
+			users.GET("/profile", ginext.WrapHandler(config.UserHandler.GetProfile))
 		}
 
 		admin := v1.Group("/admin")
 		admin.Use(middleware.RequireAuthMiddleware())
-		admin.Use(middleware.RequireRoleMiddleware("admin"))
+		admin.Use(middleware.RequireRoleMiddleware(constants.RoleAdminInt))
 		{
 			adminUsers := admin.Group("/users")
 			{

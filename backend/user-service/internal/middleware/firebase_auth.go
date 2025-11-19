@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 
+	"bus-booking/shared/constants"
 	"bus-booking/user-service/internal/model"
 	"bus-booking/user-service/internal/repository"
 )
@@ -87,17 +88,18 @@ func (m *FirebaseAuthMiddleware) FirebaseAuth() gin.HandlerFunc {
 				name = email
 			}
 
+			picture, _ := token.Claims["picture"].(string)
 			emailVerified, _ := token.Claims["email_verified"].(bool)
 
 			user = &model.User{
 				Email:         email,
-				Username:      email,
-				FirstName:     name,
-				LastName:      "",
-				Role:          model.RolePassenger,
+				FullName:      name,
+				Avatar:        picture,
+				Role:          constants.RolePassenger,
 				Status:        "verified",
 				FirebaseUID:   token.UID,
 				EmailVerified: emailVerified,
+				PhoneVerified: false,
 			}
 
 			if err := m.userRepo.Create(context.Background(), user); err != nil {

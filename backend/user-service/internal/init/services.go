@@ -19,13 +19,14 @@ type ServiceDependencies struct {
 	UserRepo    repository.UserRepository
 }
 
-func InitServices(cfg *config.Config, database *sharedDB.DatabaseManager, firebaseAuth *auth.Client) *ServiceDependencies {
+func InitServices(cfg *config.Config, database *sharedDB.DatabaseManager, redis *sharedDB.RedisManager, firebaseAuth *auth.Client) *ServiceDependencies {
 	jwtManager := utils.NewJWTManager(&cfg.JWT)
 
 	userRepo := repository.NewUserRepository(database.DB)
+	tokenBlacklistMgr := service.NewTokenBlacklistManager(redis, jwtManager)
 
 	userService := service.NewUserService(userRepo)
-	authService := service.NewAuthService(userRepo, jwtManager, firebaseAuth, cfg)
+	authService := service.NewAuthService(userRepo, jwtManager, firebaseAuth, cfg, tokenBlacklistMgr)
 
 	userHandler := handler.NewUserHandler(userService)
 	authHandler := handler.NewAuthHandler(authService)

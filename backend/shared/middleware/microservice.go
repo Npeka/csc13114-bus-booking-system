@@ -4,11 +4,12 @@ import (
 	"bus-booking/shared/constants"
 	sharedcontext "bus-booking/shared/context"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
-// RequestContextMiddleware extracts microservice headers and sets them in context
 func RequestContextMiddleware(serviceName string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Extract or generate request ID
@@ -23,10 +24,15 @@ func RequestContextMiddleware(serviceName string) gin.HandlerFunc {
 			sharedcontext.SetUserID(c, userID)
 		}
 		if userRole := c.GetHeader(constants.HeaderUserRole); userRole != "" {
-			sharedcontext.SetUserRole(c, userRole)
+			if roleInt, err := strconv.Atoi(userRole); err == nil {
+				sharedcontext.SetUserRole(c, roleInt)
+			}
 		}
 		if userEmail := c.GetHeader(constants.HeaderUserEmail); userEmail != "" {
 			sharedcontext.SetUserEmail(c, userEmail)
+		}
+		if accessToken := c.GetHeader(constants.HeaderAccessToken); accessToken != "" {
+			sharedcontext.SetAccessToken(c, accessToken)
 		}
 
 		// Set service name
@@ -45,18 +51,14 @@ func RequestContextMiddleware(serviceName string) gin.HandlerFunc {
 	}
 }
 
-// RequireAuthMiddleware ensures that user authentication headers are present
 func RequireAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID := sharedcontext.GetUserID(c)
-		if userID == "" {
+		if userID == uuid.Nil {
 			c.JSON(401, gin.H{
-				"success": false,
 				"error": gin.H{
-					"code":    constants.CodeUnauthorized,
 					"message": constants.ErrUnauthorized,
 				},
-				"request_id": sharedcontext.GetRequestID(c),
 			})
 			c.Abort()
 			return
@@ -66,11 +68,10 @@ func RequireAuthMiddleware() gin.HandlerFunc {
 	}
 }
 
-// RequireRoleMiddleware ensures that user has required role
-func RequireRoleMiddleware(allowedRoles ...string) gin.HandlerFunc {
+func RequireRoleMiddleware(allowedRoles ...int) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userRole := sharedcontext.GetUserRole(c)
-		if userRole == "" {
+		if userRole == 0 {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"success": false,
 				"error": gin.H{
@@ -86,7 +87,7 @@ func RequireRoleMiddleware(allowedRoles ...string) gin.HandlerFunc {
 		// Check if user role is in allowed roles
 		roleAllowed := false
 		for _, role := range allowedRoles {
-			if userRole == role {
+			if int(userRole) == role {
 				roleAllowed = true
 				break
 			}

@@ -23,17 +23,24 @@ const (
 	RefreshToken TokenType = "refresh"
 )
 
-type JWTManager struct {
+type JWTManager interface {
+	GenerateAccessToken(userID uuid.UUID, email, role string) (string, error)
+	GenerateRefreshToken(userID uuid.UUID, email, role string) (string, error)
+	ValidateAccessToken(tokenString string) (*JWTClaims, error)
+	ValidateRefreshToken(tokenString string) (*JWTClaims, error)
+}
+
+type JWTManagerImpl struct {
 	config *config.JWTConfig
 }
 
-func NewJWTManager(cfg *config.JWTConfig) *JWTManager {
-	return &JWTManager{
+func NewJWTManager(cfg *config.JWTConfig) JWTManager {
+	return &JWTManagerImpl{
 		config: cfg,
 	}
 }
 
-func (jm *JWTManager) GenerateAccessToken(userID uuid.UUID, email, role string) (string, error) {
+func (jm *JWTManagerImpl) GenerateAccessToken(userID uuid.UUID, email, role string) (string, error) {
 	now := time.Now()
 	claims := &JWTClaims{
 		UserID:    userID,
@@ -53,7 +60,7 @@ func (jm *JWTManager) GenerateAccessToken(userID uuid.UUID, email, role string) 
 	return token.SignedString([]byte(jm.config.SecretKey))
 }
 
-func (jm *JWTManager) GenerateRefreshToken(userID uuid.UUID, email, role string) (string, error) {
+func (jm *JWTManagerImpl) GenerateRefreshToken(userID uuid.UUID, email, role string) (string, error) {
 	now := time.Now()
 	claims := &JWTClaims{
 		UserID:    userID,
@@ -73,15 +80,15 @@ func (jm *JWTManager) GenerateRefreshToken(userID uuid.UUID, email, role string)
 	return token.SignedString([]byte(jm.config.RefreshSecretKey))
 }
 
-func (jm *JWTManager) ValidateAccessToken(tokenString string) (*JWTClaims, error) {
+func (jm *JWTManagerImpl) ValidateAccessToken(tokenString string) (*JWTClaims, error) {
 	return jm.validateToken(tokenString, jm.config.SecretKey, AccessToken)
 }
 
-func (jm *JWTManager) ValidateRefreshToken(tokenString string) (*JWTClaims, error) {
+func (jm *JWTManagerImpl) ValidateRefreshToken(tokenString string) (*JWTClaims, error) {
 	return jm.validateToken(tokenString, jm.config.RefreshSecretKey, RefreshToken)
 }
 
-func (jm *JWTManager) validateToken(tokenString, secret string, expectedType TokenType) (*JWTClaims, error) {
+func (jm *JWTManagerImpl) validateToken(tokenString, secret string, expectedType TokenType) (*JWTClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, jwt.ErrSignatureInvalid

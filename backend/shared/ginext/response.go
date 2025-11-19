@@ -13,17 +13,19 @@ type Response struct {
 
 // GeneralBody represents the response body structure
 type GeneralBody struct {
-	Data         interface{} `json:"data,omitempty"`
-	Message      string      `json:"message,omitempty"`
-	Success      bool        `json:"success"`
-	ErrorCode    string      `json:"error_code,omitempty"`
-	ErrorMessage string      `json:"error_message,omitempty"`
-	Error        interface{} `json:"error,omitempty"`
+	Data    interface{} `json:"data,omitempty"`
+	Message string      `json:"message,omitempty"`
+	Error   *ErrorBody  `json:"error,omitempty"`
 }
 
-// WithResponseCode sets response code
-func (g *GeneralBody) WithResponseCode(code string) *GeneralBody {
-	g.ErrorCode = code
+// ErrorBody represents simplified error structure
+type ErrorBody struct {
+	Message string `json:"message"`
+}
+
+// WithError sets error message
+func (g *GeneralBody) WithError(message string) *GeneralBody {
+	g.Error = &ErrorBody{Message: message}
 	return g
 }
 
@@ -34,7 +36,7 @@ type ResponseOption func(response *Response)
 func NewResponse(code int, opts ...ResponseOption) *Response {
 	r := &Response{
 		Code:        code,
-		GeneralBody: &GeneralBody{Success: code < 400},
+		GeneralBody: &GeneralBody{},
 	}
 	for _, opt := range opts {
 		opt(r)
@@ -42,10 +44,10 @@ func NewResponse(code int, opts ...ResponseOption) *Response {
 	return r
 }
 
-// WithResponseCodeOption sets response code option
-func WithResponseCodeOption(code string) ResponseOption {
+// WithErrorOption sets error message option
+func WithErrorOption(message string) ResponseOption {
 	return func(response *Response) {
-		response.GeneralBody.WithResponseCode(code)
+		response.GeneralBody.WithError(message)
 	}
 }
 
@@ -56,7 +58,6 @@ func NewResponseData(code int, data interface{}, message string, opts ...Respons
 		GeneralBody: &GeneralBody{
 			Data:    data,
 			Message: message,
-			Success: code < 400,
 		},
 	}
 	for _, opt := range opts {
@@ -66,11 +67,14 @@ func NewResponseData(code int, data interface{}, message string, opts ...Respons
 }
 
 // NewBody creates a new general body
-func NewBody(data interface{}, err interface{}) *GeneralBody {
+func NewBody(data interface{}, errMsg string) *GeneralBody {
+	var errorBody *ErrorBody
+	if errMsg != "" {
+		errorBody = &ErrorBody{Message: errMsg}
+	}
 	return &GeneralBody{
-		Data:    data,
-		Error:   err,
-		Success: err == nil,
+		Data:  data,
+		Error: errorBody,
 	}
 }
 
@@ -85,4 +89,42 @@ func NewCreatedResponse(data interface{}, message string) *Response {
 
 func NewNoContentResponse() *Response {
 	return NewResponse(http.StatusNoContent)
+}
+
+// Error response helpers
+func NewErrorResponse(code int, message string) *Response {
+	return &Response{
+		Code: code,
+		GeneralBody: &GeneralBody{
+			Error: &ErrorBody{Message: message},
+		},
+	}
+}
+
+func NewBadRequestResponse(message string) *Response {
+	return NewErrorResponse(http.StatusBadRequest, message)
+}
+
+func NewUnauthorizedResponse(message string) *Response {
+	return NewErrorResponse(http.StatusUnauthorized, message)
+}
+
+func NewForbiddenResponse(message string) *Response {
+	return NewErrorResponse(http.StatusForbidden, message)
+}
+
+func NewNotFoundResponse(message string) *Response {
+	return NewErrorResponse(http.StatusNotFound, message)
+}
+
+func NewConflictResponse(message string) *Response {
+	return NewErrorResponse(http.StatusConflict, message)
+}
+
+func NewValidationErrorResponse(message string) *Response {
+	return NewErrorResponse(http.StatusUnprocessableEntity, message)
+}
+
+func NewInternalServerErrorResponse(message string) *Response {
+	return NewErrorResponse(http.StatusInternalServerError, message)
 }

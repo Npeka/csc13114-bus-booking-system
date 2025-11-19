@@ -45,4 +45,5 @@ const (
 	HeaderUserRole    = "X-User-Role"
 	HeaderUserEmail   = "X-User-Email"
 	HeaderServiceName = "X-Service-Name"
+	HeaderAccessToken = "X-Access-Token"
 )

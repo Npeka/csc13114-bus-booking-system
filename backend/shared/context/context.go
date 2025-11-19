@@ -1,6 +1,7 @@
 package context
 
 import (
+	"bus-booking/shared/constants"
 	"context"
 
 	"github.com/gin-gonic/gin"
@@ -17,15 +18,17 @@ const (
 	UserRoleKey    ContextKey = "user_role"
 	UserEmailKey   ContextKey = "user_email"
 	ServiceNameKey ContextKey = "service_name"
+	AccessTokenKey ContextKey = "access_token"
 )
 
 // RequestContext contains request-scoped information
 type RequestContext struct {
 	RequestID   string
-	UserID      string
-	UserRole    string
+	UserID      uuid.UUID
+	UserRole    constants.UserRole
 	UserEmail   string
 	ServiceName string
+	AccessToken string
 }
 
 // GetRequestContext extracts request context from Gin context
@@ -36,6 +39,7 @@ func GetRequestContext(c *gin.Context) *RequestContext {
 		UserRole:    GetUserRole(c),
 		UserEmail:   GetUserEmail(c),
 		ServiceName: GetServiceName(c),
+		AccessToken: GetAccessToken(c),
 	}
 }
 
@@ -55,13 +59,9 @@ func SetRequestID(c *gin.Context, requestID string) {
 }
 
 // GetUserID gets user ID from context
-func GetUserID(c *gin.Context) string {
-	if userID, exists := c.Get(string(UserIDKey)); exists {
-		if id, ok := userID.(string); ok {
-			return id
-		}
-	}
-	return ""
+func GetUserID(c *gin.Context) uuid.UUID {
+	userID, _ := uuid.Parse(c.GetString(string(UserIDKey)))
+	return userID
 }
 
 // SetUserID sets user ID in context
@@ -70,17 +70,17 @@ func SetUserID(c *gin.Context, userID string) {
 }
 
 // GetUserRole gets user role from context
-func GetUserRole(c *gin.Context) string {
+func GetUserRole(c *gin.Context) constants.UserRole {
 	if userRole, exists := c.Get(string(UserRoleKey)); exists {
-		if role, ok := userRole.(string); ok {
+		if role, ok := userRole.(constants.UserRole); ok {
 			return role
 		}
 	}
-	return ""
+	return 1 // Default to passenger role
 }
 
 // SetUserRole sets user role in context
-func SetUserRole(c *gin.Context, userRole string) {
+func SetUserRole(c *gin.Context, userRole int) {
 	c.Set(string(UserRoleKey), userRole)
 }
 
@@ -136,10 +136,10 @@ func FromRequestContext(ctx context.Context) *RequestContext {
 	if requestID, ok := ctx.Value(RequestIDKey).(string); ok {
 		reqCtx.RequestID = requestID
 	}
-	if userID, ok := ctx.Value(UserIDKey).(string); ok {
+	if userID, err := uuid.Parse(ctx.Value(UserIDKey).(string)); err == nil {
 		reqCtx.UserID = userID
 	}
-	if userRole, ok := ctx.Value(UserRoleKey).(string); ok {
+	if userRole, ok := ctx.Value(UserRoleKey).(constants.UserRole); ok {
 		reqCtx.UserRole = userRole
 	}
 	if userEmail, ok := ctx.Value(UserEmailKey).(string); ok {
@@ -150,4 +150,19 @@ func FromRequestContext(ctx context.Context) *RequestContext {
 	}
 
 	return reqCtx
+}
+
+// GetAccessToken gets access token from context
+func GetAccessToken(c *gin.Context) string {
+	if accessToken, exists := c.Get("access_token"); exists {
+		if token, ok := accessToken.(string); ok {
+			return token
+		}
+	}
+	return ""
+}
+
+// SetAccessToken sets access token in context
+func SetAccessToken(c *gin.Context, accessToken string) {
+	c.Set(string(AccessTokenKey), accessToken)
 }

@@ -8,7 +8,7 @@ import (
 )
 
 type Feedback struct {
-	ID          uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID          uuid.UUID      `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
 	BookingID   uuid.UUID      `gorm:"type:uuid;not null" json:"booking_id" validate:"required"`
 	UserID      uuid.UUID      `gorm:"type:uuid;not null" json:"user_id" validate:"required"`
 	TripID      uuid.UUID      `gorm:"type:uuid;not null" json:"trip_id" validate:"required"`

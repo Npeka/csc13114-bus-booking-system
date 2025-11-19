@@ -8,7 +8,7 @@ import (
 )
 
 type PaymentMethod struct {
-	ID          uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID          uuid.UUID      `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
 	Name        string         `gorm:"type:varchar(100);not null" json:"name" validate:"required"`
 	Code        string         `gorm:"type:varchar(50);not null;unique" json:"code" validate:"required"`
 	Description string         `gorm:"type:text" json:"description"`

@@ -9,7 +9,7 @@ import (
 )
 
 type Bus struct {
-	ID            uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID            uuid.UUID      `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
 	OperatorID    uuid.UUID      `gorm:"type:uuid;not null" json:"operator_id" validate:"required"`
 	PlateNumber   string         `gorm:"type:varchar(20);unique;not null" json:"plate_number" validate:"required"`
 	Model         string         `gorm:"type:varchar(255);not null" json:"model" validate:"required"`

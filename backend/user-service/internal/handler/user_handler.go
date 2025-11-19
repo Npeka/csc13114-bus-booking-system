@@ -3,14 +3,18 @@ package handler
 import (
 	"strconv"
 
+	"bus-booking/shared/constants"
+	"bus-booking/shared/context"
 	"bus-booking/shared/ginext"
 	"bus-booking/user-service/internal/model"
 	"bus-booking/user-service/internal/service"
 
 	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 )
 
 type UserHandler interface {
+	GetProfile(r *ginext.Request) (*ginext.Response, error)
 	CreateUser(r *ginext.Request) (*ginext.Response, error)
 	GetUser(r *ginext.Request) (*ginext.Response, error)
 	UpdateUser(r *ginext.Request) (*ginext.Response, error)
@@ -29,9 +33,23 @@ func NewUserHandler(us service.UserService) UserHandler {
 	}
 }
 
+func (h *UserHandlerImpl) GetProfile(r *ginext.Request) (*ginext.Response, error) {
+	userID := context.GetUserID(r.GinCtx)
+
+	user, err := h.us.GetUserByID(r.Context(), userID)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get user profile")
+		return nil, err
+	}
+
+	return ginext.NewSuccessResponse(user, "Profile retrieved successfully"), nil
+}
+
 func (h *UserHandlerImpl) CreateUser(r *ginext.Request) (*ginext.Response, error) {
 	var createReq model.UserCreateRequest
-	r.MustBind(&createReq)
+	if err := r.GinCtx.ShouldBind(&createReq); err != nil {
+		return nil, ginext.NewBadRequestError("Invalid request data")
+	}
 
 	user, err := h.us.CreateUser(r.Context(), &createReq)
 	if err != nil {
@@ -64,7 +82,9 @@ func (h *UserHandlerImpl) UpdateUser(r *ginext.Request) (*ginext.Response, error
 	}
 
 	var updateReq model.UserUpdateRequest
-	r.MustBind(&updateReq)
+	if err := r.GinCtx.ShouldBind(&updateReq); err != nil {
+		return nil, ginext.NewBadRequestError("Invalid request data")
+	}
 
 	user, err := h.us.UpdateUser(r.Context(), id, &updateReq)
 	if err != nil {
@@ -89,39 +109,53 @@ func (h *UserHandlerImpl) DeleteUser(r *ginext.Request) (*ginext.Response, error
 }
 
 func (h *UserHandlerImpl) ListUsers(r *ginext.Request) (*ginext.Response, error) {
-	limitStr := r.DefaultQuery("limit", "20")
-	offsetStr := r.DefaultQuery("offset", "0")
-
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil || limit <= 0 {
-		return nil, ginext.NewBadRequestError("invalid limit parameter")
+	var query model.UserListQuery
+	if err := r.GinCtx.ShouldBindQuery(&query); err != nil {
+		return nil, ginext.NewBadRequestError("Invalid query parameters")
 	}
 
-	offset, err := strconv.Atoi(offsetStr)
-	if err != nil || offset < 0 {
-		return nil, ginext.NewBadRequestError("invalid offset parameter")
+	// Set defaults
+	if query.Page <= 0 {
+		query.Page = 1
+	}
+	if query.Limit <= 0 {
+		query.Limit = 20
 	}
 
-	users, total, err := h.us.ListUsers(r.Context(), limit, offset)
+	// Calculate offset from page
+	offset := (query.Page - 1) * query.Limit
+
+	users, total, err := h.us.ListUsers(r.Context(), query.Limit, offset)
 	if err != nil {
 		return nil, err
 	}
 
 	result := map[string]interface{}{
-		"users":  users,
-		"total":  total,
-		"limit":  limit,
-		"offset": offset,
+		"users":       users,
+		"total":       total,
+		"page":        query.Page,
+		"limit":       query.Limit,
+		"total_pages": (total + int64(query.Limit) - 1) / int64(query.Limit),
+		"search":      query.Search,
+		"role":        query.Role,
+		"status":      query.Status,
 	}
 
 	return ginext.NewSuccessResponse(result, "Users retrieved successfully"), nil
 }
 
 func (h *UserHandlerImpl) ListUsersByRole(r *ginext.Request) (*ginext.Response, error) {
-	role := r.Param("role")
-	if role == "" {
+	roleParam := r.Param("role")
+	if roleParam == "" {
 		return nil, ginext.NewBadRequestError("role parameter is required")
 	}
+
+	roleInt, err := strconv.Atoi(roleParam)
+	if err != nil {
+		return nil, ginext.NewBadRequestError("invalid role parameter")
+	}
+
+	role := constants.UserRole(roleInt)
 
 	limitStr := r.DefaultQuery("limit", "20")
 	offsetStr := r.DefaultQuery("offset", "0")
@@ -159,15 +193,12 @@ func (h *UserHandlerImpl) UpdateUserStatus(r *ginext.Request) (*ginext.Response,
 		return nil, ginext.NewBadRequestError("invalid user ID")
 	}
 
-	var body map[string]string
-	r.MustBind(&body)
-
-	status, ok := body["status"]
-	if !ok || status == "" {
-		return nil, ginext.NewBadRequestError("status is required")
+	var statusReq model.UserStatusUpdateRequest
+	if err := r.GinCtx.ShouldBind(&statusReq); err != nil {
+		return nil, ginext.NewBadRequestError("Invalid request data")
 	}
 
-	if err := h.us.UpdateUserStatus(r.Context(), id, status); err != nil {
+	if err := h.us.UpdateUserStatus(r.Context(), id, statusReq.Status); err != nil {
 		return nil, err
 	}
 

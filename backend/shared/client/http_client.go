@@ -12,6 +12,7 @@ import (
 	"bus-booking/shared/constants"
 	sharedcontext "bus-booking/shared/context"
 
+	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -230,11 +231,11 @@ func (c *Client) setMicroserviceHeaders(req *http.Request, ctx context.Context) 
 	}
 
 	// Set user context headers if available
-	if reqCtx.UserID != "" {
-		req.Header.Set(constants.HeaderUserID, reqCtx.UserID)
+	if reqCtx.UserID != uuid.Nil {
+		req.Header.Set(constants.HeaderUserID, reqCtx.UserID.String())
 	}
-	if reqCtx.UserRole != "" {
-		req.Header.Set(constants.HeaderUserRole, reqCtx.UserRole)
+	if reqCtx.UserRole != 0 {
+		req.Header.Set(constants.HeaderUserRole, fmt.Sprintf("%d", reqCtx.UserRole))
 	}
 	if reqCtx.UserEmail != "" {
 		req.Header.Set(constants.HeaderUserEmail, reqCtx.UserEmail)

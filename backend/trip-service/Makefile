@@ -18,8 +18,8 @@ dev: init-db migrate run
 run:
 	go run cmd/server/main.go
 
-migrate: build-migrate
-	bin\migrate.exe
+migrate:
+	go run cmd/migrate/main.go
 
 test:
 	go test -v ./...

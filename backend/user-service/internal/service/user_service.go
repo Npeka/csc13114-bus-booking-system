@@ -2,13 +2,12 @@ package service
 
 import (
 	"context"
-	"strconv"
 
+	"bus-booking/shared/constants"
 	"bus-booking/shared/ginext"
 	contextlogger "bus-booking/shared/logger"
 	"bus-booking/user-service/internal/model"
 	"bus-booking/user-service/internal/repository"
-	"bus-booking/user-service/internal/utils"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
@@ -20,7 +19,7 @@ type UserService interface {
 	UpdateUser(ctx context.Context, id uuid.UUID, req *model.UserUpdateRequest) (*model.UserResponse, error)
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 	ListUsers(ctx context.Context, limit, offset int) ([]*model.UserResponse, int64, error)
-	ListUsersByRole(ctx context.Context, role string, limit, offset int) ([]*model.UserResponse, int64, error)
+	ListUsersByRole(ctx context.Context, role constants.UserRole, limit, offset int) ([]*model.UserResponse, int64, error)
 	UpdateUserStatus(ctx context.Context, id uuid.UUID, status string) error
 }
 
@@ -37,40 +36,31 @@ func NewUserService(userRepo repository.UserRepository) UserService {
 }
 
 func (s *UserServiceImpl) CreateUser(ctx context.Context, req *model.UserCreateRequest) (*model.UserResponse, error) {
-	if emailExists, err := s.userRepo.EmailExists(ctx, req.Email); err != nil {
-		s.logger.Error(err, "Failed to check email existence")
-		return nil, ginext.NewInternalServerError("Failed to validate email")
-	} else if emailExists {
-		return nil, ginext.NewConflictError("email already exists")
+	// Validate email if provided
+	if req.Email != "" {
+		if emailExists, err := s.userRepo.EmailExists(ctx, req.Email); err != nil {
+			s.logger.Error(err, "Failed to check email existence")
+			return nil, ginext.NewInternalServerError("Failed to validate email")
+		} else if emailExists {
+			return nil, ginext.NewConflictError("email already exists")
+		}
 	}
 
-	if usernameExists, err := s.userRepo.UsernameExists(ctx, req.Username); err != nil {
-		s.logger.Error(err, "Failed to check username existence")
-		return nil, ginext.NewInternalServerError("Failed to validate username")
-	} else if usernameExists {
-		return nil, ginext.NewConflictError("username already exists")
-	}
-
-	hashedPassword, err := utils.HashPassword(req.Password)
-	if err != nil {
-		s.logger.Error(err, "Failed to hash password")
-		return nil, ginext.NewInternalServerError("Failed to process password")
-	}
-
-	role := req.Role
-	if role == 0 {
-		role = model.RolePassenger
+	// Check if Firebase UID already exists
+	if existingUser, err := s.userRepo.GetByFirebaseUID(ctx, req.FirebaseUID); err == nil && existingUser != nil {
+		return nil, ginext.NewConflictError("user with this Firebase UID already exists")
 	}
 
 	user := &model.User{
-		Email:     req.Email,
-		Username:  req.Username,
-		Password:  hashedPassword,
-		FirstName: req.FirstName,
-		LastName:  req.LastName,
-		Phone:     req.Phone,
-		Role:      role,
-		Status:    "active",
+		Email:         req.Email,
+		Phone:         req.Phone,
+		FullName:      req.FullName,
+		Avatar:        req.Avatar,
+		Role:          req.Role,
+		Status:        "active",
+		FirebaseUID:   req.FirebaseUID,
+		EmailVerified: false,
+		PhoneVerified: false,
 	}
 
 	if err := s.userRepo.Create(ctx, user); err != nil {
@@ -84,7 +74,7 @@ func (s *UserServiceImpl) CreateUser(ctx context.Context, req *model.UserCreateR
 func (s *UserServiceImpl) GetUserByID(ctx context.Context, id uuid.UUID) (*model.UserResponse, error) {
 	user, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, ginext.NewInternalServerError("Failed to get user by ID")
 	}
 	return user.ToResponse(), nil
 }
@@ -107,23 +97,12 @@ func (s *UserServiceImpl) UpdateUser(ctx context.Context, id uuid.UUID, req *mod
 		user.Email = *req.Email
 	}
 
-	// Validate and update username if provided
-	if req.Username != nil && *req.Username != user.Username {
-		if usernameExists, err := s.userRepo.UsernameExists(ctx, *req.Username); err != nil {
-			s.logger.Error(err, "Failed to check username existence during update")
-			return nil, ginext.NewInternalServerError("Failed to validate username")
-		} else if usernameExists {
-			return nil, ginext.NewConflictError("username already exists")
-		}
-		user.Username = *req.Username
-	}
-
 	// Update other fields
-	if req.FirstName != nil {
-		user.FirstName = *req.FirstName
+	if req.FullName != nil {
+		user.FullName = *req.FullName
 	}
-	if req.LastName != nil {
-		user.LastName = *req.LastName
+	if req.Avatar != nil {
+		user.Avatar = *req.Avatar
 	}
 	if req.Phone != nil {
 		user.Phone = *req.Phone
@@ -176,27 +155,8 @@ func (s *UserServiceImpl) ListUsers(ctx context.Context, limit, offset int) ([]*
 }
 
 // ListUsersByRole gets a paginated list of users by role
-func (s *UserServiceImpl) ListUsersByRole(ctx context.Context, role string, limit, offset int) ([]*model.UserResponse, int64, error) {
-	// Convert string role to UserRole
-	var userRole model.UserRole
-	if roleValue, err := strconv.Atoi(role); err == nil {
-		userRole = model.UserRole(roleValue)
-	} else {
-		switch role {
-		case "passenger":
-			userRole = model.RolePassenger
-		case "admin":
-			userRole = model.RoleAdmin
-		case "operator":
-			userRole = model.RoleOperator
-		case "support":
-			userRole = model.RoleSupport
-		default:
-			return nil, 0, ginext.NewBadRequestError("invalid role")
-		}
-	}
-
-	users, total, err := s.userRepo.ListByRole(ctx, userRole, limit, offset)
+func (s *UserServiceImpl) ListUsersByRole(ctx context.Context, role constants.UserRole, limit, offset int) ([]*model.UserResponse, int64, error) {
+	users, total, err := s.userRepo.ListByRole(ctx, role, limit, offset)
 	if err != nil {
 		return nil, 0, ginext.NewInternalServerError("Failed to list users by role")
 	}

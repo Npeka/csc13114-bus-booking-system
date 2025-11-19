@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Firebase Auth Test - Bus Booking System</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+      }
+
+      .header p {
+        opacity: 0.9;
+        font-size: 1.1rem;
+      }
+
+      .content {
+        padding: 30px;
+      }
+
+      .section {
+        margin-bottom: 40px;
+        background: #f8fafc;
+        border-radius: 15px;
+        padding: 25px;
+        border: 2px solid #e2e8f0;
+      }
+
+      .section h2 {
+        color: #1e293b;
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .section-icon {
+        width: 24px;
+        height: 24px;
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+      }
+
+      .auth-buttons {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+      }
+
+      .btn {
+        padding: 15px 25px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        color: white;
+      }
+
+      .btn-google {
+        background: linear-gradient(135deg, #dd4b39 0%, #d23430 100%);
+      }
+
+      .btn-facebook {
+        background: linear-gradient(135deg, #3b5998 0%, #2d4373 100%);
+      }
+
+      .btn-phone {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      }
+
+      .btn-logout {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      }
+
+      .btn-test {
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        margin: 5px;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+      }
+
+      .btn:active {
+        transform: translateY(0);
+      }
+
+      .user-info {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        border: 2px solid #e2e8f0;
+      }
+
+      .user-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        margin-right: 15px;
+        border: 3px solid #4f46e5;
+      }
+
+      .user-details {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+
+      .user-text h3 {
+        color: #1e293b;
+        margin-bottom: 5px;
+      }
+
+      .user-text p {
+        color: #64748b;
+        font-size: 0.9rem;
+      }
+
+      .token-area {
+        width: 100%;
+        min-height: 150px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 15px;
+        font-family: "Courier New", monospace;
+        font-size: 0.9rem;
+        background: #f1f5f9;
+        resize: vertical;
+      }
+
+      .api-section {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+      }
+
+      .api-test {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        border: 2px solid #e2e8f0;
+      }
+
+      .api-test h3 {
+        color: #1e293b;
+        margin-bottom: 15px;
+        font-size: 1.2rem;
+      }
+
+      .form-group {
+        margin-bottom: 15px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #374151;
+      }
+
+      .form-control {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s ease;
+      }
+
+      .form-control:focus {
+        outline: none;
+        border-color: #4f46e5;
+      }
+
+      .result {
+        margin-top: 15px;
+        padding: 15px;
+        border-radius: 8px;
+        border: 2px solid;
+        font-family: "Courier New", monospace;
+        font-size: 0.9rem;
+        white-space: pre-wrap;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+
+      .result.success {
+        background: #f0fdf4;
+        border-color: #22c55e;
+        color: #166534;
+      }
+
+      .result.error {
+        background: #fef2f2;
+        border-color: #ef4444;
+        color: #dc2626;
+      }
+
+      .result.info {
+        background: #f0f9ff;
+        border-color: #3b82f6;
+        color: #1e40af;
+      }
+
+      .phone-input-container {
+        display: none;
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        border: 2px solid #e2e8f0;
+      }
+
+      .phone-input-container.active {
+        display: block;
+      }
+
+      .loading {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #4f46e5;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .endpoint-tag {
+        background: #4f46e5;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-family: monospace;
+        margin-bottom: 10px;
+        display: inline-block;
+      }
+
+      @media (max-width: 768px) {
+        .header h1 {
+          font-size: 2rem;
+        }
+
+        .auth-buttons {
+          flex-direction: column;
+        }
+
+        .api-section {
+          grid-template-columns: 1fr;
+        }
+
+        .content {
+          padding: 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🚌 Firebase Auth Test</h1>
+        <p>Bus Booking System - Authentication Testing Interface</p>
+      </div>
+
+      <div class="content">
+        <!-- Authentication Section -->
+        <div class="section">
+          <h2><span class="section-icon">🔐</span>Firebase Authentication</h2>
+
+          <div class="auth-buttons">
+            <button class="btn btn-google" id="loginGoogleBtn">
+              <span>📧</span> Sign in with Google
+            </button>
+            <button class="btn btn-facebook" id="loginFacebookBtn">
+              <span>👤</span> Sign in with Facebook
+            </button>
+            <button class="btn btn-phone" id="phoneAuthBtn">
+              <span>📱</span> Sign in with Phone
+            </button>
+            <button class="btn btn-logout" id="logoutBtn">
+              <span>🚪</span> Sign Out
+            </button>
+          </div>
+
+          <!-- Phone Input Container -->
+          <div class="phone-input-container" id="phoneInputContainer">
+            <h3>📱 Phone Authentication</h3>
+            <div class="form-group">
+              <label for="phoneNumber">Phone Number (with country code):</label>
+              <input
+                type="tel"
+                id="phoneNumber"
+                class="form-control"
+                placeholder="+84 123 456 789"
+              />
+            </div>
+            <button class="btn btn-phone" id="sendCodeBtn">
+              Send Verification Code
+            </button>
+
+            <div
+              class="form-group"
+              id="verificationContainer"
+              style="display: none; margin-top: 15px"
+            >
+              <label for="verificationCode">Verification Code:</label>
+              <input
+                type="text"
+                id="verificationCode"
+                class="form-control"
+                placeholder="123456"
+              />
+              <button
+                class="btn btn-phone"
+                id="verifyCodeBtn"
+                style="margin-top: 10px"
+              >
+                Verify Code
+              </button>
+            </div>
+            <div id="recaptcha-container"></div>
+          </div>
+
+          <div id="userInfo" class="user-info" style="display: none"></div>
+
+          <div class="form-group">
+            <label for="tokenArea">Firebase ID Token:</label>
+            <textarea
+              id="tokenArea"
+              class="token-area"
+              readonly
+              placeholder="Firebase ID token will appear here..."
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- API Testing Section -->
+        <div class="section">
+          <h2><span class="section-icon">🧪</span>API Endpoint Testing</h2>
+
+          <div class="api-section">
+            <!-- Firebase Signup Test -->
+            <div class="api-test">
+              <div class="endpoint-tag">POST /api/v1/auth/firebase/sign-up</div>
+              <h3>Firebase Signup</h3>
+              <div class="form-group">
+                <label for="signupFullName">Full Name:</label>
+                <input
+                  type="text"
+                  id="signupFullName"
+                  class="form-control"
+                  placeholder="John Doe"
+                />
+              </div>
+              <button class="btn btn-test" id="signupBtn">
+                🚀 Test Signup
+              </button>
+              <div id="signupResult" class="result" style="display: none"></div>
+            </div>
+
+            <!-- Firebase Signin Test -->
+            <div class="api-test">
+              <div class="endpoint-tag">POST /api/v1/auth/firebase/sign-in</div>
+              <h3>Firebase Signin</h3>
+              <button class="btn btn-test" id="signinBtn">
+                🔑 Test Signin
+              </button>
+              <div id="signinResult" class="result" style="display: none"></div>
+            </div>
+
+            <!-- Firebase Auth (Unified) Test -->
+            <div class="api-test">
+              <div class="endpoint-tag">POST /api/v1/auth/firebase/auth</div>
+              <h3>Firebase Auth (Unified)</h3>
+              <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 15px">
+                Auto sign-in or register based on Firebase token
+              </p>
+              <button class="btn btn-test" id="authBtn">⚡ Test Auth</button>
+              <div id="authResult" class="result" style="display: none"></div>
+            </div>
+
+            <!-- Token Verify Test -->
+            <div class="api-test">
+              <div class="endpoint-tag">POST /api/v1/auth/verify-token</div>
+              <h3>Verify JWT Token</h3>
+              <div class="form-group">
+                <label for="jwtToken">JWT Access Token:</label>
+                <input
+                  type="text"
+                  id="jwtToken"
+                  class="form-control"
+                  placeholder="Paste JWT token here"
+                />
+              </div>
+              <button class="btn btn-test" id="verifyBtn">
+                ✅ Verify Token
+              </button>
+              <div id="verifyResult" class="result" style="display: none"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+      import {
+        getAuth,
+        signInWithPopup,
+        GoogleAuthProvider,
+        FacebookAuthProvider,
+        RecaptchaVerifier,
+        signInWithPhoneNumber,
+        signOut,
+      } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+
+      // Firebase configuration
+      const firebaseConfig = {
+        apiKey: "AIzaSyBXvCxL3cjAOUUucIR3J3RRkYelYWhq2rY",
+        authDomain: "csc13114-bus-booking-system.firebaseapp.com",
+        projectId: "csc13114-bus-booking-system",
+        storageBucket: "csc13114-bus-booking-system.appspot.com",
+        messagingSenderId: "502862867304",
+        appId: "1:502862867304:web:9e8f785cd2901fa09184dd",
+      };
+
+      // Initialize Firebase
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const googleProvider = new GoogleAuthProvider();
+      const facebookProvider = new FacebookAuthProvider();
+
+      // Global variables
+      let currentUser = null;
+      let currentIdToken = null;
+      let recaptchaVerifier = null;
+      let confirmationResult = null;
+
+      // DOM elements
+      const elements = {
+        loginGoogleBtn: document.getElementById("loginGoogleBtn"),
+        loginFacebookBtn: document.getElementById("loginFacebookBtn"),
+        phoneAuthBtn: document.getElementById("phoneAuthBtn"),
+        logoutBtn: document.getElementById("logoutBtn"),
+        phoneInputContainer: document.getElementById("phoneInputContainer"),
+        sendCodeBtn: document.getElementById("sendCodeBtn"),
+        verifyCodeBtn: document.getElementById("verifyCodeBtn"),
+        verificationContainer: document.getElementById("verificationContainer"),
+        tokenArea: document.getElementById("tokenArea"),
+        userInfo: document.getElementById("userInfo"),
+      };
+
+      // Initialize Recaptcha
+      function initRecaptcha() {
+        if (!recaptchaVerifier) {
+          recaptchaVerifier = new RecaptchaVerifier(
+            "recaptcha-container",
+            {
+              size: "normal",
+              callback: (response) => {
+                console.log("Recaptcha solved");
+              },
+            },
+            auth
+          );
+        }
+      }
+
+      // Authentication handlers
+      elements.loginGoogleBtn.onclick = () =>
+        handleSocialLogin(googleProvider, "Google");
+      elements.loginFacebookBtn.onclick = () =>
+        handleSocialLogin(facebookProvider, "Facebook");
+
+      elements.phoneAuthBtn.onclick = () => {
+        const container = elements.phoneInputContainer;
+        container.classList.toggle("active");
+        if (container.classList.contains("active")) {
+          initRecaptcha();
+        }
+      };
+
+      elements.sendCodeBtn.onclick = async () => {
+        const phoneNumber = document.getElementById("phoneNumber").value;
+        if (!phoneNumber) {
+          showResult("Phone number is required", "error");
+          return;
+        }
+
+        try {
+          showLoading(elements.sendCodeBtn, true);
+          confirmationResult = await signInWithPhoneNumber(
+            auth,
+            phoneNumber,
+            recaptchaVerifier
+          );
+          elements.verificationContainer.style.display = "block";
+          showResult("Verification code sent!", "success");
+        } catch (error) {
+          console.error("SMS not sent:", error);
+          showResult(`Error: ${error.message}`, "error");
+        } finally {
+          showLoading(elements.sendCodeBtn, false);
+        }
+      };
+
+      elements.verifyCodeBtn.onclick = async () => {
+        const code = document.getElementById("verificationCode").value;
+        if (!code || !confirmationResult) {
+          showResult("Verification code is required", "error");
+          return;
+        }
+
+        try {
+          showLoading(elements.verifyCodeBtn, true);
+          const result = await confirmationResult.confirm(code);
+          await handleAuthResult(result, "Phone");
+          elements.phoneInputContainer.classList.remove("active");
+        } catch (error) {
+          console.error("Code verification failed:", error);
+          showResult(`Error: ${error.message}`, "error");
+        } finally {
+          showLoading(elements.verifyCodeBtn, false);
+        }
+      };
+
+      elements.logoutBtn.onclick = async () => {
+        try {
+          await signOut(auth);
+          currentUser = null;
+          currentIdToken = null;
+          elements.tokenArea.value = "";
+          elements.userInfo.style.display = "none";
+          elements.phoneInputContainer.classList.remove("active");
+          showResult("User signed out successfully", "success");
+        } catch (error) {
+          showResult(`Logout error: ${error.message}`, "error");
+        }
+      };
+
+      async function handleSocialLogin(provider, providerName) {
+        try {
+          showLoading(elements.loginGoogleBtn, providerName === "Google");
+          showLoading(elements.loginFacebookBtn, providerName === "Facebook");
+
+          const result = await signInWithPopup(auth, provider);
+          await handleAuthResult(result, providerName);
+        } catch (error) {
+          console.error(`${providerName} login failed:`, error);
+          showResult(`${providerName} login failed: ${error.message}`, "error");
+        } finally {
+          showLoading(elements.loginGoogleBtn, false);
+          showLoading(elements.loginFacebookBtn, false);
+        }
+      }
+
+      async function handleAuthResult(result, provider) {
+        currentUser = result.user;
+        currentIdToken = await currentUser.getIdToken();
+
+        elements.tokenArea.value = currentIdToken;
+
+        const userInfoHtml = `
+                <div class="user-details">
+                    ${
+                      currentUser.photoURL
+                        ? `<img src="${currentUser.photoURL}" alt="Avatar" class="user-avatar">`
+                        : `<div class="user-avatar" style="background: #4f46e5; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">${
+                            currentUser.displayName
+                              ? currentUser.displayName[0]
+                              : "?"
+                          }</div>`
+                    }
+                    <div class="user-text">
+                        <h3>${currentUser.displayName || "Unknown User"}</h3>
+                        <p><strong>Email:</strong> ${
+                          currentUser.email || "N/A"
+                        }</p>
+                        <p><strong>Phone:</strong> ${
+                          currentUser.phoneNumber || "N/A"
+                        }</p>
+                        <p><strong>Provider:</strong> ${provider}</p>
+                        <p><strong>UID:</strong> ${currentUser.uid}</p>
+                        <p><strong>Email Verified:</strong> ${
+                          currentUser.emailVerified ? "✅" : "❌"
+                        }</p>
+                    </div>
+                </div>
+            `;
+
+        elements.userInfo.innerHTML = userInfoHtml;
+        elements.userInfo.style.display = "block";
+
+        console.log("User signed in:", currentUser);
+      }
+
+      function showLoading(button, isLoading) {
+        if (isLoading) {
+          button.disabled = true;
+          button.innerHTML = '<span class="loading"></span> Loading...';
+        } else {
+          button.disabled = false;
+          button.innerHTML =
+            button.dataset.originalText ||
+            button.innerHTML.replace(
+              '<span class="loading"></span> Loading...',
+              button.textContent
+            );
+        }
+      }
+
+      // API Testing Functions
+      const API_BASE = "http://localhost:8081/api/v1/auth";
+
+      // Test buttons
+      document.getElementById("signupBtn").onclick = () =>
+        testEndpoint("firebase/sign-up", "signupResult", {
+          id_token: currentIdToken,
+          full_name:
+            document.getElementById("signupFullName").value ||
+            currentUser?.displayName ||
+            "Test User",
+        });
+
+      document.getElementById("signinBtn").onclick = () =>
+        testEndpoint("firebase/sign-in", "signinResult", {
+          id_token: currentIdToken,
+        });
+
+      document.getElementById("authBtn").onclick = () =>
+        testEndpoint("firebase/auth", "authResult", {
+          id_token: currentIdToken,
+        });
+
+      document.getElementById("verifyBtn").onclick = () => {
+        const token = document.getElementById("jwtToken").value;
+        if (!token) {
+          showApiResult("verifyResult", "Please enter a JWT token", "error");
+          return;
+        }
+        testEndpoint("verify-token", "verifyResult", { token });
+      };
+
+      async function testEndpoint(endpoint, resultId, data) {
+        if (!currentIdToken && endpoint !== "verify-token") {
+          showApiResult(
+            resultId,
+            "Please sign in with Firebase first!",
+            "error"
+          );
+          return;
+        }
+
+        try {
+          const response = await fetch(`${API_BASE}/${endpoint}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+
+          const result = await response.json();
+          const status = response.ok ? "success" : "error";
+
+          const formattedResult = `Status: ${response.status} ${
+            response.statusText
+          }\n\n${JSON.stringify(result, null, 2)}`;
+          showApiResult(resultId, formattedResult, status);
+
+          // Auto-fill JWT token if received
+          if (response.ok && result.access_token) {
+            document.getElementById("jwtToken").value = result.access_token;
+          }
+        } catch (error) {
+          showApiResult(resultId, `Network Error: ${error.message}`, "error");
+        }
+      }
+
+      function showApiResult(elementId, content, className = "info") {
+        const element = document.getElementById(elementId);
+        element.textContent = content;
+        element.className = `result ${className}`;
+        element.style.display = "block";
+      }
+
+      function showResult(message, type) {
+        // You can implement a toast notification here
+        console.log(`${type.toUpperCase()}: ${message}`);
+      }
+
+      // Store original button text
+      document.querySelectorAll(".btn").forEach((btn) => {
+        btn.dataset.originalText = btn.innerHTML;
+      });
+    </script>
+  </body>
+</html>

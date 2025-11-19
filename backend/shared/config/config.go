@@ -48,8 +48,10 @@ type DatabaseConfig struct {
 type RedisConfig struct {
 	Host         string        `env:"HOST" envDefault:"localhost"`
 	Port         int           `env:"PORT" envDefault:"6379"`
+	Username     string        `env:"USERNAME" envDefault:""`
 	Password     string        `env:"PASSWORD" envDefault:""`
 	DB           int           `env:"DB" envDefault:"0"`
+	TLS          bool          `env:"TLS" envDefault:"false"`
 	PoolSize     int           `env:"POOL_SIZE" envDefault:"10"`
 	MinIdleConns int           `env:"MIN_IDLE_CONNS" envDefault:"2"`
 	MaxRetries   int           `env:"MAX_RETRIES" envDefault:"3"`
@@ -110,7 +112,7 @@ func IsProduction(environment string) bool {
 }
 
 func LoadConfig[T any](envFilePath ...string) (*T, error) {
-	envFile := ".env"
+	envFile := "./config/.env"
 	if len(envFilePath) > 0 && envFilePath[0] != "" {
 		envFile = envFilePath[0]
 	}

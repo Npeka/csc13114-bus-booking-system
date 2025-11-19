@@ -11,8 +11,16 @@ func RequestID() gin.HandlerFunc {
 	return requestid.New()
 }
 
-// Logger creates a structured logging middleware
+// Logger creates a colorful logging middleware for HTTP requests
 func Logger() gin.HandlerFunc {
+	return gin.LoggerWithConfig(gin.LoggerConfig{
+		Output:    gin.DefaultWriter,
+		SkipPaths: []string{"/health"}, // Skip health check logs to reduce noise
+	})
+}
+
+// StructuredLogger creates a structured logging middleware (alternative)
+func StructuredLogger() gin.HandlerFunc {
 	return gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
 		log.Info().
 			Str("client_ip", param.ClientIP).

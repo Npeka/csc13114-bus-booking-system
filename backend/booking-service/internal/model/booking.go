@@ -26,7 +26,7 @@ const (
 )
 
 type Booking struct {
-	ID                 uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ID                 uuid.UUID      `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
 	UserID             uuid.UUID      `gorm:"type:uuid;not null" json:"user_id" validate:"required"`
 	TripID             uuid.UUID      `gorm:"type:uuid;not null" json:"trip_id" validate:"required"`
 	PaymentMethodID    uuid.UUID      `gorm:"type:uuid;not null" json:"payment_method_id" validate:"required"`
