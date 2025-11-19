@@ -28,7 +28,6 @@ func NewFirebaseAuthMiddleware(
 	}
 }
 
-// FirebaseAuth middleware verifies Firebase ID tokens
 func (m *FirebaseAuthMiddleware) FirebaseAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if m.firebaseAuth == nil {
@@ -132,7 +131,6 @@ func (m *FirebaseAuthMiddleware) FirebaseAuth() gin.HandlerFunc {
 	}
 }
 
-// OptionalFirebaseAuth is similar to FirebaseAuth but doesn't abort if token is missing
 func (m *FirebaseAuthMiddleware) OptionalFirebaseAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if m.firebaseAuth == nil {
