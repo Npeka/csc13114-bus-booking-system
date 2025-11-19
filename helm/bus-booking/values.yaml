@@ -25,7 +25,7 @@ services:
   user-service:
     containerName: user-service
     image: npkhang22/bb-user-service
-    tag: user-service-f25225b
+    tag: user-service-7ce2ffb
     port: 8080
     env:
       DATABASE_NAME: "bus_booking_user"
