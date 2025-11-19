@@ -7,7 +7,7 @@ services:
     targetPort: 8080
     image:
       repository: npkhang22/bb-user-service
-      tag: user-service-248f889
+      tag: user-service-3ab4224
     env:
       SERVER_PORT: "8080"
       SERVICE_NAME: "user-service"
