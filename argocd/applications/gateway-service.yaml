@@ -11,7 +11,7 @@ spec:
 
   source:
     repoURL: https://github.com/Npeka/csc13114-bus-booking-system
-    targetRevision: gateway-service-2094887
+    targetRevision: gateway-service-f25225b
     path: helm/bus-booking
     helm:
       valueFiles:
