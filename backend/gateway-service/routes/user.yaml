@@ -1,22 +1,22 @@
 service: "user"
 routes:
-  # Public authentication routes
-  - path: "/api/v1/auth/signup"
+  - path: "/api/v1/auth/verify-token"
     methods: ["POST"]
 
-  - path: "/api/v1/auth/signin"
+  - path: "/api/v1/auth/firebase/auth"
     methods: ["POST"]
 
-  - path: "/api/v1/auth/oauth2/signin"
+  - path: "/api/v1/auth/refresh-token"
     methods: ["POST"]
+    auth:
+      required: true
 
-  - path: "/api/v1/auth/refresh"
+  - path: "/api/v1/auth/logout"
     methods: ["POST"]
+    auth:
+      required: true
 
-  - path: "/api/v1/auth/signout"
-    methods: ["POST"]
-
-  - path: "/api/v1/profile"
+  - path: "/api/v1/users/profile"
     methods: ["GET", "PUT"]
     auth:
       required: true
