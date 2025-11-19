@@ -24,6 +24,12 @@ func main() {
 		log.Fatalf("Failed to load routes: %v", err)
 	}
 
+	// Debug: Print loaded services configuration
+	log.Printf("Loaded services configuration:")
+	for serviceName, serviceConfig := range cfg.Services {
+		log.Printf("Service %s: URL=%s, Timeout=%d, Retries=%d", serviceName, serviceConfig.URL, serviceConfig.Timeout, serviceConfig.Retries)
+	}
+
 	// Debug: Print loaded routes
 	log.Printf("Loaded %d routes:", len(routes.Routes))
 	for i, route := range routes.Routes {
