@@ -30,66 +30,48 @@ interface TripCardProps {
 export function TripCard({ trip, onSelect }: TripCardProps) {
   return (
     <Card
-      className="card-hover cursor-pointer"
+      className="card-hover py-0! cursor-pointer"
       onClick={() => onSelect(trip.id)}
     >
-      <CardContent className="p-6">
-        <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
+      <CardContent className="p-3">
+        {/* Top Row: Operator Info + Price/Action */}
+        <div className="flex items-center justify-between gap-4 mb-2">
           {/* Operator Info */}
-          <div className="shrink-0">
-            <div className="flex items-center space-x-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-neutral-100">
-                <span className="text-xl">🚌</span>
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">{trip.operator}</h3>
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <Star className="mr-1 h-3 w-3 fill-warning text-warning" />
-                  <span>{trip.operatorRating.toFixed(1)}</span>
-                  <span className="mx-1">•</span>
-                  <span>{trip.busType}</span>
-                </div>
-              </div>
+          <div className="flex items-center space-x-3 min-w-0 flex-1">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-neutral-100 shrink-0">
+              <span className="text-lg">🚌</span>
             </div>
-          </div>
-
-          {/* Trip Time Details */}
-          <div className="flex flex-1 items-center justify-between md:justify-center md:space-x-8">
-            <div className="text-center">
-              <div className="text-2xl font-bold">{trip.departureTime}</div>
-              <div className="text-sm text-muted-foreground">{trip.origin}</div>
-            </div>
-
-            <div className="flex flex-col items-center px-4">
-              <Clock className="h-4 w-4 text-muted-foreground mb-1" />
-              <div className="text-xs text-muted-foreground">
-                {trip.duration}
-              </div>
-              <div className="w-20 border-t-2 border-dashed my-1"></div>
-            </div>
-
-            <div className="text-center">
-              <div className="text-2xl font-bold">{trip.arrivalTime}</div>
-              <div className="text-sm text-muted-foreground">
-                {trip.destination}
+            <div className="min-w-0 flex-1">
+              <h3
+                className="font-semibold text-base truncate"
+                title={trip.operator}
+              >
+                {trip.operator}
+              </h3>
+              <div className="flex items-center text-xs text-muted-foreground">
+                <Star className="mr-1 h-3 w-3 fill-warning text-warning shrink-0" />
+                <span>{trip.operatorRating.toFixed(1)}</span>
+                <span className="mx-1">•</span>
+                <span className="truncate">{trip.busType}</span>
               </div>
             </div>
           </div>
 
           {/* Price and Action */}
-          <div className="flex items-center justify-between md:flex-col md:items-end md:space-y-2 border-t pt-4 md:border-t-0 md:border-l md:pl-6 md:pt-0">
-            <div>
-              <div className="text-xs text-muted-foreground mb-1">Giá từ</div>
-              <div className="text-2xl font-bold text-brand-primary">
+          <div className="flex items-center gap-4 shrink-0">
+            <div className="text-right">
+              <div className="text-xs text-muted-foreground">Giá từ</div>
+              <div className="text-xl font-bold text-brand-primary">
                 {trip.price.toLocaleString()}đ
               </div>
-              <div className="flex items-center text-xs text-muted-foreground mt-1">
+              <div className="flex items-center justify-end text-xs text-muted-foreground">
                 <Users className="h-3 w-3 mr-1" />
-                <span>{trip.availableSeats} chỗ trống</span>
+                <span>{trip.availableSeats} chỗ</span>
               </div>
             </div>
             <Button
-              className="bg-brand-primary hover:bg-brand-primary-hover text-white h-10 md:w-full"
+              className="bg-brand-primary hover:bg-brand-primary-hover text-white"
+              size="sm"
               onClick={(e) => {
                 e.stopPropagation();
                 onSelect(trip.id);
@@ -100,9 +82,43 @@ export function TripCard({ trip, onSelect }: TripCardProps) {
           </div>
         </div>
 
+        {/* Bottom Row: Trip Time Details */}
+        <div className="flex items-center justify-between gap-6 py-2 px-2">
+          <div className="flex-1 text-center">
+            <div className="text-2xl font-bold text-brand-primary">
+              {trip.departureTime}
+            </div>
+            <div className="text-xs font-medium text-muted-foreground mt-1">
+              {trip.origin}
+            </div>
+          </div>
+
+          <div className="flex flex-col items-center justify-center px-5 py-1.5 bg-neutral-50 rounded-lg">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="h-2 w-2 rounded-full bg-brand-primary"></div>
+              <div className="w-12 h-0.5 bg-linear-to-r from-brand-primary to-brand-primary-hover"></div>
+              <Clock className="h-4 w-4 text-brand-primary" />
+              <div className="w-12 h-0.5 bg-linear-to-r from-brand-primary-hover to-brand-primary"></div>
+              <div className="h-2 w-2 rounded-full bg-brand-primary"></div>
+            </div>
+            <div className="text-xs font-semibold text-brand-primary whitespace-nowrap">
+              {trip.duration}
+            </div>
+          </div>
+
+          <div className="flex-1 text-center">
+            <div className="text-2xl font-bold text-brand-primary">
+              {trip.arrivalTime}
+            </div>
+            <div className="text-xs font-medium text-muted-foreground mt-1">
+              {trip.destination}
+            </div>
+          </div>
+        </div>
+
         {/* Amenities */}
         {trip.amenities.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-2 border-t pt-4">
+          <div className="mt-2 flex flex-wrap gap-2 pt-2">
             {trip.amenities.map((amenity, index) => (
               <Badge key={index} variant="secondary" className="text-xs">
                 {amenity}
@@ -118,24 +134,30 @@ export function TripCard({ trip, onSelect }: TripCardProps) {
 export function TripCardSkeleton() {
   return (
     <Card>
-      <CardContent className="p-6">
-        <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
-          <div className="flex items-center space-x-3">
-            <Skeleton className="h-12 w-12 rounded-lg" />
-            <div className="space-y-2">
-              <Skeleton className="h-5 w-32" />
-              <Skeleton className="h-4 w-24" />
+      <CardContent className="p-3">
+        {/* Top Row */}
+        <div className="flex items-center justify-between gap-4 mb-2">
+          <div className="flex items-center space-x-3 flex-1">
+            <Skeleton className="h-10 w-10 rounded-lg shrink-0" />
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-24" />
             </div>
           </div>
-          <div className="flex flex-1 items-center justify-between md:justify-center md:space-x-8">
-            <Skeleton className="h-10 w-16" />
-            <Skeleton className="h-10 w-20" />
-            <Skeleton className="h-10 w-16" />
+          <div className="flex items-center gap-4 shrink-0">
+            <div className="space-y-2">
+              <Skeleton className="h-3 w-12 ml-auto" />
+              <Skeleton className="h-5 w-20" />
+              <Skeleton className="h-3 w-16 ml-auto" />
+            </div>
+            <Skeleton className="h-9 w-20" />
           </div>
-          <div className="flex items-center justify-between md:flex-col md:items-end">
-            <Skeleton className="h-8 w-24" />
-            <Skeleton className="h-10 w-24 md:w-full" />
-          </div>
+        </div>
+        {/* Bottom Row */}
+        <div className="flex items-center justify-between gap-6 py-2 px-2">
+          <Skeleton className="h-12 w-16 mx-auto" />
+          <Skeleton className="h-10 w-32 rounded-lg" />
+          <Skeleton className="h-12 w-16 mx-auto" />
         </div>
       </CardContent>
     </Card>

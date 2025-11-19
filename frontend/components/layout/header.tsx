@@ -237,7 +237,7 @@ export function Header() {
             </DropdownMenu>
           ) : (
             <Button
-              className="hidden md:inline-flex bg-brand-primary text-white hover:bg-brand-primary-hover"
+              className="hidden md:inline-flex mr-0! bg-brand-primary text-white hover:bg-brand-primary-hover"
               onClick={() => setIsLoginOpen(true)}
             >
               Đăng nhập
