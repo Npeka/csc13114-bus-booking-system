@@ -167,14 +167,12 @@ jobs:
           git checkout infra
 
           # Update Helm values with new image tag for specific service
-          if [ -f "helm/bus-booking/values.yaml" ]; then
-            # Update image tag in values.yaml for the specific service
-            sed -i "s|bb-${SERVICE_NAME}:.*|bb-${SERVICE_NAME}:${SERVICE_TAG}|g" helm/bus-booking/values.yaml
-            
-            # Or update in service-specific values if exists
-            if [ -f "helm/bus-booking/values/${SERVICE_NAME}.yaml" ]; then
-              sed -i "s|tag:.*|tag: ${SERVICE_TAG}|g" helm/bus-booking/values/${SERVICE_NAME}.yaml
-            fi
+          if [ -f "helm/bus-booking/values/${SERVICE_NAME}.yaml" ]; then
+            # Update image tag in service-specific values file
+            sed -i "s|tag: .*|tag: ${SERVICE_TAG}|g" helm/bus-booking/values/${SERVICE_NAME}.yaml
+            echo "✅ Updated helm/bus-booking/values/${SERVICE_NAME}.yaml with tag: ${SERVICE_TAG}"
+          else
+            echo "⚠️  Service values file not found: helm/bus-booking/values/${SERVICE_NAME}.yaml"
           fi
 
           # Update ArgoCD application manifest - use service-specific tag
