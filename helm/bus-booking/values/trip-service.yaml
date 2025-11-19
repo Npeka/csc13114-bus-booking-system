@@ -7,7 +7,7 @@ services:
     targetPort: 8081
     image:
       repository: npkhang22/bb-trip-service
-      tag: trip-service-b905274
+      tag: trip-service-ae25357
     env:
       SERVER_PORT: "8081"
       SERVICE_NAME: "trip-service"
