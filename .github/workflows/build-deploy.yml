@@ -166,22 +166,13 @@ jobs:
           git fetch origin infra
           git checkout infra
 
-          # Update Helm values with new image tag for specific service
-          if [ -f "helm/bus-booking/values/${SERVICE_NAME}.yaml" ]; then
-            # Update image tag in service-specific values file
-            sed -i "s|tag: .*|tag: ${SERVICE_TAG}|g" helm/bus-booking/values/${SERVICE_NAME}.yaml
-            echo "✅ Updated helm/bus-booking/values/${SERVICE_NAME}.yaml with tag: ${SERVICE_TAG}"
+          # Update Helm values.yaml with new image tag for specific service
+          if [ -f "helm/bus-booking/values.yaml" ]; then
+            # Update image tag in main values.yaml file using service-specific path
+            sed -i "/^  ${SERVICE_NAME}:/,/^  [a-zA-Z]/ s|tag: .*|tag: ${SERVICE_TAG}|" helm/bus-booking/values.yaml
+            echo "✅ Updated helm/bus-booking/values.yaml with ${SERVICE_NAME} tag: ${SERVICE_TAG}"
           else
-            echo "⚠️  Service values file not found: helm/bus-booking/values/${SERVICE_NAME}.yaml"
-          fi
-
-          # # Update ArgoCD application manifest - use service-specific tag
-          # if [ -f "argocd/application.yaml" ]; then
-          #   sed -i "s|targetRevision:.*|targetRevision: ${SERVICE_TAG}|g" argocd/application.yaml
-          # fi
-
-          if [ -f "argocd/applications/${SERVICE_NAME}.yaml" ]; then
-            sed -i "s|targetRevision:.*|targetRevision: ${SERVICE_TAG}|g" argocd/applications/${SERVICE_NAME}.yaml
+            echo "⚠️  Main values file not found: helm/bus-booking/values.yaml"
           fi
 
           # Commit and push changes
