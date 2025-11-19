@@ -98,7 +98,7 @@ env:
   RATE_LIMIT_CLEANUP_AFTER: 10m
 
   # CORS
-  CORS_ALLOWED_ORIGINS: "https://bus-booking.site"
+  CORS_ALLOWED_ORIGINS: "*"
   CORS_ALLOWED_METHODS: "GET,POST,PUT,DELETE,OPTIONS"
   CORS_ALLOWED_HEADERS: "Origin,Content-Type,Accept,Authorization,X-Requested-With"
   CORS_ALLOW_CREDENTIALS: "true"
