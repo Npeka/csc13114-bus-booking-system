@@ -177,13 +177,13 @@ jobs:
             fi
           fi
 
-          # Update ArgoCD application manifest - use main branch with short SHA
+          # Update ArgoCD application manifest - use service-specific tag
           if [ -f "argocd/application.yaml" ]; then
-            sed -i "s|targetRevision:.*|targetRevision: main-${SHORT_SHA}|g" argocd/application.yaml
+            sed -i "s|targetRevision:.*|targetRevision: ${SERVICE_TAG}|g" argocd/application.yaml
           fi
 
           if [ -f "argocd/applications/${SERVICE_NAME}.yaml" ]; then
-            sed -i "s|targetRevision:.*|targetRevision: main-${SHORT_SHA}|g" argocd/applications/${SERVICE_NAME}.yaml
+            sed -i "s|targetRevision:.*|targetRevision: ${SERVICE_TAG}|g" argocd/applications/${SERVICE_NAME}.yaml
           fi
 
           # Commit and push changes
