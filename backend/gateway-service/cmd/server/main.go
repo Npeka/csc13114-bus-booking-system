@@ -24,6 +24,12 @@ func main() {
 		log.Fatalf("Failed to load routes: %v", err)
 	}
 
+	// Debug: Print loaded routes
+	log.Printf("Loaded %d routes:", len(routes.Routes))
+	for i, route := range routes.Routes {
+		log.Printf("Route %d: %s %v -> %s", i+1, route.Path, route.Methods, route.Service)
+	}
+
 	// Create gateway
 	gateway := proxy.NewGateway(cfg, routes)
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -42,11 +43,25 @@ func (g *Gateway) SetupRoutes(router *gin.Engine) {
 	})
 
 	// Setup proxy routes
-	for _, route := range g.routes.Routes {
-		g.setupRoute(router, route)
-	}
+	log.Printf("Total routes to setup: %d", len(g.routes.Routes))
+	for i, route := range g.routes.Routes {
+		log.Printf("Route %d: Setting up route: %s %v -> service: %s", i+1, route.Path, route.Methods, route.Service)
 
-	// Catch-all route for unmatched paths
+		// Validate route path before setting up
+		if err := g.validateRoutePath(route.Path); err != nil {
+			log.Printf("Skipping invalid route %s: %v", route.Path, err)
+			continue
+		}
+
+		// Add extra safety check
+		if strings.HasSuffix(route.Path, "/*") {
+			log.Printf("ERROR: Route %s ends with /* which is invalid for Gin router", route.Path)
+			continue
+		}
+
+		g.setupRoute(router, route)
+		log.Printf("Successfully registered route %d: %s", i+1, route.Path)
+	} // Catch-all route for unmatched paths
 	router.NoRoute(func(c *gin.Context) {
 		c.JSON(404, gin.H{
 			"error":   "route not found",
@@ -61,7 +76,10 @@ func (g *Gateway) setupRoute(router *gin.Engine, route config.Route) {
 	handler := g.createProxyHandler(route)
 
 	for _, method := range route.Methods {
-		switch strings.ToUpper(method) {
+		methodUpper := strings.ToUpper(method)
+		log.Printf("Registering %s %s", methodUpper, route.Path)
+
+		switch methodUpper {
 		case "GET":
 			router.GET(route.Path, handler)
 		case "POST":
@@ -286,4 +304,29 @@ func (g *Gateway) getScheme(c *gin.Context) string {
 		return scheme
 	}
 	return "http"
+}
+
+// validateRoutePath validates that the route path is properly formatted for Gin router
+func (g *Gateway) validateRoutePath(path string) error {
+	// Check for unnamed wildcards
+	if strings.Contains(path, "/*") {
+		// Find all occurrences of /*
+		for i := 0; i < len(path)-1; i++ {
+			if path[i] == '/' && path[i+1] == '*' {
+				// Check if there's a name after the *
+				if i+2 >= len(path) {
+					return fmt.Errorf("wildcard must be named (use /*filepath instead of /*)")
+				}
+				// If the next character is not alphanumeric, it's an unnamed wildcard
+				if i+2 < len(path) && !isAlphaNumeric(path[i+2]) && path[i+2] != '_' {
+					return fmt.Errorf("wildcard must be named (use /*filepath instead of /*)")
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func isAlphaNumeric(c byte) bool {
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
 }

@@ -23,7 +23,7 @@ type JWTConfig struct {
 }
 
 type FirebaseConfig struct {
-	ServiceAccountKeyPath string `env:"SERVICE_ACCOUNT_KEY_PATH" envDefault:"config/csc13114-bus-booking-system-firebase-adminsdk-fbsvc.json"`
+	ServiceAccountKeyPath string `env:"SERVICE_ACCOUNT_KEY_PATH" envDefault:"config/fbsvc.json"`
 	ProjectID             string `env:"PROJECT_ID" envDefault:"csc13114-bus-booking-system"`
 }
 
