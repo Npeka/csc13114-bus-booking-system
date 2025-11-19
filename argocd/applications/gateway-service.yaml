@@ -1,0 +1,44 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gateway-service
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: gateway-service
+    app.kubernetes.io/part-of: bus-booking-system
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/Npeka/csc13114-bus-booking-system
+    targetRevision: gateway-service-2c309ad
+    path: helm/bus-booking
+    helm:
+      valueFiles:
+        - values.yaml
+        - values/gateway-service.yaml
+      parameters:
+        - name: image.username
+          value: npkhang22
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: bus-booking
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  revisionHistoryLimit: 10

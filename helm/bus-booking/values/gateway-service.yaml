@@ -1,0 +1,28 @@
+# Gateway Service Specific Configuration
+services:
+  gatewayService:
+    enabled: true
+    name: gateway-service
+    port: 8000
+    targetPort: 8000
+    image:
+      repository: npkhang22/bb-gateway-service
+      tag: gateway-service-2c309ad
+    env:
+      SERVER_PORT: "8000"
+      SERVICE_NAME: "gateway-service"
+    resources:
+      limits:
+        cpu: 200m
+        memory: 128Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+
+  # Disable other services for this deployment
+  userService:
+    enabled: false
+  tripService:
+    enabled: false
+  bookingService:
+    enabled: false
