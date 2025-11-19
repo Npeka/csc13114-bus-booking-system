@@ -1,0 +1,64 @@
+namespace: bus-booking
+
+services:
+  user-service:
+    containerName: user-service
+    image: npkhang22/bb-user-service
+    tag: user-service-3ab4224
+    port: 8080
+    ingress:
+      enabled: true
+      host: bus-booking.site
+      path: "/api/v1/user"
+      annotations:
+        nginx.ingress.kubernetes.io/rewrite-target: /$2
+        nginx.ingress.kubernetes.io/use-regex: "true"
+        
+  gateway-service:
+    containerName: gateway-service
+    image: npkhang22/bb-gateway-service
+    tag: gateway-service-c5d0e57
+    port: 8000
+    ingress:
+      enabled: true
+      host: bus-booking.site
+      path: "/"
+      annotations:
+        nginx.ingress.kubernetes.io/rewrite-target: /$2
+        nginx.ingress.kubernetes.io/use-regex: "true"
+        
+  trip-service:
+    containerName: trip-service
+    image: npkhang22/bb-trip-service
+    tag: trip-service-2c309ad
+    port: 8081
+    ingress:
+      enabled: true
+      host: bus-booking.site
+      path: "/api/v1/trips"
+      annotations:
+        nginx.ingress.kubernetes.io/rewrite-target: /$2
+        nginx.ingress.kubernetes.io/use-regex: "true"
+        
+  booking-service:
+    containerName: booking-service
+    image: npkhang22/bb-booking-service
+    tag: booking-service-248f889
+    port: 8082
+    ingress:
+      enabled: true
+      host: bus-booking.site
+      path: "/api/v1/bookings"
+      annotations:
+        nginx.ingress.kubernetes.io/rewrite-target: /$2
+        nginx.ingress.kubernetes.io/use-regex: "true"
+
+# Environment Variables (if needed)
+env:
+  POSTGRES_HOST: "private-bus-booking-database-do-user-29228381-0.d.db.ondigitalocean.com"
+  POSTGRES_PORT: "25060"
+  POSTGRES_USER: "bus_booking"
+  POSTGRES_PASSWORD: "AVNS_xWZ9Nk2UEBYiI_mGXov"
+  REDIS_HOST: "singapore-keyvalue.render.com"
+  REDIS_PORT: "6379"
+  REDIS_PASSWORD: "MJm32AjPDJoT1sMS9ug2BwzxOU7aayCZ"

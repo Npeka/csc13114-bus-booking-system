@@ -1,0 +1,34 @@
+{{- range $name, $config := .Values.services }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $config.containerName }}
+  namespace: {{ $.Values.namespace }}
+  labels:
+    app: {{ $config.containerName }}
+    {{- include "bus-booking.labels" $ | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $config.containerName }}
+  template:
+    metadata:
+      labels:
+        app: {{ $config.containerName }}
+    spec:
+      containers:
+        - name: {{ $config.containerName }}
+          image: {{ $config.image }}:{{ $config.tag }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: {{ $config.port }}
+          {{- if $.Values.env }}
+          env:
+            {{- range $key, $value := $.Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- end }}
+{{- end }}
