@@ -81,7 +81,6 @@ env:
   LOG_MAX_AGE: 30
   LOG_COMPRESS: true
 
-  SERVER_PORT: "8080"
   SERVER_HOST: "0.0.0.0"
   SERVER_READ_TIMEOUT: "10s"
   SERVER_WRITE_TIMEOUT: "10s"
@@ -106,7 +105,6 @@ env:
   # Database
   DATABASE_HOST: bus-booking-database-do-user-29228381-0.d.db.ondigitalocean.com
   DATABASE_PORT: 25060
-  DATABASE_NAME: bus_booking_user
   DATABASE_USERNAME: doadmin
   DATABASE_PASSWORD: AVNS_k8dv8ULBQ3Sjwie2_Xe
   DATABASE_SSL_MODE: require
@@ -126,7 +124,6 @@ env:
   REDIS_PORT: 6379
   REDIS_USERNAME: red-d4ebsr7pm1nc738oor50
   REDIS_PASSWORD: MJm32AjPDJoT1sMS9ug2BwzxOU7aayCZ
-  REDIS_DB: 0
   REDIS_TLS: true
   REDIS_POOL_SIZE: 5
   REDIS_MIN_IDLE_CONNS: 1
