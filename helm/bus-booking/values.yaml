@@ -186,3 +186,10 @@ serviceAccount:
 nameOverride: ""
 fullnameOverride: ""
 podAnnotations: {}
+
+# Disable subchart dependencies - we use external services
+postgresql:
+  enabled: false
+
+redis:
+  enabled: false
