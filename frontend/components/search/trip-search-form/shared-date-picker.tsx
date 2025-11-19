@@ -72,22 +72,49 @@ export function SharedDatePicker({
 
   if (!isOpen) return null;
 
-  // Use modifiers to show the range visually
+  const normalizeDeparture = departureDate
+    ? new Date(
+        departureDate.getFullYear(),
+        departureDate.getMonth(),
+        departureDate.getDate(),
+      )
+    : undefined;
+  const normalizeReturn = returnDate
+    ? new Date(
+        returnDate.getFullYear(),
+        returnDate.getMonth(),
+        returnDate.getDate(),
+      )
+    : undefined;
+
+  const startDate =
+    normalizeDeparture && normalizeReturn
+      ? normalizeDeparture <= normalizeReturn
+        ? normalizeDeparture
+        : normalizeReturn
+      : normalizeDeparture;
+  const endDate =
+    normalizeDeparture && normalizeReturn
+      ? normalizeDeparture <= normalizeReturn
+        ? normalizeReturn
+        : normalizeDeparture
+      : normalizeReturn;
+
   const modifiers = {
-    range_start: departureDate ? [departureDate] : [],
-    range_end: returnDate ? [returnDate] : [],
+    range_start: startDate ? [startDate] : [],
+    range_end: endDate ? [endDate] : [],
     range_middle:
-      departureDate && returnDate
+      startDate && endDate
         ? Array.from(
             {
               length:
                 Math.floor(
-                  (returnDate.getTime() - departureDate.getTime()) /
+                  (endDate.getTime() - startDate.getTime()) /
                     (1000 * 60 * 60 * 24),
                 ) - 1,
             },
             (_, i) => {
-              const date = new Date(departureDate);
+              const date = new Date(startDate);
               date.setDate(date.getDate() + i + 1);
               return date;
             },
@@ -98,25 +125,18 @@ export function SharedDatePicker({
   const handleSelect = (date: Date | undefined) => {
     if (!date) return;
 
-    // Update based on active field
     if (activeField === "departure") {
-      // Directly set the departure date to the clicked date
       onDepartureDateChange(date);
 
-      // If return date exists and the new departure is after it, clear return date
       if (returnDate && date > returnDate) {
         onReturnDateChange(undefined);
       }
     } else if (activeField === "return") {
-      // Directly set the return date to the clicked date
       onReturnDateChange(date);
 
-      // If no departure date exists yet, set it to the selected date
       if (!departureDate) {
         onDepartureDateChange(date);
-      }
-      // If departure date exists and the new return is before it, swap them
-      else if (date < departureDate) {
+      } else if (date < departureDate) {
         onDepartureDateChange(date);
         onReturnDateChange(departureDate);
       }
