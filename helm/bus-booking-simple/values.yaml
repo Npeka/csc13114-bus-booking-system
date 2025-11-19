@@ -1,23 +1,6 @@
 namespace: bus-booking
 
 services:
-  user-service:
-    containerName: user-service
-    image: npkhang22/bb-user-service
-    tag: user-service-3ab4224
-    port: 8080
-    env:
-      DATABASE_NAME: "bus_booking_user"
-      SERVER_PORT: "8080"
-      REDIS_DB: "0"
-    ingress:
-      enabled: true
-      host: bus-booking.site
-      path: "/api/v1/user"
-      annotations:
-        nginx.ingress.kubernetes.io/rewrite-target: /$2
-        nginx.ingress.kubernetes.io/use-regex: "true"
-
   gateway-service:
     containerName: gateway-service
     image: npkhang22/bb-gateway-service
@@ -34,6 +17,23 @@ services:
         nginx.ingress.kubernetes.io/rewrite-target: /$2
         nginx.ingress.kubernetes.io/use-regex: "true"
 
+  user-service:
+    containerName: user-service
+    image: npkhang22/bb-user-service
+    tag: user-service-3ab4224
+    port: 8080
+    env:
+      DATABASE_NAME: "bus_booking_user"
+      SERVER_PORT: "8080"
+      REDIS_DB: "0"
+    ingress:
+      enabled: true
+      host: bus-booking.site
+      path: "/user"
+      annotations:
+        nginx.ingress.kubernetes.io/rewrite-target: /$2
+        nginx.ingress.kubernetes.io/use-regex: "true"
+
   trip-service:
     containerName: trip-service
     image: npkhang22/bb-trip-service
@@ -46,7 +46,7 @@ services:
     ingress:
       enabled: true
       host: bus-booking.site
-      path: "/api/v1/trips"
+      path: "/trip"
       annotations:
         nginx.ingress.kubernetes.io/rewrite-target: /$2
         nginx.ingress.kubernetes.io/use-regex: "true"
@@ -63,7 +63,7 @@ services:
     ingress:
       enabled: true
       host: bus-booking.site
-      path: "/api/v1/bookings"
+      path: "/booking"
       annotations:
         nginx.ingress.kubernetes.io/rewrite-target: /$2
         nginx.ingress.kubernetes.io/use-regex: "true"
@@ -114,11 +114,6 @@ env:
   DATABASE_CONN_MAX_LIFETIME: 300s
   DATABASE_CONN_MAX_IDLE_TIME: 60s
 
-  DATABASE_NAME_USER: "bus_booking_user"
-  DATABASE_NAME_TRIP: "bus_booking_trip"
-  DATABASE_NAME_BOOKING: "bus_booking_booking"
-  DATABASE_NAME_PAYMENT: "bus_booking_payment"
-
   # Redis
   REDIS_HOST: singapore-keyvalue.render.com
   REDIS_PORT: 6379
@@ -147,5 +142,5 @@ env:
   EXTERNAL_RETRY_ATTEMPTS: 3
 
   # Firebase Configuration
-  FIREBASE_SERVICE_ACCOUNT_KEY_PATH: config/fbsvc.json
+  FIREBASE_SERVICE_ACCOUNT_KEY_PATH: ./config/fbsvc.json
   FIREBASE_USE_SERVICE_ACCOUNT_FILE: true
