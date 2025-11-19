@@ -26,7 +26,7 @@ func main() {
 
 	// Debug: Print loaded services configuration
 	log.Printf("Loaded services configuration:")
-	for serviceName, serviceConfig := range cfg.Services {
+	for serviceName, serviceConfig := range cfg.ServicesMap {
 		log.Printf("Service %s: URL=%s, Timeout=%d, Retries=%d", serviceName, serviceConfig.URL, serviceConfig.Timeout, serviceConfig.Retries)
 	}
 

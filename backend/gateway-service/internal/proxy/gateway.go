@@ -131,6 +131,7 @@ func (g *Gateway) createProxyHandler(route config.Route) gin.HandlerFunc {
 
 		// Get service configuration (case-insensitive lookup)
 		serviceConfig, exists := g.getServiceConfig(route.Service)
+		log.Printf("Service config for %s: %+v", route.Service, serviceConfig)
 		if !exists {
 			c.JSON(500, gin.H{
 				"error":   "service not configured",
@@ -344,12 +345,12 @@ func isAlphaNumeric(c byte) bool {
 // getServiceConfig performs case-insensitive lookup for service configuration
 func (g *Gateway) getServiceConfig(serviceName string) (config.ServiceConfig, bool) {
 	// Try exact match first
-	if serviceConfig, exists := g.config.Services[serviceName]; exists {
+	if serviceConfig, exists := g.config.ServicesMap[serviceName]; exists {
 		return serviceConfig, true
 	}
 
 	// Try case-insensitive match
-	for configKey, serviceConfig := range g.config.Services {
+	for configKey, serviceConfig := range g.config.ServicesMap {
 		if strings.EqualFold(configKey, serviceName) {
 			return serviceConfig, true
 		}

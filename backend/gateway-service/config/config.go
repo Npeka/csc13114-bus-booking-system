@@ -13,8 +13,16 @@ import (
 
 type Config struct {
 	*sharedConfig.BaseConfig
-	Services map[string]ServiceConfig `envPrefix:"SERVICES_"`
-	Auth     AuthConfig               `envPrefix:"AUTH_"`
+	Services    ServicesConfig `envPrefix:"SERVICES_"`
+	Auth        AuthConfig     `envPrefix:"AUTH_"`
+	ServicesMap map[string]ServiceConfig
+}
+
+type ServicesConfig struct {
+	User    ServiceConfig `envPrefix:"USER_"`
+	Trip    ServiceConfig `envPrefix:"TRIP_"`
+	Booking ServiceConfig `envPrefix:"BOOKING_"`
+	Payment ServiceConfig `envPrefix:"PAYMENT_"`
 }
 
 type ServiceConfig struct {
@@ -24,7 +32,7 @@ type ServiceConfig struct {
 }
 
 type AuthConfig struct {
-	UserServiceURL string `env:"USER_SERVICE_URL" envDefault:"http://localhost:8081"`
+	UserServiceURL string `env:"USER_SERVICE_URL" envDefault:"http://localhost:8080"`
 	VerifyEndpoint string `env:"VERIFY_ENDPOINT" envDefault:"/api/v1/auth/verify-token"`
 	Timeout        int    `env:"TIMEOUT" envDefault:"5"`
 }
@@ -54,6 +62,15 @@ type RewriteRule struct {
 	To   string `yaml:"to"`
 }
 
+func (c *Config) BuildServiceMap() map[string]ServiceConfig {
+	return map[string]ServiceConfig{
+		"user":    c.Services.User,
+		"trip":    c.Services.Trip,
+		"booking": c.Services.Booking,
+		"payment": c.Services.Payment,
+	}
+}
+
 // LoadConfig loads configuration from environment variables and file
 func LoadConfig(configPath string) (*Config, error) {
 	// Load config using shared pattern
@@ -61,6 +78,9 @@ func LoadConfig(configPath string) (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to load config: %w", err)
 	}
+
+	// Build services map for easy lookup
+	config.ServicesMap = config.BuildServiceMap()
 
 	// Load routes from YAML (only routes, not config)
 	if configPath != "" {
@@ -89,8 +109,8 @@ func loadRoutes(config *Config, configPath string) error {
 	}
 
 	// Use YAML services if env config is empty
-	if len(config.Services) == 0 && len(yamlConfig.Services) > 0 {
-		config.Services = yamlConfig.Services
+	if len(config.ServicesMap) == 0 && len(yamlConfig.Services) > 0 {
+		config.ServicesMap = yamlConfig.Services
 	}
 
 	return nil
