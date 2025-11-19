@@ -1,6 +1,9 @@
 # Bus Booking System - Production Configuration
 # Domain: bus-booking.site | Memory: 128MB per service | Replicas: 1
 
+# Namespace
+namespace: bus-booking
+
 # Basic Configuration
 replicaCount: 1
 
@@ -43,10 +46,10 @@ image:
   # Service-specific image tags
   tags:
     userService: "user-service-248f889"
-    tripService: "trip-service-248f889"
+    tripService: "trip-service-2c309ad"
     bookingService: "booking-service-248f889"
     paymentService: "payment-service-248f889"
-    gatewayService: "gateway-service-248f889"
+    gatewayService: "gateway-service-c5d0e57"
 
 # External Database Configuration (UPDATE THESE)
 externalDatabase:
@@ -152,12 +155,6 @@ services:
     enabled: true
     port: 8082
     targetPort: 8082
-    type: ClusterIP
-
-  paymentService:
-    enabled: true
-    port: 8084
-    targetPort: 8084
     type: ClusterIP
 
   gatewayService:

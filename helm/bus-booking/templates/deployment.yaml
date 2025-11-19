@@ -5,6 +5,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "bus-booking.fullname" $ }}-{{ $serviceName | replace "Service" "" | kebabcase }}
+  namespace: {{ $.Values.namespace | default "default" }}
   labels:
     {{- include "bus-booking.labels" $ | nindent 4 }}
     app.kubernetes.io/component: {{ $serviceName | replace "Service" "" | kebabcase }}

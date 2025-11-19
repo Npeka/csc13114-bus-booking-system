@@ -2,9 +2,10 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "bus-booking.fullname" . }}-ingress
+  name: {{ include "bus-booking.fullname" $ }}-ingress
+  namespace: {{ $.Values.namespace | default "default" }}
   labels:
-    {{- include "bus-booking.labels" . | nindent 4 }}
+    {{- include "bus-booking.labels" $ | nindent 4 }}
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
