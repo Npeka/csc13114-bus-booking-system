@@ -2,9 +2,8 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: bus-booking-ingress
-  namespace: {{ .Values.namespace }}
-  labels:
-    {{- include "bus-booking.labels" . | nindent 4 }}
+  namespace: { { .Values.namespace } }
+  labels: { { - include "bus-booking.labels" . | nindent 4 } }
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
@@ -18,7 +17,6 @@ spec:
     - host: bus-booking.site
       http:
         paths:
-          # Gateway service (main API)
           - path: /
             pathType: Prefix
             backend:
@@ -26,27 +24,3 @@ spec:
                 name: gateway-service
                 port:
                   number: 8000
-          # User service
-          - path: /api/v1/user
-            pathType: Prefix
-            backend:
-              service:
-                name: user-service
-                port:
-                  number: 8080
-          # Trip service  
-          - path: /api/v1/trips
-            pathType: Prefix
-            backend:
-              service:
-                name: trip-service
-                port:
-                  number: 8081
-          # Booking service
-          - path: /api/v1/bookings
-            pathType: Prefix
-            backend:
-              service:
-                name: booking-service
-                port:
-                  number: 8082

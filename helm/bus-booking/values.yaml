@@ -9,13 +9,14 @@ services:
     env:
       SERVER_PORT: "8000"
       REDIS_DB: "4"
+      USER_SERVICE_URL: "http://user-service"
+      TRIP_SERVICE_URL: "http://trip-service"
+      BOOKING_SERVICE_URL: "http://booking-service"
+      VERIFY_ENDPOINT: "/api/v1/auth/verify-token"
     ingress:
       enabled: true
       host: bus-booking.site
       path: "/"
-      annotations:
-        nginx.ingress.kubernetes.io/rewrite-target: /$2
-        nginx.ingress.kubernetes.io/use-regex: "true"
 
   user-service:
     containerName: user-service
@@ -27,12 +28,7 @@ services:
       SERVER_PORT: "8080"
       REDIS_DB: "0"
     ingress:
-      enabled: true
-      host: bus-booking.site
-      path: "/user"
-      annotations:
-        nginx.ingress.kubernetes.io/rewrite-target: /$2
-        nginx.ingress.kubernetes.io/use-regex: "true"
+      enabled: false # Traffic goes through gateway now
 
   trip-service:
     containerName: trip-service
@@ -44,12 +40,7 @@ services:
       SERVER_PORT: "8081"
       REDIS_DB: "1"
     ingress:
-      enabled: true
-      host: bus-booking.site
-      path: "/trip"
-      annotations:
-        nginx.ingress.kubernetes.io/rewrite-target: /$2
-        nginx.ingress.kubernetes.io/use-regex: "true"
+      enabled: false # Traffic goes through gateway now
 
   booking-service:
     containerName: booking-service
@@ -61,12 +52,7 @@ services:
       SERVER_PORT: "8082"
       REDIS_DB: "2"
     ingress:
-      enabled: true
-      host: bus-booking.site
-      path: "/booking"
-      annotations:
-        nginx.ingress.kubernetes.io/rewrite-target: /$2
-        nginx.ingress.kubernetes.io/use-regex: "true"
+      enabled: false # Traffic goes through gateway now
 
 # Environment Variables
 env:
@@ -136,8 +122,8 @@ env:
   JWT_AUDIENCE: bus-booking-users
 
   # Logging Configuration
-  EXTERNAL_PAYMENT_SERVICE_URL: https://api.payment-service.com
-  EXTERNAL_NOTIFICATION_URL: https://api.notification-service.com
+  EXTERNAL_PAYMENT_SERVICE_URL: https://payment-service
+  EXTERNAL_NOTIFICATION_URL: https://notification-service
   EXTERNAL_TIMEOUT: 30s
   EXTERNAL_RETRY_ATTEMPTS: 3
 
