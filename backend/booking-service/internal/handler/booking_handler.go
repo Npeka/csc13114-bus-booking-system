@@ -13,12 +13,10 @@ import (
 	"bus-booking/booking-service/internal/service"
 )
 
-// BookingHandler handles HTTP requests for booking operations
 type BookingHandler struct {
 	bookingService service.BookingService
 }
 
-// NewBookingHandler creates a new booking handler
 func NewBookingHandler(bookingService service.BookingService) *BookingHandler {
 	return &BookingHandler{
 		bookingService: bookingService,

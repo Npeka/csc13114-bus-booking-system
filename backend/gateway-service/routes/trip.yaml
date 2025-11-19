@@ -1,43 +1,61 @@
 service: "trip"
 routes:
+  # Public routes
   - path: "/api/v1/trips/search"
     methods: ["GET", "POST"]
 
-  - path: "/api/v1/trips/:id"
-    methods: ["GET"]
-
-  - path: "/api/v1/routes"
-    methods: ["GET"]
-
-  - path: "/api/v1/routes/:id"
-    methods: ["GET"]
-
   - path: "/api/v1/trips"
-    methods: ["POST", "PUT", "DELETE"]
-    auth:
-      required: true
-      roles: ["admin", "operator"]
+    methods: ["GET"]
 
   - path: "/api/v1/trips/:id"
-    methods: ["PUT", "DELETE"]
-    auth:
-      required: true
-      roles: ["admin", "operator"]
+    methods: ["GET"]
 
   - path: "/api/v1/routes"
+    methods: ["GET"]
+
+  - path: "/api/v1/routes/:id"
+    methods: ["GET"]
+
+  # Authenticated routes for operators/admins
+  - path: "/api/v1/trips/manage"
     methods: ["POST", "PUT", "DELETE"]
     auth:
       required: true
       roles: ["admin", "operator"]
 
-  - path: "/api/v1/routes/:id"
+  - path: "/api/v1/trips/:id/manage"
     methods: ["PUT", "DELETE"]
     auth:
       required: true
       roles: ["admin", "operator"]
 
-  - path: "/api/v1/admin/trips/*action"
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
+  - path: "/api/v1/routes/manage"
+    methods: ["POST", "PUT", "DELETE"]
+    auth:
+      required: true
+      roles: ["admin", "operator"]
+
+  - path: "/api/v1/routes/:id/manage"
+    methods: ["PUT", "DELETE"]
+    auth:
+      required: true
+      roles: ["admin", "operator"]
+
+  # Admin-only routes
+  - path: "/api/v1/admin/trips"
+    methods: ["GET", "POST"]
+    auth:
+      required: true
+      roles: ["admin"]
+
+  - path: "/api/v1/admin/trips/:id"
+    methods: ["GET", "PUT", "DELETE", "PATCH"]
+    auth:
+      required: true
+      roles: ["admin"]
+
+  - path: "/api/v1/admin/trips/:id/status"
+    methods: ["PATCH"]
     auth:
       required: true
       roles: ["admin"]
