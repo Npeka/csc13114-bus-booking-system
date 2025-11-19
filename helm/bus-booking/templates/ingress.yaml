@@ -29,13 +29,26 @@ spec:
       http:
         paths:
           {{- range .paths }}
+          {{- $serviceName := .service }}
+          {{- $camelCaseService := "" }}
+          {{- if eq $serviceName "gateway-service" }}
+            {{- $camelCaseService = "gatewayService" }}
+          {{- else if eq $serviceName "user-service" }}
+            {{- $camelCaseService = "userService" }}
+          {{- else if eq $serviceName "trip-service" }}
+            {{- $camelCaseService = "tripService" }}
+          {{- else if eq $serviceName "booking-service" }}
+            {{- $camelCaseService = "bookingService" }}
+          {{- else if eq $serviceName "payment-service" }}
+            {{- $camelCaseService = "paymentService" }}
+          {{- end }}
           - path: {{ .path }}
             pathType: {{ .pathType }}
             backend:
               service:
                 name: {{ include "bus-booking.fullname" $ }}-{{ .service }}
                 port:
-                  number: {{ index $.Values.services (printf "%sService" (.service | replace "-" "" | title | untitle)) "port" }}
+                  number: {{ index $.Values.services $camelCaseService "port" }}
           {{- end }}
     {{- end }}
 {{- end }}
