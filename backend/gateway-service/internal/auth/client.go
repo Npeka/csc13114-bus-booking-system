@@ -70,7 +70,6 @@ func (c *Client) VerifyToken(ctx context.Context, token string) (*UserContext, e
 
 	req.Header.Set("Content-Type", "application/json")
 
-	// Make request
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to verify token: %w", err)
