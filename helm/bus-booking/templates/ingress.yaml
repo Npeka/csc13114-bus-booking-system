@@ -1,55 +1,52 @@
-{{- if .Values.ingress.enabled -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "bus-booking.fullname" $ }}-ingress
-  namespace: {{ $.Values.namespace | default "default" }}
+  name: bus-booking-ingress
+  namespace: {{ .Values.namespace }}
   labels:
-    {{- include "bus-booking.labels" $ | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
+    {{- include "bus-booking.labels" . | nindent 4 }}
   annotations:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
-  {{- if .Values.ingress.className }}
-  ingressClassName: {{ .Values.ingress.className }}
-  {{- end }}
-  {{- if .Values.ingress.tls }}
+  ingressClassName: nginx
   tls:
-    {{- range .Values.ingress.tls }}
-    - hosts:
-        {{- range .hosts }}
-        - {{ . | quote }}
-        {{- end }}
-      secretName: {{ .secretName }}
-    {{- end }}
-  {{- end }}
+    - secretName: bus-booking-tls
+      hosts:
+        - bus-booking.site
   rules:
-    {{- range .Values.ingress.hosts }}
-    - host: {{ .host | quote }}
+    - host: bus-booking.site
       http:
         paths:
-          {{- range .paths }}
-          {{- $serviceName := .service }}
-          {{- $camelCaseService := "" }}
-          {{- if eq $serviceName "gateway-service" }}
-            {{- $camelCaseService = "gatewayService" }}
-          {{- else if eq $serviceName "user-service" }}
-            {{- $camelCaseService = "userService" }}
-          {{- else if eq $serviceName "trip-service" }}
-            {{- $camelCaseService = "tripService" }}
-          {{- else if eq $serviceName "booking-service" }}
-            {{- $camelCaseService = "bookingService" }}
-          {{- else if eq $serviceName "payment-service" }}
-            {{- $camelCaseService = "paymentService" }}
-          {{- end }}
-          - path: {{ .path }}
-            pathType: {{ .pathType }}
+          # Gateway service (main API)
+          - path: /
+            pathType: Prefix
             backend:
               service:
-                name: {{ include "bus-booking.fullname" $ }}-{{ .service }}
+                name: gateway-service
                 port:
-                  number: {{ index $.Values.services $camelCaseService "port" }}
-          {{- end }}
-    {{- end }}
-{{- end }}
+                  number: 8000
+          # User service
+          - path: /api/v1/user
+            pathType: Prefix
+            backend:
+              service:
+                name: user-service
+                port:
+                  number: 8080
+          # Trip service  
+          - path: /api/v1/trips
+            pathType: Prefix
+            backend:
+              service:
+                name: trip-service
+                port:
+                  number: 8081
+          # Booking service
+          - path: /api/v1/bookings
+            pathType: Prefix
+            backend:
+              service:
+                name: booking-service
+                port:
+                  number: 8082

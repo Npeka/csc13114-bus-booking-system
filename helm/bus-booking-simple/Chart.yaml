@@ -1,6 +1,0 @@
-apiVersion: v2
-name: bus-booking-system
-description: Helm chart for Bus Booking System
-type: application
-version: 0.1.0
-appVersion: "1.0.0"
