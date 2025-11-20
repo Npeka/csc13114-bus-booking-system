@@ -74,31 +74,37 @@ func (m *FirebaseAuthMiddleware) FirebaseAuth() gin.HandlerFunc {
 
 		// If user doesn't exist, create a new one based on Firebase token
 		if user == nil {
-			email, ok := token.Claims["email"].(string)
-			if !ok || email == "" {
-				log.Error().Str("firebase_uid", token.UID).Msg("No email in Firebase token")
-				c.JSON(400, gin.H{"error": "Email is required"})
-				c.Abort()
-				return
-			}
-
+			// Extract user information from Firebase token
+			email, _ := token.Claims["email"].(string)
+			phone, _ := token.Claims["phone_number"].(string)
 			name, _ := token.Claims["name"].(string)
-			if name == "" {
-				name = email
-			}
-
 			picture, _ := token.Claims["picture"].(string)
 			emailVerified, _ := token.Claims["email_verified"].(bool)
 
+			// Generate full name - email first, then phone, then firebase_uid prefix
+			if name == "" {
+				if email != "" {
+					name = strings.Split(email, "@")[0]
+				} else if phone != "" {
+					name = phone
+				} else {
+					name = token.UID[:12]
+				}
+			}
+
+			// Phone-only users are verified by phone number
+			phoneVerified := phone != ""
+
 			user = &model.User{
-				Email:         email,
+				Email:         email, // Can be empty for phone-only users
+				Phone:         phone,
 				FullName:      name,
 				Avatar:        picture,
 				Role:          constants.RolePassenger,
 				Status:        "verified",
 				FirebaseUID:   token.UID,
 				EmailVerified: emailVerified,
-				PhoneVerified: false,
+				PhoneVerified: phoneVerified,
 			}
 
 			if err := m.userRepo.Create(context.Background(), user); err != nil {

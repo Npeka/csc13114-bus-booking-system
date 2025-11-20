@@ -93,36 +93,61 @@ func (s *AuthServiceImpl) FirebaseAuth(ctx context.Context, req *model.FirebaseA
 		return nil, ginext.NewUnauthorizedError("Invalid Firebase token")
 	}
 
+	// Check if user already exists by Firebase UID
 	user, err := s.userRepo.GetByFirebaseUID(ctx, token.UID)
-	if err == nil {
+	if err == nil && user != nil {
+		// User exists, return auth response
 		if user.Status != "active" && user.Status != "verified" {
 			return nil, ginext.NewForbiddenError("Account is not active")
 		}
 		return s.generateAuthResponse(user)
 	}
 
+	// Extract claims from Firebase token
 	email := ""
 	phone := ""
 	fullName := ""
 	avatar := ""
 
 	if emailClaim, exists := token.Claims["email"]; exists && emailClaim != nil {
-		email = emailClaim.(string)
+		email, _ = emailClaim.(string)
 	}
 	if phoneClaim, exists := token.Claims["phone_number"]; exists && phoneClaim != nil {
-		phone = phoneClaim.(string)
+		phone, _ = phoneClaim.(string)
 	}
 	if nameClaim, exists := token.Claims["name"]; exists && nameClaim != nil {
-		fullName = nameClaim.(string)
+		fullName, _ = nameClaim.(string)
 	}
 	if pictureClaim, exists := token.Claims["picture"]; exists && pictureClaim != nil {
-		avatar = pictureClaim.(string)
+		avatar, _ = pictureClaim.(string)
 	}
 
+	// Generate full name from email if not provided
 	if fullName == "" && email != "" {
 		fullName = strings.Split(email, "@")[0]
 	}
+	// Fallback to phone number for full name
+	if fullName == "" && phone != "" {
+		fullName = phone
+	}
+	// If still empty, use firebase UID as fallback
+	if fullName == "" {
+		fullName = token.UID[:12]
+	}
 
+	// Check email verification status
+	emailVerified := false
+	if emailVerifyClaim, exists := token.Claims["email_verified"]; exists && emailVerifyClaim != nil {
+		emailVerified, _ = emailVerifyClaim.(bool)
+	}
+
+	// Check phone verification status
+	phoneVerified := false
+	if phone != "" {
+		phoneVerified = true
+	}
+
+	// Create new user
 	user = &model.User{
 		Email:         email,
 		Phone:         phone,
@@ -131,12 +156,8 @@ func (s *AuthServiceImpl) FirebaseAuth(ctx context.Context, req *model.FirebaseA
 		Role:          constants.RolePassenger,
 		Status:        "verified",
 		FirebaseUID:   token.UID,
-		EmailVerified: false,
-		PhoneVerified: false,
-	}
-
-	if emailVerified, exists := token.Claims["email_verified"]; exists && emailVerified != nil {
-		user.EmailVerified = emailVerified.(bool)
+		EmailVerified: emailVerified,
+		PhoneVerified: phoneVerified,
 	}
 
 	if err := s.userRepo.Create(ctx, user); err != nil {
