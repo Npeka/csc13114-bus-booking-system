@@ -49,7 +49,7 @@ services:
   trip-service:
     containerName: trip-service
     image: npkhang22/bb-trip-service
-    tag: trip-service-75adbbc
+    tag: trip-service-7b9a883
     port: 8081
     env:
       DATABASE_NAME: "bus_booking_trip"
