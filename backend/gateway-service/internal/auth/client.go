@@ -22,7 +22,6 @@ type VerifyTokenRequest struct {
 }
 
 type VerifyTokenResponse struct {
-	Valid  bool               `json:"valid"`
 	UserID string             `json:"user_id,omitempty"`
 	Email  string             `json:"email,omitempty"`
 	Role   constants.UserRole `json:"role,omitempty"`
@@ -47,17 +46,17 @@ func NewClient(config *config.AuthConfig) *Client {
 }
 
 // VerifyToken calls user-service to verify JWT token
-func (c *Client) VerifyToken(ctx context.Context, token string) (*UserContext, error) {
+func (c *Client) VerifyToken(ctx context.Context, accessToken string) (*UserContext, error) {
 	// Clean token (remove Bearer prefix if present)
-	token = strings.TrimPrefix(token, "Bearer ")
-	token = strings.TrimSpace(token)
+	accessToken = strings.TrimPrefix(accessToken, "Bearer ")
+	accessToken = strings.TrimSpace(accessToken)
 
-	if token == "" {
+	if accessToken == "" {
 		return nil, fmt.Errorf("empty token")
 	}
 
 	// Prepare request
-	reqBody := VerifyTokenRequest{AccessToken: token}
+	reqBody := VerifyTokenRequest{AccessToken: accessToken}
 	jsonData, err := json.Marshal(reqBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
@@ -80,7 +79,7 @@ func (c *Client) VerifyToken(ctx context.Context, token string) (*UserContext, e
 
 	// Check status code
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("token verification failed with status: %d", resp.StatusCode)
+		return nil, fmt.Errorf("unauthorized")
 	}
 
 	// Parse response
@@ -89,15 +88,12 @@ func (c *Client) VerifyToken(ctx context.Context, token string) (*UserContext, e
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	if !verifyResp.Valid {
-		return nil, fmt.Errorf("invalid token")
-	}
-
 	return &UserContext{
-		UserID: verifyResp.UserID,
-		Email:  verifyResp.Email,
-		Role:   verifyResp.Role,
-		Name:   verifyResp.Name,
+		UserID:      verifyResp.UserID,
+		Email:       verifyResp.Email,
+		Role:        verifyResp.Role,
+		Name:        verifyResp.Name,
+		AccessToken: accessToken,
 	}, nil
 }
 

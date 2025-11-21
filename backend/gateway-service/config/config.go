@@ -34,7 +34,7 @@ type ServiceConfig struct {
 type AuthConfig struct {
 	UserServiceURL string `env:"USER_SERVICE_URL" envDefault:"http://localhost:8080"`
 	VerifyEndpoint string `env:"VERIFY_ENDPOINT" envDefault:"/api/v1/auth/verify-token"`
-	Timeout        int    `env:"TIMEOUT" envDefault:"5"`
+	Timeout        int    `env:"TIMEOUT" envDefault:"60"`
 }
 
 type RouteConfig struct {

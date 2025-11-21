@@ -19,9 +19,9 @@ import (
 )
 
 type AuthService interface {
+	VerifyToken(ctx context.Context, token string) (*model.TokenVerifyResponse, error)
 	FirebaseAuth(ctx context.Context, req *model.FirebaseAuthRequest) (*model.AuthResponse, error)
 	RefreshToken(ctx context.Context, req *model.RefreshTokenRequest, userID uuid.UUID) (*model.AuthResponse, error)
-	VerifyToken(ctx context.Context, token string) (*model.TokenVerifyResponse, error)
 	Logout(ctx context.Context, req model.SignoutRequest, userID uuid.UUID) error
 }
 
@@ -49,14 +49,14 @@ func NewAuthService(
 	}
 }
 
-func (s *AuthServiceImpl) VerifyToken(ctx context.Context, token string) (*model.TokenVerifyResponse, error) {
-	claims, err := s.jwtManager.ValidateAccessToken(token)
+func (s *AuthServiceImpl) VerifyToken(ctx context.Context, accessToken string) (*model.TokenVerifyResponse, error) {
+	claims, err := s.jwtManager.ValidateAccessToken(accessToken)
 	if err != nil {
 		return nil, ginext.NewUnauthorizedError("invalid access token")
 	}
 
 	// Check blacklist - đơn giản không cần handle error phức tạp
-	if s.tokenBlacklistMgr.IsTokenBlacklisted(ctx, token) {
+	if s.tokenBlacklistMgr.IsTokenBlacklisted(ctx, accessToken) {
 		return nil, ginext.NewUnauthorizedError("token is blacklisted")
 	}
 
