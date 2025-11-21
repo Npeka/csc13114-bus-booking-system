@@ -61,7 +61,7 @@ services:
   booking-service:
     containerName: booking-service
     image: npkhang22/bb-booking-service
-    tag: booking-service-2094887
+    tag: booking-service-75adbbc
     port: 8082
     env:
       DATABASE_NAME: "bus_booking_booking"
