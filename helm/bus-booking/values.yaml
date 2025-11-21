@@ -100,7 +100,7 @@ env:
   # CORS
   CORS_ALLOWED_ORIGINS: "https://csc13114-bus-booking-system.vercel.app,http://localhost:3000"
   CORS_ALLOWED_METHODS: "GET,POST,PUT,PATCH,DELETE,OPTIONS"
-  CORS_ALLOWED_HEADERS: "Origin,Content-Type,Accept,Authorization,X-Requested-With"
+  CORS_ALLOWED_HEADERS: "Origin,Content-Type,Accept,Authorization,X-Requested-With,X-User-ID,X-User-Role,X-Access-Token"
   CORS_ALLOW_CREDENTIALS: "true"
   CORS_MAX_AGE: "86400"
 
