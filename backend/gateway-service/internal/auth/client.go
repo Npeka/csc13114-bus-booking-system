@@ -18,7 +18,7 @@ type Client struct {
 }
 
 type VerifyTokenRequest struct {
-	Token string `json:"token"`
+	AccessToken string `json:"access_token"`
 }
 
 type VerifyTokenResponse struct {
@@ -57,7 +57,7 @@ func (c *Client) VerifyToken(ctx context.Context, token string) (*UserContext, e
 	}
 
 	// Prepare request
-	reqBody := VerifyTokenRequest{Token: token}
+	reqBody := VerifyTokenRequest{AccessToken: token}
 	jsonData, err := json.Marshal(reqBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
