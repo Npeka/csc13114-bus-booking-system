@@ -12,7 +12,7 @@ function BookingConfirmationContent() {
   const searchParams = useSearchParams();
   const bookingId = searchParams.get("bookingId");
 
-  // Mock booking data
+  // Mock booking data 
   const booking = {
     id: bookingId || "BK123456",
     status: "confirmed",
