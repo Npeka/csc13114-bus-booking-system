@@ -83,16 +83,19 @@ func (c *Client) VerifyToken(ctx context.Context, accessToken string) (*UserCont
 	}
 
 	// Parse response
-	var verifyResp VerifyTokenResponse
+	type responseBody struct {
+		Data VerifyTokenResponse `json:"data"`
+	}
+	var verifyResp responseBody
 	if err := json.NewDecoder(resp.Body).Decode(&verifyResp); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
 	return &UserContext{
-		UserID:      verifyResp.UserID,
-		Email:       verifyResp.Email,
-		Role:        verifyResp.Role,
-		Name:        verifyResp.Name,
+		UserID:      verifyResp.Data.UserID,
+		Email:       verifyResp.Data.Email,
+		Role:        verifyResp.Data.Role,
+		Name:        verifyResp.Data.Name,
 		AccessToken: accessToken,
 	}, nil
 }
