@@ -59,7 +59,7 @@ export function SeatMap({
       return "bg-neutral-300 cursor-not-allowed";
     }
     if (selectedSeats.includes(seat.id)) {
-      return "bg-brand-primary text-white";
+      return "bg-primary text-white";
     }
 
     switch (seat.type) {
@@ -89,7 +89,7 @@ export function SeatMap({
           <span>Ghế VIP</span>
         </div>
         <div className="flex items-center space-x-2">
-          <div className="h-8 w-8 rounded border-2 bg-brand-primary" />
+          <div className="h-8 w-8 rounded border-2 border-success bg-primary" />
           <span>Đã chọn</span>
         </div>
         <div className="flex items-center space-x-2">
@@ -177,7 +177,7 @@ export function SeatSelectionSummary({
                 className="flex items-center justify-between rounded-lg border p-3"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded bg-brand-primary text-sm font-bold text-white">
+                  <div className="flex h-8 w-8 items-center justify-center rounded bg-primary text-sm font-bold text-white">
                     {seat.label}
                   </div>
                   <div>
@@ -214,12 +214,12 @@ export function SeatSelectionSummary({
             <div className="my-4 border-t" />
             <div className="flex items-center justify-between">
               <span className="font-semibold">Tổng cộng:</span>
-              <span className="text-2xl font-bold text-brand-primary">
+              <span className="text-2xl font-bold text-primary">
                 {totalPrice.toLocaleString()}đ
               </span>
             </div>
             <Button
-              className="mt-4 w-full bg-brand-primary hover:bg-brand-primary-hover text-white"
+              className="mt-4 w-full bg-primary hover:bg-primary/90 text-white"
               size="lg"
               onClick={onProceed}
             >

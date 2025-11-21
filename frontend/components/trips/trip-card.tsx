@@ -30,26 +30,26 @@ interface TripCardProps {
 export function TripCard({ trip, onSelect }: TripCardProps) {
   return (
     <Card
-      className="card-hover py-0! cursor-pointer"
+      className="card-hover cursor-pointer py-0!"
       onClick={() => onSelect(trip.id)}
     >
-      <CardContent className="p-3">
+      <CardContent className="p-4">
         {/* Top Row: Operator Info + Price/Action */}
-        <div className="flex items-center justify-between gap-4 mb-2">
+        <div className="mb-2 flex items-center justify-between gap-4">
           {/* Operator Info */}
-          <div className="flex items-center space-x-3 min-w-0 flex-1">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-neutral-100 shrink-0">
+          <div className="flex min-w-0 flex-1 items-center space-x-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-secondary">
               <span className="text-lg">🚌</span>
             </div>
             <div className="min-w-0 flex-1">
               <h3
-                className="font-semibold text-base truncate"
+                className="truncate text-base font-semibold"
                 title={trip.operator}
               >
                 {trip.operator}
               </h3>
               <div className="flex items-center text-xs text-muted-foreground">
-                <Star className="mr-1 h-3 w-3 fill-warning text-warning shrink-0" />
+                <Star className="fill-warning text-warning mr-1 h-3 w-3 shrink-0" />
                 <span>{trip.operatorRating.toFixed(1)}</span>
                 <span className="mx-1">•</span>
                 <span className="truncate">{trip.busType}</span>
@@ -58,19 +58,19 @@ export function TripCard({ trip, onSelect }: TripCardProps) {
           </div>
 
           {/* Price and Action */}
-          <div className="flex items-center gap-4 shrink-0">
+          <div className="flex shrink-0 items-center gap-4">
             <div className="text-right">
               <div className="text-xs text-muted-foreground">Giá từ</div>
-              <div className="text-xl font-bold text-brand-primary">
+              <div className="text-xl font-bold text-primary">
                 {trip.price.toLocaleString()}đ
               </div>
               <div className="flex items-center justify-end text-xs text-muted-foreground">
-                <Users className="h-3 w-3 mr-1" />
+                <Users className="mr-1 h-3 w-3" />
                 <span>{trip.availableSeats} chỗ</span>
               </div>
             </div>
             <Button
-              className="bg-brand-primary hover:bg-brand-primary-hover text-white"
+              className="bg-primary text-white hover:bg-primary/90"
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
@@ -83,34 +83,34 @@ export function TripCard({ trip, onSelect }: TripCardProps) {
         </div>
 
         {/* Bottom Row: Trip Time Details */}
-        <div className="flex items-center justify-between gap-6 py-2 px-2">
+        <div className="flex items-center justify-between gap-6 px-2 py-2">
           <div className="flex-1 text-center">
-            <div className="text-2xl font-bold text-brand-primary">
+            <div className="text-2xl font-bold text-primary">
               {trip.departureTime}
             </div>
-            <div className="text-xs font-medium text-muted-foreground mt-1">
+            <div className="mt-1 text-xs font-medium text-muted-foreground">
               {trip.origin}
             </div>
           </div>
 
-          <div className="flex flex-col items-center justify-center px-5 py-1.5 bg-neutral-50 rounded-lg">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="h-2 w-2 rounded-full bg-brand-primary"></div>
-              <div className="w-12 h-0.5 bg-linear-to-r from-brand-primary to-brand-primary-hover"></div>
-              <Clock className="h-4 w-4 text-brand-primary" />
-              <div className="w-12 h-0.5 bg-linear-to-r from-brand-primary-hover to-brand-primary"></div>
-              <div className="h-2 w-2 rounded-full bg-brand-primary"></div>
+          <div className="flex flex-col items-center justify-center px-5 py-1.5">
+            <div className="mb-1 flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-primary"></div>
+              <div className="h-0.5 w-12 bg-linear-to-r from-primary to-primary/70"></div>
+              <Clock className="h-4 w-4 text-primary" />
+              <div className="h-0.5 w-12 bg-linear-to-r from-primary/70 to-primary"></div>
+              <div className="h-2 w-2 rounded-full bg-primary"></div>
             </div>
-            <div className="text-xs font-semibold text-brand-primary whitespace-nowrap">
+            <div className="text-xs font-semibold whitespace-nowrap text-primary">
               {trip.duration}
             </div>
           </div>
 
           <div className="flex-1 text-center">
-            <div className="text-2xl font-bold text-brand-primary">
+            <div className="text-2xl font-bold text-primary">
               {trip.arrivalTime}
             </div>
-            <div className="text-xs font-medium text-muted-foreground mt-1">
+            <div className="mt-1 text-xs font-medium text-muted-foreground">
               {trip.destination}
             </div>
           </div>
@@ -136,28 +136,28 @@ export function TripCardSkeleton() {
     <Card>
       <CardContent className="p-3">
         {/* Top Row */}
-        <div className="flex items-center justify-between gap-4 mb-2">
-          <div className="flex items-center space-x-3 flex-1">
-            <Skeleton className="h-10 w-10 rounded-lg shrink-0" />
-            <div className="space-y-2 flex-1">
+        <div className="mb-2 flex items-center justify-between gap-4">
+          <div className="flex flex-1 items-center space-x-3">
+            <Skeleton className="h-10 w-10 shrink-0 rounded-lg" />
+            <div className="flex-1 space-y-2">
               <Skeleton className="h-4 w-32" />
               <Skeleton className="h-3 w-24" />
             </div>
           </div>
-          <div className="flex items-center gap-4 shrink-0">
+          <div className="flex shrink-0 items-center gap-4">
             <div className="space-y-2">
-              <Skeleton className="h-3 w-12 ml-auto" />
+              <Skeleton className="ml-auto h-3 w-12" />
               <Skeleton className="h-5 w-20" />
-              <Skeleton className="h-3 w-16 ml-auto" />
+              <Skeleton className="ml-auto h-3 w-16" />
             </div>
             <Skeleton className="h-9 w-20" />
           </div>
         </div>
         {/* Bottom Row */}
-        <div className="flex items-center justify-between gap-6 py-2 px-2">
-          <Skeleton className="h-12 w-16 mx-auto" />
+        <div className="flex items-center justify-between gap-6 px-2 py-2">
+          <Skeleton className="mx-auto h-12 w-16" />
           <Skeleton className="h-10 w-32 rounded-lg" />
-          <Skeleton className="h-12 w-16 mx-auto" />
+          <Skeleton className="mx-auto h-12 w-16" />
         </div>
       </CardContent>
     </Card>

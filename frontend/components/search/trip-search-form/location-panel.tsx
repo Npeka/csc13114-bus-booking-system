@@ -3,6 +3,7 @@
 import { RefObject } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 export type LocationPanelProps = {
   searchInputRef: RefObject<HTMLInputElement | null>;
@@ -22,9 +23,9 @@ export function LocationPanel({
   recentLocations,
 }: LocationPanelProps) {
   return (
-    <div
+    <Card
       data-location-panel
-      className="absolute left-1/2 top-0 z-40 w-[min(28rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-4 rounded-2xl border bg-white p-4 shadow-elevated animate-in fade-in-0 zoom-in-95"
+      className="shadow-elevated absolute top-0 left-1/2 z-40 w-[min(28rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-4 animate-in rounded-2xl border p-4 fade-in-0 zoom-in-95"
       style={{ transformOrigin: "top" }}
     >
       <div className="space-y-5">
@@ -79,6 +80,6 @@ export function LocationPanel({
           </div>
         )}
       </div>
-    </div>
+    </Card>
   );
 }

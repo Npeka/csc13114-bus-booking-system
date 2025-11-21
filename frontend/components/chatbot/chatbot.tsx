@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, X, Send, Bot, User } from "lucide-react";
+import { MessageCircle, X, Send, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Message {
@@ -84,7 +84,7 @@ export function ChatBot() {
       {!isOpen && (
         <Button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-brand-primary hover:bg-brand-primary-hover text-white shadow-elevated z-50"
+          className="shadow-elevated fixed right-6 bottom-6 z-50 h-14 w-14 rounded-full"
           size="icon"
         >
           <MessageCircle className="h-6 w-6" />
@@ -94,18 +94,18 @@ export function ChatBot() {
 
       {/* Chat Window */}
       {isOpen && (
-        <Card className="fixed bottom-6 right-6 z-50 w-96 max-w-[calc(100vw-3rem)] py-0! shadow-elevated">
+        <Card className="shadow-elevated fixed right-6 bottom-6 z-50 w-96 max-w-[calc(100vw-3rem)] py-0!">
           {/* Header */}
-          <div className="flex items-center justify-between border-b bg-brand-primary p-4 rounded-t-lg">
+          <div className="flex items-center justify-between rounded-t-lg border-b p-4">
             <div className="flex items-center space-x-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white">
-                <Bot className="h-6 w-6 text-brand-primary" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-full">
+                <Bot className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <p className="font-semibold text-white">Trợ lý ảo</p>
+                <p className="font-semibold">Trợ lý ảo</p>
                 <div className="flex items-center space-x-1">
-                  <div className="h-2 w-2 rounded-full bg-success animate-pulse" />
-                  <span className="text-xs text-white/90">Đang online</span>
+                  <div className="bg-success h-2 w-2 animate-pulse rounded-full" />
+                  <span className="text-xs">Đang online</span>
                 </div>
               </div>
             </div>
@@ -113,14 +113,14 @@ export function ChatBot() {
               variant="ghost"
               size="icon"
               onClick={() => setIsOpen(false)}
-              className="text-white hover:bg-white/20 h-8 w-8"
+              className="h-8 w-8"
             >
               <X className="h-5 w-5" />
             </Button>
           </div>
 
           {/* Messages */}
-          <div className="h-96 overflow-y-auto p-4 space-y-4 bg-neutral-50">
+          <div className="h-96 space-y-4 overflow-y-auto p-4">
             {messages.map((message) => (
               <div key={message.id}>
                 <div
@@ -137,27 +137,22 @@ export function ChatBot() {
                         : "",
                     )}
                   >
-                    <div
-                      className={cn(
-                        "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
-                        message.role === "user"
-                          ? "bg-brand-primary"
-                          : "bg-white border",
-                      )}
-                    >
-                      {message.role === "user" ? (
-                        <User className="h-4 w-4 text-white" />
-                      ) : (
-                        <Bot className="h-4 w-4 text-brand-primary" />
-                      )}
-                    </div>
+                    {message.role !== "user" && (
+                      <div
+                        className={cn(
+                          "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border",
+                        )}
+                      >
+                        <Bot className="h-4 w-4 text-primary" />
+                      </div>
+                    )}
                     <div>
                       <div
                         className={cn(
                           "rounded-lg p-3",
                           message.role === "user"
-                            ? "bg-brand-primary text-white"
-                            : "bg-white border",
+                            ? "rounded-br-xs bg-primary"
+                            : "border",
                         )}
                       >
                         <p className="text-sm">{message.content}</p>
@@ -179,7 +174,7 @@ export function ChatBot() {
                       <Badge
                         key={index}
                         variant="secondary"
-                        className="cursor-pointer hover:bg-brand-primary hover:text-white transition-colors"
+                        className="cursor-pointer transition-colors hover:bg-primary hover:text-white"
                         onClick={() => handleSuggestionClick(suggestion)}
                       >
                         {suggestion}
@@ -193,18 +188,18 @@ export function ChatBot() {
             {isTyping && (
               <div className="flex justify-start">
                 <div className="flex space-x-2">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white border">
-                    <Bot className="h-4 w-4 text-brand-primary" />
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border">
+                    <Bot className="h-4 w-4 text-primary" />
                   </div>
-                  <div className="rounded-lg bg-white border p-3">
+                  <div className="rounded-lg border p-3">
                     <div className="flex space-x-1">
-                      <div className="h-2 w-2 rounded-full bg-neutral-400 animate-bounce" />
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-neutral-400" />
                       <div
-                        className="h-2 w-2 rounded-full bg-neutral-400 animate-bounce"
+                        className="h-2 w-2 animate-bounce rounded-full bg-neutral-400"
                         style={{ animationDelay: "0.2s" }}
                       />
                       <div
-                        className="h-2 w-2 rounded-full bg-neutral-400 animate-bounce"
+                        className="h-2 w-2 animate-bounce rounded-full bg-neutral-400"
                         style={{ animationDelay: "0.4s" }}
                       />
                     </div>
@@ -217,7 +212,7 @@ export function ChatBot() {
           </div>
 
           {/* Input */}
-          <div className="border-t p-4 bg-white rounded-b-lg">
+          <div className="rounded-b-lg border-t p-4">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -235,7 +230,7 @@ export function ChatBot() {
               <Button
                 type="submit"
                 size="icon"
-                className="bg-brand-primary hover:bg-brand-primary-hover text-white"
+                className="bg-primary text-white hover:bg-primary/90"
                 disabled={!inputValue.trim() || isTyping}
               >
                 <Send className="h-4 w-4" />

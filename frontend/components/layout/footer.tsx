@@ -3,13 +3,13 @@ import { Facebook, Mail, Phone, MapPin } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="border-t bg-neutral-900 text-neutral-300">
+    <footer className="border-t">
       <div className="container py-12">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
           {/* Company Info */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-primary">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -25,8 +25,8 @@ export function Footer() {
                   <path d="M16 6v6" />
                 </svg>
               </div>
-              <span className="text-lg font-bold text-white">
-                BusTicket<span className="text-brand-primary">.vn</span>
+              <span className="text-lg font-bold">
+                BusTicket<span className="text-primary">.vn</span>
               </span>
             </div>
             <p className="text-sm text-neutral-400">
@@ -38,7 +38,7 @@ export function Footer() {
                 href="https://facebook.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-neutral-400 hover:text-brand-primary transition-colors"
+                className="text-neutral-400 transition-colors hover:text-primary"
               >
                 <Facebook className="h-5 w-5" />
                 <span className="sr-only">Facebook</span>
@@ -48,14 +48,14 @@ export function Footer() {
 
           {/* Quick Links */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-white">
+            <h3 className="text-sm font-semibold tracking-wider uppercase">
               Liên kết nhanh
             </h3>
             <ul className="space-y-2 text-sm">
               <li>
                 <Link
                   href="/about"
-                  className="hover:text-brand-primary transition-colors"
+                  className="transition-colors hover:text-primary"
                 >
                   Về chúng tôi
                 </Link>
@@ -63,7 +63,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/routes"
-                  className="hover:text-brand-primary transition-colors"
+                  className="transition-colors hover:text-primary"
                 >
                   Tuyến đường phổ biến
                 </Link>
@@ -71,7 +71,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/operators"
-                  className="hover:text-brand-primary transition-colors"
+                  className="transition-colors hover:text-primary"
                 >
                   Nhà xe
                 </Link>
@@ -79,7 +79,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/blog"
-                  className="hover:text-brand-primary transition-colors"
+                  className="transition-colors hover:text-primary"
                 >
                   Blog
                 </Link>
@@ -89,14 +89,14 @@ export function Footer() {
 
           {/* Support */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-white">
+            <h3 className="text-sm font-semibold tracking-wider uppercase">
               Hỗ trợ
             </h3>
             <ul className="space-y-2 text-sm">
               <li>
                 <Link
                   href="/faq"
-                  className="hover:text-brand-primary transition-colors"
+                  className="transition-colors hover:text-primary"
                 >
                   Câu hỏi thường gặp
                 </Link>
@@ -104,7 +104,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/booking-policy"
-                  className="hover:text-brand-primary transition-colors"
+                  className="transition-colors hover:text-primary"
                 >
                   Chính sách đặt vé
                 </Link>
@@ -112,7 +112,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/refund-policy"
-                  className="hover:text-brand-primary transition-colors"
+                  className="transition-colors hover:text-primary"
                 >
                   Chính sách hoàn tiền
                 </Link>
@@ -120,7 +120,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/terms"
-                  className="hover:text-brand-primary transition-colors"
+                  className="transition-colors hover:text-primary"
                 >
                   Điều khoản dịch vụ
                 </Link>
@@ -128,7 +128,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/privacy"
-                  className="hover:text-brand-primary transition-colors"
+                  className="transition-colors hover:text-primary"
                 >
                   Chính sách bảo mật
                 </Link>
@@ -138,41 +138,36 @@ export function Footer() {
 
           {/* Contact */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-white">
+            <h3 className="text-sm font-semibold tracking-wider uppercase">
               Liên hệ
             </h3>
             <ul className="space-y-3 text-sm">
               <li className="flex items-start space-x-3">
-                <Phone className="h-5 w-5 mt-0.5 shrink-0 text-brand-primary" />
+                <Phone className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                 <div>
-                  <p className="font-medium text-white">Hotline</p>
                   <a
                     href="tel:1900989901"
-                    className="hover:text-brand-primary transition-colors"
+                    className="transition-colors hover:text-primary"
                   >
                     1900 989 901
                   </a>
                 </div>
               </li>
               <li className="flex items-start space-x-3">
-                <Mail className="h-5 w-5 mt-0.5 shrink-0 text-brand-primary" />
+                <Mail className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                 <div>
-                  <p className="font-medium text-white">Email</p>
                   <a
                     href="mailto:support@busticket.vn"
-                    className="hover:text-brand-primary transition-colors"
+                    className="transition-colors hover:text-primary"
                   >
                     support@busticket.vn
                   </a>
                 </div>
               </li>
               <li className="flex items-start space-x-3">
-                <MapPin className="h-5 w-5 mt-0.5 shrink-0 text-brand-primary" />
+                <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                 <div>
-                  <p className="font-medium text-white">Địa chỉ</p>
-                  <p className="text-neutral-400">
-                    Quận 1, TP. Hồ Chí Minh, Việt Nam
-                  </p>
+                  <p>Quận 1, TP. Hồ Chí Minh, Việt Nam</p>
                 </div>
               </li>
             </ul>
@@ -188,19 +183,9 @@ export function Footer() {
               </p>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-xs text-neutral-400">
-                Phương thức thanh toán:
-              </span>
-              <div className="flex items-center space-x-2">
-                <div className="flex h-8 w-12 items-center justify-center rounded border border-neutral-700 bg-white text-xs font-bold">
-                  MOMO
-                </div>
-                <div className="flex h-8 w-12 items-center justify-center rounded border border-neutral-700 bg-blue-600 text-xs font-bold text-white">
-                  Zalo
-                </div>
-                <div className="flex h-8 w-12 items-center justify-center rounded border border-neutral-700 bg-white text-xs font-bold">
-                  PayOS
-                </div>
+              <span className="text-xs">Phương thức thanh toán:</span>
+              <div className="flex h-8 w-12 items-center justify-center rounded border border-neutral-700 text-xs font-bold">
+                PayOS
               </div>
             </div>
           </div>

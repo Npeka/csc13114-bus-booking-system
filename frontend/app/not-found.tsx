@@ -5,10 +5,10 @@ import { ArrowLeft, Bus } from "lucide-react";
 export default function NotFound() {
   return (
     <main className="flex min-h-[70vh] flex-col items-center justify-center px-6 text-center">
-      <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-full bg-brand-primary/10 text-brand-primary">
+      <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-primary">
         <Bus className="h-10 w-10" />
       </div>
-      <p className="text-sm font-semibold uppercase tracking-widest text-brand-primary">
+      <p className="text-sm font-semibold uppercase tracking-widest text-primary">
         404 · Không tìm thấy trang
       </p>
       <h1 className="mt-4 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
@@ -32,4 +32,3 @@ export default function NotFound() {
     </main>
   );
 }
-

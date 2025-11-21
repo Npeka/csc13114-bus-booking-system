@@ -158,7 +158,7 @@ export function SharedDatePicker({
           <span
             className={`px-3 py-1 rounded-full transition-colors ${
               activeField === "departure"
-                ? "bg-brand-primary text-white font-medium"
+                ? "bg-primary text-white font-medium"
                 : "bg-muted text-muted-foreground"
             }`}
           >
@@ -168,7 +168,7 @@ export function SharedDatePicker({
           <span
             className={`px-3 py-1 rounded-full transition-colors ${
               activeField === "return"
-                ? "bg-brand-primary text-white font-medium"
+                ? "bg-primary text-white font-medium"
                 : "bg-muted text-muted-foreground"
             }`}
           >

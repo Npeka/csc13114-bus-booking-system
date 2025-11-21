@@ -19,7 +19,6 @@ export function DatePickerField({
   label,
   value,
   onClick,
-  isActive,
   required = false,
 }: DatePickerFieldProps) {
   return (
@@ -27,20 +26,15 @@ export function DatePickerField({
       <Label htmlFor={id} className="text-sm font-semibold">
         {label}
       </Label>
-      <div
-        className="relative cursor-pointer"
-        onClick={onClick}
-      >
-        <CalendarIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+      <div className="relative cursor-pointer" onClick={onClick}>
+        <CalendarIcon className="pointer-events-none absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
         <Input
           id={id}
           type="text"
           value={value ? format(value, "dd/MM/yyyy") : ""}
           placeholder="Chọn ngày"
           readOnly
-          className={`h-12 pl-10 cursor-pointer transition-colors ${
-            isActive ? "border-brand-primary ring-2 ring-brand-primary/20" : ""
-          }`}
+          className="h-12 cursor-pointer pl-10 transition-colors"
           required={required}
         />
       </div>

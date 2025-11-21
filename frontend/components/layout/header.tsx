@@ -28,16 +28,29 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, User } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useEffect } from "react";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { ModeToggle } from "@/components/theme/mode-toggle";
+import {
+  loginWithGoogle,
+  loginWithPhone,
+  verifyPhoneOTP,
+  logout as authLogout,
+} from "@/lib/api/auth-service";
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [countryCode, setCountryCode] = useState("+84");
   const [phoneError, setPhoneError] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [step, setStep] = useState<"phone" | "otp">("phone");
+  const [recaptchaRendered, setRecaptchaRendered] = useState(false);
+
+  // Get auth state from store
+  const { isAuthenticated } = useAuthStore();
 
   const validatePhoneNumber = (phone: string, code: string): boolean => {
     setPhoneError("");
@@ -92,7 +105,18 @@ export function Header() {
     return true;
   };
 
-  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
+  const formatPhoneNumber = (phone: string, code: string): string => {
+    const cleanPhone = phone.replace(/\D/g, "");
+
+    // For Vietnam, if starts with 0, remove it
+    if (code === "+84" && cleanPhone.startsWith("0")) {
+      return `${code}${cleanPhone.substring(1)}`;
+    }
+
+    return `${code}${cleanPhone}`;
+  };
+
+  const handleSendOTP = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!validatePhoneNumber(phoneNumber, countryCode)) {
@@ -100,28 +124,70 @@ export function Header() {
     }
 
     setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    setIsAuthenticated(true);
-    setIsSubmitting(false);
-    setIsLoginOpen(false);
     setPhoneError("");
+
+    try {
+      const formattedPhone = formatPhoneNumber(phoneNumber, countryCode);
+      await loginWithPhone(formattedPhone, "recaptcha-container");
+      setStep("otp");
+    } catch (err) {
+      setPhoneError(err instanceof Error ? err.message : "Gửi mã OTP thất bại");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setPhoneNumber("");
+  const handleVerifyOTP = async () => {
+    if (!otpCode || otpCode.length !== 6) {
+      setPhoneError("Vui lòng nhập mã OTP 6 chữ số");
+      return;
+    }
+
+    setIsSubmitting(true);
     setPhoneError("");
-    setCountryCode("+84");
+
+    try {
+      await verifyPhoneOTP(otpCode);
+      setIsLoginOpen(false);
+      // Reset state
+      setStep("phone");
+      setPhoneNumber("");
+      setOtpCode("");
+      setPhoneError("");
+    } catch (err) {
+      setPhoneError(
+        err instanceof Error ? err.message : "Xác thực OTP thất bại",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleGoogleLogin = async () => {
     setIsSubmitting(true);
     setPhoneError("");
-    // Simulate OAuth flow
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setIsAuthenticated(true);
-    setIsSubmitting(false);
-    setIsLoginOpen(false);
+
+    try {
+      await loginWithGoogle();
+      setIsLoginOpen(false);
+      // Reset state
+      setStep("phone");
+      setPhoneNumber("");
+      setOtpCode("");
+      setPhoneError("");
+    } catch (err) {
+      setPhoneError(err instanceof Error ? err.message : "Đăng nhập thất bại");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await authLogout();
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
   };
 
   const handlePhoneChange = (value: string) => {
@@ -134,12 +200,46 @@ export function Header() {
     }
   };
 
+  const handleResendOTP = async () => {
+    setOtpCode("");
+    setPhoneError("");
+    setStep("phone");
+  };
+
+  // Reset state when dialog closes
+  useEffect(() => {
+    if (!isLoginOpen) {
+      setStep("phone");
+      setPhoneNumber("");
+      setOtpCode("");
+      setPhoneError("");
+      setRecaptchaRendered(false);
+    }
+  }, [isLoginOpen]);
+
+  // Ensure recaptcha container is ready
+  useEffect(() => {
+    if (isLoginOpen && step === "phone" && !recaptchaRendered) {
+      // Check if container exists in DOM, then mark as rendered
+      const checkContainer = () => {
+        const container = document.getElementById("recaptcha-container");
+        if (container) {
+          setRecaptchaRendered(true);
+        } else {
+          // Retry in 50ms if container not found
+          setTimeout(checkContainer, 50);
+        }
+      };
+      checkContainer();
+    }
+  }, [isLoginOpen, step, recaptchaRendered]);
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-primary">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
             <svg
               viewBox="0 0 24 24"
               fill="none"
@@ -156,7 +256,7 @@ export function Header() {
             </svg>
           </div>
           <span className="text-xl font-bold text-foreground">
-            BusTicket<span className="text-brand-primary">.vn</span>
+            BusTicket<span className="text-primary">.vn</span>
           </span>
         </Link>
 
@@ -184,6 +284,9 @@ export function Header() {
 
         {/* Right Actions */}
         <div className="flex items-center space-x-2">
+          {/* Theme Toggle */}
+          <ModeToggle />
+
           {/* Auth Actions */}
           {isAuthenticated ? (
             <DropdownMenu>
@@ -213,7 +316,7 @@ export function Header() {
             </DropdownMenu>
           ) : (
             <Button
-              className="hidden md:inline-flex mr-0! bg-brand-primary text-white hover:bg-brand-primary-hover"
+              className="mr-0! hidden md:inline-flex"
               onClick={() => setIsLoginOpen(true)}
             >
               Đăng nhập
@@ -229,7 +332,7 @@ export function Header() {
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-72">
-              <div className="flex flex-col space-y-4 mt-8">
+              <div className="mt-8 flex flex-col space-y-4">
                 <Link
                   href="/"
                   className="text-base font-medium"
@@ -251,7 +354,7 @@ export function Header() {
                 >
                   Đặt vé của tôi
                 </Link>
-                <div className="border-t pt-4 space-y-3">
+                <div className="space-y-3 border-t pt-4">
                   {isAuthenticated ? (
                     <>
                       <Link
@@ -283,7 +386,7 @@ export function Header() {
                   ) : (
                     <Button
                       type="button"
-                      className="w-full bg-brand-primary text-white hover:bg-brand-primary-hover"
+                      className="w-full bg-primary text-white hover:bg-primary/90"
                       onClick={() => {
                         setIsLoginOpen(true);
                         setIsMobileMenuOpen(false);
@@ -308,100 +411,165 @@ export function Header() {
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            {/* Phone Login */}
-            <form className="space-y-4" onSubmit={handleLogin}>
-              <div className="space-y-2">
-                <Label htmlFor="login-phone">Số điện thoại</Label>
-                <div className="flex gap-2">
-                  <Select value={countryCode} onValueChange={setCountryCode}>
-                    <SelectTrigger className="w-[120px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="+84">🇻🇳 +84</SelectItem>
-                      <SelectItem value="+1">🇺🇸 +1</SelectItem>
-                      <SelectItem value="+44">🇬🇧 +44</SelectItem>
-                      <SelectItem value="+86">🇨🇳 +86</SelectItem>
-                      <SelectItem value="+81">🇯🇵 +81</SelectItem>
-                      <SelectItem value="+82">🇰🇷 +82</SelectItem>
-                      <SelectItem value="+65">🇸🇬 +65</SelectItem>
-                      <SelectItem value="+66">🇹🇭 +66</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <div className="flex-1">
-                    <Input
-                      id="login-phone"
-                      type="text"
-                      inputMode="numeric"
-                      placeholder={
-                        countryCode === "+84" ? "0912345678" : "Phone number"
-                      }
-                      required
-                      value={phoneNumber}
-                      onChange={(event) =>
-                        handlePhoneChange(event.target.value)
-                      }
-                      className={phoneError ? "border-destructive" : ""}
-                      aria-invalid={!!phoneError}
-                      aria-describedby={phoneError ? "phone-error" : undefined}
-                    />
+            {step === "phone" ? (
+              <>
+                {/* Phone Login Form */}
+                <form className="space-y-4" onSubmit={handleSendOTP}>
+                  <div className="space-y-2">
+                    <Label htmlFor="login-phone">Số điện thoại</Label>
+                    <div className="flex gap-2">
+                      <Select
+                        value={countryCode}
+                        onValueChange={setCountryCode}
+                      >
+                        <SelectTrigger className="w-[120px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="+84">🇻🇳 +84</SelectItem>
+                          <SelectItem value="+1">🇺🇸 +1</SelectItem>
+                          <SelectItem value="+44">🇬🇧 +44</SelectItem>
+                          <SelectItem value="+86">🇨🇳 +86</SelectItem>
+                          <SelectItem value="+81">🇯🇵 +81</SelectItem>
+                          <SelectItem value="+82">🇰🇷 +82</SelectItem>
+                          <SelectItem value="+65">🇸🇬 +65</SelectItem>
+                          <SelectItem value="+66">🇹🇭 +66</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div className="flex-1">
+                        <Input
+                          id="login-phone"
+                          type="text"
+                          inputMode="numeric"
+                          placeholder={
+                            countryCode === "+84"
+                              ? "0912345678"
+                              : "Phone number"
+                          }
+                          required
+                          value={phoneNumber}
+                          onChange={(event) =>
+                            handlePhoneChange(event.target.value)
+                          }
+                          className={phoneError ? "border-destructive" : ""}
+                          aria-invalid={!!phoneError}
+                          aria-describedby={
+                            phoneError ? "phone-error" : undefined
+                          }
+                        />
+                      </div>
+                    </div>
+                    {phoneError && (
+                      <p id="phone-error" className="text-xs text-destructive">
+                        {phoneError}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Recaptcha container - positioned above dialog to allow modal interaction */}
+                  <div
+                    id="recaptcha-container"
+                    className="pointer-events-auto relative z-60 flex justify-center"
+                    style={{ pointerEvents: "auto", position: "relative" }}
+                  ></div>
+
+                  <Button
+                    type="submit"
+                    className="w-full bg-primary text-white hover:bg-primary/90"
+                    disabled={isSubmitting || !recaptchaRendered}
+                  >
+                    {isSubmitting
+                      ? "Đang gửi..."
+                      : "Tiếp tục với số điện thoại"}
+                  </Button>
+                </form>
+
+                {/* Divider */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <Separator />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      Hoặc
+                    </span>
                   </div>
                 </div>
-                {phoneError && (
-                  <p id="phone-error" className="text-xs text-destructive">
-                    {phoneError}
-                  </p>
-                )}
-              </div>
-              <Button
-                type="submit"
-                className="w-full bg-brand-primary text-white hover:bg-brand-primary-hover"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Đang xử lý..." : "Tiếp tục với số điện thoại"}
-              </Button>
-            </form>
 
-            {/* Divider */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <Separator />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Hoặc
-                </span>
-              </div>
-            </div>
+                {/* Google OAuth */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleGoogleLogin}
+                  disabled={isSubmitting}
+                >
+                  <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+                    <path
+                      fill="currentColor"
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    />
+                    <path
+                      fill="currentColor"
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    />
+                    <path
+                      fill="currentColor"
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                    />
+                    <path
+                      fill="currentColor"
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    />
+                  </svg>
+                  Tiếp tục với Google
+                </Button>
+              </>
+            ) : (
+              <>
+                {/* OTP Verification Step */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="otp-code">Mã xác thực OTP</Label>
+                    <Input
+                      id="otp-code"
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="123456"
+                      maxLength={6}
+                      value={otpCode}
+                      onChange={(e) =>
+                        setOtpCode(e.target.value.replace(/\D/g, ""))
+                      }
+                      disabled={isSubmitting}
+                      className={phoneError ? "border-destructive" : ""}
+                    />
+                    {phoneError && (
+                      <p className="text-xs text-destructive">{phoneError}</p>
+                    )}
+                  </div>
 
-            {/* Google OAuth */}
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={handleGoogleLogin}
-              disabled={isSubmitting}
-            >
-              <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-                <path
-                  fill="currentColor"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                />
-              </svg>
-              Tiếp tục với Google
-            </Button>
+                  <Button
+                    type="button"
+                    onClick={handleVerifyOTP}
+                    className="w-full bg-primary text-white hover:bg-primary/90"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Đang xác thực..." : "Xác thực"}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleResendOTP}
+                    disabled={isSubmitting}
+                  >
+                    Gửi lại mã OTP
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
 
           <p className="text-center text-xs text-muted-foreground">

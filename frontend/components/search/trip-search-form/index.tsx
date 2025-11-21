@@ -200,7 +200,7 @@ export function TripSearchForm() {
               label="Điểm đến"
               placeholder="Đà Nẵng"
               value={destination}
-              iconClassName="text-brand-primary"
+              iconClassName="text-primary"
               onTrigger={() => openLocationPicker("destination")}
             >
               {locationPicker.open &&
@@ -263,7 +263,7 @@ export function TripSearchForm() {
         <Button
           type="submit"
           size="lg"
-          className="h-12 w-full bg-brand-primary text-base font-semibold text-white hover:bg-brand-primary-hover"
+          className="h-12 w-full bg-primary text-base font-semibold text-white hover:bg-primary/90"
         >
           <Search className="mr-2 h-5 w-5" />
           Tìm chuyến xe
