@@ -55,9 +55,9 @@ type RedisConfig struct {
 	PoolSize     int           `env:"POOL_SIZE" envDefault:"10"`
 	MinIdleConns int           `env:"MIN_IDLE_CONNS" envDefault:"2"`
 	MaxRetries   int           `env:"MAX_RETRIES" envDefault:"3"`
-	DialTimeout  time.Duration `env:"DIAL_TIMEOUT" envDefault:"5s"`
-	ReadTimeout  time.Duration `env:"READ_TIMEOUT" envDefault:"3s"`
-	WriteTimeout time.Duration `env:"WRITE_TIMEOUT" envDefault:"3s"`
+	DialTimeout  time.Duration `env:"DIAL_TIMEOUT" envDefault:"60s"`
+	ReadTimeout  time.Duration `env:"READ_TIMEOUT" envDefault:"60s"`
+	WriteTimeout time.Duration `env:"WRITE_TIMEOUT" envDefault:"60s"`
 }
 
 type RateLimitConfig struct {
