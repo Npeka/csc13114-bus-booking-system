@@ -9,10 +9,9 @@ services:
     env:
       SERVER_PORT: "8000"
       REDIS_DB: "4"
-      USER_SERVICE_URL: "http://user-service"
-      TRIP_SERVICE_URL: "http://trip-service"
-      BOOKING_SERVICE_URL: "http://booking-service"
-      VERIFY_ENDPOINT: "/api/v1/auth/verify-token"
+
+      AUTH_USER_SERVICE_URL: "http://user-service"
+      AUTH_VERIFY_ENDPOINT: "/api/v1/auth/verify-token"
 
       SERVICES_USER_URL: "http://user-service"
       SERVICES_USER_TIMEOUT: "30"
