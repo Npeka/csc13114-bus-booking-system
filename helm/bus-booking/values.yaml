@@ -76,7 +76,7 @@ services:
   payment-service:
     containerName: payment-service
     image: npkhang22/bb-payment-service
-    tag: payment-service-b3e0ff4
+    tag: payment-service-e11fb3d
     port: 8080
     env:
       SERVICE_NAME: "payment-service"
