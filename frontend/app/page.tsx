@@ -2,7 +2,6 @@ import { TripSearchForm } from "@/components/search/trip-search-form";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-  Shield,
   Clock,
   CreditCard,
   HeadphonesIcon,
@@ -16,13 +15,13 @@ export default function Home() {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative bg-linear-to-br from-brand-primary/10 via-brand-primary-light/20 to-background py-12 md:py-20">
+      <section className="relative bg-linear-to-br from-primary/10 via-primary/5 to-background py-12 md:py-20">
         <div className="container">
-          <div className="mx-auto max-w-3xl text-center mb-8">
+          <div className="mx-auto mb-8 max-w-3xl text-center">
             <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl lg:text-5xl">
               Đặt vé xe khách
               <br />
-              <span className="text-brand-primary">nhanh chóng & tiện lợi</span>
+              <span className="text-primary">nhanh chóng & tiện lợi</span>
             </h1>
             <p className="mt-4 text-base text-muted-foreground md:text-lg">
               Hàng trăm tuyến đường khắp Việt Nam. Đặt vé online, thanh toán an
@@ -38,19 +37,19 @@ export default function Home() {
           {/* Trust Indicators */}
           <div className="mt-8 grid grid-cols-2 gap-6 text-center md:grid-cols-4">
             <div className="space-y-2">
-              <div className="text-3xl font-bold text-brand-primary">500K+</div>
+              <div className="text-3xl font-bold text-primary">500K+</div>
               <div className="text-sm text-muted-foreground">Vé đã đặt</div>
             </div>
             <div className="space-y-2">
-              <div className="text-3xl font-bold text-brand-primary">200+</div>
+              <div className="text-3xl font-bold text-primary">200+</div>
               <div className="text-sm text-muted-foreground">Nhà xe</div>
             </div>
             <div className="space-y-2">
-              <div className="text-3xl font-bold text-brand-primary">1000+</div>
+              <div className="text-3xl font-bold text-primary">1000+</div>
               <div className="text-sm text-muted-foreground">Tuyến đường</div>
             </div>
             <div className="space-y-2">
-              <div className="text-3xl font-bold text-brand-primary">4.8/5</div>
+              <div className="text-3xl font-bold text-primary">4.8/5</div>
               <div className="text-sm text-muted-foreground">Đánh giá</div>
             </div>
           </div>
@@ -58,9 +57,9 @@ export default function Home() {
       </section>
 
       {/* Popular Routes Section */}
-      <section className=" py-16 md:py-24">
+      <section className="py-16 md:py-24">
         <div className="container">
-          <div className="mx-auto max-w-2xl text-center mb-12">
+          <div className="mx-auto mb-12 max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">
               Tuyến đường phổ biến
             </h2>
@@ -73,17 +72,17 @@ export default function Home() {
             {popularDestinations.map((route) => (
               <Card key={route.id} className="card-hover cursor-pointer">
                 <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
+                  <div className="mb-4 flex items-start justify-between">
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold">{route.from}</h3>
-                      <div className="flex items-center text-sm text-muted-foreground my-2">
-                        <Bus className="h-4 w-4 mr-1" />
+                      <div className="my-2 flex items-center text-sm text-muted-foreground">
+                        <Bus className="mr-1 h-4 w-4" />
                         <span>→</span>
                       </div>
                       <h3 className="text-lg font-semibold">{route.to}</h3>
                     </div>
                     <Badge variant="secondary" className="ml-2">
-                      <TrendingUp className="h-3 w-3 mr-1" />
+                      <TrendingUp className="mr-1 h-3 w-3" />
                       Phổ biến
                     </Badge>
                   </div>
@@ -91,7 +90,7 @@ export default function Home() {
                     <span className="text-muted-foreground">
                       {route.operators} nhà xe
                     </span>
-                    <span className="font-semibold text-brand-primary">
+                    <span className="font-semibold text-primary">
                       Từ {route.priceFrom.toLocaleString()}đ
                     </span>
                   </div>
@@ -103,9 +102,9 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="bg-neutral-50 py-16 md:py-24">
+      <section className="bg-secondary py-16 md:py-24">
         <div className="container">
-          <div className="mx-auto max-w-2xl text-center mb-12">
+          <div className="mx-auto mb-12 max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">
               Tại sao chọn BusTicket.vn?
             </h2>
@@ -115,10 +114,10 @@ export default function Home() {
           </div>
 
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-            <Card className="border-2 hover:border-brand-primary transition-colors">
+            <Card className="border-2 transition-colors hover:border-primary">
               <CardContent className="pt-6">
-                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-brand-primary/10">
-                  <Shield className="h-6 w-6 text-brand-primary" />
+                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                  <CreditCard className="h-6 w-6 text-primary" />
                 </div>
                 <h3 className="mb-2 text-xl font-semibold">
                   An toàn & Bảo mật
@@ -130,10 +129,10 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            <Card className="border-2 hover:border-brand-primary transition-colors">
+            <Card className="border-2 transition-colors hover:border-primary">
               <CardContent className="pt-6">
-                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-success/10">
-                  <Clock className="h-6 w-6 text-success" />
+                <div className="bg-success/10 mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg">
+                  <Clock className="text-success h-6 w-6" />
                 </div>
                 <h3 className="mb-2 text-xl font-semibold">Đặt vé nhanh</h3>
                 <p className="text-sm text-muted-foreground">
@@ -143,10 +142,10 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            <Card className="border-2 hover:border-brand-primary transition-colors">
+            <Card className="border-2 transition-colors hover:border-primary">
               <CardContent className="pt-6">
-                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-info/10">
-                  <CreditCard className="h-6 w-6 text-info" />
+                <div className="bg-info/10 mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg">
+                  <CreditCard className="text-info h-6 w-6" />
                 </div>
                 <h3 className="mb-2 text-xl font-semibold">
                   Thanh toán linh hoạt
@@ -157,7 +156,7 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            <Card className="border-2 hover:border-brand-primary transition-colors">
+            <Card className="border-2 transition-colors hover:border-primary">
               <CardContent className="pt-6">
                 <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-warning/10">
                   <HeadphonesIcon className="h-6 w-6 text-warning" />
@@ -175,7 +174,7 @@ export default function Home() {
       {/* Reviews Section */}
       <section className="py-16 md:py-24">
         <div className="container">
-          <div className="mx-auto max-w-2xl text-center mb-12">
+          <div className="mx-auto mb-12 max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">
               Khách hàng nói gì về chúng tôi
             </h2>
@@ -200,8 +199,8 @@ export default function Home() {
                     &ldquo;{review.content}&rdquo;
                   </p>
                   <div className="flex items-center">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-primary/10">
-                      <Users className="h-5 w-5 text-brand-primary" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                      <Users className="h-5 w-5 text-primary" />
                     </div>
                     <div className="ml-3">
                       <p className="text-sm font-semibold">{review.name}</p>

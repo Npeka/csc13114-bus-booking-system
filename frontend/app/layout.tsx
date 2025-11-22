@@ -3,6 +3,8 @@ import "./globals.css";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { ChatBot } from "@/components/chatbot/chatbot";
+import { AuthProvider } from "@/components/auth/auth-provider";
+import { HydrationGuard } from "@/components/auth/hydration-guard";
 import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
@@ -47,7 +49,14 @@ export default function RootLayout({
     <html lang="vi" suppressHydrationWarning>
       <body className="flex min-h-screen flex-col antialiased">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <main className="flex-1">{children}</main>
+          <AuthProvider>
+            <HydrationGuard>
+              <Header />
+            </HydrationGuard>
+            <main className="flex-1">{children}</main>
+            <Footer />
+            <ChatBot />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
