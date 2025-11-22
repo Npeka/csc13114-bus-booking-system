@@ -32,7 +32,7 @@ COPY --from=builder /build/gateway-service/routes /routes
 
 USER appuser
 
-EXPOSE 8000
+EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD ["/app", "--health"] || exit 1

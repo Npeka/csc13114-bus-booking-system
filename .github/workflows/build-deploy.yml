@@ -76,16 +76,16 @@ jobs:
         service:
           - name: booking-service
             changed: ${{ needs.detect-changes.outputs.booking-service }}
-            port: 8082
+            port: 8080
           - name: gateway-service
             changed: ${{ needs.detect-changes.outputs.gateway-service }}
-            port: 8000
+            port: 8080
           - name: payment-service
             changed: ${{ needs.detect-changes.outputs.payment-service }}
-            port: 8081
+            port: 8080
           - name: trip-service
             changed: ${{ needs.detect-changes.outputs.trip-service }}
-            port: 8081
+            port: 8080
           - name: user-service
             changed: ${{ needs.detect-changes.outputs.user-service }}
             port: 8080
