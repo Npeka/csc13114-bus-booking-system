@@ -51,7 +51,6 @@ func main() {
 }
 
 func (app *Application) initDependencies() error {
-	// Initialize database
 	var err error
 	app.Database, err = initializer.InitDatabase(app.Config)
 	if err != nil {
