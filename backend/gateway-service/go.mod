@@ -2,6 +2,8 @@ module bus-booking/gateway-service
 
 go 1.24.0
 
+replace bus-booking/shared => ../shared
+
 require (
 	bus-booking/shared v0.0.0
 	github.com/gin-gonic/gin v1.11.0
@@ -55,5 +57,3 @@ require (
 	golang.org/x/tools v0.37.0 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
 )
-
-replace bus-booking/shared => ../shared

@@ -2,6 +2,8 @@ module bus-booking/trip-service
 
 go 1.24.0
 
+replace bus-booking/shared => ../shared
+
 require (
 	bus-booking/shared v0.0.0
 	github.com/gin-gonic/gin v1.11.0
@@ -62,5 +64,3 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gorm.io/driver/postgres v1.5.11 // indirect
 )
-
-replace bus-booking/shared => ../shared
