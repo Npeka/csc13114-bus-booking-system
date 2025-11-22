@@ -7,6 +7,7 @@ services:
     tag: gateway-service-b521823
     port: 8000
     env:
+      SERVICE_NAME: "gateway-service"
       SERVER_PORT: "8000"
       REDIS_DB: "4"
 
@@ -39,6 +40,7 @@ services:
     tag: user-service-7d2c2ea
     port: 8080
     env:
+      SERVICE_NAME: "user-service"
       DATABASE_NAME: "bus_booking_user"
       SERVER_PORT: "8080"
       REDIS_DB: "0"
@@ -51,6 +53,7 @@ services:
     tag: trip-service-b3e0ff4
     port: 8081
     env:
+      SERVICE_NAME: "trip-service"
       DATABASE_NAME: "bus_booking_trip"
       SERVER_PORT: "8081"
       REDIS_DB: "1"
@@ -63,9 +66,23 @@ services:
     tag: booking-service-b3e0ff4
     port: 8082
     env:
+      SERVICE_NAME: "booking-service"
       DATABASE_NAME: "bus_booking_booking"
       SERVER_PORT: "8082"
       REDIS_DB: "2"
+    ingress:
+      enabled: false # Traffic goes through gateway now
+
+  payment-service:
+    containerName: payment-service
+    image: npkhang22/bb-payment-service
+    tag: payment-service-b3e0ff4
+    port: 8083
+    env:
+      SERVICE_NAME: "payment-service"
+      DATABASE_NAME: "bus_booking_payment"
+      SERVER_PORT: "8083"
+      REDIS_DB: "3"
     ingress:
       enabled: false # Traffic goes through gateway now
 
