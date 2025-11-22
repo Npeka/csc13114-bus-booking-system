@@ -174,11 +174,14 @@ func (s *AuthServiceImpl) RefreshToken(ctx context.Context, req *model.RefreshTo
 		return nil, ginext.NewUnauthorizedError("invalid refresh token")
 	}
 
-	if claims.UserID != userID {
+	if userID == uuid.Nil {
+		userID = claims.UserID
+		log.Debug().Str("userID", userID.String()).Msg("Using userID from refresh token claims")
+	} else if claims.UserID != userID {
 		return nil, ginext.NewUnauthorizedError("refresh token does not match user")
 	}
 
-	// Check blacklist - đơn giản
+	// Check blacklist
 	if s.tokenBlacklistMgr.IsTokenBlacklisted(ctx, req.RefreshToken) {
 		return nil, ginext.NewUnauthorizedError("refresh token has been revoked")
 	}

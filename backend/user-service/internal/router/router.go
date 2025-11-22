@@ -33,7 +33,7 @@ func SetupRoutes(router *gin.Engine, cfg *RouterConfig) {
 		{
 			auth.POST("/verify-token", ginext.WrapHandler(cfg.AuthHandler.VerifyToken))
 			auth.POST("/firebase/auth", ginext.WrapHandler(cfg.AuthHandler.FirebaseAuth))
-			auth.POST("/refresh-token", middleware.RequireAuthMiddleware(), ginext.WrapHandler(cfg.AuthHandler.RefreshToken))
+			auth.POST("/refresh-token", ginext.WrapHandler(cfg.AuthHandler.RefreshToken))
 			auth.POST("/logout", middleware.RequireAuthMiddleware(), ginext.WrapHandler(cfg.AuthHandler.Logout))
 		}
 
