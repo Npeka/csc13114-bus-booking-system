@@ -91,9 +91,9 @@ export default function SeatSelectionPage({
   );
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen">
       {/* Trip Info Header */}
-      <div className="bg-white border-b">
+      <div className="border-b">
         <div className="container py-6">
           <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
             <div className="flex-1">
@@ -136,8 +136,8 @@ export default function SeatSelectionPage({
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center space-x-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-primary/10">
-                    <MapPin className="h-5 w-5 text-brand-primary" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                    <MapPin className="h-5 w-5 text-primary" />
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Điểm đến</p>

@@ -3,7 +3,7 @@ import { Facebook, Mail, Phone, MapPin } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="border-t">
+    <footer className="border-t bg-linear-to-tl from-primary/30 via-primary/15 to-background">
       <div className="container py-12">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
           {/* Company Info */}

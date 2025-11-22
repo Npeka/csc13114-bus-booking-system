@@ -264,19 +264,19 @@ export function Header() {
         <nav className="hidden items-center space-x-6 md:flex">
           <Link
             href="/"
-            className="text-sm font-medium text-foreground/80 transition-colors hover:text-foreground"
+            className="text-sm font-semibold text-foreground/80 transition-colors hover:text-foreground"
           >
             Trang chủ
           </Link>
           <Link
             href="/trips"
-            className="text-sm font-medium text-foreground/80 transition-colors hover:text-foreground"
+            className="text-sm font-semibold text-foreground/80 transition-colors hover:text-foreground"
           >
             Tìm chuyến
           </Link>
           <Link
             href="/my-bookings"
-            className="text-sm font-medium text-foreground/80 transition-colors hover:text-foreground"
+            className="text-sm font-semibold text-foreground/80 transition-colors hover:text-foreground"
           >
             Vé của tôi
           </Link>
@@ -316,7 +316,7 @@ export function Header() {
             </DropdownMenu>
           ) : (
             <Button
-              className="mr-0! hidden md:inline-flex"
+              className="mr-0! hidden text-white md:inline-flex"
               onClick={() => setIsLoginOpen(true)}
             >
               Đăng nhập
@@ -335,7 +335,7 @@ export function Header() {
               <div className="mt-8 flex flex-col space-y-4">
                 <Link
                   href="/"
-                  className="text-base font-medium"
+                  className="text-base font-medium!"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Trang chủ

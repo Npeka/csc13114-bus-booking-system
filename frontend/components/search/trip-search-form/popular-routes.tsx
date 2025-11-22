@@ -9,7 +9,7 @@ type PopularRoutesProps = {
 
 export function PopularRoutes({ onSelectRoute }: PopularRoutesProps) {
   return (
-    <div className="mt-6 border-t pt-6">
+    <div className="border-t pt-6">
       <p className="mb-3 text-sm font-medium text-muted-foreground">
         Tuyến đường phổ biến:
       </p>
@@ -30,4 +30,3 @@ export function PopularRoutes({ onSelectRoute }: PopularRoutesProps) {
     </div>
   );
 }
-

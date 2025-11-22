@@ -84,7 +84,7 @@ export function ChatBot() {
       {!isOpen && (
         <Button
           onClick={() => setIsOpen(true)}
-          className="shadow-elevated fixed right-6 bottom-6 z-50 h-14 w-14 rounded-full"
+          className="fixed right-6 bottom-6 z-50 h-14 w-14 rounded-full text-white shadow-elevated"
           size="icon"
         >
           <MessageCircle className="h-6 w-6" />
@@ -94,17 +94,17 @@ export function ChatBot() {
 
       {/* Chat Window */}
       {isOpen && (
-        <Card className="shadow-elevated fixed right-6 bottom-6 z-50 w-96 max-w-[calc(100vw-3rem)] py-0!">
+        <Card className="fixed right-6 bottom-6 z-50 w-96 max-w-[calc(100vw-3rem)] py-0! shadow-elevated">
           {/* Header */}
-          <div className="flex items-center justify-between rounded-t-lg border-b p-4">
+          <div className="flex items-center justify-between rounded-t-lg border-b bg-primary p-4 text-white">
             <div className="flex items-center space-x-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full">
-                <Bot className="h-6 w-6 text-primary" />
+                <Bot className="h-6 w-6" />
               </div>
               <div>
                 <p className="font-semibold">Trợ lý ảo</p>
                 <div className="flex items-center space-x-1">
-                  <div className="bg-success h-2 w-2 animate-pulse rounded-full" />
+                  <div className="h-2 w-2 animate-pulse rounded-full bg-success" />
                   <span className="text-xs">Đang online</span>
                 </div>
               </div>
@@ -151,7 +151,7 @@ export function ChatBot() {
                         className={cn(
                           "rounded-lg p-3",
                           message.role === "user"
-                            ? "rounded-br-xs bg-primary"
+                            ? "rounded-br-xs bg-primary text-white"
                             : "border",
                         )}
                       >

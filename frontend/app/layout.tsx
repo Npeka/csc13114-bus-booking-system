@@ -3,6 +3,7 @@ import "./globals.css";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { ChatBot } from "@/components/chatbot/chatbot";
+import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
   title: {
@@ -44,11 +45,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi" suppressHydrationWarning>
-      <body className="antialiased min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
-        <ChatBot />
+      <body className="flex min-h-screen flex-col antialiased">
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <main className="flex-1">{children}</main>
+        </ThemeProvider>
       </body>
     </html>
   );

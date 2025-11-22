@@ -49,7 +49,7 @@ export function TripCard({ trip, onSelect }: TripCardProps) {
                 {trip.operator}
               </h3>
               <div className="flex items-center text-xs text-muted-foreground">
-                <Star className="fill-warning text-warning mr-1 h-3 w-3 shrink-0" />
+                <Star className="mr-1 h-3 w-3 shrink-0 fill-warning text-warning" />
                 <span>{trip.operatorRating.toFixed(1)}</span>
                 <span className="mx-1">•</span>
                 <span className="truncate">{trip.busType}</span>
