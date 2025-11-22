@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// SetupCORS configures CORS middleware
 func SetupCORS(cfg *config.CORSConfig) gin.HandlerFunc {
 	corsConfig := cors.Config{
 		AllowOrigins:     cfg.AllowOrigins,
@@ -20,7 +19,6 @@ func SetupCORS(cfg *config.CORSConfig) gin.HandlerFunc {
 		MaxAge:           time.Duration(cfg.MaxAge) * time.Second,
 	}
 
-	// If allow origins contains "*", use AllowAllOrigins
 	for _, origin := range cfg.AllowOrigins {
 		if origin == "*" {
 			corsConfig.AllowAllOrigins = true

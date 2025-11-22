@@ -11,10 +11,10 @@ import (
 	"firebase.google.com/go/v4/auth"
 	"github.com/rs/zerolog/log"
 
+	"bus-booking/payment-service/config"
+	"bus-booking/payment-service/internal/initializer"
 	sharedDB "bus-booking/shared/db"
 	"bus-booking/shared/validator"
-	"bus-booking/user-service/config"
-	"bus-booking/user-service/internal/initializer"
 )
 
 type Application struct {
@@ -68,20 +68,8 @@ func (app *Application) initDependencies() error {
 		return err
 	}
 
-	// Initialize Redis
-	app.Redis, err = initializer.InitRedis(app.Config)
-	if err != nil {
-		return err
-	}
-
-	// Initialize Firebase Auth client
-	app.FirebaseAuth, err = initializer.InitFirebase(app.Config)
-	if err != nil {
-		return err
-	}
-
 	// Initialize services and handlers
-	app.Services = initializer.InitServices(app.Config, app.Database, app.Redis, app.FirebaseAuth)
+	app.Services = initializer.InitServices(app.Config, app.Database)
 
 	log.Info().Msg("All dependencies initialized successfully")
 	return nil
@@ -89,7 +77,7 @@ func (app *Application) initDependencies() error {
 
 // setupHTTPServer configures the HTTP server and routes
 func (app *Application) setupHTTPServer() {
-	app.HTTPServer = initializer.InitHTTPServer(app.Config, app.FirebaseAuth, app.Services)
+	app.HTTPServer = initializer.InitHTTPServer(app.Config, app.Services)
 }
 
 // start starts the HTTP server with graceful shutdown

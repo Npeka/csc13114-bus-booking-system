@@ -11,12 +11,13 @@ import (
 )
 
 type BaseConfig struct {
-	Server    ServerConfig    `envPrefix:"SERVER_"`
-	Database  DatabaseConfig  `envPrefix:"DATABASE_"`
-	Redis     RedisConfig     `envPrefix:"REDIS_"`
-	RateLimit RateLimitConfig `envPrefix:"RATE_LIMIT_"`
-	CORS      CORSConfig      `envPrefix:"CORS_"`
-	Log       LogConfig       `envPrefix:"LOG_"`
+	ServiceName string          `env:"SERVICE_NAME"`
+	Server      ServerConfig    `envPrefix:"SERVER_"`
+	Database    DatabaseConfig  `envPrefix:"DATABASE_"`
+	Redis       RedisConfig     `envPrefix:"REDIS_"`
+	RateLimit   RateLimitConfig `envPrefix:"RATE_LIMIT_"`
+	CORS        CORSConfig      `envPrefix:"CORS_"`
+	Log         LogConfig       `envPrefix:"LOG_"`
 }
 
 type ServerConfig struct {
@@ -146,12 +147,10 @@ func setBaseConfig(serviceConfig interface{}, baseConfig *BaseConfig) error {
 	v := reflect.ValueOf(serviceConfig).Elem()
 	t := v.Type()
 
-	// Find the embedded BaseConfig field
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Field(i)
 		fieldType := t.Field(i)
 
-		// Check if this field is a pointer to BaseConfig
 		if field.Type() == reflect.TypeOf((*BaseConfig)(nil)) {
 			if !field.CanSet() {
 				return fmt.Errorf("cannot set BaseConfig field %s", fieldType.Name)

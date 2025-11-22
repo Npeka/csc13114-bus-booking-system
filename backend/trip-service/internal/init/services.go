@@ -1,4 +1,4 @@
-package appinit
+package initializer
 
 import (
 	sharedDB "bus-booking/shared/db"

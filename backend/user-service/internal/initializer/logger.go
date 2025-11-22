@@ -2,9 +2,9 @@ package initializer
 
 import (
 	"bus-booking/shared/logger"
-	"bus-booking/trip-service/config"
+	"bus-booking/user-service/config"
 )
 
 func SetupLogger(cfg *config.Config) error {
-	return logger.SetupLogger(&cfg.BaseConfig.Log)
+	return logger.SetupLogger(&cfg.Log)
 }

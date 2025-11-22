@@ -1,8 +1,8 @@
 package initializer
 
 import (
+	"bus-booking/payment-service/config"
 	sharedDB "bus-booking/shared/db"
-	"bus-booking/trip-service/config"
 	"fmt"
 )
 

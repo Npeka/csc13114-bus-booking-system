@@ -16,8 +16,6 @@ import (
 	appinit "bus-booking/trip-service/internal/init"
 )
 
-const ServiceName = "trip-service"
-
 type Application struct {
 	Config     *config.Config
 	Database   *sharedDB.DatabaseManager
@@ -37,7 +35,7 @@ func main() {
 		log.Fatal().Err(err).Msg("Failed to setup logger")
 	}
 
-	log.Info().Str("service", ServiceName).Msg("Starting Trip Service...")
+	log.Info().Str("service", cfg.ServiceName).Msg("Starting Trip Service...")
 
 	// Initialize validator
 	validator.InitValidator()
@@ -83,7 +81,7 @@ func (app *Application) initDependencies() error {
 
 // setupHTTPServer configures the HTTP server and routes
 func (app *Application) setupHTTPServer() {
-	app.HTTPServer = appinit.InitHTTPServer(app.Config, ServiceName, app.Services)
+	app.HTTPServer = appinit.InitHTTPServer(app.Config, app.Services)
 }
 
 // start starts the HTTP server with graceful shutdown

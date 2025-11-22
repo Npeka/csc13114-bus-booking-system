@@ -5,7 +5,6 @@ use (
 	./gateway-service
 	./payment-service
 	./shared
-	./template-service
 	./trip-service
 	./user-service
 )

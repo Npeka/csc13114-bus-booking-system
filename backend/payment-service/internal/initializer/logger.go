@@ -1,8 +1,8 @@
 package initializer
 
 import (
+	"bus-booking/payment-service/config"
 	"bus-booking/shared/logger"
-	"bus-booking/trip-service/config"
 )
 
 func SetupLogger(cfg *config.Config) error {

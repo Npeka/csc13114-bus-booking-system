@@ -3,18 +3,20 @@ package initializer
 import (
 	"net/http"
 
+	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 
-	"bus-booking/trip-service/config"
-	"bus-booking/trip-service/internal/router"
+	"bus-booking/user-service/config"
+	"bus-booking/user-service/internal/router"
 )
 
 func InitHTTPServer(
 	cfg *config.Config,
+	firebaseAuth *auth.Client,
 	services *ServiceDependencies,
 ) *http.Server {
-	if cfg.BaseConfig.Server.IsProduction {
+	if cfg.Server.IsProduction {
 		gin.SetMode(gin.ReleaseMode)
 	} else {
 		gin.SetMode(gin.DebugMode)
@@ -24,19 +26,20 @@ func InitHTTPServer(
 
 	routerConfig := &router.RouterConfig{
 		Config:       cfg,
-		TripHandler:  services.TripHandler,
-		RouteHandler: services.RouteHandler,
-		BusHandler:   services.BusHandler,
+		FirebaseAuth: firebaseAuth,
+		UserHandler:  services.UserHandler,
+		AuthHandler:  services.AuthHandler,
+		UserRepo:     services.UserRepo,
 	}
 	router.SetupRoutes(ginRouter, routerConfig)
 
 	server := &http.Server{
 		Addr:           cfg.GetServerAddr(),
 		Handler:        ginRouter,
-		ReadTimeout:    cfg.BaseConfig.Server.ReadTimeout,
-		WriteTimeout:   cfg.BaseConfig.Server.WriteTimeout,
-		IdleTimeout:    cfg.BaseConfig.Server.IdleTimeout,
-		MaxHeaderBytes: cfg.BaseConfig.Server.MaxHeaderBytes,
+		ReadTimeout:    cfg.Server.ReadTimeout,
+		WriteTimeout:   cfg.Server.WriteTimeout,
+		IdleTimeout:    cfg.Server.IdleTimeout,
+		MaxHeaderBytes: cfg.Server.MaxHeaderBytes,
 	}
 
 	log.Info().Str("address", cfg.GetServerAddr()).Msg("HTTP server configured")

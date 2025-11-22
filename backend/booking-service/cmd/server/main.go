@@ -17,8 +17,6 @@ import (
 	sharedMiddleware "bus-booking/shared/middleware"
 )
 
-const ServiceName = "booking-service"
-
 type Application struct {
 	Config     *config.Config
 	Database   *sharedDB.DatabaseManager
@@ -95,7 +93,7 @@ func startServer(app *Application) {
 	// Start HTTP server in a goroutine
 	go func() {
 		log.Info().
-			Str("service", ServiceName).
+			Str("service", app.Config.ServiceName).
 			Str("address", app.Config.GetServerAddr()).
 			Msg("Starting HTTP server...")
 
@@ -105,7 +103,7 @@ func startServer(app *Application) {
 	}()
 
 	log.Info().
-		Str("service", ServiceName).
+		Str("service", app.Config.ServiceName).
 		Str("address", app.Config.GetServerAddr()).
 		Msg("Booking Service started successfully")
 
