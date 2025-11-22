@@ -48,7 +48,6 @@ func main() {
 	app.start()
 }
 
-// initDependencies initializes all application dependencies
 func (app *Application) initDependencies() error {
 	// Initialize database
 	var err error

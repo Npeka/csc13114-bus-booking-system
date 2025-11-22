@@ -18,7 +18,6 @@ func main() {
 		cfg, _ = config.LoadConfig("")
 	}
 
-	// Load routes
 	routes, err := config.LoadRoutes("routes")
 	if err != nil {
 		log.Fatalf("Failed to load routes: %v", err)

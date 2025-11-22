@@ -27,16 +27,12 @@ type Application struct {
 }
 
 func main() {
-	// Load configuration first
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load configuration")
 	}
 
-	// Initialize application
-	app := &Application{
-		Config: cfg,
-	}
+	app := &Application{Config: cfg}
 
 	// Initialize database
 	app.Database, err = sharedDB.NewPostgresConnection(&cfg.BaseConfig.Database, cfg.BaseConfig.Server.Environment)
