@@ -67,7 +67,8 @@ func (g *Gateway) SetupRoutes(router *gin.Engine) {
 
 		g.setupRoute(router, prefixedRoute)
 		log.Printf("Successfully registered route %d: %s", i+1, prefixedRoute.Path)
-	} // Catch-all route for unmatched paths
+	}
+
 	router.NoRoute(func(c *gin.Context) {
 		c.JSON(404, gin.H{
 			"error":   "route not found",

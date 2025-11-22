@@ -39,23 +39,14 @@ func main() {
 
 	log.Info().Str("service", cfg.ServiceName).Msg("Starting User Service...")
 
-	// Initialize validator
 	validator.InitValidator()
 
-	// Create application instance
-	app := &Application{
-		Config: cfg,
-	}
-
-	// Initialize dependencies
+	app := &Application{Config: cfg}
 	if err := app.initDependencies(); err != nil {
 		log.Fatal().Err(err).Msg("Failed to initialize dependencies")
 	}
 
-	// Setup HTTP server
 	app.setupHTTPServer()
-
-	// Start server
 	app.start()
 }
 
