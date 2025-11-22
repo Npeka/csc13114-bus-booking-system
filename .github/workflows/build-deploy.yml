@@ -27,10 +27,10 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       booking-service: ${{ steps.changes.outputs.booking-service }}
+      gateway-service: ${{ steps.changes.outputs.gateway-service }}
+      payment-service: ${{ steps.changes.outputs.payment-service }}
       trip-service: ${{ steps.changes.outputs.trip-service }}
       user-service: ${{ steps.changes.outputs.user-service }}
-
-      gateway-service: ${{ steps.changes.outputs.gateway-service }}
       shared: ${{ steps.changes.outputs.shared }}
     steps:
       - uses: actions/checkout@v4
@@ -45,15 +45,17 @@ jobs:
             booking-service:
               - 'backend/booking-service/**'
               - 'backend/shared/**'
+            gateway-service:
+              - 'backend/gateway-service/**'
+              - 'backend/shared/**'
+            payment-service:
+              - 'backend/payment-service/**'
+              - 'backend/shared/**'
             trip-service:
               - 'backend/trip-service/**'
               - 'backend/shared/**'
             user-service:
               - 'backend/user-service/**'
-              - 'backend/shared/**'
-
-            gateway-service:
-              - 'backend/gateway-service/**'
               - 'backend/shared/**'
             shared:
               - 'backend/shared/**'
@@ -62,9 +64,11 @@ jobs:
     needs: detect-changes
     if: |
       needs.detect-changes.outputs.booking-service == 'true' ||
+      needs.detect-changes.outputs.gateway-service == 'true' ||
+      needs.detect-changes.outputs.payment-service == 'true' ||
       needs.detect-changes.outputs.trip-service == 'true' ||
       needs.detect-changes.outputs.user-service == 'true' ||
-      needs.detect-changes.outputs.gateway-service == 'true'
+      needs.detect-changes.outputs.shared == 'true'
     runs-on: ubuntu-latest
     environment: Production
     strategy:
@@ -73,15 +77,18 @@ jobs:
           - name: booking-service
             changed: ${{ needs.detect-changes.outputs.booking-service }}
             port: 8082
+          - name: gateway-service
+            changed: ${{ needs.detect-changes.outputs.gateway-service }}
+            port: 8000
+          - name: payment-service
+            changed: ${{ needs.detect-changes.outputs.payment-service }}
+            port: 8081
           - name: trip-service
             changed: ${{ needs.detect-changes.outputs.trip-service }}
             port: 8081
           - name: user-service
             changed: ${{ needs.detect-changes.outputs.user-service }}
             port: 8080
-          - name: gateway-service
-            changed: ${{ needs.detect-changes.outputs.gateway-service }}
-            port: 8000
     steps:
       - name: Checkout main branch for build
         if: matrix.service.changed == 'true'
@@ -201,13 +208,14 @@ jobs:
         service:
           - name: booking-service
             changed: ${{ needs.detect-changes.outputs.booking-service }}
+          - name: gateway-service
+            changed: ${{ needs.detect-changes.outputs.gateway-service }}
+          - name: payment-service
+            changed: ${{ needs.detect-changes.outputs.payment-service }}
           - name: trip-service
             changed: ${{ needs.detect-changes.outputs.trip-service }}
           - name: user-service
             changed: ${{ needs.detect-changes.outputs.user-service }}
-
-          - name: gateway-service
-            changed: ${{ needs.detect-changes.outputs.gateway-service }}
 
     steps:
       - name: Login to Docker Hub
@@ -244,9 +252,10 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Services Changed:" >> $GITHUB_STEP_SUMMARY
           echo "- **booking-service**: ${{ needs.detect-changes.outputs.booking-service }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **gateway-service**: ${{ needs.detect-changes.outputs.gateway-service }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **payment-service**: ${{ needs.detect-changes.outputs.payment-service }}" >> $GITHUB_STEP_SUMMARY
           echo "- **trip-service**: ${{ needs.detect-changes.outputs.trip-service }}" >> $GITHUB_STEP_SUMMARY
           echo "- **user-service**: ${{ needs.detect-changes.outputs.user-service }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **gateway-service**: ${{ needs.detect-changes.outputs.gateway-service }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Pipeline Results:" >> $GITHUB_STEP_SUMMARY
           echo "- **Build & Push**: ${{ needs.build-and-push.result }}" >> $GITHUB_STEP_SUMMARY
