@@ -45,7 +45,7 @@ services:
       SERVER_PORT: "8080"
       REDIS_DB: "0"
     ingress:
-      enabled: false # Traffic goes through gateway now
+      enabled: false
 
   trip-service:
     containerName: trip-service
