@@ -13,14 +13,6 @@ metadata:
     nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, PATCH, DELETE, OPTIONS"
     nginx.ingress.kubernetes.io/cors-allow-headers: "Origin,Content-Type,Accept,Authorization,X-Requested-With"
     nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
-    nginx.ingress.kubernetes.io/server-snippet: |
-      # Block automated scanners and known malicious IPs
-      deny 190.92.233.29;
-      deny 108.162.227.66;
-      deny 143.110.209.50;
-      deny 213.209.157.81;
-      # Allow all other IPs
-      allow all;
 spec:
   ingressClassName: nginx
   tls:
