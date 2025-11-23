@@ -278,7 +278,7 @@ export const refreshAccessToken = async (): Promise<string | null> => {
     }
 
     if (!refreshToken) {
-      throw new Error("No refresh token available");
+      return null;
     }
 
     // Call backend refresh endpoint

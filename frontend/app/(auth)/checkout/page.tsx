@@ -16,7 +16,6 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
-import { ProtectedRoute } from "@/components/auth/protected-route";
 
 function CheckoutContent() {
   const router = useRouter();
@@ -58,8 +57,7 @@ function CheckoutContent() {
   };
 
   return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-50">
         <div className="container py-8">
           <div className="mb-6">
             <h1 className="text-3xl font-bold">Thanh toán</h1>
@@ -403,7 +401,6 @@ function CheckoutContent() {
           </form>
         </div>
       </div>
-    </ProtectedRoute>
   );
 }
 

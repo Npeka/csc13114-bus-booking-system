@@ -21,7 +21,9 @@ export function TripSearchForm() {
   const router = useRouter();
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
-  const [date, setDate] = useState<Date | undefined>(new Date());
+  // Initialize as undefined to avoid hydration mismatch with PPR
+  // Set the date in useEffect to ensure it only runs on client
+  const [date, setDate] = useState<Date | undefined>(undefined);
   const [isRoundTrip, setIsRoundTrip] = useState(false);
   const [returnDate, setReturnDate] = useState<Date | undefined>(undefined);
   const [passengers, setPassengers] = useState(1);
@@ -144,6 +146,13 @@ export function TripSearchForm() {
       searchInputRef.current?.focus();
     }
   }, [locationPicker.open, locationPicker.field]);
+
+  // Initialize date on client side only to avoid hydration mismatch
+  useEffect(() => {
+    if (date === undefined) {
+      setDate(new Date());
+    }
+  }, [date]);
 
   useEffect(() => {
     if (!locationPicker.open) {

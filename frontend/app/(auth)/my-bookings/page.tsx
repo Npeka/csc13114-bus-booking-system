@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, MapPin, Download, X } from "lucide-react";
 import Link from "next/link";
-import { ProtectedRoute } from "@/components/auth/protected-route";
 
 type Booking = {
   id: string;
@@ -88,8 +87,7 @@ export default function MyBookingsPage() {
   ];
 
   return (
-    <ProtectedRoute>
-      <div className="min-h-screen">
+    <div className="min-h-screen">
         <div className="container py-8">
           <div className="mb-6">
             <h1 className="text-3xl font-bold">Vé đã đặt</h1>
@@ -204,7 +202,6 @@ export default function MyBookingsPage() {
           </Tabs>
         </div>
       </div>
-    </ProtectedRoute>
   );
 }
 

@@ -31,6 +31,8 @@ import { Menu, User } from "lucide-react";
 import { FormEvent, useState, useEffect } from "react";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { ModeToggle } from "@/components/theme/mode-toggle";
+import { RoleBadge } from "@/components/auth/role-badge";
+import { useRole } from "@/lib/auth/useRole";
 import {
   loginWithGoogle,
   loginWithPhone,
@@ -50,7 +52,8 @@ export function Header() {
   const [recaptchaRendered, setRecaptchaRendered] = useState(false);
 
   // Get auth state from store
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const { isAdmin, isOperator } = useRole();
 
   const validatePhoneNumber = (phone: string, code: string): boolean => {
     setPhoneError("");
@@ -274,12 +277,30 @@ export function Header() {
           >
             Tìm chuyến
           </Link>
-          <Link
-            href="/my-bookings"
-            className="text-sm font-semibold text-foreground/80 transition-colors hover:text-foreground"
-          >
-            Vé của tôi
-          </Link>
+          {isAuthenticated && (
+            <Link
+              href="/my-bookings"
+              className="text-sm font-semibold text-foreground/80 transition-colors hover:text-foreground"
+            >
+              Vé của tôi
+            </Link>
+          )}
+          {isAdmin && (
+            <Link
+              href="/admin/dashboard"
+              className="text-sm font-semibold text-foreground/80 transition-colors hover:text-foreground"
+            >
+              Quản trị
+            </Link>
+          )}
+          {isOperator && (
+            <Link
+              href="/operator/dashboard"
+              className="text-sm font-semibold text-foreground/80 transition-colors hover:text-foreground"
+            >
+              Điều hành
+            </Link>
+          )}
         </nav>
 
         {/* Right Actions */}
@@ -297,12 +318,43 @@ export function Header() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
+                {user && (
+                  <>
+                    <div className="flex items-center justify-between px-2 py-1.5">
+                      <span className="text-sm font-medium">
+                        {user.full_name}
+                      </span>
+                      {user.role && <RoleBadge userRole={user.role} />}
+                    </div>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 <DropdownMenuItem asChild>
                   <Link href="/profile">Hồ sơ của tôi</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/my-bookings">Vé đã đặt</Link>
                 </DropdownMenuItem>
+                {isAdmin && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/dashboard">
+                        Bảng điều khiển quản trị
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {isOperator && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/operator/dashboard">
+                        Bảng điều khiển điều hành
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onSelect={(event) => {
@@ -347,13 +399,33 @@ export function Header() {
                 >
                   Tìm chuyến
                 </Link>
-                <Link
-                  href="/my-bookings"
-                  className="text-base font-medium"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Đặt vé của tôi
-                </Link>
+                {isAuthenticated && (
+                  <Link
+                    href="/my-bookings"
+                    className="text-base font-medium"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Đặt vé của tôi
+                  </Link>
+                )}
+                {isAdmin && (
+                  <Link
+                    href="/admin/dashboard"
+                    className="text-base font-medium text-primary"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Bảng điều khiển quản trị
+                  </Link>
+                )}
+                {isOperator && (
+                  <Link
+                    href="/operator/dashboard"
+                    className="text-base font-medium text-primary"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Bảng điều khiển điều hành
+                  </Link>
+                )}
                 <div className="space-y-3 border-t pt-4">
                   {isAuthenticated ? (
                     <>

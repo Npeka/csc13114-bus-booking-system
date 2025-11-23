@@ -14,7 +14,6 @@ import {
   MapPin,
   Clock,
 } from "lucide-react";
-import { ProtectedRoute } from "@/components/auth/protected-route";
 
 function BookingConfirmationContent() {
   const searchParams = useSearchParams();
@@ -46,8 +45,7 @@ function BookingConfirmationContent() {
   };
 
   return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-neutral-50 py-12">
+    <div className="min-h-screen bg-neutral-50 py-12">
         <div className="container max-w-3xl">
           {/* Success Message */}
           <div className="mb-8 text-center">
@@ -214,7 +212,6 @@ function BookingConfirmationContent() {
           </Card>
         </div>
       </div>
-    </ProtectedRoute>
   );
 }
 
