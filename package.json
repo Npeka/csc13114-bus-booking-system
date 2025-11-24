@@ -1,0 +1,24 @@
+{
+  "name": "csc13114-bus-booking-system",
+  "version": "1.0.0",
+  "description": "A comprehensive microservices-based bus booking platform built with modern technologies, featuring a Next.js frontend and Go-based backend services.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky install",
+    "lint:staged": "lint-staged"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0"
+  },
+  "lint-staged": {
+    "frontend/**/*.{ts,tsx,js,jsx}": [
+      "cd frontend && pnpm lint:check",
+      "cd frontend && pnpm format:check"
+    ]
+  }
+}

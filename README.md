@@ -203,10 +203,50 @@ Per-service checks with change detection:
 
 ### Pre-commit Hooks
 
-The project uses Husky and lint-staged for pre-commit validation:
-- Automatic code formatting
-- Linting on staged files
-- Type checking
+The project uses **Husky** for Git hooks and **lint-staged** for running checks on staged files.
+
+#### Setup
+
+Pre-commit hooks are automatically installed when you run:
+```bash
+npm install
+```
+
+This runs the `prepare` script which executes `husky install`.
+
+#### What Gets Checked
+
+**Frontend** (when `frontend/` files are staged):
+- ESLint checks via `pnpm lint:check`
+- Prettier formatting via `pnpm format:check`
+- Runs through lint-staged for efficiency
+
+**Backend** (per-service, only for changed services):
+- `gofmt` formatting check
+- `golangci-lint` static analysis
+- Automatically detects which services changed
+- Only runs checks for modified services
+
+#### Example Output
+
+```bash
+[PRE] Pre-commit started
+[FE ] frontend changed → running lint-staged...
+✔ Running tasks for staged files...
+[BE ] Running Go fmt + lint for changed backend services...
+[BE ] booking-service no changes → skip
+[BE ] payment-service changed → running fmt + lint...
+golangci-lint run --config=../.golangci.yml ./...
+0 issues.
+[BE ] user-service no changes → skip
+[OK ] Pre-commit checks passed.
+```
+
+#### Configuration Files
+
+- [`.husky/pre-commit`](.husky/pre-commit) - Main pre-commit hook script
+- [`package.json`](package.json) - Husky and lint-staged configuration
+- Root level manages both frontend and backend checks
 
 ### CI/CD Pipeline
 

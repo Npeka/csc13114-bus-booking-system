@@ -57,3 +57,6 @@ logs/
 # Firebase service account files
 *firebase*.json
 fbsvc.json
+
+# node_modules
+node_modules/

@@ -1,0 +1,44 @@
+#!/usr/bin/env sh
+set -e
+
+# luôn đảm bảo đang ở root repo
+cd "$(git rev-parse --show-toplevel)"
+
+echo "[PRE] Pre-commit started"
+
+########################################
+# 1) FRONTEND – lint-staged
+########################################
+
+if git diff --cached --name-only | grep -q "^frontend/"; then
+  echo "[FE ] frontend changed → running lint-staged..."
+  npm run lint:staged
+else
+  echo "[FE ] no staged changes → skip frontend checks"
+fi
+
+########################################
+# 2) BACKEND – Go fmt + lint từng service
+########################################
+
+echo "[BE ] Running Go fmt + lint for changed backend services..."
+
+run_for_service() {
+  service_dir="$1"
+  label="$2"
+
+  if git diff --cached --name-only | grep -q "^$service_dir/"; then
+    echo "[BE ] $label changed → running fmt + lint..."
+    make -C "$service_dir" fmt lint
+  else
+    echo "[BE ] $label no changes → skip"
+  fi
+}
+
+run_for_service "backend/booking-service"  "booking-service"
+run_for_service "backend/gateway-service"  "gateway-service"
+run_for_service "backend/payment-service"  "payment-service"
+run_for_service "backend/trip-service"     "trip-service"
+run_for_service "backend/user-service"     "user-service"
+
+echo "[OK ] Pre-commit checks passed."

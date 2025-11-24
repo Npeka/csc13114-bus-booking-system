@@ -29,7 +29,7 @@ func NewTransactionHandler(service service.TransactionService) TransactionHandle
 // @Accept json
 // @Produce json
 // @Param transaction body model.CreateTransactionRequest true "Transaction creation request"
-// @Success 201 {object} nil
+// @Success 201 {object} map[string]string "Created"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /transactions [post]
