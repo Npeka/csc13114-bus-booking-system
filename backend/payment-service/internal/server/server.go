@@ -10,8 +10,8 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"bus-booking/shared/db"
 	"bus-booking/payment-service/config"
+	"bus-booking/shared/db"
 )
 
 type Server struct {
