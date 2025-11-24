@@ -11,21 +11,21 @@ import (
 	"firebase.google.com/go/v4/auth"
 	"github.com/rs/zerolog/log"
 
-	sharedDB "bus-booking/shared/db"
+	"bus-booking/shared/db"
 	"bus-booking/user-service/config"
 )
 
 type Server struct {
 	cfg *config.Config
-	db  *sharedDB.DatabaseManager
-	rd  *sharedDB.RedisManager
+	db  *db.DatabaseManager
+	rd  *db.RedisManager
 	fa  *auth.Client
 }
 
 func NewServer(
 	cfg *config.Config,
-	db *sharedDB.DatabaseManager,
-	rd *sharedDB.RedisManager,
+	db *db.DatabaseManager,
+	rd *db.RedisManager,
 	fa *auth.Client,
 ) *Server {
 	return &Server{cfg: cfg, db: db, rd: rd, fa: fa}

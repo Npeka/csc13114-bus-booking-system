@@ -17,7 +17,7 @@ package main
 // @description Type "Bearer" followed by a space and JWT token.
 
 import (
-	sharedDB "bus-booking/shared/db"
+	"bus-booking/shared/db"
 	"bus-booking/shared/logger"
 	"bus-booking/shared/validator"
 	"bus-booking/user-service/config"
@@ -31,11 +31,11 @@ func main() {
 	logger.MustSetupLogger(&cfg.Log)
 	validator.MustSetupValidator()
 
-	db := sharedDB.MustNewPostgresConnection(&cfg.Database)
-	rd := sharedDB.MustNewRedisConnection(&cfg.Redis)
+	pg := db.MustNewPostgresConnection(&cfg.Database)
+	rd := db.MustNewRedisConnection(&cfg.Redis)
 	fa := initializer.MustNewFirebase(&cfg.Firebase)
 
-	sv := server.NewServer(cfg, db, rd, fa)
+	sv := server.NewServer(cfg, pg, rd, fa)
 	defer sv.Close()
 
 	sv.Run()
