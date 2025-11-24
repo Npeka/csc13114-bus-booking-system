@@ -30,7 +30,17 @@ func NewTripHandler(tripService service.TripService) TripHandler {
 	}
 }
 
-// SearchTrips handles trip search requests
+// SearchTrips godoc
+// @Summary Search trips
+// @Description Search for available trips based on origin, destination, and other criteria
+// @Tags trips
+// @Accept json
+// @Produce json
+// @Param request body model.TripSearchRequest true "Trip search criteria"
+// @Success 200 {object} model.TripSearchResponse "List of matching trips"
+// @Failure 400 {object} map[string]string "Invalid request"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /api/v1/trips/search [post]
 func (h *TripHandlerImpl) SearchTrips(c *gin.Context) {
 	var req model.TripSearchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -74,7 +84,17 @@ func (h *TripHandlerImpl) SearchTrips(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// GetTrip handles get trip by ID requests
+// GetTrip godoc
+// @Summary Get trip by ID
+// @Description Get detailed information about a specific trip
+// @Tags trips
+// @Accept json
+// @Produce json
+// @Param id path string true "Trip ID" format(uuid)
+// @Success 200 {object} model.Trip "Trip details"
+// @Failure 400 {object} map[string]string "Invalid trip ID"
+// @Failure 404 {object} map[string]string "Trip not found"
+// @Router /api/v1/trips/{id} [get]
 func (h *TripHandlerImpl) GetTrip(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
@@ -92,7 +112,17 @@ func (h *TripHandlerImpl) GetTrip(c *gin.Context) {
 	c.JSON(http.StatusOK, trip)
 }
 
-// CreateTrip handles trip creation requests
+// CreateTrip godoc
+// @Summary Create a new trip
+// @Description Create a new trip with route, bus, and schedule information
+// @Tags trips
+// @Accept json
+// @Produce json
+// @Param request body model.CreateTripRequest true "Trip creation data"
+// @Success 201 {object} model.Trip "Created trip"
+// @Failure 400 {object} map[string]string "Invalid request"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /api/v1/trips [post]
 func (h *TripHandlerImpl) CreateTrip(c *gin.Context) {
 	var req model.CreateTripRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -109,7 +139,18 @@ func (h *TripHandlerImpl) CreateTrip(c *gin.Context) {
 	c.JSON(http.StatusCreated, trip)
 }
 
-// UpdateTrip handles trip update requests
+// UpdateTrip godoc
+// @Summary Update trip
+// @Description Update trip information such as schedule, price, or status
+// @Tags trips
+// @Accept json
+// @Produce json
+// @Param id path string true "Trip ID" format(uuid)
+// @Param request body model.UpdateTripRequest true "Trip update data"
+// @Success 200 {object} model.Trip "Updated trip"
+// @Failure 400 {object} map[string]string "Invalid request"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /api/v1/trips/{id} [put]
 func (h *TripHandlerImpl) UpdateTrip(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
@@ -133,7 +174,17 @@ func (h *TripHandlerImpl) UpdateTrip(c *gin.Context) {
 	c.JSON(http.StatusOK, trip)
 }
 
-// DeleteTrip handles trip deletion requests
+// DeleteTrip godoc
+// @Summary Delete trip
+// @Description Delete a trip by ID
+// @Tags trips
+// @Accept json
+// @Produce json
+// @Param id path string true "Trip ID" format(uuid)
+// @Success 200 {object} map[string]string "Success message"
+// @Failure 400 {object} map[string]string "Invalid trip ID"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /api/v1/trips/{id} [delete]
 func (h *TripHandlerImpl) DeleteTrip(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
@@ -151,7 +202,18 @@ func (h *TripHandlerImpl) DeleteTrip(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "trip deleted successfully"})
 }
 
-// ListTripsByRoute handles listing trips by route
+// ListTripsByRoute godoc
+// @Summary List trips by route and date
+// @Description Get all trips for a specific route on a given date
+// @Tags trips
+// @Accept json
+// @Produce json
+// @Param route_id path string true "Route ID" format(uuid)
+// @Param date query string true "Date in YYYY-MM-DD format" example(2024-01-15)
+// @Success 200 {array} model.Trip "List of trips"
+// @Failure 400 {object} map[string]string "Invalid request"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /api/v1/routes/{route_id}/trips [get]
 func (h *TripHandlerImpl) ListTripsByRoute(c *gin.Context) {
 	routeIDStr := c.Param("route_id")
 	routeID, err := uuid.Parse(routeIDStr)

@@ -125,8 +125,23 @@ func (h *BookingHandler) GetUserBookings(c *gin.Context) {
 		return
 	}
 
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, model.ErrorResponse{
+			Error:   "Invalid page number",
+			Message: "Page number must be a valid integer",
+		})
+		return
+	}
+
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, model.ErrorResponse{
+			Error:   "Invalid limit number",
+			Message: "Limit must be a valid integer",
+		})
+		return
+	}
 
 	if page < 1 {
 		page = 1
@@ -171,8 +186,23 @@ func (h *BookingHandler) GetTripBookings(c *gin.Context) {
 		return
 	}
 
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, model.ErrorResponse{
+			Error:   "Invalid page number",
+			Message: "Page number must be a valid integer",
+		})
+		return
+	}
+
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, model.ErrorResponse{
+			Error:   "Invalid limit number",
+			Message: "Limit must be a valid integer",
+		})
+		return
+	}
 
 	if page < 1 {
 		page = 1
@@ -543,8 +573,23 @@ func (h *BookingHandler) GetTripFeedbacks(c *gin.Context) {
 		return
 	}
 
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, model.ErrorResponse{
+			Error:   "Invalid page number",
+			Message: "Page number must be a valid integer",
+		})
+		return
+	}
+
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, model.ErrorResponse{
+			Error:   "Invalid limit number",
+			Message: "Limit must be a valid integer",
+		})
+		return
+	}
 
 	if page < 1 {
 		page = 1
@@ -635,8 +680,23 @@ func (h *BookingHandler) GetBookingStats(c *gin.Context) {
 // @Failure 500 {object} model.ErrorResponse
 // @Router /statistics/popular-trips [get]
 func (h *BookingHandler) GetPopularTrips(c *gin.Context) {
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
-	days, _ := strconv.Atoi(c.DefaultQuery("days", "30"))
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, model.ErrorResponse{
+			Error:   "Invalid limit number",
+			Message: "Limit must be a valid integer",
+		})
+		return
+	}
+
+	days, err := strconv.Atoi(c.DefaultQuery("days", "30"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, model.ErrorResponse{
+			Error:   "Invalid days number",
+			Message: "Days must be a valid integer",
+		})
+		return
+	}
 
 	if limit < 1 || limit > 100 {
 		limit = 10

@@ -14,33 +14,32 @@ import (
 	"bus-booking/user-service/internal/handler"
 )
 
-type Config struct {
-	Config      *config.Config
+type Handlers struct {
 	AuthHandler handler.AuthHandler
 	UserHandler handler.UserHandler
 }
 
-func SetupRoutes(router *gin.Engine, cfg *Config) {
+func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 	router.Use(middleware.Logger())
-	router.Use(middleware.SetupCORS(&cfg.Config.CORS))
-	router.Use(middleware.RequestContextMiddleware(cfg.Config.ServiceName))
-	router.GET(health.Path, health.Handler(cfg.Config.ServiceName))
+	router.Use(middleware.SetupCORS(&cfg.CORS))
+	router.Use(middleware.RequestContextMiddleware(cfg.ServiceName))
+	router.GET(health.Path, health.Handler(cfg.ServiceName))
 	router.GET(swagger.Path, ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	v1 := router.Group("/api/v1")
 	{
 		auth := v1.Group("/auth")
 		{
-			auth.POST("/verify-token", ginext.WrapHandler(cfg.AuthHandler.VerifyToken))
-			auth.POST("/firebase/auth", ginext.WrapHandler(cfg.AuthHandler.FirebaseAuth))
-			auth.POST("/refresh-token", ginext.WrapHandler(cfg.AuthHandler.RefreshToken))
-			auth.POST("/logout", middleware.RequireAuthMiddleware(), ginext.WrapHandler(cfg.AuthHandler.Logout))
+			auth.POST("/verify-token", ginext.WrapHandler(h.AuthHandler.VerifyToken))
+			auth.POST("/firebase/auth", ginext.WrapHandler(h.AuthHandler.FirebaseAuth))
+			auth.POST("/refresh-token", ginext.WrapHandler(h.AuthHandler.RefreshToken))
+			auth.POST("/logout", middleware.RequireAuthMiddleware(), ginext.WrapHandler(h.AuthHandler.Logout))
 		}
 
 		users := v1.Group("/users")
 		users.Use(middleware.RequireAuthMiddleware())
 		{
-			users.GET("/profile", ginext.WrapHandler(cfg.UserHandler.GetProfile))
+			users.GET("/profile", ginext.WrapHandler(h.UserHandler.GetProfile))
 		}
 
 		admin := v1.Group("/admin")
@@ -49,12 +48,12 @@ func SetupRoutes(router *gin.Engine, cfg *Config) {
 		{
 			adminUsers := admin.Group("/users")
 			{
-				adminUsers.POST("", ginext.WrapHandler(cfg.UserHandler.CreateUser))
-				adminUsers.GET("", ginext.WrapHandler(cfg.UserHandler.ListUsers))
-				adminUsers.GET("/:id", ginext.WrapHandler(cfg.UserHandler.GetUser))
-				adminUsers.PUT("/:id", ginext.WrapHandler(cfg.UserHandler.UpdateUser))
-				adminUsers.DELETE("/:id", ginext.WrapHandler(cfg.UserHandler.DeleteUser))
-				adminUsers.PATCH("/:id/status", ginext.WrapHandler(cfg.UserHandler.UpdateUserStatus))
+				adminUsers.POST("", ginext.WrapHandler(h.UserHandler.CreateUser))
+				adminUsers.GET("", ginext.WrapHandler(h.UserHandler.ListUsers))
+				adminUsers.GET("/:id", ginext.WrapHandler(h.UserHandler.GetUser))
+				adminUsers.PUT("/:id", ginext.WrapHandler(h.UserHandler.UpdateUser))
+				adminUsers.DELETE("/:id", ginext.WrapHandler(h.UserHandler.DeleteUser))
+				adminUsers.PATCH("/:id/status", ginext.WrapHandler(h.UserHandler.UpdateUserStatus))
 			}
 		}
 	}

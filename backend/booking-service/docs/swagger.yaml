@@ -1,0 +1,947 @@
+definitions:
+  bus-booking_booking-service_internal_model.Booking:
+    properties:
+      booking_seats:
+        items:
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.BookingSeat'
+        type: array
+      cancellation_reason:
+        type: string
+      cancelled_at:
+        type: string
+      completed_at:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      passenger_email:
+        type: string
+      passenger_name:
+        type: string
+      passenger_phone:
+        type: string
+      payment_method:
+        $ref: '#/definitions/bus-booking_booking-service_internal_model.PaymentMethod'
+      payment_method_id:
+        type: string
+      special_requests:
+        type: string
+      status:
+        type: string
+      total_amount:
+        minimum: 0
+        type: number
+      trip_id:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    required:
+    - passenger_name
+    - passenger_phone
+    - payment_method_id
+    - total_amount
+    - trip_id
+    - user_id
+    type: object
+  bus-booking_booking-service_internal_model.BookingResponse:
+    properties:
+      cancellation_reason:
+        type: string
+      cancelled_at:
+        type: string
+      completed_at:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      passenger_email:
+        type: string
+      passenger_name:
+        type: string
+      passenger_phone:
+        type: string
+      payment_method:
+        $ref: '#/definitions/bus-booking_booking-service_internal_model.PaymentMethodResponse'
+      seats:
+        items:
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.BookingSeatResponse'
+        type: array
+      special_requests:
+        type: string
+      status:
+        type: string
+      total_amount:
+        type: number
+      trip_id:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  bus-booking_booking-service_internal_model.BookingSeat:
+    properties:
+      booking:
+        $ref: '#/definitions/bus-booking_booking-service_internal_model.Booking'
+      booking_id:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      price:
+        minimum: 0
+        type: number
+      seat_id:
+        type: string
+      updated_at:
+        type: string
+    required:
+    - booking_id
+    - price
+    - seat_id
+    type: object
+  bus-booking_booking-service_internal_model.BookingSeatResponse:
+    properties:
+      id:
+        type: string
+      price:
+        type: number
+      seat_id:
+        type: string
+    type: object
+  bus-booking_booking-service_internal_model.BookingStatsResponse:
+    properties:
+      average_rating:
+        type: number
+      cancelled_bookings:
+        type: integer
+      completed_bookings:
+        type: integer
+      end_date:
+        type: string
+      start_date:
+        type: string
+      total_bookings:
+        type: integer
+      total_revenue:
+        type: number
+    type: object
+  bus-booking_booking-service_internal_model.CancelBookingRequest:
+    properties:
+      reason:
+        type: string
+      user_id:
+        type: string
+    required:
+    - reason
+    - user_id
+    type: object
+  bus-booking_booking-service_internal_model.CreateBookingRequest:
+    properties:
+      passenger_email:
+        type: string
+      passenger_name:
+        type: string
+      passenger_phone:
+        type: string
+      payment_method_id:
+        type: string
+      seat_ids:
+        items:
+          type: string
+        maxItems: 10
+        minItems: 1
+        type: array
+      seat_price:
+        minimum: 0
+        type: number
+      special_requests:
+        type: string
+      total_amount:
+        minimum: 0
+        type: number
+      trip_id:
+        type: string
+      user_id:
+        type: string
+    required:
+    - passenger_name
+    - passenger_phone
+    - payment_method_id
+    - seat_ids
+    - seat_price
+    - total_amount
+    - trip_id
+    - user_id
+    type: object
+  bus-booking_booking-service_internal_model.CreateFeedbackRequest:
+    properties:
+      booking_id:
+        type: string
+      comment:
+        type: string
+      rating:
+        maximum: 5
+        minimum: 1
+        type: integer
+      user_id:
+        type: string
+    required:
+    - booking_id
+    - rating
+    - user_id
+    type: object
+  bus-booking_booking-service_internal_model.ErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  bus-booking_booking-service_internal_model.FeedbackResponse:
+    properties:
+      booking_id:
+        type: string
+      comment:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      rating:
+        type: integer
+      trip_id:
+        type: string
+      user_id:
+        type: string
+    type: object
+  bus-booking_booking-service_internal_model.HealthResponse:
+    properties:
+      service:
+        type: string
+      status:
+        type: string
+      timestamp:
+        type: string
+    type: object
+  bus-booking_booking-service_internal_model.PaginatedBookingResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.BookingResponse'
+        type: array
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  bus-booking_booking-service_internal_model.PaginatedFeedbackResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.FeedbackResponse'
+        type: array
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  bus-booking_booking-service_internal_model.PaymentMethod:
+    properties:
+      code:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      updated_at:
+        type: string
+    required:
+    - code
+    - name
+    type: object
+  bus-booking_booking-service_internal_model.PaymentMethodResponse:
+    properties:
+      code:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+    type: object
+  bus-booking_booking-service_internal_model.PaymentResponse:
+    properties:
+      amount:
+        type: number
+      booking_id:
+        type: string
+      payment_method_id:
+        type: string
+      processed_at:
+        type: string
+      status:
+        type: string
+      transaction_id:
+        type: string
+    type: object
+  bus-booking_booking-service_internal_model.ProcessPaymentRequest:
+    properties:
+      booking_id:
+        type: string
+      token:
+        type: string
+    required:
+    - booking_id
+    type: object
+  bus-booking_booking-service_internal_model.ReleaseSeatRequest:
+    properties:
+      seat_id:
+        type: string
+      trip_id:
+        type: string
+    required:
+    - seat_id
+    - trip_id
+    type: object
+  bus-booking_booking-service_internal_model.ReserveSeatRequest:
+    properties:
+      reservation_minutes:
+        type: integer
+      seat_id:
+        type: string
+      trip_id:
+        type: string
+      user_id:
+        type: string
+    required:
+    - seat_id
+    - trip_id
+    - user_id
+    type: object
+  bus-booking_booking-service_internal_model.SeatAvailabilityResponse:
+    properties:
+      available_seats:
+        items:
+          type: string
+        type: array
+      booked_seats:
+        items:
+          type: string
+        type: array
+      reserved_seats:
+        items:
+          type: string
+        type: array
+      seat_details:
+        additionalProperties:
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.SeatStatus'
+        type: object
+      trip_id:
+        type: string
+    type: object
+  bus-booking_booking-service_internal_model.SeatStatus:
+    properties:
+      booking:
+        $ref: '#/definitions/bus-booking_booking-service_internal_model.Booking'
+      booking_id:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      reserved_until:
+        type: string
+      seat_id:
+        type: string
+      seat_number:
+        type: string
+      status:
+        type: string
+      trip_id:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    required:
+    - seat_id
+    - seat_number
+    - trip_id
+    type: object
+  bus-booking_booking-service_internal_model.SuccessResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+    type: object
+  bus-booking_booking-service_internal_model.TripStatsResponse:
+    properties:
+      average_rating:
+        type: number
+      total_bookings:
+        type: integer
+      total_revenue:
+        type: number
+      trip_id:
+        type: string
+    type: object
+  bus-booking_booking-service_internal_model.UpdateBookingStatusRequest:
+    properties:
+      status:
+        type: string
+    required:
+    - status
+    type: object
+info:
+  contact:
+    email: support@busbooking.com
+    name: API Support
+  description: |-
+    API for booking management in the bus booking system
+    This service handles bookings, seat reservations, and feedback.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: Booking Service API
+  version: "1.0"
+paths:
+  /bookings:
+    post:
+      consumes:
+      - application/json
+      description: Create a new booking with seat selection
+      parameters:
+      - description: Booking creation request
+        in: body
+        name: booking
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.CreateBookingRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.BookingResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+      summary: Create a new booking
+      tags:
+      - bookings
+  /bookings/{id}:
+    get:
+      description: Get a specific booking by its ID
+      parameters:
+      - description: Booking ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.BookingResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+      summary: Get booking by ID
+      tags:
+      - bookings
+  /bookings/{id}/cancel:
+    post:
+      consumes:
+      - application/json
+      description: Cancel a booking and release seats
+      parameters:
+      - description: Booking ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Cancellation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.CancelBookingRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+      summary: Cancel a booking
+      tags:
+      - bookings
+  /bookings/{id}/status:
+    put:
+      consumes:
+      - application/json
+      description: Update the status of a booking
+      parameters:
+      - description: Booking ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Status update request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.UpdateBookingStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+      summary: Update booking status
+      tags:
+      - bookings
+  /bookings/trip/{trip_id}:
+    get:
+      description: Get all bookings for a specific trip with pagination
+      parameters:
+      - description: Trip ID
+        in: path
+        name: trip_id
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.PaginatedBookingResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+      summary: Get trip bookings
+      tags:
+      - bookings
+  /bookings/user/{user_id}:
+    get:
+      description: Get all bookings for a specific user with pagination
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.PaginatedBookingResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+      summary: Get user bookings
+      tags:
+      - bookings
+  /feedback:
+    post:
+      consumes:
+      - application/json
+      description: Create feedback for a completed booking
+      parameters:
+      - description: Feedback creation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.CreateFeedbackRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.FeedbackResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+      summary: Create feedback
+      tags:
+      - feedback
+  /feedback/booking/{booking_id}:
+    get:
+      description: Get feedback for a specific booking
+      parameters:
+      - description: Booking ID
+        in: path
+        name: booking_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.FeedbackResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+      summary: Get booking feedback
+      tags:
+      - feedback
+  /feedback/trip/{trip_id}:
+    get:
+      description: Get all feedbacks for a specific trip with pagination
+      parameters:
+      - description: Trip ID
+        in: path
+        name: trip_id
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.PaginatedFeedbackResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+      summary: Get trip feedbacks
+      tags:
+      - feedback
+  /health:
+    get:
+      description: Check service health
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.HealthResponse'
+      summary: Health check
+      tags:
+      - health
+  /payment/methods:
+    get:
+      description: Get all available payment methods
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/bus-booking_booking-service_internal_model.PaymentMethodResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+      summary: Get payment methods
+      tags:
+      - payment
+  /payment/process:
+    post:
+      consumes:
+      - application/json
+      description: Process payment for a booking
+      parameters:
+      - description: Payment processing request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.ProcessPaymentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.PaymentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+      summary: Process payment
+      tags:
+      - payment
+  /seats/release:
+    post:
+      consumes:
+      - application/json
+      description: Release a reserved seat back to available status
+      parameters:
+      - description: Seat release request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.ReleaseSeatRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+      summary: Release a reserved seat
+      tags:
+      - seats
+  /seats/reserve:
+    post:
+      consumes:
+      - application/json
+      description: Reserve a seat for a user temporarily
+      parameters:
+      - description: Seat reservation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.ReserveSeatRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+      summary: Reserve a seat
+      tags:
+      - seats
+  /statistics/bookings:
+    get:
+      description: Get booking statistics for a date range
+      parameters:
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        required: true
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.BookingStatsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+      summary: Get booking statistics
+      tags:
+      - statistics
+  /statistics/popular-trips:
+    get:
+      description: Get popular trips based on booking statistics
+      parameters:
+      - default: 10
+        description: Number of trips to return
+        in: query
+        name: limit
+        type: integer
+      - default: 30
+        description: Number of days to look back
+        in: query
+        name: days
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/bus-booking_booking-service_internal_model.TripStatsResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+      summary: Get popular trips
+      tags:
+      - statistics
+  /trips/{trip_id}/seats:
+    get:
+      description: Get available, reserved, and booked seats for a specific trip
+      parameters:
+      - description: Trip ID
+        in: path
+        name: trip_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.SeatAvailabilityResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/bus-booking_booking-service_internal_model.ErrorResponse'
+      summary: Get seat availability for a trip
+      tags:
+      - seats
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

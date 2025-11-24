@@ -1,0 +1,69 @@
+definitions:
+  bus-booking_payment-service_internal_model.CreateTransactionRequest:
+    properties:
+      amount:
+        type: number
+      booking_id:
+        type: string
+      currency:
+        type: string
+      payment_method:
+        type: string
+    required:
+    - amount
+    - booking_id
+    - currency
+    - payment_method
+    type: object
+info:
+  contact:
+    email: support@busbooking.com
+    name: API Support
+  description: |-
+    API for payment processing in the bus booking system
+    This service handles payment transactions, refunds, and payment history.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: Payment Service API
+  version: "1.0"
+paths:
+  /transactions:
+    post:
+      consumes:
+      - application/json
+      description: Create a new transaction for a booking
+      parameters:
+      - description: Transaction creation request
+        in: body
+        name: transaction
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_payment-service_internal_model.CreateTransactionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new transaction
+      tags:
+      - transactions
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

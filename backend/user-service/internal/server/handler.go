@@ -31,8 +31,7 @@ func (s *Server) buildHandler() http.Handler {
 	}
 
 	engine := gin.New()
-	router.SetupRoutes(engine, &router.Config{
-		Config:      s.cfg,
+	router.SetupRoutes(engine, s.cfg, &router.Handlers{
 		UserHandler: userHandler,
 		AuthHandler: authHandler,
 	})

@@ -1,24 +1,24 @@
 package main
 
 import (
-	"log"
-
 	"bus-booking/booking-service/config"
 	"bus-booking/booking-service/internal/model"
-	sharedDB "bus-booking/shared/db"
+	"bus-booking/shared/db"
+	"bus-booking/shared/logger"
+
+	"github.com/rs/zerolog/log"
 )
 
 func main() {
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		log.Fatal("Failed to load config:", err)
-	}
+	cfg := config.MustLoadConfig()
+	logger.MustSetupLogger(&cfg.Log)
 
-	migrationManager, err := sharedDB.NewMigrationManager(&cfg.Database)
-	if err != nil {
-		log.Fatal("Failed to create migration manager:", err)
-	}
-	defer migrationManager.Close()
+	mm := db.MustNewMigrationManager(&cfg.Database)
+	defer func() {
+		if err := mm.Close(); err != nil {
+			log.Error().Err(err).Msg("failed to close migrator")
+		}
+	}()
 
 	models := []interface{}{
 		&model.Booking{},
@@ -28,9 +28,9 @@ func main() {
 		&model.Feedback{},
 	}
 
-	if err := migrationManager.RunMigrations(models...); err != nil {
-		log.Fatal("Migration failed:", err)
+	if err := mm.RunMigrations(models...); err != nil {
+		log.Fatal().Err(err).Msg("Migration failed")
 	}
 
-	log.Println("User-service migration completed successfully!")
+	log.Info().Msg("Booking-service migration completed successfully!")
 }

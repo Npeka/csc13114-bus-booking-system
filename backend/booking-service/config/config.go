@@ -17,3 +17,7 @@ type ExternalConfig struct {
 func LoadConfig(envFilePath ...string) (*Config, error) {
 	return sharedConfig.LoadConfig[Config](envFilePath...)
 }
+
+func MustLoadConfig(envFilePath ...string) *Config {
+	return sharedConfig.MustLoadConfig[Config](envFilePath...)
+}

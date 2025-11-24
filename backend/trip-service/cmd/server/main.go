@@ -20,6 +20,7 @@ import (
 	"bus-booking/shared/logger"
 	"bus-booking/shared/validator"
 	"bus-booking/trip-service/config"
+	_ "bus-booking/trip-service/docs"
 	"bus-booking/trip-service/internal/server"
 )
 

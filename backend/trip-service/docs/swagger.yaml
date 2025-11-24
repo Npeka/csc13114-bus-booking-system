@@ -1,0 +1,1098 @@
+definitions:
+  bus-booking_trip-service_internal_model.Bus:
+    properties:
+      amenities:
+        items:
+          type: string
+        type: array
+      created_at:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      model:
+        type: string
+      operator:
+        $ref: '#/definitions/bus-booking_trip-service_internal_model.Operator'
+      operator_id:
+        type: string
+      plate_number:
+        type: string
+      seat_capacity:
+        maximum: 100
+        minimum: 1
+        type: integer
+      seats:
+        items:
+          $ref: '#/definitions/bus-booking_trip-service_internal_model.Seat'
+        type: array
+      trips:
+        items:
+          $ref: '#/definitions/bus-booking_trip-service_internal_model.Trip'
+        type: array
+      updated_at:
+        type: string
+    required:
+    - model
+    - operator_id
+    - plate_number
+    - seat_capacity
+    type: object
+  bus-booking_trip-service_internal_model.CreateBusRequest:
+    properties:
+      amenities:
+        items:
+          type: string
+        type: array
+      model:
+        maxLength: 255
+        minLength: 2
+        type: string
+      operator_id:
+        type: string
+      plate_number:
+        maxLength: 20
+        minLength: 3
+        type: string
+      seat_capacity:
+        maximum: 100
+        minimum: 1
+        type: integer
+    required:
+    - model
+    - operator_id
+    - plate_number
+    - seat_capacity
+    type: object
+  bus-booking_trip-service_internal_model.CreateRouteRequest:
+    properties:
+      destination:
+        maxLength: 255
+        minLength: 2
+        type: string
+      distance_km:
+        minimum: 1
+        type: integer
+      estimated_minutes:
+        minimum: 1
+        type: integer
+      operator_id:
+        type: string
+      origin:
+        maxLength: 255
+        minLength: 2
+        type: string
+    required:
+    - destination
+    - distance_km
+    - estimated_minutes
+    - operator_id
+    - origin
+    type: object
+  bus-booking_trip-service_internal_model.CreateTripRequest:
+    properties:
+      arrival_time:
+        type: string
+      base_price:
+        minimum: 0
+        type: number
+      bus_id:
+        type: string
+      departure_time:
+        type: string
+      route_id:
+        type: string
+    required:
+    - arrival_time
+    - base_price
+    - bus_id
+    - departure_time
+    - route_id
+    type: object
+  bus-booking_trip-service_internal_model.Operator:
+    properties:
+      approved_at:
+        type: string
+      buses:
+        items:
+          $ref: '#/definitions/bus-booking_trip-service_internal_model.Bus'
+        type: array
+      contact_email:
+        type: string
+      contact_phone:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      routes:
+        items:
+          $ref: '#/definitions/bus-booking_trip-service_internal_model.Route'
+        type: array
+      status:
+        enum:
+        - pending
+        - approved
+        - rejected
+        type: string
+      updated_at:
+        type: string
+    required:
+    - contact_email
+    - name
+    type: object
+  bus-booking_trip-service_internal_model.Route:
+    properties:
+      created_at:
+        type: string
+      destination:
+        type: string
+      distance_km:
+        minimum: 1
+        type: integer
+      estimated_minutes:
+        minimum: 1
+        type: integer
+      id:
+        type: string
+      is_active:
+        type: boolean
+      operator:
+        $ref: '#/definitions/bus-booking_trip-service_internal_model.Operator'
+      operator_id:
+        type: string
+      origin:
+        type: string
+      trips:
+        items:
+          $ref: '#/definitions/bus-booking_trip-service_internal_model.Trip'
+        type: array
+      updated_at:
+        type: string
+    required:
+    - destination
+    - distance_km
+    - estimated_minutes
+    - operator_id
+    - origin
+    type: object
+  bus-booking_trip-service_internal_model.Seat:
+    properties:
+      bus:
+        $ref: '#/definitions/bus-booking_trip-service_internal_model.Bus'
+      bus_id:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      seat_code:
+        type: string
+      seat_type:
+        enum:
+        - standard
+        - premium
+        - vip
+        type: string
+      updated_at:
+        type: string
+    required:
+    - bus_id
+    - seat_code
+    type: object
+  bus-booking_trip-service_internal_model.Trip:
+    properties:
+      arrival_time:
+        type: string
+      base_price:
+        minimum: 0
+        type: number
+      bus:
+        $ref: '#/definitions/bus-booking_trip-service_internal_model.Bus'
+      bus_id:
+        type: string
+      created_at:
+        type: string
+      departure_time:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      route:
+        $ref: '#/definitions/bus-booking_trip-service_internal_model.Route'
+      route_id:
+        type: string
+      status:
+        enum:
+        - scheduled
+        - in_progress
+        - completed
+        - cancelled
+        type: string
+      updated_at:
+        type: string
+    required:
+    - arrival_time
+    - base_price
+    - bus_id
+    - departure_time
+    - route_id
+    type: object
+  bus-booking_trip-service_internal_model.TripDetail:
+    properties:
+      arrival_time:
+        type: string
+      available_seats:
+        type: integer
+      base_price:
+        type: number
+      bus_amenities:
+        items:
+          type: string
+        type: array
+      bus_id:
+        type: string
+      bus_model:
+        description: Bus information
+        type: string
+      bus_plate_number:
+        type: string
+      departure_time:
+        type: string
+      destination:
+        type: string
+      distance_km:
+        type: integer
+      duration:
+        type: string
+      id:
+        type: string
+      operator_id:
+        description: Operator information
+        type: string
+      operator_name:
+        type: string
+      origin:
+        description: Route information
+        type: string
+      route_id:
+        type: string
+      status:
+        type: string
+      total_seats:
+        type: integer
+    type: object
+  bus-booking_trip-service_internal_model.TripSearchRequest:
+    properties:
+      departure_date:
+        type: string
+      destination:
+        type: string
+      limit:
+        maximum: 100
+        minimum: 1
+        type: integer
+      operator_id:
+        type: string
+      origin:
+        type: string
+      page:
+        minimum: 1
+        type: integer
+      passengers:
+        maximum: 10
+        minimum: 1
+        type: integer
+      price_max:
+        minimum: 0
+        type: number
+      price_min:
+        minimum: 0
+        type: number
+      seat_type:
+        enum:
+        - standard
+        - premium
+        - vip
+        type: string
+      sort_by:
+        enum:
+        - price
+        - departure_time
+        - arrival_time
+        type: string
+      sort_order:
+        enum:
+        - asc
+        - desc
+        type: string
+    required:
+    - departure_date
+    - destination
+    - origin
+    - passengers
+    type: object
+  bus-booking_trip-service_internal_model.TripSearchResponse:
+    properties:
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+      trips:
+        items:
+          $ref: '#/definitions/bus-booking_trip-service_internal_model.TripDetail'
+        type: array
+    type: object
+  bus-booking_trip-service_internal_model.UpdateBusRequest:
+    properties:
+      amenities:
+        items:
+          type: string
+        type: array
+      is_active:
+        type: boolean
+      model:
+        maxLength: 255
+        minLength: 2
+        type: string
+      plate_number:
+        maxLength: 20
+        minLength: 3
+        type: string
+      seat_capacity:
+        maximum: 100
+        minimum: 1
+        type: integer
+    type: object
+  bus-booking_trip-service_internal_model.UpdateRouteRequest:
+    properties:
+      destination:
+        maxLength: 255
+        minLength: 2
+        type: string
+      distance_km:
+        minimum: 1
+        type: integer
+      estimated_minutes:
+        minimum: 1
+        type: integer
+      is_active:
+        type: boolean
+      origin:
+        maxLength: 255
+        minLength: 2
+        type: string
+    type: object
+  bus-booking_trip-service_internal_model.UpdateTripRequest:
+    properties:
+      arrival_time:
+        type: string
+      base_price:
+        minimum: 0
+        type: number
+      departure_time:
+        type: string
+      is_active:
+        type: boolean
+      status:
+        enum:
+        - scheduled
+        - in_progress
+        - completed
+        - cancelled
+        type: string
+    type: object
+info:
+  contact:
+    email: support@busbooking.com
+    name: API Support
+  description: API for managing trips, routes, buses, and operators in the bus booking
+    system
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: Trip Service API
+  version: "1.0"
+paths:
+  /api/v1/buses:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of buses, optionally filtered by operator
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by operator ID
+        format: uuid
+        in: query
+        name: operator_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated bus list
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List buses
+      tags:
+      - buses
+    post:
+      consumes:
+      - application/json
+      description: Create a new bus with operator, model, and seat capacity information
+      parameters:
+      - description: Bus creation data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_trip-service_internal_model.CreateBusRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created bus
+          schema:
+            $ref: '#/definitions/bus-booking_trip-service_internal_model.Bus'
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new bus
+      tags:
+      - buses
+  /api/v1/buses/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a bus by ID
+      parameters:
+      - description: Bus ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid bus ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete bus
+      tags:
+      - buses
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a specific bus
+      parameters:
+      - description: Bus ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Bus details
+          schema:
+            $ref: '#/definitions/bus-booking_trip-service_internal_model.Bus'
+        "400":
+          description: Invalid bus ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Bus not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get bus by ID
+      tags:
+      - buses
+    put:
+      consumes:
+      - application/json
+      description: Update bus information such as model, plate number, or amenities
+      parameters:
+      - description: Bus ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Bus update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_trip-service_internal_model.UpdateBusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated bus
+          schema:
+            $ref: '#/definitions/bus-booking_trip-service_internal_model.Bus'
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update bus
+      tags:
+      - buses
+  /api/v1/buses/{id}/seats:
+    get:
+      consumes:
+      - application/json
+      description: Get all seats for a specific bus
+      parameters:
+      - description: Bus ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of bus seats
+          schema:
+            items:
+              $ref: '#/definitions/bus-booking_trip-service_internal_model.Seat'
+            type: array
+        "400":
+          description: Invalid bus ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get bus seats
+      tags:
+      - buses
+  /api/v1/routes:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of routes, optionally filtered by operator
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by operator ID
+        format: uuid
+        in: query
+        name: operator_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated route list
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List routes
+      tags:
+      - routes
+    post:
+      consumes:
+      - application/json
+      description: Create a new route with origin, destination, and distance information
+      parameters:
+      - description: Route creation data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_trip-service_internal_model.CreateRouteRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created route
+          schema:
+            $ref: '#/definitions/bus-booking_trip-service_internal_model.Route'
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new route
+      tags:
+      - routes
+  /api/v1/routes/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a route by ID
+      parameters:
+      - description: Route ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid route ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete route
+      tags:
+      - routes
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a specific route
+      parameters:
+      - description: Route ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Route details
+          schema:
+            $ref: '#/definitions/bus-booking_trip-service_internal_model.Route'
+        "400":
+          description: Invalid route ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Route not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get route by ID
+      tags:
+      - routes
+    put:
+      consumes:
+      - application/json
+      description: Update route information such as origin, destination, or distance
+      parameters:
+      - description: Route ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Route update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_trip-service_internal_model.UpdateRouteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated route
+          schema:
+            $ref: '#/definitions/bus-booking_trip-service_internal_model.Route'
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update route
+      tags:
+      - routes
+  /api/v1/routes/{route_id}/trips:
+    get:
+      consumes:
+      - application/json
+      description: Get all trips for a specific route on a given date
+      parameters:
+      - description: Route ID
+        format: uuid
+        in: path
+        name: route_id
+        required: true
+        type: string
+      - description: Date in YYYY-MM-DD format
+        example: "2024-01-15"
+        in: query
+        name: date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of trips
+          schema:
+            items:
+              $ref: '#/definitions/bus-booking_trip-service_internal_model.Trip'
+            type: array
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List trips by route and date
+      tags:
+      - trips
+  /api/v1/routes/search:
+    get:
+      consumes:
+      - application/json
+      description: Search routes by origin and destination
+      parameters:
+      - description: Origin city
+        in: query
+        name: origin
+        required: true
+        type: string
+      - description: Destination city
+        in: query
+        name: destination
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of matching routes
+          schema:
+            items:
+              $ref: '#/definitions/bus-booking_trip-service_internal_model.Route'
+            type: array
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Search routes
+      tags:
+      - routes
+  /api/v1/trips:
+    post:
+      consumes:
+      - application/json
+      description: Create a new trip with route, bus, and schedule information
+      parameters:
+      - description: Trip creation data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_trip-service_internal_model.CreateTripRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created trip
+          schema:
+            $ref: '#/definitions/bus-booking_trip-service_internal_model.Trip'
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new trip
+      tags:
+      - trips
+  /api/v1/trips/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a trip by ID
+      parameters:
+      - description: Trip ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid trip ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete trip
+      tags:
+      - trips
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a specific trip
+      parameters:
+      - description: Trip ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Trip details
+          schema:
+            $ref: '#/definitions/bus-booking_trip-service_internal_model.Trip'
+        "400":
+          description: Invalid trip ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Trip not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get trip by ID
+      tags:
+      - trips
+    put:
+      consumes:
+      - application/json
+      description: Update trip information such as schedule, price, or status
+      parameters:
+      - description: Trip ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Trip update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_trip-service_internal_model.UpdateTripRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated trip
+          schema:
+            $ref: '#/definitions/bus-booking_trip-service_internal_model.Trip'
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update trip
+      tags:
+      - trips
+  /api/v1/trips/search:
+    post:
+      consumes:
+      - application/json
+      description: Search for available trips based on origin, destination, and other
+        criteria
+      parameters:
+      - description: Trip search criteria
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_trip-service_internal_model.TripSearchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of matching trips
+          schema:
+            $ref: '#/definitions/bus-booking_trip-service_internal_model.TripSearchResponse'
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Search trips
+      tags:
+      - trips
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

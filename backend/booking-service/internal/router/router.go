@@ -1,80 +1,68 @@
 package router
 
 import (
-	"time"
-
 	"bus-booking/booking-service/config"
 	"bus-booking/booking-service/internal/handler"
+	"bus-booking/shared/health"
+	"bus-booking/shared/middleware"
+	"bus-booking/shared/swagger"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func SetupRouter(cfg *config.Config, bookingHandler *handler.BookingHandler) *gin.Engine {
-	if cfg.Server.IsProduction {
-		gin.SetMode(gin.ReleaseMode)
-	} else {
-		gin.SetMode(gin.DebugMode)
-	}
+type Handlers struct {
+	BookingHandler *handler.BookingHandler
+}
 
-	router := gin.New()
-	router.Use(gin.Logger())
-	router.Use(gin.Recovery())
-
-	corsConfig := cors.Config{
-		AllowOrigins:     cfg.CORS.AllowOrigins,
-		AllowMethods:     cfg.CORS.AllowMethods,
-		AllowHeaders:     cfg.CORS.AllowHeaders,
-		ExposeHeaders:    cfg.CORS.ExposeHeaders,
-		AllowCredentials: cfg.CORS.AllowCredentials,
-		MaxAge:           time.Duration(cfg.CORS.MaxAge) * time.Second,
-	}
-	router.Use(cors.New(corsConfig))
-
-	router.GET("/health", bookingHandler.Health)
+func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
+	router.Use(middleware.Logger())
+	router.Use(middleware.SetupCORS(&cfg.CORS))
+	router.Use(middleware.RequestContextMiddleware(cfg.ServiceName))
+	router.GET(health.Path, health.Handler(cfg.ServiceName))
+	router.GET(swagger.Path, ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	v1 := router.Group("/api/v1")
 	{
 		bookings := v1.Group("/bookings")
 		{
-			bookings.POST("", bookingHandler.CreateBooking)
-			bookings.GET("/:id", bookingHandler.GetBooking)
-			bookings.POST("/:id/cancel", bookingHandler.CancelBooking)
-			bookings.PUT("/:id/status", bookingHandler.UpdateBookingStatus)
-			bookings.GET("/user/:user_id", bookingHandler.GetUserBookings)
-			bookings.GET("/trip/:trip_id", bookingHandler.GetTripBookings)
+			bookings.POST("", h.BookingHandler.CreateBooking)
+			bookings.GET("/:id", h.BookingHandler.GetBooking)
+			bookings.POST("/:id/cancel", h.BookingHandler.CancelBooking)
+			bookings.PUT("/:id/status", h.BookingHandler.UpdateBookingStatus)
+			bookings.GET("/user/:user_id", h.BookingHandler.GetUserBookings)
+			bookings.GET("/trip/:trip_id", h.BookingHandler.GetTripBookings)
 		}
 
 		trips := v1.Group("/trips")
 		{
-			trips.GET("/:trip_id/seats", bookingHandler.GetSeatAvailability)
+			trips.GET("/:trip_id/seats", h.BookingHandler.GetSeatAvailability)
 		}
 
 		seats := v1.Group("/seats")
 		{
-			seats.POST("/reserve", bookingHandler.ReserveSeat)
-			seats.POST("/release", bookingHandler.ReleaseSeat)
+			seats.POST("/reserve", h.BookingHandler.ReserveSeat)
+			seats.POST("/release", h.BookingHandler.ReleaseSeat)
 		}
 
 		payment := v1.Group("/payment")
 		{
-			payment.GET("/methods", bookingHandler.GetPaymentMethods)
-			payment.POST("/process", bookingHandler.ProcessPayment)
+			payment.GET("/methods", h.BookingHandler.GetPaymentMethods)
+			payment.POST("/process", h.BookingHandler.ProcessPayment)
 		}
 
 		feedback := v1.Group("/feedback")
 		{
-			feedback.POST("", bookingHandler.CreateFeedback)
-			feedback.GET("/booking/:booking_id", bookingHandler.GetBookingFeedback)
-			feedback.GET("/trip/:trip_id", bookingHandler.GetTripFeedbacks)
+			feedback.POST("", h.BookingHandler.CreateFeedback)
+			feedback.GET("/booking/:booking_id", h.BookingHandler.GetBookingFeedback)
+			feedback.GET("/trip/:trip_id", h.BookingHandler.GetTripFeedbacks)
 		}
 
 		statistics := v1.Group("/statistics")
 		{
-			statistics.GET("/bookings", bookingHandler.GetBookingStats)
-			statistics.GET("/popular-trips", bookingHandler.GetPopularTrips)
+			statistics.GET("/bookings", h.BookingHandler.GetBookingStats)
+			statistics.GET("/popular-trips", h.BookingHandler.GetPopularTrips)
 		}
 	}
-
-	return router
 }
