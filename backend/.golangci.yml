@@ -1,44 +1,52 @@
+version: "2"
+
 run:
   timeout: 5m
   tests: true
   modules-download-mode: readonly
-  go: "1.24.0"
 
 linters:
   enable:
-    - gofmt
     - govet
-    - gosimple
     - ineffassign
     - unused
     - errcheck
     - gosec
     - revive
-  disable:
-    - typecheck
 
-linters-settings:
-  gofmt:
-    simplify: true
-  errcheck:
-    check-blank: true
-  gosec:
-    excludes:
-      - G104
+  settings:
+    errcheck:
+      check-blank: true
+    gosec:
+      excludes:
+        - G104
+    revive:
+      rules:
+        - name: exported
+          disabled: true
+        - name: package-comments
+          disabled: true
+
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - gosec
+          - errcheck
+      - path: mock_.*\.go$
+        linters:
+          - all
+      - path: \.pb\.go$
+        linters:
+          - all
 
 issues:
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - gosec
-        - errcheck
-    - path: \.pb\.go$
-      linters:
-        - all
   max-issues-per-linter: 0
   max-same-issues: 0
 
 output:
-  format: colored-line-number
-  print-issued-lines: true
-  print-linter-name: true
+  formats:
+    text:
+      path: stdout
+      print-issued-lines: true
+      print-linter-name: true

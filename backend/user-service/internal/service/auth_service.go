@@ -140,10 +140,7 @@ func (s *AuthServiceImpl) FirebaseAuth(ctx context.Context, req *model.FirebaseA
 	}
 
 	// Check phone verification status
-	phoneVerified := false
-	if phone != "" {
-		phoneVerified = true
-	}
+	phoneVerified := phone != ""
 
 	// Create new user
 	user = &model.User{
