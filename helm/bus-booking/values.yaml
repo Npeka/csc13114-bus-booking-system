@@ -131,6 +131,7 @@ env:
   DATABASE_MAX_IDLE_CONNS: 5
   DATABASE_CONN_MAX_LIFETIME: 300s
   DATABASE_CONN_MAX_IDLE_TIME: 60s
+  DATABASE_ENVIRONMENT: production
 
   # Redis
   REDIS_HOST: singapore-keyvalue.render.com
