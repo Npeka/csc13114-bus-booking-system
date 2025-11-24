@@ -146,7 +146,7 @@ func (s *TripServiceImpl) CreateTrip(ctx context.Context, req *model.CreateTripR
 	}
 
 	for _, existingTrip := range conflictTrips {
-		if !(req.ArrivalTime.Before(existingTrip.DepartureTime) || req.DepartureTime.After(existingTrip.ArrivalTime)) {
+		if req.ArrivalTime.After(existingTrip.DepartureTime) && req.DepartureTime.Before(existingTrip.ArrivalTime) {
 			return nil, errors.New("bus is not available at the specified time")
 		}
 	}

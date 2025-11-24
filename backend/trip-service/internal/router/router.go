@@ -9,14 +9,14 @@ import (
 	"bus-booking/trip-service/internal/handler"
 )
 
-type RouterConfig struct {
+type Config struct {
 	Config       *config.Config
-	TripHandler  *handler.TripHandler
-	RouteHandler *handler.RouteHandler
-	BusHandler   *handler.BusHandler
+	TripHandler  handler.TripHandler
+	RouteHandler handler.RouteHandler
+	BusHandler   handler.BusHandler
 }
 
-func SetupRoutes(router *gin.Engine, cfg *RouterConfig) {
+func SetupRoutes(router *gin.Engine, cfg *Config) {
 	router.Use(middleware.Logger())
 	router.Use(middleware.SetupCORS(&cfg.Config.CORS))
 	router.Use(middleware.RequestContextMiddleware(cfg.Config.ServiceName))

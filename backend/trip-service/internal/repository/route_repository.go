@@ -6,6 +6,7 @@ import (
 	"bus-booking/trip-service/internal/model"
 
 	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
 
@@ -91,7 +92,11 @@ func (r *RouteRepositoryImpl) ListRoutes(ctx context.Context, operatorID *uuid.U
 	if err != nil {
 		return nil, 0, err
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Error().Err(err).Msg("failed to close rows")
+		}
+	}()
 
 	for rows.Next() {
 		var result model.RouteSummary

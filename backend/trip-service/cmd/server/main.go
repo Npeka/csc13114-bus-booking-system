@@ -1,118 +1,36 @@
 package main
 
+// @title Trip Service API
+// @version 1.0
+// @description API for managing trips, routes, buses, and operators in the bus booking system
+//
+// @contact.name API Support
+// @contact.email support@busbooking.com
+//
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+//
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
+
 import (
-	"context"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
-
-	"github.com/rs/zerolog/log"
-
-	sharedDB "bus-booking/shared/db"
+	"bus-booking/shared/db"
+	"bus-booking/shared/logger"
 	"bus-booking/shared/validator"
 	"bus-booking/trip-service/config"
-	appinit "bus-booking/trip-service/internal/init"
+	"bus-booking/trip-service/internal/server"
 )
 
-type Application struct {
-	Config     *config.Config
-	Database   *sharedDB.DatabaseManager
-	Redis      *sharedDB.RedisManager
-	HTTPServer *http.Server
-
-	Services *appinit.ServiceDependencies
-}
-
 func main() {
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to load configuration")
-	}
+	cfg := config.MustLoadConfig()
+	logger.MustSetupLogger(&cfg.Log)
+	validator.MustSetupValidator()
 
-	if err := appinit.SetupLogger(cfg); err != nil {
-		log.Fatal().Err(err).Msg("Failed to setup logger")
-	}
+	pg := db.MustNewPostgresConnection(&cfg.Database)
+	sv := server.NewServer(cfg, pg)
+	defer sv.Close()
 
-	log.Info().Str("service", cfg.ServiceName).Msg("Starting Trip Service...")
-
-	validator.InitValidator()
-
-	app := &Application{Config: cfg}
-	if err := app.initDependencies(); err != nil {
-		log.Fatal().Err(err).Msg("Failed to initialize dependencies")
-	}
-
-	app.setupHTTPServer()
-	app.start()
-}
-
-func (app *Application) initDependencies() error {
-	// Initialize database
-	var err error
-	app.Database, err = appinit.InitDatabase(app.Config)
-	if err != nil {
-		return err
-	}
-
-	// Initialize Redis
-	app.Redis, err = appinit.InitRedis(app.Config)
-	if err != nil {
-		return err
-	}
-
-	// Initialize services and handlers
-	app.Services = appinit.InitServices(app.Config, app.Database)
-
-	log.Info().Msg("All dependencies initialized successfully")
-	return nil
-}
-
-// setupHTTPServer configures the HTTP server and routes
-func (app *Application) setupHTTPServer() {
-	app.HTTPServer = appinit.InitHTTPServer(app.Config, app.Services)
-}
-
-// start starts the HTTP server with graceful shutdown
-func (app *Application) start() {
-	// Start server in a goroutine
-	go func() {
-		log.Info().Str("address", app.Config.GetServerAddr()).Msg("Starting HTTP server...")
-		if err := app.HTTPServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatal().Err(err).Msg("Failed to start HTTP server")
-		}
-	}()
-
-	// Wait for interrupt signal to gracefully shutdown the server
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-
-	log.Info().Msg("Shutting down server...")
-
-	// Graceful shutdown with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	// Shutdown HTTP server
-	if err := app.HTTPServer.Shutdown(ctx); err != nil {
-		log.Error().Err(err).Msg("Server forced to shutdown")
-	}
-
-	// Close database connections
-	if app.Database != nil {
-		if err := app.Database.Close(); err != nil {
-			log.Error().Err(err).Msg("Failed to close database connection")
-		}
-	}
-
-	// Close Redis connection
-	if app.Redis != nil {
-		if err := app.Redis.Close(); err != nil {
-			log.Error().Err(err).Msg("Failed to close Redis connection")
-		}
-	}
-
-	log.Info().Msg("Server shutdown complete")
+	sv.Run()
 }

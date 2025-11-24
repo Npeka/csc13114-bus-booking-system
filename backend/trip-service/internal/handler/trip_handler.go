@@ -11,18 +11,27 @@ import (
 	"github.com/google/uuid"
 )
 
-type TripHandler struct {
+type TripHandler interface {
+	SearchTrips(c *gin.Context)
+	GetTrip(c *gin.Context)
+	CreateTrip(c *gin.Context)
+	UpdateTrip(c *gin.Context)
+	DeleteTrip(c *gin.Context)
+	ListTripsByRoute(c *gin.Context)
+}
+
+type TripHandlerImpl struct {
 	tripService service.TripService
 }
 
-func NewTripHandler(tripService service.TripService) *TripHandler {
-	return &TripHandler{
+func NewTripHandler(tripService service.TripService) TripHandler {
+	return &TripHandlerImpl{
 		tripService: tripService,
 	}
 }
 
 // SearchTrips handles trip search requests
-func (h *TripHandler) SearchTrips(c *gin.Context) {
+func (h *TripHandlerImpl) SearchTrips(c *gin.Context) {
 	var req model.TripSearchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -66,7 +75,7 @@ func (h *TripHandler) SearchTrips(c *gin.Context) {
 }
 
 // GetTrip handles get trip by ID requests
-func (h *TripHandler) GetTrip(c *gin.Context) {
+func (h *TripHandlerImpl) GetTrip(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -84,7 +93,7 @@ func (h *TripHandler) GetTrip(c *gin.Context) {
 }
 
 // CreateTrip handles trip creation requests
-func (h *TripHandler) CreateTrip(c *gin.Context) {
+func (h *TripHandlerImpl) CreateTrip(c *gin.Context) {
 	var req model.CreateTripRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -101,7 +110,7 @@ func (h *TripHandler) CreateTrip(c *gin.Context) {
 }
 
 // UpdateTrip handles trip update requests
-func (h *TripHandler) UpdateTrip(c *gin.Context) {
+func (h *TripHandlerImpl) UpdateTrip(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -125,7 +134,7 @@ func (h *TripHandler) UpdateTrip(c *gin.Context) {
 }
 
 // DeleteTrip handles trip deletion requests
-func (h *TripHandler) DeleteTrip(c *gin.Context) {
+func (h *TripHandlerImpl) DeleteTrip(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -143,7 +152,7 @@ func (h *TripHandler) DeleteTrip(c *gin.Context) {
 }
 
 // ListTripsByRoute handles listing trips by route
-func (h *TripHandler) ListTripsByRoute(c *gin.Context) {
+func (h *TripHandlerImpl) ListTripsByRoute(c *gin.Context) {
 	routeIDStr := c.Param("route_id")
 	routeID, err := uuid.Parse(routeIDStr)
 	if err != nil {

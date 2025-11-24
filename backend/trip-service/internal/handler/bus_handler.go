@@ -11,18 +11,27 @@ import (
 	"github.com/google/uuid"
 )
 
-type BusHandler struct {
+type BusHandler interface {
+	CreateBus(c *gin.Context)
+	GetBus(c *gin.Context)
+	UpdateBus(c *gin.Context)
+	DeleteBus(c *gin.Context)
+	ListBuses(c *gin.Context)
+	GetBusSeats(c *gin.Context)
+}
+
+type BusHandlerImpl struct {
 	busService service.BusService
 }
 
-func NewBusHandler(busService service.BusService) *BusHandler {
-	return &BusHandler{
+func NewBusHandler(busService service.BusService) BusHandler {
+	return &BusHandlerImpl{
 		busService: busService,
 	}
 }
 
 // CreateBus handles bus creation requests
-func (h *BusHandler) CreateBus(c *gin.Context) {
+func (h *BusHandlerImpl) CreateBus(c *gin.Context) {
 	var req model.CreateBusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -39,7 +48,7 @@ func (h *BusHandler) CreateBus(c *gin.Context) {
 }
 
 // GetBus handles get bus by ID requests
-func (h *BusHandler) GetBus(c *gin.Context) {
+func (h *BusHandlerImpl) GetBus(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -57,7 +66,7 @@ func (h *BusHandler) GetBus(c *gin.Context) {
 }
 
 // UpdateBus handles bus update requests
-func (h *BusHandler) UpdateBus(c *gin.Context) {
+func (h *BusHandlerImpl) UpdateBus(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -81,7 +90,7 @@ func (h *BusHandler) UpdateBus(c *gin.Context) {
 }
 
 // DeleteBus handles bus deletion requests
-func (h *BusHandler) DeleteBus(c *gin.Context) {
+func (h *BusHandlerImpl) DeleteBus(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -99,9 +108,18 @@ func (h *BusHandler) DeleteBus(c *gin.Context) {
 }
 
 // ListBuses handles listing buses with pagination
-func (h *BusHandler) ListBuses(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+func (h *BusHandlerImpl) ListBuses(c *gin.Context) {
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid page number"})
+		return
+	}
+
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid limit number"})
+		return
+	}
 
 	var operatorID *uuid.UUID
 	if operatorIDStr := c.Query("operator_id"); operatorIDStr != "" {
@@ -130,7 +148,7 @@ func (h *BusHandler) ListBuses(c *gin.Context) {
 }
 
 // GetBusSeats handles getting seats for a specific bus
-func (h *BusHandler) GetBusSeats(c *gin.Context) {
+func (h *BusHandlerImpl) GetBusSeats(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {

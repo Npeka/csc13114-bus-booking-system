@@ -8,6 +8,7 @@ import (
 	"bus-booking/trip-service/internal/model"
 
 	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
 
@@ -128,7 +129,11 @@ func (r *TripRepositoryImpl) SearchTrips(ctx context.Context, req *model.TripSea
 	if err != nil {
 		return nil, 0, err
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Error().Err(err).Msg("Failed to close rows")
+		}
+	}()
 
 	for rows.Next() {
 		var result model.TripDetail
@@ -146,9 +151,9 @@ func (r *TripRepositoryImpl) SearchTrips(ctx context.Context, req *model.TripSea
 		}
 
 		// Parse amenities JSON
-		if amenitiesJSON != "" {
-			// This would need JSON unmarshaling
-		}
+		// if amenitiesJSON != "" {
+		// 	// This would need JSON unmarshaling
+		// }
 
 		// Calculate duration
 		duration := result.ArrivalTime.Sub(result.DepartureTime)

@@ -21,11 +21,28 @@ This project implements a distributed microservices architecture with the follow
 - Responsive UI with Tailwind CSS and Radix UI components
 
 ### Infrastructure
-- **PostgreSQL** - Primary database with separate schemas per service
+- **PostgreSQL** - Single PostgreSQL server with one database per service
 - **Redis** - Caching and session management
 - **Docker** - Containerization for all services
-- **Kubernetes** - Production deployment orchestration
-- **ArgoCD** - GitOps-based continuous deployment
+- **DigitalOcean Kubernetes** - Production deployment orchestration
+- **ArgoCD** - GitOps-based continuous deployment using Helm charts from `infra` branch
+- **Ingress + Cert Manager** - Traffic routing and SSL certificate management
+
+## 🌐 API Gateway Architecture
+
+All external traffic flows through the **Gateway Service** which acts as a single entry point:
+
+1. **Ingress** routes all traffic to the Gateway Service
+2. **Gateway Service** receives requests and checks route configuration
+3. For protected routes, Gateway calls **User Service** to verify JWT token
+4. If authentication succeeds, Gateway forwards the request to the appropriate backend service
+5. User context (ID, email, role) is added to request headers for downstream services
+
+This architecture ensures:
+- Centralized authentication and authorization
+- Service-to-service communication remains internal
+- Role-based access control (RBAC) enforcement
+- Clean separation of concerns
 
 ## 🚀 Quick Start
 
@@ -80,13 +97,12 @@ cd backend && docker-compose down
 csc13114-bus-booking-system/
 ├── backend/
 │   ├── booking-service/       # Booking management microservice
-│   ├── gateway-service/       # API Gateway
+│   ├── gateway-service/       # API Gateway with JWT verification
 │   ├── payment-service/       # Payment processing
 │   ├── trip-service/          # Trip management
 │   ├── user-service/          # User authentication & management
 │   ├── shared/                # Shared libraries and utilities
-│   ├── infra/                 # Infrastructure configurations
-│   │   └── docker/            # Docker and database initialization
+│   ├── init-databases.sql     # PostgreSQL database initialization
 │   ├── docker-compose.yaml    # Local development orchestration
 │   └── .golangci.yml          # Go linting configuration
 ├── frontend/
@@ -228,56 +244,48 @@ make build-service SERVICE=user-service
 - Network isolation
 - Volume persistence for databases
 
-## ☸️ Kubernetes Deployment
+## ☸️ Production Deployment
 
-### Deploy to Kubernetes
-```bash
-make k8s-deploy
-```
+### Deployment Architecture
 
-### Check Deployment Status
-```bash
-make k8s-status
-```
+The project uses a GitOps approach with the following components:
 
-### View Logs
-```bash
-make k8s-logs
-```
+- **Platform**: DigitalOcean Kubernetes
+- **GitOps Tool**: ArgoCD
+- **Package Manager**: Helm
+- **Infrastructure Config**: Stored in `infra` branch (separate from `main`)
+- **Ingress Controller**: Routes external traffic to Gateway Service only
+- **Cert Manager**: Automatic SSL certificate management
 
-### ArgoCD Integration
-```bash
-# Setup ArgoCD application
-make argocd-setup
+### Deployment Flow
 
-# Sync application
-make argocd-sync
+1. **Code Push**: Developer pushes code to `main` or `develop` branch
+2. **Quality Checks**: GitHub Actions runs linting, formatting, and tests
+3. **Build & Push**: Docker images are built and pushed to Docker Hub with versioned tags
+4. **Update Infra**: GitHub Actions updates Helm values in `infra` branch with new image tags
+5. **ArgoCD Sync**: ArgoCD detects changes in `infra` branch and deploys automatically
+6. **Kubernetes**: Pods are updated with new images via rolling update
 
-# Check status
-make argocd-status
-```
+### CI/CD Pipeline
+
+See [`.github/workflows/quality-checks.yml`](.github/workflows/quality-checks.yml) and [`.github/workflows/build-deploy.yml`](.github/workflows/build-deploy.yml) for the complete pipeline configuration.
 
 ## 🗄️ Database
 
 ### Database Architecture
-- Single PostgreSQL instance with multiple databases
-- Separate database per microservice for data isolation
-- Automatic initialization via init scripts
+- **Single PostgreSQL server** with one database per microservice
+- Separate database per service for data isolation and independent scaling
+- Automatic initialization via [`init-databases.sql`](backend/init-databases.sql)
 
 ### Databases
-- `user_db` - User service database
-- `trip_db` - Trip service database
-- `booking_db` - Booking service database
-- `payment_db` - Payment service database
+- `bus_booking_user` - User service database
+- `bus_booking_trip` - Trip service database
+- `bus_booking_booking` - Booking service database
+- `bus_booking_payment` - Payment service database
 
-### Database Operations
-```bash
-# Run migrations
-make db-migrate
+### Database Initialization
 
-# Seed test data
-make db-seed
-```
+Databases are automatically created when the PostgreSQL container starts for the first time using the [`init-databases.sql`](backend/init-databases.sql) script.
 
 ## 🔐 Environment Variables
 

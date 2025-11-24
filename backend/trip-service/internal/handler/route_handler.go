@@ -11,18 +11,27 @@ import (
 	"github.com/google/uuid"
 )
 
-type RouteHandler struct {
+type RouteHandler interface {
+	CreateRoute(c *gin.Context)
+	GetRoute(c *gin.Context)
+	UpdateRoute(c *gin.Context)
+	DeleteRoute(c *gin.Context)
+	ListRoutes(c *gin.Context)
+	SearchRoutes(c *gin.Context)
+}
+
+type RouteHandlerImpl struct {
 	routeService service.RouteService
 }
 
-func NewRouteHandler(routeService service.RouteService) *RouteHandler {
-	return &RouteHandler{
+func NewRouteHandler(routeService service.RouteService) RouteHandler {
+	return &RouteHandlerImpl{
 		routeService: routeService,
 	}
 }
 
 // CreateRoute handles route creation requests
-func (h *RouteHandler) CreateRoute(c *gin.Context) {
+func (h *RouteHandlerImpl) CreateRoute(c *gin.Context) {
 	var req model.CreateRouteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -39,7 +48,7 @@ func (h *RouteHandler) CreateRoute(c *gin.Context) {
 }
 
 // GetRoute handles get route by ID requests
-func (h *RouteHandler) GetRoute(c *gin.Context) {
+func (h *RouteHandlerImpl) GetRoute(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -57,7 +66,7 @@ func (h *RouteHandler) GetRoute(c *gin.Context) {
 }
 
 // UpdateRoute handles route update requests
-func (h *RouteHandler) UpdateRoute(c *gin.Context) {
+func (h *RouteHandlerImpl) UpdateRoute(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -81,7 +90,7 @@ func (h *RouteHandler) UpdateRoute(c *gin.Context) {
 }
 
 // DeleteRoute handles route deletion requests
-func (h *RouteHandler) DeleteRoute(c *gin.Context) {
+func (h *RouteHandlerImpl) DeleteRoute(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -99,9 +108,18 @@ func (h *RouteHandler) DeleteRoute(c *gin.Context) {
 }
 
 // ListRoutes handles listing routes with pagination
-func (h *RouteHandler) ListRoutes(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+func (h *RouteHandlerImpl) ListRoutes(c *gin.Context) {
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid page number"})
+		return
+	}
+
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid limit number"})
+		return
+	}
 
 	var operatorID *uuid.UUID
 	if operatorIDStr := c.Query("operator_id"); operatorIDStr != "" {
@@ -130,7 +148,7 @@ func (h *RouteHandler) ListRoutes(c *gin.Context) {
 }
 
 // SearchRoutes handles route search by origin and destination
-func (h *RouteHandler) SearchRoutes(c *gin.Context) {
+func (h *RouteHandlerImpl) SearchRoutes(c *gin.Context) {
 	origin := c.Query("origin")
 	destination := c.Query("destination")
 
