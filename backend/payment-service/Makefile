@@ -8,6 +8,10 @@ fmt-check:
 	@echo "Checking code formatting..."
 	@test -z "$$(gofmt -l .)" || (echo "Code is not formatted. Run 'make fmt' to fix." && gofmt -l . && exit 1)
 
+lint:
+	@echo "Running golangci-lint..."
+	@golangci-lint run --config=../.golangci.yml ./...
+
 .PHONY: build run migrate test clean docker-up init-db dev lint fmt fmt-check vet quality-check
 
 build:
@@ -41,13 +45,6 @@ docker-run:
 	docker run -p 8083:8083 payment-service
 
 db-migrate: migrate
-
-# Linting with golangci-lint
-lint:
-	@echo "Running golangci-lint..."
-	@golangci-lint run --config=../.golangci.yml ./...
-
-
 
 # Fix formatting
 fmt:

@@ -8,16 +8,15 @@ fmt-check:
 	@echo "Checking code formatting..."
 	@test -z "$$(gofmt -l .)" || (echo "Code is not formatted. Run 'make fmt' to fix." && gofmt -l . && exit 1)
 
+lint:
+	@echo "Running golangci-lint..."
+	@golangci-lint run --config=../.golangci.yml ./...
+
 .PHONY: run migrate test lint fmt fmt-fix vet quality-check
 
 
 test:
 	go test -v ./...
-
-# Linting with golangci-lint
-lint:
-	@echo "Running golangci-lint..."
-	@golangci-lint run --config=../.golangci.yml ./...
 
 # Check formatting
 fmt:

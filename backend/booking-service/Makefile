@@ -8,6 +8,10 @@ fmt-check:
 	@echo "Checking code formatting..."
 	@test -z "$$(gofmt -l .)" || (echo "Code is not formatted. Run 'make fmt' to fix." && gofmt -l . && exit 1)
 
+lint:
+	@echo "Running golangci-lint..."
+	@golangci-lint run --config=../.golangci.yml ./...
+
 # Variables
 BINARY_NAME=booking-service
 MAIN_PATH=./cmd/server
