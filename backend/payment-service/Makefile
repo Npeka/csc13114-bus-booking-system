@@ -30,6 +30,9 @@ quality-check:
 	fmt-check vet lint test
 
 # Swagger
+SWAG_PKG=github.com/swaggo/swag/v2/cmd/swag
+SWAG_VERSION=v2.6.2
+
 install-swag:
 	go install github.com/swaggo/swag/cmd/swag@v1.16.3
 

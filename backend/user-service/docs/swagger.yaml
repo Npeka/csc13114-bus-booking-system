@@ -147,11 +147,6 @@ definitions:
       RoleOperator: 'bit 2: 4'
       RolePassenger: 'bit 0: 1'
       RoleSupport: 'bit 3: 8'
-    x-enum-descriptions:
-    - 'bit 0: 1'
-    - 'bit 1: 2'
-    - 'bit 2: 4'
-    - 'bit 3: 8'
     x-enum-varnames:
     - RolePassenger
     - RoleAdmin
