@@ -15,7 +15,6 @@ linters:
     - errcheck
     - gosec
     - revive
-    - shadow  # Replaces deprecated govet.check-shadowing
   disable:
     - typecheck # Disabled as it can be slow
 
