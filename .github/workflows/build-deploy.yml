@@ -1,5 +1,8 @@
 name: Build and Deploy Microservices
 
+# NOTE: This workflow runs AFTER quality-checks.yml completes successfully.
+# Quality checks (linting, formatting, tests) must pass before build and deploy.
+
 on:
   push:
     branches: [main, develop]
@@ -8,7 +11,11 @@ on:
   pull_request:
     branches: [main, develop]
     paths:
-      - "backend/**"
+      - "backend/**"  
+  workflow_run:
+    workflows: ["Quality Checks"]
+    types: [completed]
+    branches: [main, develop]
 
 permissions:
   contents: write # Required to push to infra branch

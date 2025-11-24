@@ -26,23 +26,6 @@ test:
 
 clean:
 	if exist bin rmdir /s /q bin
-
-# Development helpers
-deps:
-	go mod tidy
-	go mod download
-
-fmt:
-	go fmt ./...
-
-lint:
-	golangci-lint run
-
-# Docker operations
-docker-build:
-	docker build -t trip-service .
-
-docker-run:
 	docker run -p 8081:8081 trip-service
 
 # Database operations

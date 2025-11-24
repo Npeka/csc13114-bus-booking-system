@@ -135,21 +135,6 @@ staticcheck:
 security:
 	@echo "Running security scan..."
 	@if ! command -v gosec > /dev/null; then \
-		echo "Installing gosec..."; \
-		go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest; \
-	fi
-	gosec ./...
-	@echo "Security scan completed"
-
-# Full quality check
-quality: deps fmt vet staticcheck security test
-	@echo "Quality check completed"
-
-# Show help
-help:
-	@echo "Available commands:"
-	@echo "  build       - Build the application"
-	@echo "  build-linux - Build for Linux"
 	@echo "  clean       - Clean build artifacts"
 	@echo "  test        - Run tests"
 	@echo "  coverage    - Run tests with coverage report"

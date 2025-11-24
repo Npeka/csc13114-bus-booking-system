@@ -1,5 +1,24 @@
 package main
 
+// @title User Service API
+// @version 1.0
+// @description API for user management and authentication in the bus booking system
+// @description This Pservice handles user registration, authentication, profile management, and authorization.
+
+// @contact.name API Support
+// @contact.email support@busbooking.com
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:8081
+// @BasePath /api/v1
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
+
 import (
 	"context"
 	"net/http"

@@ -33,6 +33,17 @@ func NewUserHandler(us service.UserService) UserHandler {
 	}
 }
 
+// GetProfile godoc
+// @Summary Get current user profile
+// @Description Retrieves the profile information of the currently authenticated user
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} ginext.Response{data=model.UserResponse} "Profile retrieved successfully"
+// @Failure 401 {object} ginext.Response "Unauthorized"
+// @Failure 500 {object} ginext.Response "Internal server error"
+// @Router /users/profile [get]
 func (h *UserHandlerImpl) GetProfile(r *ginext.Request) (*ginext.Response, error) {
 	userID := context.GetUserID(r.GinCtx)
 
@@ -45,6 +56,20 @@ func (h *UserHandlerImpl) GetProfile(r *ginext.Request) (*ginext.Response, error
 	return ginext.NewSuccessResponse(user, "Profile retrieved successfully"), nil
 }
 
+// CreateUser godoc
+// @Summary Create a new user
+// @Description Creates a new user account (Admin only)
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body model.UserCreateRequest true "User creation request"
+// @Success 201 {object} ginext.Response{data=model.UserResponse} "User created successfully"
+// @Failure 400 {object} ginext.Response "Invalid request data"
+// @Failure 401 {object} ginext.Response "Unauthorized"
+// @Failure 403 {object} ginext.Response "Forbidden"
+// @Failure 500 {object} ginext.Response "Internal server error"
+// @Router /users [post]
 func (h *UserHandlerImpl) CreateUser(r *ginext.Request) (*ginext.Response, error) {
 	var createReq model.UserCreateRequest
 	if err := r.GinCtx.ShouldBind(&createReq); err != nil {
@@ -59,6 +84,21 @@ func (h *UserHandlerImpl) CreateUser(r *ginext.Request) (*ginext.Response, error
 	return ginext.NewCreatedResponse(user, "User created successfully"), nil
 }
 
+// GetUser godoc
+// @Summary Get user by ID
+// @Description Retrieves a user's information by their ID (Admin only)
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "User ID (UUID)"
+// @Success 200 {object} ginext.Response{data=model.UserResponse} "User retrieved successfully"
+// @Failure 400 {object} ginext.Response "Invalid user ID"
+// @Failure 401 {object} ginext.Response "Unauthorized"
+// @Failure 403 {object} ginext.Response "Forbidden"
+// @Failure 404 {object} ginext.Response "User not found"
+// @Failure 500 {object} ginext.Response "Internal server error"
+// @Router /users/{id} [get]
 func (h *UserHandlerImpl) GetUser(r *ginext.Request) (*ginext.Response, error) {
 	idStr := r.Param("id")
 	id, err := uuid.Parse(idStr)
@@ -74,6 +114,22 @@ func (h *UserHandlerImpl) GetUser(r *ginext.Request) (*ginext.Response, error) {
 	return ginext.NewSuccessResponse(user, "User retrieved successfully"), nil
 }
 
+// UpdateUser godoc
+// @Summary Update user information
+// @Description Updates a user's information (Admin only)
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "User ID (UUID)"
+// @Param request body model.UserUpdateRequest true "User update request"
+// @Success 200 {object} ginext.Response{data=model.UserResponse} "User updated successfully"
+// @Failure 400 {object} ginext.Response "Invalid request data"
+// @Failure 401 {object} ginext.Response "Unauthorized"
+// @Failure 403 {object} ginext.Response "Forbidden"
+// @Failure 404 {object} ginext.Response "User not found"
+// @Failure 500 {object} ginext.Response "Internal server error"
+// @Router /users/{id} [put]
 func (h *UserHandlerImpl) UpdateUser(r *ginext.Request) (*ginext.Response, error) {
 	idStr := r.Param("id")
 	id, err := uuid.Parse(idStr)
@@ -94,6 +150,21 @@ func (h *UserHandlerImpl) UpdateUser(r *ginext.Request) (*ginext.Response, error
 	return ginext.NewSuccessResponse(user, "User updated successfully"), nil
 }
 
+// DeleteUser godoc
+// @Summary Delete a user
+// @Description Deletes a user account (Admin only)
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "User ID (UUID)"
+// @Success 200 {object} ginext.Response "User deleted successfully"
+// @Failure 400 {object} ginext.Response "Invalid user ID"
+// @Failure 401 {object} ginext.Response "Unauthorized"
+// @Failure 403 {object} ginext.Response "Forbidden"
+// @Failure 404 {object} ginext.Response "User not found"
+// @Failure 500 {object} ginext.Response "Internal server error"
+// @Router /users/{id} [delete]
 func (h *UserHandlerImpl) DeleteUser(r *ginext.Request) (*ginext.Response, error) {
 	idStr := r.Param("id")
 	id, err := uuid.Parse(idStr)
@@ -108,6 +179,24 @@ func (h *UserHandlerImpl) DeleteUser(r *ginext.Request) (*ginext.Response, error
 	return ginext.NewSuccessResponse(nil, "User deleted successfully"), nil
 }
 
+// ListUsers godoc
+// @Summary List all users
+// @Description Retrieves a paginated list of users with optional filtering (Admin only)
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "Page number" default(1)
+// @Param limit query int false "Items per page" default(20)
+// @Param search query string false "Search by name or email"
+// @Param role query int false "Filter by role (1=Passenger, 2=Driver, 3=Admin)"
+// @Param status query string false "Filter by status (active, suspended, etc.)"
+// @Success 200 {object} ginext.Response{data=object} "Users retrieved successfully"
+// @Failure 400 {object} ginext.Response "Invalid query parameters"
+// @Failure 401 {object} ginext.Response "Unauthorized"
+// @Failure 403 {object} ginext.Response "Forbidden"
+// @Failure 500 {object} ginext.Response "Internal server error"
+// @Router /users [get]
 func (h *UserHandlerImpl) ListUsers(r *ginext.Request) (*ginext.Response, error) {
 	var query model.UserListQuery
 	if err := r.GinCtx.ShouldBindQuery(&query); err != nil {
@@ -186,6 +275,22 @@ func (h *UserHandlerImpl) ListUsersByRole(r *ginext.Request) (*ginext.Response, 
 	return ginext.NewSuccessResponse(result, "Users retrieved successfully"), nil
 }
 
+// UpdateUserStatus godoc
+// @Summary Update user status
+// @Description Updates a user's status (e.g., active, suspended) (Admin only)
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "User ID (UUID)"
+// @Param request body model.UserStatusUpdateRequest true "Status update request"
+// @Success 200 {object} ginext.Response "User status updated successfully"
+// @Failure 400 {object} ginext.Response "Invalid request data"
+// @Failure 401 {object} ginext.Response "Unauthorized"
+// @Failure 403 {object} ginext.Response "Forbidden"
+// @Failure 404 {object} ginext.Response "User not found"
+// @Failure 500 {object} ginext.Response "Internal server error"
+// @Router /users/{id}/status [patch]
 func (h *UserHandlerImpl) UpdateUserStatus(r *ginext.Request) (*ginext.Response, error) {
 	idStr := r.Param("id")
 	id, err := uuid.Parse(idStr)

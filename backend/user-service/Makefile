@@ -1,20 +1,4 @@
-
-.PHONY: build run migrate test clean docker-up init-db dev
-
-build:
-	go build -o bin/user-service.exe cmd/server/main.go
-
-build-migrate:
-	go build -o bin/migrate.exe cmd/migrate/main.go
-
-docker-up:
-	cd .. && docker-compose up -d
-
-init-db: docker-up
-	timeout /t 3
-	docker exec -it postgres psql -U postgres -c "CREATE DATABASE bus_dev_user;" || echo "Database already exists"
-
-dev: init-db migrate run
+.PHONY: run migrate test lint fmt fmt-fix vet quality-check
 
 run:
 	go run cmd/server/main.go
@@ -25,30 +9,67 @@ migrate:
 test:
 	go test -v ./...
 
-clean:
-	if exist bin rmdir /s /q bin
+# Linting with golangci-lint
+lint:
+	@echo "Running golangci-lint..."
+	@golangci-lint run --config=../.golangci.yml ./...
 
-dev-setup: build-migrate migrate
-	@echo "Development environment setup complete"
+# Check formatting
+fmt:
+	@echo "Checking code formatting..."
+	@test -z "$$(gofmt -l .)" || (echo "Code is not formatted. Run 'make fmt-fix' to fix." && gofmt -l . && exit 1)
 
-docker-build:
-	docker build -t user-service .
+# Fix formatting
+fmt-fix:
+	@echo "Fixing code formatting..."
+	@gofmt -w .
+.PHONY: run migrate test lint fmt fmt-fix vet quality-check install-swag swagger swagger-gen
 
-docker-run:
-	docker run -p 8080:8080 user-service
+run:
+	go run cmd/server/main.go
 
-db-migrate: migrate
+migrate:
+	go run cmd/migrate/main.go
 
-help:
-	@echo "Available commands:"
-	@echo "  build        - Build the main application"
-	@echo "  build-migrate - Build the migration tool"
-	@echo "  run          - Run the application"
-	@echo "  migrate      - Run database migration"
-	@echo "  test         - Run tests"
-	@echo "  clean        - Clean build artifacts"
-	@echo "  dev-setup    - Setup development environment"
-	@echo "  docker-build - Build Docker image"
-	@echo "  docker-run   - Run Docker container"
-	@echo "  db-migrate   - Run database migration (alias for migrate)"
-	@echo "  help         - Show this help message"
+test:
+	go test -v ./...
+
+# Linting with golangci-lint
+lint:
+	@echo "Running golangci-lint..."
+	@golangci-lint run --config=../.golangci.yml ./...
+
+# Check formatting
+fmt:
+	@echo "Checking code formatting..."
+	@test -z "$$(gofmt -l .)" || (echo "Code is not formatted. Run 'make fmt-fix' to fix." && gofmt -l . && exit 1)
+
+# Fix formatting
+fmt-fix:
+	@echo "Fixing code formatting..."
+	@gofmt -w .
+
+# Run go vet
+vet:
+	@echo "Running go vet..."
+	@go vet ./...
+
+# Run all quality checks
+quality-check: fmt vet lint test
+	@echo "All quality checks passed!"
+
+# Install swag tool for Swagger documentation generation
+install-swag:
+	@echo "Installing swag..."
+	@go install github.com/swaggo/swag/cmd/swag@latest
+	@echo "Swag installed successfully!"
+
+# Generate Swagger documentation
+swagger:
+	@echo "Generating Swagger documentation..."
+	@swag init -g cmd/server/main.go -o docs --parseDependency --parseInternal
+	@echo "Swagger documentation generated in docs/ directory"
+
+# Format and generate Swagger docs
+swagger-gen: fmt swagger
+	@echo "Swagger documentation ready!"
