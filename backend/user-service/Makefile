@@ -18,7 +18,6 @@ lint:
 test:
 	go test -v ./...
 
-# Check formatting
 fmt:
 	@echo "Checking code formatting..."
 	@test -z "$$(gofmt -l .)" || (echo "Code is not formatted. Run 'make fmt-fix' to fix." && gofmt -l . && exit 1)
