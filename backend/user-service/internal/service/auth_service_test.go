@@ -30,7 +30,7 @@ func TestAuthService_VerifyToken_Success(t *testing.T) {
 		},
 	}
 
-	service := NewAuthService(mockRepo, mockJWT, nil, cfg, mockBlacklist)
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -79,7 +79,7 @@ func TestAuthService_VerifyToken_InvalidToken(t *testing.T) {
 	mockBlacklist := new(mocks.MockTokenBlacklistManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(mockRepo, mockJWT, nil, cfg, mockBlacklist)
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
 	ctx := context.Background()
 
 	token := "invalid.token"
@@ -102,7 +102,7 @@ func TestAuthService_VerifyToken_TokenBlacklisted(t *testing.T) {
 	mockBlacklist := new(mocks.MockTokenBlacklistManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(mockRepo, mockJWT, nil, cfg, mockBlacklist)
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -134,7 +134,7 @@ func TestAuthService_VerifyToken_UserTokensBlacklisted(t *testing.T) {
 	mockBlacklist := new(mocks.MockTokenBlacklistManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(mockRepo, mockJWT, nil, cfg, mockBlacklist)
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -167,7 +167,7 @@ func TestAuthService_VerifyToken_UserNotFound(t *testing.T) {
 	mockBlacklist := new(mocks.MockTokenBlacklistManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(mockRepo, mockJWT, nil, cfg, mockBlacklist)
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -202,7 +202,7 @@ func TestAuthService_VerifyToken_UserNotActive(t *testing.T) {
 	mockBlacklist := new(mocks.MockTokenBlacklistManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(mockRepo, mockJWT, nil, cfg, mockBlacklist)
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -386,7 +386,7 @@ func TestAuthService_RefreshToken_Success(t *testing.T) {
 		},
 	}
 
-	service := NewAuthService(mockRepo, mockJWT, nil, cfg, mockBlacklist)
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -437,7 +437,7 @@ func TestAuthService_RefreshToken_InvalidToken(t *testing.T) {
 	mockBlacklist := new(mocks.MockTokenBlacklistManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(mockRepo, mockJWT, nil, cfg, mockBlacklist)
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -464,7 +464,7 @@ func TestAuthService_RefreshToken_UserMismatch(t *testing.T) {
 	mockBlacklist := new(mocks.MockTokenBlacklistManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(mockRepo, mockJWT, nil, cfg, mockBlacklist)
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -496,7 +496,7 @@ func TestAuthService_Logout_Success(t *testing.T) {
 	mockBlacklist := new(mocks.MockTokenBlacklistManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(mockRepo, mockJWT, nil, cfg, mockBlacklist)
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
 	ctx := context.Background()
 
 	userID := uuid.New()

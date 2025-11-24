@@ -5,6 +5,7 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"fmt"
+	"math"
 
 	"golang.org/x/crypto/argon2"
 	"golang.org/x/crypto/bcrypt"
@@ -90,12 +91,22 @@ func decodeArgon2Hash(encodedHash string) (params *Argon2Params, salt, hash []by
 		return nil, nil, nil, fmt.Errorf("failed to decode hash: %w", err)
 	}
 
+	saltLen := len(salt)
+	if saltLen > math.MaxUint32 {
+		return nil, nil, nil, fmt.Errorf("salt length too large: %d", saltLen)
+	}
+
+	hashLen := len(hash)
+	if hashLen > math.MaxUint32 {
+		return nil, nil, nil, fmt.Errorf("hash length too large: %d", hashLen)
+	}
+
 	params = &Argon2Params{
 		Memory:      memory,
 		Iterations:  iterations,
 		Parallelism: parallelism,
-		SaltLength:  uint32(len(salt)),
-		KeyLength:   uint32(len(hash)),
+		SaltLength:  uint32(saltLen),
+		KeyLength:   uint32(hashLen),
 	}
 
 	return params, salt, hash, nil

@@ -44,6 +44,7 @@ type DatabaseConfig struct {
 	MaxIdleConns    int           `env:"MAX_IDLE_CONNS" envDefault:"5"`
 	ConnMaxLifetime time.Duration `env:"CONN_MAX_LIFETIME" envDefault:"300s"`
 	ConnMaxIdleTime time.Duration `env:"CONN_MAX_IDLE_TIME" envDefault:"60s"`
+	Environment     string        `env:"ENVIRONMENT" envDefault:"development"`
 }
 
 type RedisConfig struct {
@@ -108,8 +109,20 @@ func (c *BaseConfig) GetServerAddr() string {
 	return fmt.Sprintf("%s:%d", c.Server.Host, c.Server.Port)
 }
 
+func (c *ServerConfig) GetServerAddr() string {
+	return fmt.Sprintf("%s:%d", c.Host, c.Port)
+}
+
 func IsProduction(environment string) bool {
 	return environment == "production"
+}
+
+func MustLoadConfig[T any](envFilePath ...string) *T {
+	cfg, err := LoadConfig[T](envFilePath...)
+	if err != nil {
+		panic(err)
+	}
+	return cfg
 }
 
 func LoadConfig[T any](envFilePath ...string) (*T, error) {

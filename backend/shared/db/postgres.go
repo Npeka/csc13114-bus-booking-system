@@ -17,19 +17,26 @@ import (
 )
 
 type DatabaseManager struct {
-	DB     *gorm.DB
-	SqlDB  *sql.DB
-	Config *config.DatabaseConfig
+	DB    *gorm.DB
+	SqlDB *sql.DB
 }
 
-func NewPostgresConnection(cfg *config.DatabaseConfig, env string) (*DatabaseManager, error) {
+func MustNewPostgresConnection(cfg *config.DatabaseConfig) *DatabaseManager {
+	db, err := NewPostgresConnection(cfg)
+	if err != nil {
+		panic(err)
+	}
+	return db
+}
+
+func NewPostgresConnection(cfg *config.DatabaseConfig) (*DatabaseManager, error) {
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=%s",
 		cfg.Host, cfg.Username, cfg.Password, cfg.Name, cfg.Port, cfg.SSLMode, cfg.TimeZone,
 	)
 
 	var logLevel logger.LogLevel
-	switch env {
+	switch cfg.Environment {
 	case "development":
 		logLevel = logger.Info
 	case "staging":
@@ -46,8 +53,8 @@ func NewPostgresConnection(cfg *config.DatabaseConfig, env string) (*DatabaseMan
 			SlowThreshold:             time.Second,
 			LogLevel:                  logLevel,
 			IgnoreRecordNotFoundError: true,
-			Colorful:                  env == "development",
-			ParameterizedQueries:      env == "production",
+			Colorful:                  cfg.Environment == "development",
+			ParameterizedQueries:      cfg.Environment == "production",
 		},
 	)
 
@@ -91,9 +98,8 @@ func NewPostgresConnection(cfg *config.DatabaseConfig, env string) (*DatabaseMan
 		Msg("Successfully connected to PostgreSQL database")
 
 	return &DatabaseManager{
-		DB:     db,
-		SqlDB:  sqlDB,
-		Config: cfg,
+		DB:    db,
+		SqlDB: sqlDB,
 	}, nil
 }
 

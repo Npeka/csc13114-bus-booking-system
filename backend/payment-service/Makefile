@@ -1,80 +1,40 @@
+.PHONY: run migrate fmt fmt-check fmt-fix lint test vet quality-check install-swag swagger swagger-gen
+
 run:
-	go run cmd/server/main.go
+	go run ./cmd/server/main.go
 
 migrate:
-	go run cmd/migrate/main.go
+	go run ./cmd/migrate/main.go
+
+fmt:
+	go fmt ./...
 
 fmt-check:
-	@echo "Checking code formatting..."
-	@test -z "$$(gofmt -l .)" || (echo "Code is not formatted. Run 'make fmt' to fix." && gofmt -l . && exit 1)
+	@files=$$(gofmt -l .); \
+	if [ -n "$$files" ]; then \
+		echo "Code is not formatted. Run 'make fmt' to format."; \
+		echo "$$files"; \
+		exit 1; \
+	fi
 
 lint:
-	@echo "Running golangci-lint..."
-	@golangci-lint run --config=../.golangci.yml ./...
-
-.PHONY: build run migrate test clean docker-up init-db dev lint fmt fmt-check vet quality-check
-
-build:
-	go build -o bin/payment-service.exe cmd/server/main.go
-
-build-migrate:
-	go build -o bin/migrate.exe cmd/migrate/main.go
-
-docker-up:
-	cd .. && docker-compose up -d
-
-init-db: docker-up
-	timeout /t 3
-	docker exec -it postgres psql -U postgres -c "CREATE DATABASE bus_dev_payment;" || echo "Database already exists"
-
-dev: init-db migrate run
+	golangci-lint run --config=../.golangci.yml ./...
 
 test:
-	go test -v ./...
+	go test ./...
 
-clean:
-	if exist bin rmdir /s /q bin
-
-dev-setup: build-migrate migrate
-	@echo "Development environment setup complete"
-
-docker-build:
-	docker build -t payment-service .
-
-docker-run:
-	docker run -p 8083:8083 payment-service
-
-db-migrate: migrate
-
-# Fix formatting
-fmt:
-	@echo "Fixing code formatting..."
-	@gofmt -w .
-
-# Run go vet
 vet:
-	@echo "Running go vet..."
-	@go vet ./...
+	go vet ./...
 
-# Run all quality checks
-quality-check: fmt-check vet lint test
-	@echo "All quality checks passed!"
+quality-check:
+	fmt-check vet lint test
 
-help:
-	@echo "Available commands:"
-	@echo "  build        - Build the main application"
-	@echo "  build-migrate - Build the migration tool"
-	@echo "  run          - Run the application"
-	@echo "  migrate      - Run database migration"
-	@echo "  test         - Run tests"
-	@echo "  clean        - Clean build artifacts"
-	@echo "  lint         - Run golangci-lint"
-	@echo "  fmt          - Fix code formatting"
-	@echo "  fmt-check    - Check code formatting"
-	@echo "  vet          - Run go vet"
-	@echo "  quality-check - Run all quality checks"
-	@echo "  dev-setup    - Setup development environment"
-	@echo "  docker-build - Build Docker image"
-	@echo "  docker-run   - Run Docker container"
-	@echo "  db-migrate   - Run database migration (alias for migrate)"
-	@echo "  help         - Show this help message"
+# Swagger
+install-swag:
+	go install github.com/swaggo/swag/cmd/swag@v1.16.3
+
+swagger:
+	swag init -g cmd/server/main.go -o docs --parseDependency --parseInternal
+
+swagger-gen:
+	fmt swagger

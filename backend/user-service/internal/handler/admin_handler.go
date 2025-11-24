@@ -15,11 +15,14 @@ type AdminHandler interface {
 }
 
 type AdminHandlerImpl struct {
-	tokenBlacklistMgr *service.TokenBlacklistManagerImpl
+	tokenBlacklistMgr service.TokenBlacklistManager
 	authService       service.AuthService
 }
 
-func NewAdminHandler(tokenBlacklistMgr *service.TokenBlacklistManagerImpl, authService service.AuthService) AdminHandler {
+func NewAdminHandler(
+	tokenBlacklistMgr service.TokenBlacklistManager,
+	authService service.AuthService,
+) AdminHandler {
 	return &AdminHandlerImpl{
 		tokenBlacklistMgr: tokenBlacklistMgr,
 		authService:       authService,

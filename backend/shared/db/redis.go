@@ -17,6 +17,14 @@ type RedisManager struct {
 	Config *config.RedisConfig
 }
 
+func MustNewRedisConnection(cfg *config.RedisConfig) *RedisManager {
+	rm, err := NewRedisConnection(cfg)
+	if err != nil {
+		panic(err)
+	}
+	return rm
+}
+
 func NewRedisConnection(cfg *config.RedisConfig) (*RedisManager, error) {
 	// Redis client options
 	options := &redis.Options{

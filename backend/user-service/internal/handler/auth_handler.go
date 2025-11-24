@@ -100,9 +100,9 @@ func (h *AuthHandlerImpl) RefreshToken(r *ginext.Request) (*ginext.Response, err
 		return nil, ginext.NewBadRequestError("Invalid request data")
 	}
 
-	userId := sharedcontext.GetUserID(r.GinCtx)
+	userID := sharedcontext.GetUserID(r.GinCtx)
 
-	authResp, err := h.as.RefreshToken(r.Context(), &req, userId)
+	authResp, err := h.as.RefreshToken(r.Context(), &req, userID)
 	if err != nil {
 		log.Error().Err(err).Msg("Token refresh failed")
 		return nil, err
@@ -125,7 +125,7 @@ func (h *AuthHandlerImpl) RefreshToken(r *ginext.Request) (*ginext.Response, err
 // @Failure 500 {object} ginext.Response "Internal server error"
 // @Router /auth/logout [post]
 func (h *AuthHandlerImpl) Logout(r *ginext.Request) (*ginext.Response, error) {
-	userId := sharedcontext.GetUserID(r.GinCtx)
+	userID := sharedcontext.GetUserID(r.GinCtx)
 	accessToken := sharedcontext.GetAccessToken(r.GinCtx)
 
 	req := model.SignoutRequest{AccessToken: accessToken}
@@ -134,7 +134,7 @@ func (h *AuthHandlerImpl) Logout(r *ginext.Request) (*ginext.Response, error) {
 		return nil, ginext.NewBadRequestError("Invalid request data")
 	}
 
-	if err := h.as.Logout(r.Context(), req, userId); err != nil {
+	if err := h.as.Logout(r.Context(), req, userID); err != nil {
 		log.Error().Err(err).Msg("Logout failed")
 		return nil, err
 	}

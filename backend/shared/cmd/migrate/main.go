@@ -14,7 +14,7 @@ func main() {
 	}
 
 	// Create migration manager
-	migrationManager, err := sharedDB.NewMigrationManager(&cfg.Database, cfg.Server.Environment)
+	migrationManager, err := sharedDB.NewMigrationManager(&cfg.Database)
 	if err != nil {
 		log.Fatal("Failed to create migration manager:", err)
 	}

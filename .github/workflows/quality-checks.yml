@@ -34,7 +34,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: dorny/paths-filter@v2
+      - uses: dorny/paths-filter@v3.0.2
         id: changes
         with:
           filters: |
@@ -69,13 +69,13 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          node-version: "20"
+          cache: "pnpm"
           cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install dependencies
@@ -97,11 +97,13 @@ jobs:
       - name: Summary
         if: always()
         run: |
-          echo "## 🎨 Frontend Quality Checks" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Type checking completed" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Linting completed" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Format checking completed" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## Frontend Quality Checks"
+            echo
+            echo "- Type check: completed"
+            echo "- Lint: completed"
+            echo "- Format check: completed"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   backend-quality:
     needs: detect-changes
@@ -127,6 +129,7 @@ jobs:
             changed: ${{ needs.detect-changes.outputs.trip-service }}
           - name: user-service
             changed: ${{ needs.detect-changes.outputs.user-service }}
+
     steps:
       - name: Checkout code
         if: matrix.service.changed == 'true'
@@ -136,14 +139,15 @@ jobs:
         if: matrix.service.changed == 'true'
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: "1.23"
           cache-dependency-path: backend/${{ matrix.service.name }}/go.sum
 
       - name: Install golangci-lint
         if: matrix.service.changed == 'true'
         run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.61.0
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
+            | sh -s -- -b "$(go env GOPATH)/bin" v2.6.2
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
       - name: Download dependencies
         if: matrix.service.changed == 'true'
@@ -173,38 +177,43 @@ jobs:
       - name: Summary
         if: matrix.service.changed == 'true' && always()
         run: |
-          echo "## 🔧 ${{ matrix.service.name }} Quality Checks" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Format checking completed" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Go vet completed" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Linting completed" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Tests completed" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## Backend Quality - ${{ matrix.service.name }}"
+            echo
+            echo "- Format check: completed"
+            echo "- Go vet: completed"
+            echo "- Lint: completed"
+            echo "- Tests: completed"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   quality-summary:
     needs: [detect-changes, frontend-quality, backend-quality]
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Check quality results
+      - name: Quality summary
         run: |
-          echo "## 📊 Quality Checks Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Changes Detected:" >> $GITHUB_STEP_SUMMARY
-          echo "- **Frontend**: ${{ needs.detect-changes.outputs.frontend }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **booking-service**: ${{ needs.detect-changes.outputs.booking-service }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **gateway-service**: ${{ needs.detect-changes.outputs.gateway-service }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **payment-service**: ${{ needs.detect-changes.outputs.payment-service }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **trip-service**: ${{ needs.detect-changes.outputs.trip-service }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **user-service**: ${{ needs.detect-changes.outputs.user-service }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Results:" >> $GITHUB_STEP_SUMMARY
-          echo "- **Frontend Quality**: ${{ needs.frontend-quality.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Backend Quality**: ${{ needs.backend-quality.result }}" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## Quality Checks Summary"
+            echo
+            echo "### Changes detected"
+            echo "- Frontend: ${{ needs.detect-changes.outputs.frontend }}"
+            echo "- booking-service: ${{ needs.detect-changes.outputs.booking-service }}"
+            echo "- gateway-service: ${{ needs.detect-changes.outputs.gateway-service }}"
+            echo "- payment-service: ${{ needs.detect-changes.outputs.payment-service }}"
+            echo "- trip-service: ${{ needs.detect-changes.outputs.trip-service }}"
+            echo "- user-service: ${{ needs.detect-changes.outputs.user-service }}"
+            echo "- shared: ${{ needs.detect-changes.outputs.shared }}"
+            echo
+            echo "### Job results"
+            echo "- Frontend quality job: ${{ needs.frontend-quality.result }}"
+            echo "- Backend quality job: ${{ needs.backend-quality.result }}"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Fail if quality checks failed
         if: |
-          (needs.frontend-quality.result == 'failure') ||
-          (needs.backend-quality.result == 'failure')
+          needs.frontend-quality.result == 'failure' ||
+          needs.backend-quality.result == 'failure'
         run: |
-          echo "❌ Quality checks failed!"
+          echo "Quality checks failed."
           exit 1

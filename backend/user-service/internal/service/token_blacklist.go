@@ -29,7 +29,10 @@ type TokenBlacklistManagerImpl struct {
 	jwtManager  utils.JWTManager
 }
 
-func NewTokenBlacklistManager(redisManager *db.RedisManager, jwtManager utils.JWTManager) TokenBlacklistManager {
+func NewTokenBlacklistManager(
+	redisManager *db.RedisManager,
+	jwtManager utils.JWTManager,
+) TokenBlacklistManager {
 	return &TokenBlacklistManagerImpl{
 		redisClient: redisManager.Client,
 		jwtManager:  jwtManager,

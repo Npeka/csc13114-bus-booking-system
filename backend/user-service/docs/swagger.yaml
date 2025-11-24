@@ -1,4 +1,3 @@
-basePath: /api/v1
 definitions:
   bus-booking_user-service_internal_model.AuthResponse:
     properties:
@@ -181,14 +180,13 @@ definitions:
         type: string
       type: array
     type: object
-host: localhost:8081
 info:
   contact:
     email: support@busbooking.com
     name: API Support
   description: |-
     API for user management and authentication in the bus booking system
-    This Pservice handles user registration, authentication, profile management, and authorization.
+    This service handles user registration, authentication, profile management, and authorization.
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT

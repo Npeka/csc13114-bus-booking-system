@@ -35,7 +35,7 @@ func main() {
 	app := &Application{Config: cfg}
 
 	// Initialize database
-	app.Database, err = sharedDB.NewPostgresConnection(&cfg.BaseConfig.Database, cfg.BaseConfig.Server.Environment)
+	app.Database, err = sharedDB.NewPostgresConnection(&cfg.BaseConfig.Database)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to initialize database")
 	}

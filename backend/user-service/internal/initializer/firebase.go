@@ -13,13 +13,21 @@ import (
 	"bus-booking/user-service/config"
 )
 
-func InitFirebase(cfg *config.Config) (*auth.Client, error) {
+func MustNewFirebase(cfg *config.FirebaseConfig) *auth.Client {
+	authClient, err := NewFirebase(cfg)
+	if err != nil {
+		panic(err)
+	}
+	return authClient
+}
+
+func NewFirebase(cfg *config.FirebaseConfig) (*auth.Client, error) {
 	ctx := context.Background()
 	var firebaseApp *firebase.App
 	var err error
 
 	// Try to load from service account file first
-	serviceAccountPath := cfg.Firebase.ServiceAccountKeyPath
+	serviceAccountPath := cfg.ServiceAccountKeyPath
 
 	// Check if service account file exists at relative path
 	if _, err := os.Stat(serviceAccountPath); os.IsNotExist(err) {
@@ -35,7 +43,7 @@ func InitFirebase(cfg *config.Config) (*auth.Client, error) {
 	if _, err := os.Stat(serviceAccountPath); err == nil {
 		opt := option.WithCredentialsFile(serviceAccountPath)
 		firebaseConfig := &firebase.Config{
-			ProjectID: cfg.Firebase.ProjectID,
+			ProjectID: cfg.ProjectID,
 		}
 
 		firebaseApp, err = firebase.NewApp(ctx, firebaseConfig, opt)

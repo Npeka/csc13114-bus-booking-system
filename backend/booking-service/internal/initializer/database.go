@@ -7,7 +7,7 @@ import (
 )
 
 func InitDatabase(cfg *config.Config) (*sharedDB.DatabaseManager, error) {
-	dbManager, err := sharedDB.NewPostgresConnection(&cfg.BaseConfig.Database, cfg.BaseConfig.Server.Environment)
+	dbManager, err := sharedDB.NewPostgresConnection(&cfg.BaseConfig.Database)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}

@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "API for user management and authentication in the bus booking system\nThis Pservice handles user registration, authentication, profile management, and authorization.",
+        "description": "API for user management and authentication in the bus booking system\nThis service handles user registration, authentication, profile management, and authorization.",
         "title": "User Service API",
         "contact": {
             "name": "API Support",
@@ -13,8 +13,6 @@
         },
         "version": "1.0"
     },
-    "host": "localhost:8081",
-    "basePath": "/api/v1",
     "paths": {
         "/auth/firebase": {
             "post": {

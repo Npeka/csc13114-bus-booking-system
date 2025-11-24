@@ -5,7 +5,6 @@ import (
 
 	"bus-booking/shared/constants"
 	"bus-booking/shared/ginext"
-	contextlogger "bus-booking/shared/logger"
 	"bus-booking/user-service/internal/model"
 	"bus-booking/user-service/internal/repository"
 
@@ -25,13 +24,13 @@ type UserService interface {
 
 type UserServiceImpl struct {
 	userRepo repository.UserRepository
-	logger   *contextlogger.ContextLogger
 }
 
-func NewUserService(userRepo repository.UserRepository) UserService {
+func NewUserService(
+	userRepo repository.UserRepository,
+) UserService {
 	return &UserServiceImpl{
 		userRepo: userRepo,
-		logger:   contextlogger.NewContextLogger("user-service", "UserService", ""),
 	}
 }
 
@@ -39,7 +38,7 @@ func (s *UserServiceImpl) CreateUser(ctx context.Context, req *model.UserCreateR
 	// Validate email if provided
 	if req.Email != "" {
 		if emailExists, err := s.userRepo.EmailExists(ctx, req.Email); err != nil {
-			s.logger.Error(err, "Failed to check email existence")
+			log.Error().Err(err).Msg("Failed to check email existence")
 			return nil, ginext.NewInternalServerError("Failed to validate email")
 		} else if emailExists {
 			return nil, ginext.NewConflictError("email already exists")
@@ -64,7 +63,7 @@ func (s *UserServiceImpl) CreateUser(ctx context.Context, req *model.UserCreateR
 	}
 
 	if err := s.userRepo.Create(ctx, user); err != nil {
-		s.logger.Error(err, "Failed to create user in database")
+		log.Error().Err(err).Msg("Failed to create user in database")
 		return nil, err
 	}
 
@@ -89,7 +88,7 @@ func (s *UserServiceImpl) UpdateUser(ctx context.Context, id uuid.UUID, req *mod
 	// Validate and update email if provided
 	if req.Email != nil && *req.Email != user.Email {
 		if emailExists, err := s.userRepo.EmailExists(ctx, *req.Email); err != nil {
-			s.logger.Error(err, "Failed to check email existence during update")
+			log.Error().Err(err).Msg("Failed to check email existence during update")
 			return nil, ginext.NewInternalServerError("Failed to validate email")
 		} else if emailExists {
 			return nil, ginext.NewConflictError("email already exists")
@@ -116,7 +115,7 @@ func (s *UserServiceImpl) UpdateUser(ctx context.Context, id uuid.UUID, req *mod
 
 	// Update user in database
 	if err := s.userRepo.Update(ctx, user); err != nil {
-		s.logger.Error(err, "Failed to update user in database")
+		log.Error().Err(err).Msg("Failed to update user in database")
 		return nil, ginext.NewInternalServerError("Failed to update user")
 	}
 
@@ -132,7 +131,7 @@ func (s *UserServiceImpl) DeleteUser(ctx context.Context, id uuid.UUID) error {
 
 	// Delete user
 	if err := s.userRepo.Delete(ctx, id); err != nil {
-		s.logger.Error(err, "Failed to delete user from database")
+		log.Error().Err(err).Msg("Failed to delete user from database")
 		return ginext.NewInternalServerError("Failed to delete user")
 	}
 

@@ -20,6 +20,10 @@ type CustomValidator struct {
 // ValidatorInstance holds the global validator instance
 var ValidatorInstance *CustomValidator
 
+func MustSetupValidator() {
+	InitValidator()
+}
+
 // InitValidator initializes the custom validator with custom validation rules and tag name func
 func InitValidator() {
 	v := validator.New()

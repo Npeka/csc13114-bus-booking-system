@@ -1,31 +1,31 @@
 package router
 
 import (
-	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"bus-booking/shared/constants"
 	"bus-booking/shared/ginext"
 	"bus-booking/shared/health"
 	"bus-booking/shared/middleware"
+	"bus-booking/shared/swagger"
 	"bus-booking/user-service/config"
 	"bus-booking/user-service/internal/handler"
-	"bus-booking/user-service/internal/repository"
 )
 
-type RouterConfig struct {
-	Config       *config.Config
-	FirebaseAuth *auth.Client
-	UserHandler  handler.UserHandler
-	AuthHandler  handler.AuthHandler
-	UserRepo     repository.UserRepository
+type Config struct {
+	Config      *config.Config
+	AuthHandler handler.AuthHandler
+	UserHandler handler.UserHandler
 }
 
-func SetupRoutes(router *gin.Engine, cfg *RouterConfig) {
+func SetupRoutes(router *gin.Engine, cfg *Config) {
 	router.Use(middleware.Logger())
 	router.Use(middleware.SetupCORS(&cfg.Config.CORS))
 	router.Use(middleware.RequestContextMiddleware(cfg.Config.ServiceName))
 	router.GET(health.Path, health.Handler(cfg.Config.ServiceName))
+	router.GET(swagger.Path, ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	v1 := router.Group("/api/v1")
 	{

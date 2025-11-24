@@ -1084,11 +1084,11 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:8081",
-	BasePath:         "/api/v1",
+	Host:             "",
+	BasePath:         "",
 	Schemes:          []string{},
 	Title:            "User Service API",
-	Description:      "API for user management and authentication in the bus booking system\nThis Pservice handles user registration, authentication, profile management, and authorization.",
+	Description:      "API for user management and authentication in the bus booking system\nThis service handles user registration, authentication, profile management, and authorization.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

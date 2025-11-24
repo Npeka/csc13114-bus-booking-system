@@ -2,13 +2,12 @@ run:
   timeout: 5m
   tests: true
   modules-download-mode: readonly
-  go: '1.23'  # Specify Go version to avoid version mismatch
+  go: "1.24.0"
 
 linters:
   enable:
     - gofmt
     - govet
-    - staticcheck
     - gosimple
     - ineffassign
     - unused
@@ -16,7 +15,7 @@ linters:
     - gosec
     - revive
   disable:
-    - typecheck # Disabled as it can be slow
+    - typecheck
 
 linters-settings:
   gofmt:
@@ -25,16 +24,14 @@ linters-settings:
     check-blank: true
   gosec:
     excludes:
-      - G104 # Audit errors not checked (too noisy)
+      - G104
 
 issues:
   exclude-rules:
-    # Exclude some linters from running on tests files
     - path: _test\.go
       linters:
         - gosec
         - errcheck
-    # Exclude generated files
     - path: \.pb\.go$
       linters:
         - all

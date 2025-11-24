@@ -35,7 +35,7 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 
 func (r *UserRepositoryImpl) Create(ctx context.Context, user *model.User) error {
 	if err := r.db.WithContext(ctx).Create(user).Error; err != nil {
-		if errors.Is(gorm.ErrDuplicatedKey, err) {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
 			return fmt.Errorf("User already exists: %w", err)
 		}
 		return fmt.Errorf("Failed to create user: %w", err)

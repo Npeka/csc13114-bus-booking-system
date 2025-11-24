@@ -32,18 +32,18 @@ type AuthServiceImpl struct {
 }
 
 func NewAuthService(
-	userRepo repository.UserRepository,
+	config *config.Config,
 	jwtManager utils.JWTManager,
 	firebaseAuth FirebaseAuthClient,
-	config *config.Config,
 	tokenBlacklistMgr TokenBlacklistManager,
+	userRepo repository.UserRepository,
 ) AuthService {
 	return &AuthServiceImpl{
-		userRepo:          userRepo,
+		config:            config,
 		jwtManager:        jwtManager,
 		firebaseAuth:      firebaseAuth,
-		config:            config,
 		tokenBlacklistMgr: tokenBlacklistMgr,
+		userRepo:          userRepo,
 	}
 }
 

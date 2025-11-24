@@ -17,8 +17,8 @@ type MigrationManager struct {
 }
 
 // NewMigrationManager creates a new migration manager
-func NewMigrationManager(cfg *config.DatabaseConfig, env string) (*MigrationManager, error) {
-	dbManager, err := NewPostgresConnection(cfg, env)
+func NewMigrationManager(cfg *config.DatabaseConfig) (*MigrationManager, error) {
+	dbManager, err := NewPostgresConnection(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database for migration: %w", err)
 	}

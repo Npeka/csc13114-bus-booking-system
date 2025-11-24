@@ -30,3 +30,11 @@ type FirebaseConfig struct {
 func LoadConfig(envFilePath ...string) (*Config, error) {
 	return sharedConfig.LoadConfig[Config](envFilePath...)
 }
+
+func MustLoadConfig(envFilePath ...string) *Config {
+	cfg, err := LoadConfig(envFilePath...)
+	if err != nil {
+		panic(err)
+	}
+	return cfg
+}

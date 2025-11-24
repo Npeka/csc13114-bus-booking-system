@@ -73,7 +73,7 @@ func (u *User) ToResponse() *UserResponse {
 	}
 }
 
-func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
+func (u *User) BeforeCreate(_ *gorm.DB) (err error) {
 	if u.ID == uuid.Nil {
 		u.ID = uuid.New()
 	}

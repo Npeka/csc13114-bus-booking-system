@@ -13,6 +13,12 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
+func MustSetupLogger(cfg *config.LogConfig) {
+	if err := SetupLogger(cfg); err != nil {
+		panic(err)
+	}
+}
+
 // SetupLogger configures and initializes the zerolog logger
 func SetupLogger(cfg *config.LogConfig) error {
 	// Set log level
