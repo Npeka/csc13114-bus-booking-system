@@ -1,3 +1,13 @@
+run:
+	go run cmd/server/main.go
+
+migrate:
+	go run cmd/migrate/main.go
+
+fmt-check:
+	@echo "Checking code formatting..."
+	@test -z "$$(gofmt -l .)" || (echo "Code is not formatted. Run 'make fmt' to fix." && gofmt -l . && exit 1)
+
 .PHONY: build run migrate test clean docker-up init-db dev
 
 build:
@@ -15,11 +25,6 @@ init-db: docker-up
 
 dev: init-db migrate run
 
-run:
-	go run cmd/server/main.go
-
-migrate:
-	go run cmd/migrate/main.go
 
 test:
 	go test -v ./...

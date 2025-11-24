@@ -1,4 +1,12 @@
-# Booking Service Makefile
+run:
+	go run cmd/server/main.go
+
+migrate:
+	go run cmd/migrate/main.go
+
+fmt-check:
+	@echo "Checking code formatting..."
+	@test -z "$$(gofmt -l .)" || (echo "Code is not formatted. Run 'make fmt' to fix." && gofmt -l . && exit 1)
 
 # Variables
 BINARY_NAME=booking-service
@@ -83,16 +91,6 @@ deps:
 dev: deps fmt vet
 	@echo "Starting development server..."
 	$(GOCMD) run $(MAIN_PATH)
-
-# Run the application
-run: build
-	@echo "Starting $(BINARY_NAME)..."
-	./$(BUILD_DIR)/$(BINARY_NAME)
-
-# Run database migrations
-migrate: build
-	@echo "Running database migrations..."
-	./$(BUILD_DIR)/migrate
 
 # Docker commands
 docker-build:

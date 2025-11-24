@@ -1,3 +1,13 @@
+run:
+	go run cmd/server/main.go
+
+migrate:
+	go run cmd/migrate/main.go
+
+fmt-check:
+	@echo "Checking code formatting..."
+	@test -z "$$(gofmt -l .)" || (echo "Code is not formatted. Run 'make fmt' to fix." && gofmt -l . && exit 1)
+
 .PHONY: build run migrate test clean docker-up init-db dev lint fmt fmt-check vet quality-check
 
 build:
@@ -14,12 +24,6 @@ init-db: docker-up
 	docker exec -it postgres psql -U postgres -c "CREATE DATABASE bus_dev_payment;" || echo "Database already exists"
 
 dev: init-db migrate run
-
-run:
-	go run cmd/server/main.go
-
-migrate:
-	go run cmd/migrate/main.go
 
 test:
 	go test -v ./...
@@ -43,10 +47,7 @@ lint:
 	@echo "Running golangci-lint..."
 	@golangci-lint run --config=../.golangci.yml ./...
 
-# Check formatting
-fmt-check:
-	@echo "Checking code formatting..."
-	@test -z "$$(gofmt -l .)" || (echo "Code is not formatted. Run 'make fmt' to fix." && gofmt -l . && exit 1)
+
 
 # Fix formatting
 fmt:
