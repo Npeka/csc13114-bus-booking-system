@@ -102,6 +102,7 @@ func (r *OperatorRepositoryImpl) ListOperators(ctx context.Context, page, limit 
 	return results, total, nil
 }
 
+// Get operator by email
 func (r *OperatorRepositoryImpl) GetOperatorByEmail(ctx context.Context, email string) (*model.Operator, error) {
 	var operator model.Operator
 	if err := r.db.WithContext(ctx).Where("contact_email = ?", email).First(&operator).Error; err != nil {

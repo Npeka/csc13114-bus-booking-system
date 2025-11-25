@@ -20,6 +20,7 @@ func NewTransactionRepository(db *gorm.DB) TransactionRepository {
 	return &transactionRepositoryImpl{db: db}
 }
 
+// Create a new transaction
 func (r *transactionRepositoryImpl) CreateTransaction(ctx context.Context, transaction *model.Transaction) error {
 	if err := r.db.WithContext(ctx).Create(transaction).Error; err != nil {
 		return fmt.Errorf("failed to create transaction: %w", err)

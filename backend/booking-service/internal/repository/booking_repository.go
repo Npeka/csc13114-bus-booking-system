@@ -111,7 +111,6 @@ func (r *bookingRepositoryImpl) GetBookingsByTripID(ctx context.Context, tripID 
 		return nil, 0, fmt.Errorf("failed to count bookings: %w", err)
 	}
 
-	// Get bookings
 	err := r.db.WithContext(ctx).
 		Preload("BookingSeats").
 		Preload("PaymentMethod").
