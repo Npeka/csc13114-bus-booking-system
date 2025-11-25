@@ -18,6 +18,7 @@ permissions:
 
 jobs:
   frontend-quality:
+    name: Frontend Quality Checks
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

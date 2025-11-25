@@ -62,7 +62,8 @@ jobs:
               - 'backend/shared/**'
 
   # Quality checks per service - runs independently
-  quality-check:
+  ci:
+    name: CI (${{ matrix.service.name }})
     needs: detect-changes
     if: |
       needs.detect-changes.outputs.booking-service == 'true' ||
@@ -155,8 +156,9 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   # Build and deploy - only if quality checks pass for that service
-  build-and-deploy:
-    needs: [detect-changes, quality-check]
+  cd:
+    name: CD (${{ matrix.service.name }})
+    needs: [detect-changes, ci]
     if: |
       needs.detect-changes.outputs.booking-service == 'true' ||
       needs.detect-changes.outputs.gateway-service == 'true' ||
@@ -192,8 +194,8 @@ jobs:
         id: quality-check
         run: |
           # Only proceed if quality checks passed for this service
-          echo "Quality check status for ${{ matrix.service.name }}: ${{ needs.quality-check.result }}"
-          if [ "${{ needs.quality-check.result }}" != "success" ]; then
+          echo "Quality check status for ${{ matrix.service.name }}: ${{ needs.ci.result }}"
+          if [ "${{ needs.ci.result }}" != "success" ]; then
             echo "Quality checks failed for ${{ matrix.service.name }}, skipping build and deploy"
             exit 1
           fi
@@ -306,7 +308,7 @@ jobs:
 
   # Summary job
   pipeline-summary:
-    needs: [detect-changes, quality-check, build-and-deploy]
+    needs: [detect-changes, ci, cd]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -323,8 +325,8 @@ jobs:
             echo "- **user-service**: ${{ needs.detect-changes.outputs.user-service }}"
             echo
             echo "### Pipeline Results:"
-            echo "- **Quality Checks**: ${{ needs.quality-check.result }}"
-            echo "- **Build & Deploy**: ${{ needs.build-and-deploy.result }}"
+            echo "- **CI (Quality Checks)**: ${{ needs.ci.result }}"
+            echo "- **CD (Build & Deploy)**: ${{ needs.cd.result }}"
             echo
             echo "### Notes:"
             echo "- Each service runs independently"
