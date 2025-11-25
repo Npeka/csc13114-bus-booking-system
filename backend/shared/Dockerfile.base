@@ -38,6 +38,8 @@ COPY --from=builder /etc/passwd /etc/passwd
 # Copy the binary
 COPY --from=builder /build/app /app
 
+ENV TZ=Asia/Ho_Chi_Minh
+
 # Use non-root user
 USER appuser
 

@@ -30,6 +30,8 @@ COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /build/gateway-service/app /app
 COPY --from=builder /build/gateway-service/routes /routes
 
+ENV TZ=Asia/Ho_Chi_Minh
+
 USER appuser
 
 EXPOSE 8080

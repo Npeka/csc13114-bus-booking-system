@@ -30,6 +30,8 @@ COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /build/user-service/app /app
 COPY --from=builder /build/user-service/config/ /config/
 
+ENV TZ=Asia/Ho_Chi_Minh
+
 USER appuser
 
 EXPOSE 8080

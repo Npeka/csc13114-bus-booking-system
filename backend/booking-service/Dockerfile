@@ -29,6 +29,8 @@ COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /build/booking-service/app /app
 
+ENV TZ=Asia/Ho_Chi_Minh
+
 USER appuser
 
 EXPOSE 8080
