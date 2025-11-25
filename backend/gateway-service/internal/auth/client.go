@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -75,7 +76,11 @@ func (c *Client) VerifyToken(ctx context.Context, accessToken string) (*UserCont
 	if err != nil {
 		return nil, fmt.Errorf("failed to verify token: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Failed to close response body: %v", err)
+		}
+	}()
 
 	// Check status code
 	if resp.StatusCode != http.StatusOK {

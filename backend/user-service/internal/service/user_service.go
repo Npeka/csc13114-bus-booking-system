@@ -57,7 +57,7 @@ func (s *UserServiceImpl) CreateUser(ctx context.Context, req *model.UserCreateR
 		Avatar:        req.Avatar,
 		Role:          req.Role,
 		Status:        "active",
-		FirebaseUID:   req.FirebaseUID,
+		FirebaseUID:   &req.FirebaseUID,
 		EmailVerified: false,
 		PhoneVerified: false,
 	}

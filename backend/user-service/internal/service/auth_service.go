@@ -19,8 +19,10 @@ import (
 type AuthService interface {
 	VerifyToken(ctx context.Context, token string) (*model.TokenVerifyResponse, error)
 	FirebaseAuth(ctx context.Context, req *model.FirebaseAuthRequest) (*model.AuthResponse, error)
+	Login(ctx context.Context, req *model.LoginRequest) (*model.AuthResponse, error)
+	Register(ctx context.Context, req *model.RegisterRequest) (*model.AuthResponse, error)
 	RefreshToken(ctx context.Context, req *model.RefreshTokenRequest, userID uuid.UUID) (*model.AuthResponse, error)
-	Logout(ctx context.Context, req model.SignoutRequest, userID uuid.UUID) error
+	Logout(ctx context.Context, req model.LogoutRequest, userID uuid.UUID) error
 }
 
 type AuthServiceImpl struct {
@@ -150,7 +152,7 @@ func (s *AuthServiceImpl) FirebaseAuth(ctx context.Context, req *model.FirebaseA
 		Avatar:        avatar,
 		Role:          constants.RolePassenger,
 		Status:        "verified",
-		FirebaseUID:   token.UID,
+		FirebaseUID:   &token.UID,
 		EmailVerified: emailVerified,
 		PhoneVerified: phoneVerified,
 	}
@@ -158,6 +160,69 @@ func (s *AuthServiceImpl) FirebaseAuth(ctx context.Context, req *model.FirebaseA
 	if err := s.userRepo.Create(ctx, user); err != nil {
 		log.Error().Err(err).Msg("Failed to create Firebase user")
 		return nil, ginext.NewInternalServerError("Failed to create user")
+	}
+
+	return s.generateAuthResponse(user)
+}
+
+func (s *AuthServiceImpl) Register(ctx context.Context, req *model.RegisterRequest) (*model.AuthResponse, error) {
+	// Check if email already exists
+	existingUser, err := s.userRepo.GetByEmail(ctx, req.Email)
+	if err == nil && existingUser != nil {
+		log.Warn().Str("email", req.Email).Msg("Email already registered")
+		return nil, ginext.NewBadRequestError("Email already registered")
+	}
+
+	// Hash password
+	passwordHash, err := utils.HashPassword(req.Password)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to hash password")
+		return nil, ginext.NewInternalServerError("Failed to create account")
+	}
+
+	// Create new user
+	user := &model.User{
+		Email:         req.Email,
+		FullName:      req.FullName,
+		PasswordHash:  &passwordHash,
+		Role:          constants.RolePassenger,
+		Status:        "active",
+		FirebaseUID:   nil, // Empty for email/password users
+		EmailVerified: false,
+		PhoneVerified: false,
+	}
+
+	if err := s.userRepo.Create(ctx, user); err != nil {
+		log.Error().Err(err).Msg("Failed to create user")
+		return nil, ginext.NewInternalServerError("Failed to create account")
+	}
+
+	return s.generateAuthResponse(user)
+}
+
+func (s *AuthServiceImpl) Login(ctx context.Context, req *model.LoginRequest) (*model.AuthResponse, error) {
+	// Get user by email
+	user, err := s.userRepo.GetByEmail(ctx, req.Email)
+	if err != nil {
+		log.Error().Err(err).Str("email", req.Email).Msg("User not found")
+		return nil, ginext.NewUnauthorizedError("Invalid email or password")
+	}
+
+	// Check if user has password set (not a Firebase-only user)
+	if user.PasswordHash == nil {
+		log.Warn().Str("email", req.Email).Msg("User does not have password set")
+		return nil, ginext.NewUnauthorizedError("Invalid email or password")
+	}
+
+	// Verify password
+	if !utils.CheckPasswordHash(req.Password, *user.PasswordHash) {
+		log.Error().Str("email", req.Email).Msg("Password verification failed")
+		return nil, ginext.NewUnauthorizedError("Invalid email or password")
+	}
+
+	// Check user status
+	if user.Status != "active" && user.Status != "verified" {
+		return nil, ginext.NewForbiddenError("Account is not active")
 	}
 
 	return s.generateAuthResponse(user)
@@ -216,7 +281,7 @@ func (s *AuthServiceImpl) generateAuthResponse(user *model.User) (*model.AuthRes
 	}, nil
 }
 
-func (s *AuthServiceImpl) Logout(ctx context.Context, req model.SignoutRequest, userID uuid.UUID) error {
+func (s *AuthServiceImpl) Logout(ctx context.Context, req model.LogoutRequest, userID uuid.UUID) error {
 	claims, err := s.jwtManager.ValidateRefreshToken(req.RefreshToken)
 	if err != nil {
 		return ginext.NewUnauthorizedError("invalid refresh token")

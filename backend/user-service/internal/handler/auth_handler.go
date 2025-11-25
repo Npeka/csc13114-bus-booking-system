@@ -12,8 +12,10 @@ import (
 type AuthHandler interface {
 	VerifyToken(r *ginext.Request) (*ginext.Response, error)
 	FirebaseAuth(r *ginext.Request) (*ginext.Response, error)
-	RefreshToken(r *ginext.Request) (*ginext.Response, error)
+	Register(r *ginext.Request) (*ginext.Response, error)
+	Login(r *ginext.Request) (*ginext.Response, error)
 	Logout(r *ginext.Request) (*ginext.Response, error)
+	RefreshToken(r *ginext.Request) (*ginext.Response, error)
 }
 
 type AuthHandlerImpl struct {
@@ -80,6 +82,93 @@ func (h *AuthHandlerImpl) FirebaseAuth(r *ginext.Request) (*ginext.Response, err
 	return ginext.NewSuccessResponse(authResp, "Firebase authentication successful"), nil
 }
 
+// Register godoc
+// @Summary Register new user with email and password
+// @Description Creates a new user account using email and password
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param request body model.EmailPasswordRegisterRequest true "Registration request"
+// @Success 200 {object} ginext.Response{data=model.AuthResponse} "Registration successful"
+// @Failure 400 {object} ginext.Response "Invalid request data or email already registered"
+// @Failure 500 {object} ginext.Response "Internal server error"
+// @Router /auth/register [post]
+func (h *AuthHandlerImpl) Register(r *ginext.Request) (*ginext.Response, error) {
+	req := model.RegisterRequest{}
+	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
+		log.Debug().Err(err).Msg("JSON binding failed")
+		return nil, ginext.NewBadRequestError("Invalid request data")
+	}
+
+	authResp, err := h.as.Register(r.Context(), &req)
+	if err != nil {
+		log.Error().Err(err).Msg("Registration failed")
+		return nil, err
+	}
+
+	return ginext.NewSuccessResponse(authResp, "Registration successful"), nil
+}
+
+// EmailPasswordLogin godoc
+// @Summary Login with email and password
+// @Description Authenticates a user using email and password and returns access/refresh tokens
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param request body model.EmailPasswordLoginRequest true "Email and password login request"
+// @Success 200 {object} ginext.Response{data=model.AuthResponse} "Login successful"
+// @Failure 400 {object} ginext.Response "Invalid request data"
+// @Failure 401 {object} ginext.Response "Invalid email or password"
+// @Failure 403 {object} ginext.Response "Account is not active"
+// @Failure 500 {object} ginext.Response "Internal server error"
+// @Router /auth/login [post]
+func (h *AuthHandlerImpl) Login(r *ginext.Request) (*ginext.Response, error) {
+	req := model.LoginRequest{}
+	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
+		log.Debug().Err(err).Msg("JSON binding failed")
+		return nil, ginext.NewBadRequestError("Invalid request data")
+	}
+
+	authResp, err := h.as.Login(r.Context(), &req)
+	if err != nil {
+		log.Error().Err(err).Msg("Email/password login failed")
+		return nil, err
+	}
+
+	return ginext.NewSuccessResponse(authResp, "Login successful"), nil
+}
+
+// Logout godoc
+// @Summary Logout user
+// @Description Invalidates the user's access and refresh tokens
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body model.SignoutRequest true "Logout request"
+// @Success 200 {object} ginext.Response "User logged out successfully"
+// @Failure 400 {object} ginext.Response "Invalid request data"
+// @Failure 401 {object} ginext.Response "Unauthorized"
+// @Failure 500 {object} ginext.Response "Internal server error"
+// @Router /auth/logout [post]
+func (h *AuthHandlerImpl) Logout(r *ginext.Request) (*ginext.Response, error) {
+	userID := sharedcontext.GetUserID(r.GinCtx)
+	accessToken := sharedcontext.GetAccessToken(r.GinCtx)
+
+	req := model.LogoutRequest{AccessToken: accessToken}
+	if err := r.GinCtx.ShouldBind(&req); err != nil {
+		log.Debug().Err(err).Msg("JSON binding failed")
+		return nil, ginext.NewBadRequestError("Invalid request data")
+	}
+
+	if err := h.as.Logout(r.Context(), req, userID); err != nil {
+		log.Error().Err(err).Msg("Logout failed")
+		return nil, err
+	}
+
+	return ginext.NewSuccessResponse(nil, "User logged out successfully"), nil
+}
+
 // RefreshToken godoc
 // @Summary Refresh access token
 // @Description Generates a new access token using a valid refresh token
@@ -109,35 +198,4 @@ func (h *AuthHandlerImpl) RefreshToken(r *ginext.Request) (*ginext.Response, err
 	}
 
 	return ginext.NewSuccessResponse(authResp, "Token refreshed successfully"), nil
-}
-
-// Logout godoc
-// @Summary Logout user
-// @Description Invalidates the user's access and refresh tokens
-// @Tags Authentication
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param request body model.SignoutRequest true "Logout request"
-// @Success 200 {object} ginext.Response "User logged out successfully"
-// @Failure 400 {object} ginext.Response "Invalid request data"
-// @Failure 401 {object} ginext.Response "Unauthorized"
-// @Failure 500 {object} ginext.Response "Internal server error"
-// @Router /auth/logout [post]
-func (h *AuthHandlerImpl) Logout(r *ginext.Request) (*ginext.Response, error) {
-	userID := sharedcontext.GetUserID(r.GinCtx)
-	accessToken := sharedcontext.GetAccessToken(r.GinCtx)
-
-	req := model.SignoutRequest{AccessToken: accessToken}
-	if err := r.GinCtx.ShouldBind(&req); err != nil {
-		log.Debug().Err(err).Msg("JSON binding failed")
-		return nil, ginext.NewBadRequestError("Invalid request data")
-	}
-
-	if err := h.as.Logout(r.Context(), req, userID); err != nil {
-		log.Error().Err(err).Msg("Logout failed")
-		return nil, err
-	}
-
-	return ginext.NewSuccessResponse(nil, "User logged out successfully"), nil
 }

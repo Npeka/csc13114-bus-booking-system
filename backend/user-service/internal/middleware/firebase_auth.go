@@ -102,7 +102,7 @@ func (m *FirebaseAuthMiddleware) FirebaseAuth() gin.HandlerFunc {
 				Avatar:        picture,
 				Role:          constants.RolePassenger,
 				Status:        "verified",
-				FirebaseUID:   token.UID,
+				FirebaseUID:   &token.UID,
 				EmailVerified: emailVerified,
 				PhoneVerified: phoneVerified,
 			}

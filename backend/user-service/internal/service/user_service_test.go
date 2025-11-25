@@ -85,7 +85,7 @@ func TestUserService_CreateUser_FirebaseUIDExists(t *testing.T) {
 
 	existingUser := &model.User{
 		ID:          uuid.New(),
-		FirebaseUID: req.FirebaseUID,
+		FirebaseUID: &req.FirebaseUID,
 	}
 
 	mockRepo.On("EmailExists", ctx, req.Email).Return(false, nil)

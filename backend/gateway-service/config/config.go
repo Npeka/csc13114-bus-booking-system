@@ -71,6 +71,14 @@ func (c *Config) BuildServiceMap() map[string]ServiceConfig {
 	}
 }
 
+func MustLoadConfig(configPath string) *Config {
+	config, err := LoadConfig(configPath)
+	if err != nil {
+		panic(err)
+	}
+	return config
+}
+
 // LoadConfig loads configuration from environment variables and file
 func LoadConfig(configPath string) (*Config, error) {
 	// Load config using shared pattern
@@ -94,6 +102,7 @@ func LoadConfig(configPath string) (*Config, error) {
 
 func loadRoutes(config *Config, configPath string) error {
 	// Read YAML file for services configuration only
+	// #nosec G304 -- configPath is a trusted application config file path
 	yamlData, err := os.ReadFile(configPath)
 	if err != nil {
 		return fmt.Errorf("failed to read config file: %w", err)
@@ -114,6 +123,14 @@ func loadRoutes(config *Config, configPath string) error {
 	}
 
 	return nil
+}
+
+func MustLoadRoutes(routesDir string) *RouteConfig {
+	routes, err := LoadRoutes(routesDir)
+	if err != nil {
+		panic(err)
+	}
+	return routes
 }
 
 // LoadRoutes loads route configurations from directory
@@ -161,6 +178,7 @@ func LoadRoutes(routesDir string) (*RouteConfig, error) {
 }
 
 func loadFromFile(config interface{}, path string) error {
+	// #nosec G304 -- path is from trusted routes directory walked by filepath.Walk
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err

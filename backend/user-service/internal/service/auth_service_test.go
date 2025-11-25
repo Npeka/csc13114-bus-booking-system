@@ -320,7 +320,7 @@ func TestAuthService_FirebaseAuth_ExistingUser(t *testing.T) {
 	existingUser := &model.User{
 		ID:          uuid.New(),
 		Email:       "existing@example.com",
-		FirebaseUID: "firebase123",
+		FirebaseUID: &firebaseToken.UID,
 		Status:      "active",
 		Role:        constants.RolePassenger,
 	}
@@ -500,7 +500,7 @@ func TestAuthService_Logout_Success(t *testing.T) {
 	ctx := context.Background()
 
 	userID := uuid.New()
-	req := model.SignoutRequest{
+	req := model.LogoutRequest{
 		RefreshToken: "refresh.token",
 		AccessToken:  "access.token",
 	}
@@ -520,4 +520,260 @@ func TestAuthService_Logout_Success(t *testing.T) {
 	assert.NoError(t, err)
 	mockJWT.AssertExpectations(t)
 	mockBlacklist.AssertExpectations(t)
+}
+
+func TestAuthService_Register_Success(t *testing.T) {
+	// Arrange
+	mockRepo := new(mocks.MockUserRepository)
+	mockJWT := new(mocks.MockJWTManager)
+	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	cfg := &config.Config{
+		JWT: config.JWTConfig{
+			AccessTokenTTL: 15 * time.Minute,
+		},
+	}
+
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
+	ctx := context.Background()
+
+	req := &model.RegisterRequest{
+		FullName: "Test User",
+		Email:    "newuser@example.com",
+		Password: "password123",
+	}
+
+	// Mock email doesn't exist
+	mockRepo.On("GetByEmail", ctx, req.Email).Return(nil, errors.New("not found"))
+	mockRepo.On("Create", ctx, mock.AnythingOfType("*model.User")).Return(nil)
+	mockJWT.On("GenerateAccessToken", mock.AnythingOfType("uuid.UUID"), req.Email, "1").Return("access.token", nil)
+	mockJWT.On("GenerateRefreshToken", mock.AnythingOfType("uuid.UUID"), req.Email, "1").Return("refresh.token", nil)
+
+	// Act
+	result, err := service.Register(ctx, req)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, "access.token", result.AccessToken)
+	assert.Equal(t, "refresh.token", result.RefreshToken)
+	assert.NotNil(t, result.User)
+	assert.Equal(t, req.Email, result.User.Email)
+	assert.Equal(t, req.FullName, result.User.FullName)
+	mockRepo.AssertExpectations(t)
+	mockJWT.AssertExpectations(t)
+}
+
+func TestAuthService_Register_EmailAlreadyExists(t *testing.T) {
+	// Arrange
+	mockRepo := new(mocks.MockUserRepository)
+	mockJWT := new(mocks.MockJWTManager)
+	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	cfg := &config.Config{}
+
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
+	ctx := context.Background()
+
+	req := &model.RegisterRequest{
+		FullName: "Test User",
+		Email:    "existing@example.com",
+		Password: "password123",
+	}
+
+	existingUser := &model.User{
+		ID:    uuid.New(),
+		Email: req.Email,
+	}
+
+	mockRepo.On("GetByEmail", ctx, req.Email).Return(existingUser, nil)
+
+	// Act
+	result, err := service.Register(ctx, req)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Contains(t, err.Error(), "Email already registered")
+	mockRepo.AssertExpectations(t)
+}
+
+func TestAuthService_Login_Success(t *testing.T) {
+	// Arrange
+	mockRepo := new(mocks.MockUserRepository)
+	mockJWT := new(mocks.MockJWTManager)
+	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	cfg := &config.Config{
+		JWT: config.JWTConfig{
+			AccessTokenTTL: 15 * time.Minute,
+		},
+	}
+
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
+	ctx := context.Background()
+
+	req := &model.LoginRequest{
+		Email:    "test@example.com",
+		Password: "password123",
+	}
+
+	// Hash the password
+	hashedPassword, _ := utils.HashPassword(req.Password)
+
+	user := &model.User{
+		ID:           uuid.New(),
+		Email:        req.Email,
+		FullName:     "Test User",
+		PasswordHash: &hashedPassword,
+		Role:         constants.RolePassenger,
+		Status:       "active",
+	}
+
+	mockRepo.On("GetByEmail", ctx, req.Email).Return(user, nil)
+	mockJWT.On("GenerateAccessToken", user.ID, user.Email, "1").Return("access.token", nil)
+	mockJWT.On("GenerateRefreshToken", user.ID, user.Email, "1").Return("refresh.token", nil)
+
+	// Act
+	result, err := service.Login(ctx, req)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, "access.token", result.AccessToken)
+	assert.Equal(t, "refresh.token", result.RefreshToken)
+	mockRepo.AssertExpectations(t)
+	mockJWT.AssertExpectations(t)
+}
+
+func TestAuthService_Login_UserNotFound(t *testing.T) {
+	// Arrange
+	mockRepo := new(mocks.MockUserRepository)
+	mockJWT := new(mocks.MockJWTManager)
+	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	cfg := &config.Config{}
+
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
+	ctx := context.Background()
+
+	req := &model.LoginRequest{
+		Email:    "notfound@example.com",
+		Password: "password123",
+	}
+
+	mockRepo.On("GetByEmail", ctx, req.Email).Return(nil, errors.New("not found"))
+
+	// Act
+	result, err := service.Login(ctx, req)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Contains(t, err.Error(), "Invalid email or password")
+	mockRepo.AssertExpectations(t)
+}
+
+func TestAuthService_Login_NoPasswordSet(t *testing.T) {
+	// Arrange
+	mockRepo := new(mocks.MockUserRepository)
+	mockJWT := new(mocks.MockJWTManager)
+	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	cfg := &config.Config{}
+
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
+	ctx := context.Background()
+
+	req := &model.LoginRequest{
+		Email:    "firebase@example.com",
+		Password: "password123",
+	}
+
+	user := &model.User{
+		ID:           uuid.New(),
+		Email:        req.Email,
+		PasswordHash: nil, // Firebase user without password
+		Status:       "active",
+	}
+
+	mockRepo.On("GetByEmail", ctx, req.Email).Return(user, nil)
+
+	// Act
+	result, err := service.Login(ctx, req)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Contains(t, err.Error(), "Invalid email or password")
+	mockRepo.AssertExpectations(t)
+}
+
+func TestAuthService_Login_WrongPassword(t *testing.T) {
+	// Arrange
+	mockRepo := new(mocks.MockUserRepository)
+	mockJWT := new(mocks.MockJWTManager)
+	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	cfg := &config.Config{}
+
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
+	ctx := context.Background()
+
+	req := &model.LoginRequest{
+		Email:    "test@example.com",
+		Password: "wrongpassword",
+	}
+
+	// Hash a different password
+	correctPassword := "correctpassword"
+	hashedPassword, _ := utils.HashPassword(correctPassword)
+
+	user := &model.User{
+		ID:           uuid.New(),
+		Email:        req.Email,
+		PasswordHash: &hashedPassword,
+		Status:       "active",
+	}
+
+	mockRepo.On("GetByEmail", ctx, req.Email).Return(user, nil)
+
+	// Act
+	result, err := service.Login(ctx, req)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Contains(t, err.Error(), "Invalid email or password")
+	mockRepo.AssertExpectations(t)
+}
+
+func TestAuthService_Login_UserNotActive(t *testing.T) {
+	// Arrange
+	mockRepo := new(mocks.MockUserRepository)
+	mockJWT := new(mocks.MockJWTManager)
+	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	cfg := &config.Config{}
+
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
+	ctx := context.Background()
+
+	req := &model.LoginRequest{
+		Email:    "test@example.com",
+		Password: "password123",
+	}
+
+	hashedPassword, _ := utils.HashPassword(req.Password)
+
+	user := &model.User{
+		ID:           uuid.New(),
+		Email:        req.Email,
+		PasswordHash: &hashedPassword,
+		Status:       "suspended", // Not active
+	}
+
+	mockRepo.On("GetByEmail", ctx, req.Email).Return(user, nil)
+
+	// Act
+	result, err := service.Login(ctx, req)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Contains(t, err.Error(), "Account is not active")
+	mockRepo.AssertExpectations(t)
 }

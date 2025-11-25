@@ -17,13 +17,23 @@ type FirebaseAuthRequest struct {
 	IDToken string `json:"id_token" validate:"required,min=1"`
 }
 
-type RefreshTokenRequest struct {
-	RefreshToken string `json:"refresh_token" validate:"required,min=1"`
+type RegisterRequest struct {
+	FullName string `json:"full_name" validate:"required,min=1,max=100"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=6"`
 }
 
-type SignoutRequest struct {
+type LoginRequest struct {
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=6"`
+}
+
+type LogoutRequest struct {
 	RefreshToken string `json:"refresh_token" validate:"required,min=1"`
 	AccessToken  string `json:"access_token"` // set after middleware
+}
+type RefreshTokenRequest struct {
+	RefreshToken string `json:"refresh_token" validate:"required,min=1"`
 }
 
 type AuthResponse struct {

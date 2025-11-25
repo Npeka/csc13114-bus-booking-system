@@ -17,7 +17,8 @@ type User struct {
 	Avatar        string             `json:"avatar" gorm:"type:text"`
 	Role          constants.UserRole `json:"role" gorm:"not null;default:1"`
 	Status        string             `json:"status" gorm:"not null;default:'active'"`
-	FirebaseUID   string             `json:"-" gorm:"uniqueIndex;not null"`
+	FirebaseUID   *string            `json:"-" gorm:"uniqueIndex:,type:NULLS NOT DISTINCT"`
+	PasswordHash  *string            `json:"-" gorm:"type:text"`
 	EmailVerified bool               `json:"email_verified" gorm:"default:false"`
 	PhoneVerified bool               `json:"phone_verified" gorm:"default:false"`
 	CreatedAt     time.Time          `json:"created_at"`

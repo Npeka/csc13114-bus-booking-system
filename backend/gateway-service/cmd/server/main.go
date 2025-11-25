@@ -12,16 +12,8 @@ import (
 )
 
 func main() {
-	cfg, err := config.LoadConfig("config/config.yaml")
-	if err != nil {
-		log.Printf("Warning: Failed to load config file: %v. Using defaults.", err)
-		cfg, _ = config.LoadConfig("")
-	}
-
-	routes, err := config.LoadRoutes("routes")
-	if err != nil {
-		log.Fatalf("Failed to load routes: %v", err)
-	}
+	cfg := config.MustLoadConfig("config/config.yaml")
+	routes := config.MustLoadRoutes("routes")
 
 	// Debug: Print loaded services configuration
 	log.Printf("Loaded services configuration:")

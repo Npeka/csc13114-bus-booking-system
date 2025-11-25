@@ -266,7 +266,11 @@ func (g *Gateway) proxyRequest(c *gin.Context, targetURL string, userContext *au
 	if err != nil {
 		return fmt.Errorf("failed to proxy request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Failed to close response body: %v", err)
+		}
+	}()
 
 	// Copy response headers
 	for key, values := range resp.Header {
