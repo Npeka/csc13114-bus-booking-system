@@ -6,21 +6,21 @@ routes:
   - path: '/api/v1/auth/firebase/auth'
     methods: ['POST']
 
-  - path: '/api/v1/auth/login'
-    methods: ['POST']
-
   - path: '/api/v1/auth/register'
     methods: ['POST']
 
-  - path: '/api/v1/auth/refresh-token'
+  - path: '/api/v1/auth/login'
     methods: ['POST']
-    auth:
-      required: false
 
   - path: '/api/v1/auth/logout'
     methods: ['POST']
     auth:
       required: true
+      
+  - path: '/api/v1/auth/refresh-token'
+    methods: ['POST']
+    auth:
+      required: false
 
   - path: '/api/v1/users/profile'
     methods: ['GET', 'PUT']
