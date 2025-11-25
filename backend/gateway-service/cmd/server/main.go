@@ -12,8 +12,8 @@ import (
 )
 
 func main() {
-	cfg := config.MustLoadConfig("config/config.yaml")
-	routes := config.MustLoadRoutes("routes")
+	cfg := config.MustLoadConfig()
+	routes := config.MustLoadRoutes()
 
 	// Debug: Print loaded services configuration
 	log.Printf("Loaded services configuration:")

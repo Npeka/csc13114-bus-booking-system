@@ -71,8 +71,8 @@ func (c *Config) BuildServiceMap() map[string]ServiceConfig {
 	}
 }
 
-func MustLoadConfig(configPath string) *Config {
-	config, err := LoadConfig(configPath)
+func MustLoadConfig() *Config {
+	config, err := LoadConfig()
 	if err != nil {
 		panic(err)
 	}
@@ -80,7 +80,7 @@ func MustLoadConfig(configPath string) *Config {
 }
 
 // LoadConfig loads configuration from environment variables and file
-func LoadConfig(configPath string) (*Config, error) {
+func LoadConfig() (*Config, error) {
 	// Load config using shared pattern
 	config, err := sharedConfig.LoadConfig[Config]()
 	if err != nil {
@@ -90,43 +90,11 @@ func LoadConfig(configPath string) (*Config, error) {
 	// Build services map for easy lookup
 	config.ServicesMap = config.BuildServiceMap()
 
-	// Load routes from YAML (only routes, not config)
-	if configPath != "" {
-		if err := loadRoutes(config, configPath); err != nil {
-			return nil, fmt.Errorf("failed to load routes: %w", err)
-		}
-	}
-
 	return config, nil
 }
 
-func loadRoutes(config *Config, configPath string) error {
-	// Read YAML file for services configuration only
-	// #nosec G304 -- configPath is a trusted application config file path
-	yamlData, err := os.ReadFile(configPath)
-	if err != nil {
-		return fmt.Errorf("failed to read config file: %w", err)
-	}
-
-	// Parse YAML to get services configuration
-	var yamlConfig struct {
-		Services map[string]ServiceConfig `yaml:"services"`
-	}
-
-	if err := yaml.Unmarshal(yamlData, &yamlConfig); err != nil {
-		return fmt.Errorf("failed to parse YAML config: %w", err)
-	}
-
-	// Use YAML services if env config is empty
-	if len(config.ServicesMap) == 0 && len(yamlConfig.Services) > 0 {
-		config.ServicesMap = yamlConfig.Services
-	}
-
-	return nil
-}
-
-func MustLoadRoutes(routesDir string) *RouteConfig {
-	routes, err := LoadRoutes(routesDir)
+func MustLoadRoutes() *RouteConfig {
+	routes, err := LoadRoutes()
 	if err != nil {
 		panic(err)
 	}
@@ -134,10 +102,10 @@ func MustLoadRoutes(routesDir string) *RouteConfig {
 }
 
 // LoadRoutes loads route configurations from directory
-func LoadRoutes(routesDir string) (*RouteConfig, error) {
+func LoadRoutes() (*RouteConfig, error) {
 	routes := &RouteConfig{Routes: []Route{}}
 
-	err := filepath.Walk(routesDir, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk("routes", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
