@@ -24,8 +24,163 @@ interface AuthResponse {
   expires_in: number;
 }
 
+// Email/password registration request
+interface RegisterRequest {
+  email: string;
+  password: string;
+  full_name: string;
+}
+
+// Email/password login request
+interface LoginRequest {
+  email: string;
+  password: string;
+}
+
 // Store confirmation result globally for OTP verification
 let phoneConfirmationResult: ConfirmationResult | null = null;
+
+/**
+ * Register with email and password
+ * @param email - User email address
+ * @param password - User password (min 6 characters)
+ * @param fullName - User full name
+ */
+export const registerWithEmail = async (
+  email: string,
+  password: string,
+  fullName: string,
+): Promise<User> => {
+  try {
+    const requestBody: RegisterRequest = {
+      email,
+      password,
+      full_name: fullName,
+    };
+
+    // Call backend registration endpoint
+    const response = await apiClient.post<ApiResponse<AuthResponse>>(
+      "/user/api/v1/auth/register",
+      requestBody,
+    );
+
+    if (!response.data.data) {
+      // Handle specific error responses from backend
+      if (!response.data.success) {
+        const errorMsg =
+          response.data.message ||
+          response.data.error ||
+          "Đăng ký thất bại. Vui lòng thử lại.";
+        throw new Error(errorMsg);
+      }
+      throw new Error("Nhận phản hồi không hợp lệ từ máy chủ");
+    }
+
+    const { user, access_token, refresh_token, expires_in } =
+      response.data.data;
+
+    // Store tokens
+    await storeTokens(access_token, refresh_token);
+
+    // Update auth store
+    useAuthStore.getState().login(user, access_token);
+
+    // Initialize session with token expiry
+    initializeSession(expires_in);
+
+    return user;
+  } catch (error) {
+    console.error("Email registration error:", error);
+
+    // Handle different error types with user-friendly messages
+    if (error instanceof Error) {
+      if (error.message.includes("Email already registered")) {
+        throw new Error("Email này đã được đăng ký. Vui lòng sử dụng email khác.");
+      }
+      if (error.message.includes("HTTP") || error.message.includes("500")) {
+        throw new Error("Lỗi máy chủ. Vui lòng thử lại sau vài giây.");
+      }
+      // Return the error message if it's already user-friendly
+      return Promise.reject(error);
+    }
+
+    throw new Error("Đăng ký thất bại. Vui lòng thử lại.");
+  }
+};
+
+/**
+ * Login with email and password
+ * @param email - User email address
+ * @param password - User password
+ */
+export const loginWithEmail = async (
+  email: string,
+  password: string,
+): Promise<User> => {
+  try {
+    const requestBody: LoginRequest = {
+      email,
+      password,
+    };
+
+    // Call backend login endpoint
+    const response = await apiClient.post<ApiResponse<AuthResponse>>(
+      "/user/api/v1/auth/login",
+      requestBody,
+    );
+
+    if (!response.data.data) {
+      // Handle specific error responses from backend
+      if (!response.data.success) {
+        const errorMsg =
+          response.data.message ||
+          response.data.error ||
+          "Đăng nhập thất bại. Vui lòng thử lại.";
+        throw new Error(errorMsg);
+      }
+      throw new Error("Nhận phản hồi không hợp lệ từ máy chủ");
+    }
+
+    const { user, access_token, refresh_token, expires_in } =
+      response.data.data;
+
+    // Store tokens
+    await storeTokens(access_token, refresh_token);
+
+    // Update auth store
+    useAuthStore.getState().login(user, access_token);
+
+    // Initialize session with token expiry
+    initializeSession(expires_in);
+
+    return user;
+  } catch (error) {
+    console.error("Email login error:", error);
+
+    // Handle different error types with user-friendly messages
+    if (error instanceof Error) {
+      if (
+        error.message.includes("Invalid email or password") ||
+        error.message.includes("401")
+      ) {
+        throw new Error("Email hoặc mật khẩu không đúng.");
+      }
+      if (
+        error.message.includes("Account is not active") ||
+        error.message.includes("403")
+      ) {
+        throw new Error("Tài khoản chưa được kích hoạt.");
+      }
+      if (error.message.includes("HTTP") || error.message.includes("500")) {
+        throw new Error("Lỗi máy chủ. Vui lòng thử lại sau vài giây.");
+      }
+      // Return the error message if it's already user-friendly
+      return Promise.reject(error);
+    }
+
+    throw new Error("Đăng nhập thất bại. Vui lòng thử lại.");
+  }
+};
 
 /**
  * Login with Google OAuth
