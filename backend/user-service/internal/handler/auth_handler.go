@@ -90,7 +90,7 @@ func (h *AuthHandlerImpl) FirebaseAuth(r *ginext.Request) (*ginext.Response, err
 // @Tags Authentication
 // @Accept json
 // @Produce json
-// @Param request body model.EmailPasswordRegisterRequest true "Registration request"
+// @Param request body model.RegisterRequest true "Registration request"
 // @Success 200 {object} ginext.Response{data=model.AuthResponse} "Registration successful"
 // @Failure 400 {object} ginext.Response "Invalid request data or email already registered"
 // @Failure 500 {object} ginext.Response "Internal server error"
@@ -117,7 +117,7 @@ func (h *AuthHandlerImpl) Register(r *ginext.Request) (*ginext.Response, error) 
 // @Tags Authentication
 // @Accept json
 // @Produce json
-// @Param request body model.EmailPasswordLoginRequest true "Email and password login request"
+// @Param request body model.LoginRequest true "Email and password login request"
 // @Success 200 {object} ginext.Response{data=model.AuthResponse} "Login successful"
 // @Failure 400 {object} ginext.Response "Invalid request data"
 // @Failure 401 {object} ginext.Response "Invalid email or password"
@@ -147,7 +147,7 @@ func (h *AuthHandlerImpl) Login(r *ginext.Request) (*ginext.Response, error) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param request body model.SignoutRequest true "Logout request"
+// @Param request body model.LogoutRequest true "Logout request"
 // @Success 200 {object} ginext.Response "User logged out successfully"
 // @Failure 400 {object} ginext.Response "Invalid request data"
 // @Failure 401 {object} ginext.Response "Unauthorized"

@@ -10,7 +10,22 @@ definitions:
       user:
         $ref: '#/definitions/bus-booking_user-service_internal_model.UserResponse'
     type: object
-  bus-booking_user-service_internal_model.EmailPasswordLoginRequest:
+  bus-booking_user-service_internal_model.FirebaseAuthRequest:
+    properties:
+      id_token:
+        minLength: 1
+        type: string
+    required:
+    - id_token
+    type: object
+  bus-booking_user-service_internal_model.ForgotPasswordRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  bus-booking_user-service_internal_model.LoginRequest:
     properties:
       email:
         type: string
@@ -21,7 +36,26 @@ definitions:
     - email
     - password
     type: object
-  bus-booking_user-service_internal_model.EmailPasswordRegisterRequest:
+  bus-booking_user-service_internal_model.LogoutRequest:
+    properties:
+      access_token:
+        description: set after middleware
+        type: string
+      refresh_token:
+        minLength: 1
+        type: string
+    required:
+    - refresh_token
+    type: object
+  bus-booking_user-service_internal_model.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        minLength: 1
+        type: string
+    required:
+    - refresh_token
+    type: object
+  bus-booking_user-service_internal_model.RegisterRequest:
     properties:
       email:
         type: string
@@ -37,32 +71,17 @@ definitions:
     - full_name
     - password
     type: object
-  bus-booking_user-service_internal_model.FirebaseAuthRequest:
+  bus-booking_user-service_internal_model.ResetPasswordRequest:
     properties:
-      id_token:
+      new_password:
+        minLength: 6
+        type: string
+      token:
         minLength: 1
         type: string
     required:
-    - id_token
-    type: object
-  bus-booking_user-service_internal_model.RefreshTokenRequest:
-    properties:
-      refresh_token:
-        minLength: 1
-        type: string
-    required:
-    - refresh_token
-    type: object
-  bus-booking_user-service_internal_model.SignoutRequest:
-    properties:
-      access_token:
-        description: set after middleware
-        type: string
-      refresh_token:
-        minLength: 1
-        type: string
-    required:
-    - refresh_token
+    - new_password
+    - token
     type: object
   bus-booking_user-service_internal_model.TokenVerifyRequest:
     properties:
@@ -255,6 +274,36 @@ paths:
       summary: Authenticate with Firebase
       tags:
       - Authentication
+  /auth/forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: Sends a password reset link to the user's email
+      parameters:
+      - description: Forgot password request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_user-service_internal_model.ForgotPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Password reset email sent successfully
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "400":
+          description: Invalid request data
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: Request password reset
+      tags:
+      - Authentication
   /auth/login:
     post:
       consumes:
@@ -267,7 +316,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/bus-booking_user-service_internal_model.EmailPasswordLoginRequest'
+          $ref: '#/definitions/bus-booking_user-service_internal_model.LoginRequest'
       produces:
       - application/json
       responses:
@@ -310,7 +359,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/bus-booking_user-service_internal_model.SignoutRequest'
+          $ref: '#/definitions/bus-booking_user-service_internal_model.LogoutRequest'
       produces:
       - application/json
       responses:
@@ -387,7 +436,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/bus-booking_user-service_internal_model.EmailPasswordRegisterRequest'
+          $ref: '#/definitions/bus-booking_user-service_internal_model.RegisterRequest'
       produces:
       - application/json
       responses:
@@ -409,6 +458,36 @@ paths:
           schema:
             $ref: '#/definitions/ginext.Response'
       summary: Register new user with email and password
+      tags:
+      - Authentication
+  /auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: Resets the user's password using a valid reset token
+      parameters:
+      - description: Reset password request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_user-service_internal_model.ResetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Password reset successful
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "400":
+          description: Invalid request data or token
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: Reset password with token
       tags:
       - Authentication
   /auth/verify:
