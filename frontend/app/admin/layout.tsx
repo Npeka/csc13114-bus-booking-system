@@ -13,4 +13,3 @@ interface AdminLayoutProps {
 export default function AdminLayout({ children }: AdminLayoutProps) {
   return <AuthGuard requiredRole={Role.ADMIN}>{children}</AuthGuard>;
 }
-

@@ -27,7 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, User } from "lucide-react";
+import { Menu, User, Eye, EyeOff } from "lucide-react";
 import { FormEvent, useState, useEffect } from "react";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { ModeToggle } from "@/components/theme/mode-toggle";
@@ -37,6 +37,8 @@ import {
   loginWithGoogle,
   loginWithPhone,
   verifyPhoneOTP,
+  loginWithEmail,
+  registerWithEmail,
   logout as authLogout,
 } from "@/lib/api/auth-service";
 
@@ -50,6 +52,14 @@ export function Header() {
   const [otpCode, setOtpCode] = useState("");
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [recaptchaRendered, setRecaptchaRendered] = useState(false);
+
+  // Email/password login state
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [activeTab, setActiveTab] = useState("phone");
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [fullName, setFullName] = useState("");
 
   // Get auth state from store
   const { isAuthenticated, user } = useAuthStore();
@@ -209,6 +219,80 @@ export function Header() {
     setStep("phone");
   };
 
+  const handleEmailLogin = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPhoneError("");
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setPhoneError("Email không hợp lệ");
+      return;
+    }
+
+    // Password validation
+    if (password.length < 6) {
+      setPhoneError("Mật khẩu phải có ít nhất 6 ký tự");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await loginWithEmail(email, password);
+      setIsLoginOpen(false);
+      // Reset state
+      setEmail("");
+      setPassword("");
+      setPhoneError("");
+      setShowPassword(false);
+    } catch (err) {
+      setPhoneError(err instanceof Error ? err.message : "Đăng nhập thất bại");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSignUp = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPhoneError("");
+
+    // Validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setPhoneError("Email không hợp lệ");
+      return;
+    }
+
+    if (password.length < 6) {
+      setPhoneError("Mật khẩu phải có ít nhất 6 ký tự");
+      return;
+    }
+
+    if (!fullName.trim()) {
+      setPhoneError("Vui lòng nhập họ tên");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await registerWithEmail(email, password, fullName);
+      setIsLoginOpen(false);
+      // Reset state
+      setEmail("");
+      setPassword("");
+      setFullName("");
+      setPhoneError("");
+      setShowPassword(false);
+      setIsSignUp(false);
+    } catch (err) {
+      setPhoneError(err instanceof Error ? err.message : "Đăng ký thất bại");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Reset state when dialog closes
   useEffect(() => {
     if (!isLoginOpen) {
@@ -217,6 +301,11 @@ export function Header() {
       setOtpCode("");
       setPhoneError("");
       setRecaptchaRendered(false);
+      // Reset email/password fields
+      setEmail("");
+      setPassword("");
+      setShowPassword(false);
+      setActiveTab("phone");
     }
   }, [isLoginOpen]);
 
@@ -474,7 +563,7 @@ export function Header() {
         </div>
       </div>
       <Dialog open={isLoginOpen} onOpenChange={setIsLoginOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Đăng nhập</DialogTitle>
             <DialogDescription>
@@ -482,122 +571,8 @@ export function Header() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            {step === "phone" ? (
-              <>
-                {/* Phone Login Form */}
-                <form className="space-y-4" onSubmit={handleSendOTP}>
-                  <div className="space-y-2">
-                    <Label htmlFor="login-phone">Số điện thoại</Label>
-                    <div className="flex gap-2">
-                      <Select
-                        value={countryCode}
-                        onValueChange={setCountryCode}
-                      >
-                        <SelectTrigger className="w-[120px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="+84">🇻🇳 +84</SelectItem>
-                          <SelectItem value="+1">🇺🇸 +1</SelectItem>
-                          <SelectItem value="+44">🇬🇧 +44</SelectItem>
-                          <SelectItem value="+86">🇨🇳 +86</SelectItem>
-                          <SelectItem value="+81">🇯🇵 +81</SelectItem>
-                          <SelectItem value="+82">🇰🇷 +82</SelectItem>
-                          <SelectItem value="+65">🇸🇬 +65</SelectItem>
-                          <SelectItem value="+66">🇹🇭 +66</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <div className="flex-1">
-                        <Input
-                          id="login-phone"
-                          type="text"
-                          inputMode="numeric"
-                          placeholder={
-                            countryCode === "+84"
-                              ? "0912345678"
-                              : "Phone number"
-                          }
-                          required
-                          value={phoneNumber}
-                          onChange={(event) =>
-                            handlePhoneChange(event.target.value)
-                          }
-                          className={phoneError ? "border-destructive" : ""}
-                          aria-invalid={!!phoneError}
-                          aria-describedby={
-                            phoneError ? "phone-error" : undefined
-                          }
-                        />
-                      </div>
-                    </div>
-                    {phoneError && (
-                      <p id="phone-error" className="text-xs text-destructive">
-                        {phoneError}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Recaptcha container - positioned above dialog to allow modal interaction */}
-                  <div
-                    id="recaptcha-container"
-                    className="pointer-events-auto relative z-60 flex justify-center"
-                    style={{ pointerEvents: "auto", position: "relative" }}
-                  ></div>
-
-                  <Button
-                    type="submit"
-                    className="w-full bg-primary text-white hover:bg-primary/90"
-                    disabled={isSubmitting || !recaptchaRendered}
-                  >
-                    {isSubmitting
-                      ? "Đang gửi..."
-                      : "Tiếp tục với số điện thoại"}
-                  </Button>
-                </form>
-
-                {/* Divider */}
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <Separator />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">
-                      Hoặc
-                    </span>
-                  </div>
-                </div>
-
-                {/* Google OAuth */}
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={handleGoogleLogin}
-                  disabled={isSubmitting}
-                >
-                  <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-                    <path
-                      fill="currentColor"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="currentColor"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="currentColor"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                    />
-                    <path
-                      fill="currentColor"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                    />
-                  </svg>
-                  Tiếp tục với Google
-                </Button>
-              </>
-            ) : (
+          <div className="py-4">
+            {step === "otp" ? (
               <>
                 {/* OTP Verification Step */}
                 <div className="space-y-4">
@@ -641,6 +616,249 @@ export function Header() {
                   </Button>
                 </div>
               </>
+            ) : (
+              <div className="space-y-4">
+                {/* Google OAuth - Always Visible */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleGoogleLogin}
+                  disabled={isSubmitting}
+                >
+                  <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+                    <path
+                      fill="currentColor"
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    />
+                    <path
+                      fill="currentColor"
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    />
+                    <path
+                      fill="currentColor"
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                    />
+                    <path
+                      fill="currentColor"
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    />
+                  </svg>
+                  Tiếp tục với Google
+                </Button>
+
+                {/* Separator */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <Separator />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      hoặc
+                    </span>
+                  </div>
+                </div>
+
+                {/* Toggle Buttons for Email/Password vs Phone */}
+                <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-1">
+                  <Button
+                    type="button"
+                    variant={activeTab === "email" ? "default" : "ghost"}
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setActiveTab("email")}
+                  >
+                    Email
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={activeTab === "phone" ? "default" : "ghost"}
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setActiveTab("phone")}
+                  >
+                    Điện thoại
+                  </Button>
+                </div>
+
+                {/* Email Form */}
+                {activeTab === "email" && (
+                  <form
+                    className="space-y-4"
+                    onSubmit={isSignUp ? handleSignUp : handleEmailLogin}
+                  >
+                    {isSignUp && (
+                      <div className="space-y-2">
+                        <Label htmlFor="login-fullname">Họ tên</Label>
+                        <Input
+                          id="login-fullname"
+                          type="text"
+                          placeholder="Nguyễn Văn A"
+                          required
+                          value={fullName}
+                          onChange={(e) => {
+                            setFullName(e.target.value);
+                            setPhoneError("");
+                          }}
+                          disabled={isSubmitting}
+                          autoComplete="name"
+                        />
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      <Label htmlFor="login-email">Email</Label>
+                      <Input
+                        id="login-email"
+                        type="email"
+                        placeholder="your@email.com"
+                        required
+                        value={email}
+                        onChange={(e) => {
+                          setEmail(e.target.value);
+                          setPhoneError("");
+                        }}
+                        disabled={isSubmitting}
+                        autoComplete="email"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="login-password">Mật khẩu</Label>
+                      <div className="relative">
+                        <Input
+                          id="login-password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••"
+                          required
+                          value={password}
+                          onChange={(e) => {
+                            setPassword(e.target.value);
+                            setPhoneError("");
+                          }}
+                          disabled={isSubmitting}
+                          autoComplete="current-password"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute top-0 right-0 h-full px-3 hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                          tabIndex={-1}
+                          aria-label={
+                            showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"
+                          }
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {phoneError && (
+                      <p className="text-xs text-destructive">{phoneError}</p>
+                    )}
+
+                    <Button
+                      type="submit"
+                      className="w-full bg-primary text-white hover:bg-primary/90"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting
+                        ? isSignUp
+                          ? "Đang đăng ký..."
+                          : "Đang đăng nhập..."
+                        : isSignUp
+                          ? "Đăng ký"
+                          : "Đăng nhập"}
+                    </Button>
+
+                    {/* Toggle between Sign In and Sign Up */}
+                    <div className="text-center text-sm">
+                      <span className="text-muted-foreground">
+                        {isSignUp ? "Đã có tài khoản?" : "Chưa có tài khoản?"}
+                      </span>{" "}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsSignUp(!isSignUp);
+                          setPhoneError("");
+                          setFullName("");
+                        }}
+                        className="text-primary hover:underline"
+                      >
+                        {isSignUp ? "Đăng nhập" : "Đăng ký"}
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {/* Phone Form */}
+                {activeTab === "phone" && (
+                  <form className="space-y-4" onSubmit={handleSendOTP}>
+                    <div className="space-y-2">
+                      <Label htmlFor="login-phone">Số điện thoại</Label>
+                      <div className="flex gap-2">
+                        <Select
+                          value={countryCode}
+                          onValueChange={setCountryCode}
+                        >
+                          <SelectTrigger className="w-[120px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="+84">🇻🇳 +84</SelectItem>
+                            <SelectItem value="+1">🇺🇸 +1</SelectItem>
+                            <SelectItem value="+44">🇬🇧 +44</SelectItem>
+                            <SelectItem value="+86">🇨🇳 +86</SelectItem>
+                            <SelectItem value="+81">🇯🇵 +81</SelectItem>
+                            <SelectItem value="+82">🇰🇷 +82</SelectItem>
+                            <SelectItem value="+65">🇸🇬 +65</SelectItem>
+                            <SelectItem value="+66">🇹🇭 +66</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          id="login-phone"
+                          type="text"
+                          inputMode="numeric"
+                          placeholder={
+                            countryCode === "+84"
+                              ? "0912345678"
+                              : "Phone number"
+                          }
+                          required
+                          value={phoneNumber}
+                          onChange={(event) =>
+                            handlePhoneChange(event.target.value)
+                          }
+                          className={phoneError ? "border-destructive" : ""}
+                        />
+                      </div>
+                      {phoneError && (
+                        <p className="text-xs text-destructive">{phoneError}</p>
+                      )}
+                    </div>
+
+                    {/* Recaptcha container */}
+                    <div
+                      id="recaptcha-container"
+                      className="flex justify-center"
+                    ></div>
+
+                    <Button
+                      type="submit"
+                      className="w-full bg-primary text-white hover:bg-primary/90"
+                      disabled={isSubmitting || !recaptchaRendered}
+                    >
+                      {isSubmitting ? "Đang gửi..." : "Gửi mã OTP"}
+                    </Button>
+                  </form>
+                )}
+              </div>
             )}
           </div>
 
