@@ -17,9 +17,10 @@ func (s *Server) buildHandler() http.Handler {
 	userRepo := repository.NewUserRepository(s.db.DB)
 
 	tokenBlacklistMgr := service.NewTokenBlacklistManager(s.rd, jwtManager)
+	passwordResetService := service.NewPasswordResetService(s.rd)
 
 	userService := service.NewUserService(userRepo)
-	authService := service.NewAuthService(s.cfg, jwtManager, s.fa, tokenBlacklistMgr, userRepo)
+	authService := service.NewAuthService(s.cfg, jwtManager, s.fa, tokenBlacklistMgr, userRepo, passwordResetService)
 
 	userHandler := handler.NewUserHandler(userService)
 	authHandler := handler.NewAuthHandler(authService)

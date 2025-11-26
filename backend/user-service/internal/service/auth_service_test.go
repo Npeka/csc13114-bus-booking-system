@@ -30,7 +30,7 @@ func TestAuthService_VerifyToken_Success(t *testing.T) {
 		},
 	}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -79,7 +79,7 @@ func TestAuthService_VerifyToken_InvalidToken(t *testing.T) {
 	mockBlacklist := new(mocks.MockTokenBlacklistManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
 	ctx := context.Background()
 
 	token := "invalid.token"
@@ -102,7 +102,7 @@ func TestAuthService_VerifyToken_TokenBlacklisted(t *testing.T) {
 	mockBlacklist := new(mocks.MockTokenBlacklistManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -134,7 +134,7 @@ func TestAuthService_VerifyToken_UserTokensBlacklisted(t *testing.T) {
 	mockBlacklist := new(mocks.MockTokenBlacklistManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -167,7 +167,7 @@ func TestAuthService_VerifyToken_UserNotFound(t *testing.T) {
 	mockBlacklist := new(mocks.MockTokenBlacklistManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -202,7 +202,7 @@ func TestAuthService_VerifyToken_UserNotActive(t *testing.T) {
 	mockBlacklist := new(mocks.MockTokenBlacklistManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -386,7 +386,7 @@ func TestAuthService_RefreshToken_Success(t *testing.T) {
 		},
 	}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -437,7 +437,7 @@ func TestAuthService_RefreshToken_InvalidToken(t *testing.T) {
 	mockBlacklist := new(mocks.MockTokenBlacklistManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -464,7 +464,7 @@ func TestAuthService_RefreshToken_UserMismatch(t *testing.T) {
 	mockBlacklist := new(mocks.MockTokenBlacklistManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -496,7 +496,7 @@ func TestAuthService_Logout_Success(t *testing.T) {
 	mockBlacklist := new(mocks.MockTokenBlacklistManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -533,7 +533,7 @@ func TestAuthService_Register_Success(t *testing.T) {
 		},
 	}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
 	ctx := context.Background()
 
 	req := &model.RegisterRequest{
@@ -570,7 +570,7 @@ func TestAuthService_Register_EmailAlreadyExists(t *testing.T) {
 	mockBlacklist := new(mocks.MockTokenBlacklistManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
 	ctx := context.Background()
 
 	req := &model.RegisterRequest{
@@ -607,7 +607,7 @@ func TestAuthService_Login_Success(t *testing.T) {
 		},
 	}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
 	ctx := context.Background()
 
 	req := &model.LoginRequest{
@@ -650,7 +650,7 @@ func TestAuthService_Login_UserNotFound(t *testing.T) {
 	mockBlacklist := new(mocks.MockTokenBlacklistManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
 	ctx := context.Background()
 
 	req := &model.LoginRequest{
@@ -677,7 +677,7 @@ func TestAuthService_Login_NoPasswordSet(t *testing.T) {
 	mockBlacklist := new(mocks.MockTokenBlacklistManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
 	ctx := context.Background()
 
 	req := &model.LoginRequest{
@@ -711,7 +711,7 @@ func TestAuthService_Login_WrongPassword(t *testing.T) {
 	mockBlacklist := new(mocks.MockTokenBlacklistManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
 	ctx := context.Background()
 
 	req := &model.LoginRequest{
@@ -749,7 +749,7 @@ func TestAuthService_Login_UserNotActive(t *testing.T) {
 	mockBlacklist := new(mocks.MockTokenBlacklistManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo)
+	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
 	ctx := context.Background()
 
 	req := &model.LoginRequest{
@@ -775,5 +775,218 @@ func TestAuthService_Login_UserNotActive(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), "Account is not active")
+	mockRepo.AssertExpectations(t)
+}
+
+// ============================================================================
+// Password Reset Tests
+// ============================================================================
+
+func TestAuthService_ForgotPassword_Success(t *testing.T) {
+	// Arrange
+	mockRepo := new(mocks.MockUserRepository)
+	mockPasswordReset := new(mocks.MockPasswordResetService)
+	cfg := &config.Config{}
+
+	service := &AuthServiceImpl{
+		userRepo:             mockRepo,
+		config:               cfg,
+		passwordResetService: mockPasswordReset,
+	}
+	ctx := context.Background()
+
+	req := &model.ForgotPasswordRequest{
+		Email: "test@example.com",
+	}
+
+	hashedPassword, _ := utils.HashPassword("password123")
+	user := &model.User{
+		ID:           uuid.New(),
+		Email:        req.Email,
+		PasswordHash: &hashedPassword,
+		Status:       "active",
+	}
+
+	mockRepo.On("GetByEmail", ctx, req.Email).Return(user, nil)
+	mockPasswordReset.On("GenerateResetToken", ctx, req.Email).Return("reset-token-123", nil)
+
+	// Act
+	err := service.ForgotPassword(ctx, req)
+
+	// Assert
+	assert.NoError(t, err)
+	mockRepo.AssertExpectations(t)
+	mockPasswordReset.AssertExpectations(t)
+}
+
+func TestAuthService_ForgotPassword_UserNotFound(t *testing.T) {
+	// Arrange
+	mockRepo := new(mocks.MockUserRepository)
+	mockPasswordReset := new(mocks.MockPasswordResetService)
+	cfg := &config.Config{}
+
+	service := &AuthServiceImpl{
+		userRepo:             mockRepo,
+		config:               cfg,
+		passwordResetService: mockPasswordReset,
+	}
+	ctx := context.Background()
+
+	req := &model.ForgotPasswordRequest{
+		Email: "notfound@example.com",
+	}
+
+	mockRepo.On("GetByEmail", ctx, req.Email).Return(nil, errors.New("user not found"))
+
+	// Act
+	err := service.ForgotPassword(ctx, req)
+
+	// Assert - Should not error (security: don't reveal if email exists)
+	assert.NoError(t, err)
+	mockRepo.AssertExpectations(t)
+	mockPasswordReset.AssertNotCalled(t, "GenerateResetToken")
+}
+
+func TestAuthService_ForgotPassword_FirebaseOnlyUser(t *testing.T) {
+	// Arrange
+	mockRepo := new(mocks.MockUserRepository)
+	mockPasswordReset := new(mocks.MockPasswordResetService)
+	cfg := &config.Config{}
+
+	service := &AuthServiceImpl{
+		userRepo:             mockRepo,
+		config:               cfg,
+		passwordResetService: mockPasswordReset,
+	}
+	ctx := context.Background()
+
+	req := &model.ForgotPasswordRequest{
+		Email: "firebase@example.com",
+	}
+
+	firebaseUID := "firebase-uid-123"
+	user := &model.User{
+		ID:           uuid.New(),
+		Email:        req.Email,
+		FirebaseUID:  &firebaseUID,
+		PasswordHash: nil, // Firebase-only user
+		Status:       "active",
+	}
+
+	mockRepo.On("GetByEmail", ctx, req.Email).Return(user, nil)
+
+	// Act
+	err := service.ForgotPassword(ctx, req)
+
+	// Assert - Should not error (security: don't reveal user type)
+	assert.NoError(t, err)
+	mockRepo.AssertExpectations(t)
+	mockPasswordReset.AssertNotCalled(t, "GenerateResetToken")
+}
+
+func TestAuthService_ResetPassword_Success(t *testing.T) {
+	// Arrange
+	mockRepo := new(mocks.MockUserRepository)
+	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	mockPasswordReset := new(mocks.MockPasswordResetService)
+	cfg := &config.Config{}
+
+	service := &AuthServiceImpl{
+		userRepo:             mockRepo,
+		config:               cfg,
+		tokenBlacklistMgr:    mockBlacklist,
+		passwordResetService: mockPasswordReset,
+	}
+	ctx := context.Background()
+
+	req := &model.ResetPasswordRequest{
+		Token:       "valid-reset-token",
+		NewPassword: "newPassword123",
+	}
+
+	email := "test@example.com"
+	oldHashedPassword, _ := utils.HashPassword("oldPassword123")
+	user := &model.User{
+		ID:           uuid.New(),
+		Email:        email,
+		PasswordHash: &oldHashedPassword,
+		Status:       "active",
+	}
+
+	mockPasswordReset.On("ValidateResetToken", ctx, req.Token).Return(email, nil)
+	mockRepo.On("GetByEmail", ctx, email).Return(user, nil)
+	mockRepo.On("Update", ctx, mock.MatchedBy(func(u *model.User) bool {
+		// Verify password was updated
+		return u.Email == email && u.PasswordHash != nil && *u.PasswordHash != oldHashedPassword
+	})).Return(nil)
+	mockPasswordReset.On("InvalidateResetToken", ctx, req.Token).Return(nil)
+	mockBlacklist.On("BlacklistUserTokens", ctx, user.ID).Return(true)
+
+	// Act
+	err := service.ResetPassword(ctx, req)
+
+	// Assert
+	assert.NoError(t, err)
+	mockPasswordReset.AssertExpectations(t)
+	mockRepo.AssertExpectations(t)
+	mockBlacklist.AssertExpectations(t)
+}
+
+func TestAuthService_ResetPassword_InvalidToken(t *testing.T) {
+	// Arrange
+	mockPasswordReset := new(mocks.MockPasswordResetService)
+	cfg := &config.Config{}
+
+	service := &AuthServiceImpl{
+		config:               cfg,
+		passwordResetService: mockPasswordReset,
+	}
+	ctx := context.Background()
+
+	req := &model.ResetPasswordRequest{
+		Token:       "invalid-token",
+		NewPassword: "newPassword123",
+	}
+
+	mockPasswordReset.On("ValidateResetToken", ctx, req.Token).Return("", errors.New("invalid token"))
+
+	// Act
+	err := service.ResetPassword(ctx, req)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "Invalid or expired reset token")
+	mockPasswordReset.AssertExpectations(t)
+}
+
+func TestAuthService_ResetPassword_UserNotFound(t *testing.T) {
+	// Arrange
+	mockRepo := new(mocks.MockUserRepository)
+	mockPasswordReset := new(mocks.MockPasswordResetService)
+	cfg := &config.Config{}
+
+	service := &AuthServiceImpl{
+		userRepo:             mockRepo,
+		config:               cfg,
+		passwordResetService: mockPasswordReset,
+	}
+	ctx := context.Background()
+
+	req := &model.ResetPasswordRequest{
+		Token:       "valid-token",
+		NewPassword: "newPassword123",
+	}
+
+	email := "notfound@example.com"
+	mockPasswordReset.On("ValidateResetToken", ctx, req.Token).Return(email, nil)
+	mockRepo.On("GetByEmail", ctx, email).Return(nil, errors.New("user not found"))
+
+	// Act
+	err := service.ResetPassword(ctx, req)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "Invalid reset token")
+	mockPasswordReset.AssertExpectations(t)
 	mockRepo.AssertExpectations(t)
 }

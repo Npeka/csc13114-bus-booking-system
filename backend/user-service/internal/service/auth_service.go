@@ -19,18 +19,21 @@ import (
 type AuthService interface {
 	VerifyToken(ctx context.Context, token string) (*model.TokenVerifyResponse, error)
 	FirebaseAuth(ctx context.Context, req *model.FirebaseAuthRequest) (*model.AuthResponse, error)
-	Login(ctx context.Context, req *model.LoginRequest) (*model.AuthResponse, error)
 	Register(ctx context.Context, req *model.RegisterRequest) (*model.AuthResponse, error)
-	RefreshToken(ctx context.Context, req *model.RefreshTokenRequest, userID uuid.UUID) (*model.AuthResponse, error)
+	Login(ctx context.Context, req *model.LoginRequest) (*model.AuthResponse, error)
 	Logout(ctx context.Context, req model.LogoutRequest, userID uuid.UUID) error
+	ForgotPassword(ctx context.Context, req *model.ForgotPasswordRequest) error
+	ResetPassword(ctx context.Context, req *model.ResetPasswordRequest) error
+	RefreshToken(ctx context.Context, req *model.RefreshTokenRequest, userID uuid.UUID) (*model.AuthResponse, error)
 }
 
 type AuthServiceImpl struct {
-	userRepo          repository.UserRepository
-	jwtManager        utils.JWTManager
-	firebaseAuth      FirebaseAuthClient
-	config            *config.Config
-	tokenBlacklistMgr TokenBlacklistManager
+	userRepo             repository.UserRepository
+	jwtManager           utils.JWTManager
+	firebaseAuth         FirebaseAuthClient
+	config               *config.Config
+	tokenBlacklistMgr    TokenBlacklistManager
+	passwordResetService PasswordResetService
 }
 
 func NewAuthService(
@@ -39,13 +42,15 @@ func NewAuthService(
 	firebaseAuth FirebaseAuthClient,
 	tokenBlacklistMgr TokenBlacklistManager,
 	userRepo repository.UserRepository,
+	passwordResetService PasswordResetService,
 ) AuthService {
 	return &AuthServiceImpl{
-		config:            config,
-		jwtManager:        jwtManager,
-		firebaseAuth:      firebaseAuth,
-		tokenBlacklistMgr: tokenBlacklistMgr,
-		userRepo:          userRepo,
+		config:               config,
+		jwtManager:           jwtManager,
+		firebaseAuth:         firebaseAuth,
+		tokenBlacklistMgr:    tokenBlacklistMgr,
+		userRepo:             userRepo,
+		passwordResetService: passwordResetService,
 	}
 }
 
@@ -226,6 +231,81 @@ func (s *AuthServiceImpl) Login(ctx context.Context, req *model.LoginRequest) (*
 	}
 
 	return s.generateAuthResponse(user)
+}
+
+func (s *AuthServiceImpl) ForgotPassword(ctx context.Context, req *model.ForgotPasswordRequest) error {
+	// Check if user exists with email/password auth
+	user, err := s.userRepo.GetByEmail(ctx, req.Email)
+	if err != nil {
+		// Don't reveal if email exists - return success anyway for security
+		log.Info().Str("email", req.Email).Msg("Password reset requested for non-existent email")
+		return nil
+	}
+
+	// Check if user has password (not Firebase-only user)
+	if user.PasswordHash == nil {
+		log.Warn().Str("email", req.Email).Msg("Password reset requested for Firebase-only user")
+		return nil // Don't reveal this to user
+	}
+
+	// Generate reset token
+	token, err := s.passwordResetService.GenerateResetToken(ctx, req.Email)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to generate reset token")
+		return ginext.NewInternalServerError("Failed to process password reset request")
+	}
+
+	// TODO: Send email with reset link
+	// For now, just log the token (development only)
+	resetLink := fmt.Sprintf("http://localhost:3000/reset-password?token=%s", token)
+	log.Info().Str("email", req.Email).Str("reset_link", resetLink).Msg("Password reset link generated")
+
+	return nil
+}
+
+func (s *AuthServiceImpl) ResetPassword(ctx context.Context, req *model.ResetPasswordRequest) error {
+	// Validate reset token and get email
+	email, err := s.passwordResetService.ValidateResetToken(ctx, req.Token)
+	if err != nil {
+		log.Error().Err(err).Msg("Invalid reset token")
+		return ginext.NewBadRequestError("Invalid or expired reset token")
+	}
+
+	// Get user by email
+	user, err := s.userRepo.GetByEmail(ctx, email)
+	if err != nil {
+		log.Error().Err(err).Str("email", email).Msg("User not found for reset")
+		return ginext.NewBadRequestError("Invalid reset token")
+	}
+
+	// Hash new password
+	newPasswordHash, err := utils.HashPassword(req.NewPassword)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to hash new password")
+		return ginext.NewInternalServerError("Failed to reset password")
+	}
+
+	// Update user password
+	user.PasswordHash = &newPasswordHash
+	if err := s.userRepo.Update(ctx, user); err != nil {
+		log.Error().Err(err).Msg("Failed to update password")
+		return ginext.NewInternalServerError("Failed to reset password")
+	}
+
+	// Invalidate the reset token
+	if err := s.passwordResetService.InvalidateResetToken(ctx, req.Token); err != nil {
+		log.Error().Err(err).Msg("Failed to invalidate reset token")
+		// Don't fail the request, password is already updated
+	}
+
+	// Invalidate all user sessions (blacklist all tokens issued before now)
+	if !s.tokenBlacklistMgr.BlacklistUserTokens(ctx, user.ID) {
+		log.Error().Msg("Failed to blacklist user tokens")
+		// Don't fail the request
+	}
+
+	log.Info().Str("email", email).Msg("Password reset successful")
+	return nil
 }
 
 func (s *AuthServiceImpl) RefreshToken(ctx context.Context, req *model.RefreshTokenRequest, userID uuid.UUID) (*model.AuthResponse, error) {

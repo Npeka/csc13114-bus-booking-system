@@ -15,6 +15,8 @@ type AuthHandler interface {
 	Register(r *ginext.Request) (*ginext.Response, error)
 	Login(r *ginext.Request) (*ginext.Response, error)
 	Logout(r *ginext.Request) (*ginext.Response, error)
+	ForgotPassword(r *ginext.Request) (*ginext.Response, error)
+	ResetPassword(r *ginext.Request) (*ginext.Response, error)
 	RefreshToken(r *ginext.Request) (*ginext.Response, error)
 }
 
@@ -167,6 +169,58 @@ func (h *AuthHandlerImpl) Logout(r *ginext.Request) (*ginext.Response, error) {
 	}
 
 	return ginext.NewSuccessResponse(nil, "User logged out successfully"), nil
+}
+
+// ForgotPassword godoc
+// @Summary Request password reset
+// @Description Sends a password reset link to the user's email
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param request body model.ForgotPasswordRequest true "Forgot password request"
+// @Success 200 {object} ginext.Response "Password reset email sent successfully"
+// @Failure 400 {object} ginext.Response "Invalid request data"
+// @Failure 500 {object} ginext.Response "Internal server error"
+// @Router /auth/forgot-password [post]
+func (h *AuthHandlerImpl) ForgotPassword(r *ginext.Request) (*ginext.Response, error) {
+	req := model.ForgotPasswordRequest{}
+	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
+		log.Debug().Err(err).Msg("JSON binding failed")
+		return nil, ginext.NewBadRequestError("Invalid request data")
+	}
+
+	if err := h.as.ForgotPassword(r.Context(), &req); err != nil {
+		log.Error().Err(err).Msg("Forgot password failed")
+		return nil, err
+	}
+
+	return ginext.NewSuccessResponse(nil, "If the email exists, a password reset link has been sent"), nil
+}
+
+// ResetPassword godoc
+// @Summary Reset password with token
+// @Description Resets the user's password using a valid reset token
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param request body model.ResetPasswordRequest true "Reset password request"
+// @Success 200 {object} ginext.Response "Password reset successful"
+// @Failure 400 {object} ginext.Response "Invalid request data or token"
+// @Failure 500 {object} ginext.Response "Internal server error"
+// @Router /auth/reset-password [post]
+func (h *AuthHandlerImpl) ResetPassword(r *ginext.Request) (*ginext.Response, error) {
+	req := model.ResetPasswordRequest{}
+	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
+		log.Debug().Err(err).Msg("JSON binding failed")
+		return nil, ginext.NewBadRequestError("Invalid request data")
+	}
+
+	if err := h.as.ResetPassword(r.Context(), &req); err != nil {
+		log.Error().Err(err).Msg("Reset password failed")
+		return nil, err
+	}
+
+	return ginext.NewSuccessResponse(nil, "Password reset successful"), nil
 }
 
 // RefreshToken godoc
