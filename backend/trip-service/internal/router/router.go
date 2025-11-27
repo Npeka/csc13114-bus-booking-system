@@ -5,6 +5,7 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
+	"bus-booking/shared/ginext"
 	"bus-booking/shared/health"
 	"bus-booking/shared/middleware"
 	"bus-booking/shared/swagger"
@@ -13,9 +14,11 @@ import (
 )
 
 type Handlers struct {
-	TripHandler  handler.TripHandler
-	RouteHandler handler.RouteHandler
-	BusHandler   handler.BusHandler
+	TripHandler      handler.TripHandler
+	RouteHandler     handler.RouteHandler
+	RouteStopHandler handler.RouteStopHandler
+	BusHandler       handler.BusHandler
+	SeatHandler      handler.SeatHandler
 }
 
 func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
@@ -29,32 +32,56 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 	{
 		trips := v1.Group("/trips")
 		{
-			trips.POST("/search", h.TripHandler.SearchTrips)
-			trips.GET("/:id", h.TripHandler.GetTrip)
-			trips.POST("", h.TripHandler.CreateTrip)
-			trips.PUT("/:id", h.TripHandler.UpdateTrip)
-			trips.DELETE("/:id", h.TripHandler.DeleteTrip)
-			trips.GET("/route/:route_id", h.TripHandler.ListTripsByRoute)
+			trips.POST("/search", ginext.WrapHandler(h.TripHandler.SearchTrips))
+			trips.GET("/:id", ginext.WrapHandler(h.TripHandler.GetTrip))
+			trips.POST("", ginext.WrapHandler(h.TripHandler.CreateTrip))
+			trips.PUT("/:id", ginext.WrapHandler(h.TripHandler.UpdateTrip))
+			trips.DELETE("/:id", ginext.WrapHandler(h.TripHandler.DeleteTrip))
+			trips.GET("/route/:route_id", ginext.WrapHandler(h.TripHandler.ListTripsByRoute))
 		}
 
 		routes := v1.Group("/routes")
 		{
-			routes.POST("", h.RouteHandler.CreateRoute)
-			routes.GET("/:id", h.RouteHandler.GetRoute)
-			routes.PUT("/:id", h.RouteHandler.UpdateRoute)
-			routes.DELETE("/:id", h.RouteHandler.DeleteRoute)
-			routes.GET("", h.RouteHandler.ListRoutes)
-			routes.GET("/search", h.RouteHandler.SearchRoutes)
+			routes.POST("", ginext.WrapHandler(h.RouteHandler.CreateRoute))
+			routes.GET("/:id", ginext.WrapHandler(h.RouteHandler.GetRoute))
+			routes.PUT("/:id", ginext.WrapHandler(h.RouteHandler.UpdateRoute))
+			routes.DELETE("/:id", ginext.WrapHandler(h.RouteHandler.DeleteRoute))
+			routes.GET("", ginext.WrapHandler(h.RouteHandler.ListRoutes))
+			routes.GET("/search", ginext.WrapHandler(h.RouteHandler.SearchRoutes))
+
+			// Route stops
+			routes.GET("/:id/stops", ginext.WrapHandler(h.RouteStopHandler.ListRouteStops))
+			routes.POST("/:id/stops/reorder", ginext.WrapHandler(h.RouteStopHandler.ReorderStops))
+		}
+
+		// Route stops (standalone)
+		routeStops := v1.Group("/routes/stops")
+		{
+			routeStops.POST("", ginext.WrapHandler(h.RouteStopHandler.CreateRouteStop))
+			routeStops.PUT("/:id", ginext.WrapHandler(h.RouteStopHandler.UpdateRouteStop))
+			routeStops.DELETE("/:id", ginext.WrapHandler(h.RouteStopHandler.DeleteRouteStop))
 		}
 
 		buses := v1.Group("/buses")
 		{
-			buses.POST("", h.BusHandler.CreateBus)
-			buses.GET("/:id", h.BusHandler.GetBus)
-			buses.PUT("/:id", h.BusHandler.UpdateBus)
-			buses.DELETE("/:id", h.BusHandler.DeleteBus)
-			buses.GET("", h.BusHandler.ListBuses)
-			buses.GET("/:id/seats", h.BusHandler.GetBusSeats)
+			buses.POST("", ginext.WrapHandler(h.BusHandler.CreateBus))
+			buses.GET("/:id", ginext.WrapHandler(h.BusHandler.GetBus))
+			buses.PUT("/:id", ginext.WrapHandler(h.BusHandler.UpdateBus))
+			buses.DELETE("/:id", ginext.WrapHandler(h.BusHandler.DeleteBus))
+			buses.GET("", ginext.WrapHandler(h.BusHandler.ListBuses))
+			buses.GET("/:id/seats", ginext.WrapHandler(h.BusHandler.GetBusSeats))
+
+			// Seat map management
+			buses.GET("/:id/seat-map", ginext.WrapHandler(h.SeatHandler.GetSeatMap))
+		}
+
+		// Seats (standalone)
+		seats := v1.Group("/buses/seats")
+		{
+			seats.POST("", ginext.WrapHandler(h.SeatHandler.CreateSeat))
+			seats.POST("/bulk", ginext.WrapHandler(h.SeatHandler.CreateSeatsFromTemplate))
+			seats.PUT("/:id", ginext.WrapHandler(h.SeatHandler.UpdateSeat))
+			seats.DELETE("/:id", ginext.WrapHandler(h.SeatHandler.DeleteSeat))
 		}
 	}
 }

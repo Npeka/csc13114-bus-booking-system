@@ -6,77 +6,38 @@ import (
 	"github.com/google/uuid"
 )
 
-type TripSearchRequest struct {
-	Origin        string     `json:"origin" validate:"required"`
-	Destination   string     `json:"destination" validate:"required"`
-	DepartureDate time.Time  `json:"departure_date" validate:"required"`
-	Passengers    int        `json:"passengers" validate:"required,min=1,max=10"`
-	SeatType      string     `json:"seat_type,omitempty" validate:"omitempty,oneof=standard premium vip"`
-	PriceMin      *float64   `json:"price_min,omitempty" validate:"omitempty,min=0"`
-	PriceMax      *float64   `json:"price_max,omitempty" validate:"omitempty,min=0"`
-	OperatorID    *uuid.UUID `json:"operator_id,omitempty"`
-	SortBy        string     `json:"sort_by,omitempty" validate:"omitempty,oneof=price departure_time arrival_time"`
-	SortOrder     string     `json:"sort_order,omitempty" validate:"omitempty,oneof=asc desc"`
-	Page          int        `json:"page,omitempty" validate:"omitempty,min=1"`
-	Limit         int        `json:"limit,omitempty" validate:"omitempty,min=1,max=100"`
+// PaginationRequest represents common pagination query parameters
+type PaginationRequest struct {
+	Page  int `form:"page,default=1"`
+	Limit int `form:"limit,default=20"`
 }
 
-type TripSearchResponse struct {
-	Trips      []TripDetail `json:"trips"`
-	Total      int64        `json:"total"`
-	Page       int          `json:"page"`
-	Limit      int          `json:"limit"`
-	TotalPages int          `json:"total_pages"`
+// ListBusesRequest represents query parameters for listing buses
+type ListBusesRequest struct {
+	PaginationRequest
+	OperatorID string `form:"operator_id"`
 }
 
-type TripDetail struct {
-	ID             uuid.UUID `json:"id"`
-	RouteID        uuid.UUID `json:"route_id"`
-	BusID          uuid.UUID `json:"bus_id"`
-	DepartureTime  time.Time `json:"departure_time"`
-	ArrivalTime    time.Time `json:"arrival_time"`
-	BasePrice      float64   `json:"base_price"`
-	Status         string    `json:"status"`
-	AvailableSeats int       `json:"available_seats"`
-	TotalSeats     int       `json:"total_seats"`
-	Duration       string    `json:"duration"`
+// ListRoutesRequest represents query parameters for listing routes
+type ListRoutesRequest struct {
+	PaginationRequest
+	OperatorID string `form:"operator_id"`
+}
 
-	// Route information
-	Origin      string `json:"origin"`
-	Destination string `json:"destination"`
-	DistanceKm  int    `json:"distance_km"`
+// SearchRoutesQueryRequest represents query parameters for searching routes
+type SearchRoutesQueryRequest struct {
+	Origin      string `form:"origin" binding:"required"`
+	Destination string `form:"destination" binding:"required"`
+}
 
-	// Bus information
-	BusModel       string   `json:"bus_model"`
-	BusPlateNumber string   `json:"bus_plate_number"`
-	BusAmenities   []string `json:"bus_amenities"`
-
-	// Operator information
-	OperatorID   uuid.UUID `json:"operator_id"`
-	OperatorName string    `json:"operator_name"`
+// ListTripsByRouteRequest represents query parameters for listing trips by route
+type ListTripsByRouteRequest struct {
+	Date string `form:"date" binding:"required"`
 }
 
 // SeatAvailabilityRequest represents seat availability check request
 type SeatAvailabilityRequest struct {
 	TripID uuid.UUID `json:"trip_id" validate:"required"`
-}
-
-// SeatAvailabilityResponse represents seat availability with detailed seat info
-type SeatAvailabilityResponse struct {
-	TripID         uuid.UUID    `json:"trip_id"`
-	AvailableSeats int          `json:"available_seats"`
-	TotalSeats     int          `json:"total_seats"`
-	Seats          []SeatDetail `json:"seats"`
-}
-
-// SeatDetail represents detailed seat information with availability
-type SeatDetail struct {
-	ID       uuid.UUID `json:"id"`
-	SeatCode string    `json:"seat_code"`
-	SeatType string    `json:"seat_type"`
-	IsBooked bool      `json:"is_booked"`
-	IsLocked bool      `json:"is_locked"`
-	Price    float64   `json:"price"`
 }
 
 // OperatorListResponse represents operator listing
@@ -188,4 +149,51 @@ type UpdateTripRequest struct {
 	BasePrice     *float64   `json:"base_price,omitempty" validate:"omitempty,min=0"`
 	Status        *string    `json:"status,omitempty" validate:"omitempty,oneof=scheduled in_progress completed cancelled"`
 	IsActive      *bool      `json:"is_active,omitempty"`
+}
+
+// Booking requests
+type CreateBookingRequest struct {
+	TripID     uuid.UUID          `json:"trip_id" validate:"required"`
+	SeatIDs    []uuid.UUID        `json:"seat_ids" validate:"required,min=1,max=10"`
+	Passengers []PassengerRequest `json:"passengers" validate:"required,dive"`
+	IsGuest    bool               `json:"is_guest"`
+	GuestInfo  *GuestInfo         `json:"guest_info,omitempty"`
+}
+
+type PassengerRequest struct {
+	SeatID      uuid.UUID `json:"seat_id" validate:"required"`
+	FullName    string    `json:"full_name" validate:"required,min=2,max=255"`
+	IDNumber    string    `json:"id_number,omitempty" validate:"omitempty,min=5,max=50"`
+	PhoneNumber string    `json:"phone_number,omitempty" validate:"omitempty,min=10,max=20"`
+}
+
+type GuestInfo struct {
+	Email string `json:"email" validate:"required,email"`
+	Phone string `json:"phone" validate:"required,min=10,max=20"`
+	Name  string `json:"name" validate:"required,min=2,max=255"`
+}
+
+type LockSeatsRequest struct {
+	TripID    uuid.UUID   `json:"trip_id" validate:"required"`
+	SeatIDs   []uuid.UUID `json:"seat_ids" validate:"required,min=1,max=10"`
+	SessionID string      `json:"session_id" validate:"required"`
+}
+
+type UnlockSeatsRequest struct {
+	SessionID string `json:"session_id" validate:"required"`
+}
+
+type CancelBookingRequest struct {
+	Reason string `json:"reason,omitempty"`
+}
+
+// Booking query parameters
+type BookingLookupRequest struct {
+	Reference string `form:"reference" binding:"required"`
+	Email     string `form:"email" binding:"required,email"`
+}
+
+type ListBookingsRequest struct {
+	PaginationRequest
+	Status string `form:"status"`
 }

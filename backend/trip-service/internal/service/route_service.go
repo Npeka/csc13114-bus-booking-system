@@ -22,12 +22,12 @@ type RouteService interface {
 }
 
 type RouteServiceImpl struct {
-	repositories *repository.Repositories
+	routeRepo repository.RouteRepository
 }
 
-func NewRouteService(repositories *repository.Repositories) RouteService {
+func NewRouteService(routeRepo repository.RouteRepository) RouteService {
 	return &RouteServiceImpl{
-		repositories: repositories,
+		routeRepo: routeRepo,
 	}
 }
 
@@ -52,7 +52,7 @@ func (s *RouteServiceImpl) CreateRoute(ctx context.Context, req *model.CreateRou
 		IsActive:         true,
 	}
 
-	if err := s.repositories.Route.CreateRoute(ctx, route); err != nil {
+	if err := s.routeRepo.CreateRoute(ctx, route); err != nil {
 		log.Error().Err(err).Msg("Failed to create route")
 		return nil, fmt.Errorf("failed to create route: %w", err)
 	}
@@ -62,7 +62,7 @@ func (s *RouteServiceImpl) CreateRoute(ctx context.Context, req *model.CreateRou
 }
 
 func (s *RouteServiceImpl) GetRouteByID(ctx context.Context, id uuid.UUID) (*model.Route, error) {
-	route, err := s.repositories.Route.GetRouteByID(ctx, id)
+	route, err := s.routeRepo.GetRouteByID(ctx, id)
 	if err != nil {
 		log.Error().Err(err).Str("route_id", id.String()).Msg("Failed to get route")
 		return nil, fmt.Errorf("failed to get route: %w", err)
@@ -75,7 +75,7 @@ func (s *RouteServiceImpl) UpdateRoute(ctx context.Context, id uuid.UUID, req *m
 	log.Info().Str("route_id", id.String()).Msg("Updating route")
 
 	// Get existing route
-	route, err := s.repositories.Route.GetRouteByID(ctx, id)
+	route, err := s.routeRepo.GetRouteByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("route not found: %w", err)
 	}
@@ -103,7 +103,7 @@ func (s *RouteServiceImpl) UpdateRoute(ctx context.Context, id uuid.UUID, req *m
 		route.IsActive = *req.IsActive
 	}
 
-	if err := s.repositories.Route.UpdateRoute(ctx, route); err != nil {
+	if err := s.routeRepo.UpdateRoute(ctx, route); err != nil {
 		log.Error().Err(err).Str("route_id", id.String()).Msg("Failed to update route")
 		return nil, fmt.Errorf("failed to update route: %w", err)
 	}
@@ -115,7 +115,7 @@ func (s *RouteServiceImpl) UpdateRoute(ctx context.Context, id uuid.UUID, req *m
 func (s *RouteServiceImpl) DeleteRoute(ctx context.Context, id uuid.UUID) error {
 	log.Info().Str("route_id", id.String()).Msg("Deleting route")
 
-	if err := s.repositories.Route.DeleteRoute(ctx, id); err != nil {
+	if err := s.routeRepo.DeleteRoute(ctx, id); err != nil {
 		log.Error().Err(err).Str("route_id", id.String()).Msg("Failed to delete route")
 		return fmt.Errorf("failed to delete route: %w", err)
 	}
@@ -132,7 +132,7 @@ func (s *RouteServiceImpl) ListRoutes(ctx context.Context, operatorID *uuid.UUID
 		limit = 20
 	}
 
-	routes, total, err := s.repositories.Route.ListRoutes(ctx, operatorID, page, limit)
+	routes, total, err := s.routeRepo.ListRoutes(ctx, operatorID, page, limit)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to list routes")
 		return nil, 0, fmt.Errorf("failed to list routes: %w", err)
@@ -146,7 +146,7 @@ func (s *RouteServiceImpl) GetRoutesByOriginDestination(ctx context.Context, ori
 		return nil, errors.New("origin and destination are required")
 	}
 
-	routes, err := s.repositories.Route.GetRoutesByOriginDestination(ctx, origin, destination)
+	routes, err := s.routeRepo.GetRoutesByOriginDestination(ctx, origin, destination)
 	if err != nil {
 		log.Error().Err(err).Str("origin", origin).Str("destination", destination).Msg("Failed to get routes by origin/destination")
 		return nil, fmt.Errorf("failed to get routes: %w", err)
