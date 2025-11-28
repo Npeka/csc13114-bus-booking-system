@@ -1,0 +1,233 @@
+definitions:
+  bus-booking_chatbot-service_internal_model.ChatContext:
+    properties:
+      current_step:
+        description: '"search", "select_trip", "booking", etc.'
+        type: string
+      selected_trip:
+        $ref: '#/definitions/bus-booking_chatbot-service_internal_model.TripInfo'
+      trip_search_id:
+        type: string
+      user_id:
+        type: string
+    type: object
+  bus-booking_chatbot-service_internal_model.ChatMessage:
+    properties:
+      content:
+        description: Message content
+        type: string
+      role:
+        description: '"user", "assistant", "system"'
+        type: string
+    type: object
+  bus-booking_chatbot-service_internal_model.ChatRequest:
+    properties:
+      context:
+        allOf:
+        - $ref: '#/definitions/bus-booking_chatbot-service_internal_model.ChatContext'
+        description: Optional context
+      history:
+        description: Conversation history
+        items:
+          $ref: '#/definitions/bus-booking_chatbot-service_internal_model.ChatMessage'
+        type: array
+      message:
+        type: string
+      session_id:
+        description: Optional session tracking
+        type: string
+    required:
+    - message
+    type: object
+  bus-booking_chatbot-service_internal_model.ChatResponse:
+    properties:
+      action:
+        description: '"show_trips", "show_booking_form", etc.'
+        type: string
+      context:
+        allOf:
+        - $ref: '#/definitions/bus-booking_chatbot-service_internal_model.ChatContext'
+        description: Updated context
+      data:
+        description: Additional data (trip results, booking info, etc.)
+      intent:
+        description: '"search_trip", "book_trip", "faq", "other"'
+        type: string
+      message:
+        type: string
+      suggestions:
+        description: Quick reply suggestions
+        items:
+          type: string
+        type: array
+    type: object
+  bus-booking_chatbot-service_internal_model.TripInfo:
+    properties:
+      departure_time:
+        type: string
+      destination:
+        type: string
+      origin:
+        type: string
+      price:
+        type: number
+      trip_id:
+        type: string
+    type: object
+  bus-booking_chatbot-service_internal_model.TripSearchParams:
+    properties:
+      departure_date:
+        type: string
+      destination:
+        type: string
+      origin:
+        type: string
+      passengers:
+        type: integer
+    type: object
+  ginext.ErrorBody:
+    properties:
+      message:
+        type: string
+    type: object
+  ginext.Response:
+    properties:
+      code:
+        type: integer
+      data: {}
+      error:
+        $ref: '#/definitions/ginext.ErrorBody'
+      header:
+        $ref: '#/definitions/http.Header'
+      message:
+        type: string
+    type: object
+  http.Header:
+    additionalProperties:
+      items:
+        type: string
+      type: array
+    type: object
+info:
+  contact:
+    email: support@busbooking.com
+    name: API Support
+  description: |-
+    AI-powered chatbot service for bus ticket booking assistance
+    This service provides natural language processing for trip search, FAQ handling, and booking assistance.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: Chatbot Service API
+  version: "1.0"
+paths:
+  /api/v1/chat:
+    post:
+      consumes:
+      - application/json
+      description: Send a message to the chatbot and get an AI-powered response
+      parameters:
+      - description: Chat request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_chatbot-service_internal_model.ChatRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/ginext.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bus-booking_chatbot-service_internal_model.ChatResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: Chat with AI assistant
+      tags:
+      - chatbot
+  /api/v1/chat/extract-search:
+    get:
+      consumes:
+      - application/json
+      description: Extract trip search parameters from natural language
+      parameters:
+      - description: Natural language message
+        in: query
+        name: message
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/ginext.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bus-booking_chatbot-service_internal_model.TripSearchParams'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: Extract trip search parameters
+      tags:
+      - chatbot
+  /api/v1/chat/faq:
+    get:
+      consumes:
+      - application/json
+      description: Get answer to frequently asked questions
+      parameters:
+      - description: Question
+        in: query
+        name: question
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/ginext.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: Get FAQ answer
+      tags:
+      - chatbot
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
