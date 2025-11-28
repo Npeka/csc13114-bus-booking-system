@@ -13,7 +13,20 @@ import (
 func (s *Server) buildHandler() http.Handler {
 	repositories := repository.NewRepositories(s.db.DB)
 
-	transactionService := service.NewTransactionService(repositories)
+	// Initialize PayOS client
+	payosClient := service.NewPayOSClient(
+		s.cfg.PayOS.ClientID,
+		s.cfg.PayOS.APIKey,
+		s.cfg.PayOS.ChecksumKey,
+	)
+
+	// Initialize services with PayOS client
+	transactionService := service.NewTransactionService(
+		repositories,
+		payosClient,
+		s.cfg.PayOS.ReturnURL,
+		s.cfg.PayOS.CancelURL,
+	)
 
 	transactionHandler := handler.NewTransactionHandler(transactionService)
 

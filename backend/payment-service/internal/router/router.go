@@ -26,9 +26,17 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 
 	v1 := router.Group("/api/v1")
 	{
-		payment := v1.Group("/transactions")
+		transactions := v1.Group("/transactions")
 		{
-			payment.POST("", ginext.WrapHandler(h.TransactionHandler.CreateTransaction))
+			// Create basic transaction (deprecated - use payment-link instead)
+			transactions.POST("", ginext.WrapHandler(h.TransactionHandler.CreateTransaction))
+
+			// PayOS integration endpoints
+			transactions.POST("/payment-link", ginext.WrapHandler(h.TransactionHandler.CreatePaymentLink))
+			transactions.POST("/webhook", ginext.WrapHandler(h.TransactionHandler.HandlePaymentWebhook))
+			transactions.GET("/return", ginext.WrapHandler(h.TransactionHandler.HandlePaymentReturn))
+			transactions.GET("/cancel", ginext.WrapHandler(h.TransactionHandler.HandlePaymentCancel))
+			transactions.GET("/:order_code", ginext.WrapHandler(h.TransactionHandler.GetTransactionByOrderCode))
 		}
 	}
 }
