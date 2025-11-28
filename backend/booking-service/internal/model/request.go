@@ -144,24 +144,6 @@ type PaginatedFeedbackResponse struct {
 	TotalPages int64               `json:"total_pages"`
 }
 
-// Statistics responses
-type BookingStatsResponse struct {
-	TotalBookings     int64     `json:"total_bookings"`
-	TotalRevenue      float64   `json:"total_revenue"`
-	CancelledBookings int64     `json:"cancelled_bookings"`
-	CompletedBookings int64     `json:"completed_bookings"`
-	AverageRating     float64   `json:"average_rating"`
-	StartDate         time.Time `json:"start_date"`
-	EndDate           time.Time `json:"end_date"`
-}
-
-type TripStatsResponse struct {
-	TripID        uuid.UUID `json:"trip_id"`
-	TotalBookings int64     `json:"total_bookings"`
-	TotalRevenue  float64   `json:"total_revenue"`
-	AverageRating float64   `json:"average_rating"`
-}
-
 // Standard API responses
 type SuccessResponse struct {
 	Message string      `json:"message"`
@@ -200,4 +182,15 @@ func (req *CreateBookingRequest) Validate() error {
 		return fmt.Errorf("passenger phone is required")
 	}
 	return nil
+}
+
+// Seat lock requests
+type LockSeatsRequest struct {
+	TripID    uuid.UUID   `json:"trip_id" validate:"required"`
+	SeatIDs   []uuid.UUID `json:"seat_ids" validate:"required,min=1,max=10"`
+	SessionID string      `json:"session_id" validate:"required"`
+}
+
+type UnlockSeatsRequest struct {
+	SessionID string `json:"session_id" validate:"required"`
 }

@@ -1,24 +1,29 @@
 package handler
 
 import (
-	"net/http"
-	"strconv"
-	"time"
-
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	"github.com/rs/zerolog/log"
-
 	"bus-booking/booking-service/internal/model"
 	"bus-booking/booking-service/internal/service"
+	"bus-booking/shared/ginext"
+
+	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 )
 
-type BookingHandler struct {
+type BookingHandler interface {
+	CreateBooking(r *ginext.Request) (*ginext.Response, error)
+	GetBooking(r *ginext.Request) (*ginext.Response, error)
+	GetUserBookings(r *ginext.Request) (*ginext.Response, error)
+	GetTripBookings(r *ginext.Request) (*ginext.Response, error)
+	CancelBooking(r *ginext.Request) (*ginext.Response, error)
+	UpdateBookingStatus(r *ginext.Request) (*ginext.Response, error)
+}
+
+type BookingHandlerImpl struct {
 	bookingService service.BookingService
 }
 
-func NewBookingHandler(bookingService service.BookingService) *BookingHandler {
-	return &BookingHandler{
+func NewBookingHandler(bookingService service.BookingService) BookingHandler {
+	return &BookingHandlerImpl{
 		bookingService: bookingService,
 	}
 }
@@ -30,42 +35,30 @@ func NewBookingHandler(bookingService service.BookingService) *BookingHandler {
 // @Accept json
 // @Produce json
 // @Param booking body model.CreateBookingRequest true "Booking creation request"
-// @Success 201 {object} model.BookingResponse
-// @Failure 400 {object} model.ErrorResponse
-// @Failure 500 {object} model.ErrorResponse
-// @Router /bookings [post]
-func (h *BookingHandler) CreateBooking(c *gin.Context) {
+// @Success 201 {object} ginext.Response{data=model.BookingResponse}
+// @Failure 400 {object} ginext.Response
+// @Failure 500 {object} ginext.Response
+// @Router /api/v1/bookings [post]
+func (h *BookingHandlerImpl) CreateBooking(r *ginext.Request) (*ginext.Response, error) {
 	var req model.CreateBookingRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Error().Err(err).Msg("Failed to bind request")
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Invalid request format",
-			Message: err.Error(),
-		})
-		return
+	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
+		log.Debug().Err(err).Msg("Invalid request body")
+		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
 	// Validate request
 	if err := req.Validate(); err != nil {
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Validation failed",
-			Message: err.Error(),
-		})
-		return
+		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
 	// Create booking
-	booking, err := h.bookingService.CreateBooking(c.Request.Context(), &req)
+	booking, err := h.bookingService.CreateBooking(r.Context(), &req)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create booking")
-		c.JSON(http.StatusInternalServerError, model.ErrorResponse{
-			Error:   "Failed to create booking",
-			Message: err.Error(),
-		})
-		return
+		return nil, err
 	}
 
-	c.JSON(http.StatusCreated, booking)
+	return ginext.NewSuccessResponse(booking, "Booking created successfully"), nil
 }
 
 // GetBooking godoc
@@ -73,33 +66,25 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 // @Description Get a specific booking by its ID
 // @Tags bookings
 // @Produce json
-// @Param id path string true "Booking ID"
-// @Success 200 {object} model.BookingResponse
-// @Failure 400 {object} model.ErrorResponse
-// @Failure 404 {object} model.ErrorResponse
-// @Router /bookings/{id} [get]
-func (h *BookingHandler) GetBooking(c *gin.Context) {
-	idStr := c.Param("id")
+// @Param id path string true "Booking ID" format(uuid)
+// @Success 200 {object} ginext.Response{data=model.BookingResponse}
+// @Failure 400 {object} ginext.Response
+// @Failure 404 {object} ginext.Response
+// @Router /api/v1/bookings/{id} [get]
+func (h *BookingHandlerImpl) GetBooking(r *ginext.Request) (*ginext.Response, error) {
+	idStr := r.GinCtx.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Invalid booking ID",
-			Message: "Booking ID must be a valid UUID",
-		})
-		return
+		return nil, ginext.NewBadRequestError("invalid booking ID")
 	}
 
-	booking, err := h.bookingService.GetBookingByID(c.Request.Context(), id)
+	booking, err := h.bookingService.GetBookingByID(r.Context(), id)
 	if err != nil {
-		log.Error().Err(err).Str("booking_id", id.String()).Msg("Failed to get booking")
-		c.JSON(http.StatusNotFound, model.ErrorResponse{
-			Error:   "Booking not found",
-			Message: err.Error(),
-		})
-		return
+		log.Error().Err(err).Str("booking_id", idStr).Msg("Failed to get booking")
+		return nil, err
 	}
 
-	c.JSON(http.StatusOK, booking)
+	return ginext.NewSuccessResponse(booking, "Booking retrieved successfully"), nil
 }
 
 // GetUserBookings godoc
@@ -107,60 +92,44 @@ func (h *BookingHandler) GetBooking(c *gin.Context) {
 // @Description Get all bookings for a specific user with pagination
 // @Tags bookings
 // @Produce json
-// @Param user_id path string true "User ID"
+// @Param user_id path string true "User ID" format(uuid)
 // @Param page query int false "Page number" default(1)
 // @Param limit query int false "Items per page" default(10)
-// @Success 200 {object} model.PaginatedBookingResponse
-// @Failure 400 {object} model.ErrorResponse
-// @Failure 500 {object} model.ErrorResponse
-// @Router /bookings/user/{user_id} [get]
-func (h *BookingHandler) GetUserBookings(c *gin.Context) {
-	userIDStr := c.Param("user_id")
+// @Success 200 {object} ginext.Response{data=model.PaginatedBookingResponse}
+// @Failure 400 {object} ginext.Response
+// @Failure 500 {object} ginext.Response
+// @Router /api/v1/bookings/user/{user_id} [get]
+func (h *BookingHandlerImpl) GetUserBookings(r *ginext.Request) (*ginext.Response, error) {
+	userIDStr := r.GinCtx.Param("user_id")
 	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Invalid user ID",
-			Message: "User ID must be a valid UUID",
-		})
-		return
+		return nil, ginext.NewBadRequestError("invalid user ID")
 	}
 
-	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	var query struct {
+		Page  int `form:"page,default=1"`
+		Limit int `form:"limit,default=10"`
+	}
+
+	if err := r.GinCtx.ShouldBindQuery(&query); err != nil {
+		return nil, ginext.NewBadRequestError(err.Error())
+	}
+
+	// Set defaults if not provided
+	if query.Page < 1 {
+		query.Page = 1
+	}
+	if query.Limit < 1 || query.Limit > 100 {
+		query.Limit = 10
+	}
+
+	bookings, err := h.bookingService.GetUserBookings(r.Context(), userID, query.Page, query.Limit)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Invalid page number",
-			Message: "Page number must be a valid integer",
-		})
-		return
+		log.Error().Err(err).Str("user_id", userIDStr).Msg("Failed to get user bookings")
+		return nil, err
 	}
 
-	limit, err := strconv.Atoi(c.DefaultQuery("limit", "10"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Invalid limit number",
-			Message: "Limit must be a valid integer",
-		})
-		return
-	}
-
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 || limit > 100 {
-		limit = 10
-	}
-
-	bookings, err := h.bookingService.GetUserBookings(c.Request.Context(), userID, page, limit)
-	if err != nil {
-		log.Error().Err(err).Str("user_id", userID.String()).Msg("Failed to get user bookings")
-		c.JSON(http.StatusInternalServerError, model.ErrorResponse{
-			Error:   "Failed to get bookings",
-			Message: err.Error(),
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, bookings)
+	return ginext.NewSuccessResponse(bookings, "User bookings retrieved successfully"), nil
 }
 
 // GetTripBookings godoc
@@ -168,60 +137,44 @@ func (h *BookingHandler) GetUserBookings(c *gin.Context) {
 // @Description Get all bookings for a specific trip with pagination
 // @Tags bookings
 // @Produce json
-// @Param trip_id path string true "Trip ID"
+// @Param trip_id path string true "Trip ID" format(uuid)
 // @Param page query int false "Page number" default(1)
 // @Param limit query int false "Items per page" default(10)
-// @Success 200 {object} model.PaginatedBookingResponse
-// @Failure 400 {object} model.ErrorResponse
-// @Failure 500 {object} model.ErrorResponse
-// @Router /bookings/trip/{trip_id} [get]
-func (h *BookingHandler) GetTripBookings(c *gin.Context) {
-	tripIDStr := c.Param("trip_id")
+// @Success 200 {object} ginext.Response{data=model.PaginatedBookingResponse}
+// @Failure 400 {object} ginext.Response
+// @Failure 500 {object} ginext.Response
+// @Router /api/v1/bookings/trip/{trip_id} [get]
+func (h *BookingHandlerImpl) GetTripBookings(r *ginext.Request) (*ginext.Response, error) {
+	tripIDStr := r.GinCtx.Param("trip_id")
 	tripID, err := uuid.Parse(tripIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Invalid trip ID",
-			Message: "Trip ID must be a valid UUID",
-		})
-		return
+		return nil, ginext.NewBadRequestError("invalid trip ID")
 	}
 
-	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	var query struct {
+		Page  int `form:"page,default=1"`
+		Limit int `form:"limit,default=10"`
+	}
+
+	if err := r.GinCtx.ShouldBindQuery(&query); err != nil {
+		return nil, ginext.NewBadRequestError(err.Error())
+	}
+
+	// Set defaults if not provided
+	if query.Page < 1 {
+		query.Page = 1
+	}
+	if query.Limit < 1 || query.Limit > 100 {
+		query.Limit = 10
+	}
+
+	bookings, err := h.bookingService.GetTripBookings(r.Context(), tripID, query.Page, query.Limit)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Invalid page number",
-			Message: "Page number must be a valid integer",
-		})
-		return
+		log.Error().Err(err).Str("trip_id", tripIDStr).Msg("Failed to get trip bookings")
+		return nil, err
 	}
 
-	limit, err := strconv.Atoi(c.DefaultQuery("limit", "10"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Invalid limit number",
-			Message: "Limit must be a valid integer",
-		})
-		return
-	}
-
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 || limit > 100 {
-		limit = 10
-	}
-
-	bookings, err := h.bookingService.GetTripBookings(c.Request.Context(), tripID, page, limit)
-	if err != nil {
-		log.Error().Err(err).Str("trip_id", tripID.String()).Msg("Failed to get trip bookings")
-		c.JSON(http.StatusInternalServerError, model.ErrorResponse{
-			Error:   "Failed to get bookings",
-			Message: err.Error(),
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, bookings)
+	return ginext.NewSuccessResponse(bookings, "Trip bookings retrieved successfully"), nil
 }
 
 // CancelBooking godoc
@@ -230,45 +183,31 @@ func (h *BookingHandler) GetTripBookings(c *gin.Context) {
 // @Tags bookings
 // @Accept json
 // @Produce json
-// @Param id path string true "Booking ID"
+// @Param id path string true "Booking ID" format(uuid)
 // @Param request body model.CancelBookingRequest true "Cancellation request"
-// @Success 200 {object} model.SuccessResponse
-// @Failure 400 {object} model.ErrorResponse
-// @Failure 404 {object} model.ErrorResponse
-// @Router /bookings/{id}/cancel [post]
-func (h *BookingHandler) CancelBooking(c *gin.Context) {
-	idStr := c.Param("id")
+// @Success 200 {object} ginext.Response
+// @Failure 400 {object} ginext.Response
+// @Failure 404 {object} ginext.Response
+// @Router /api/v1/bookings/{id}/cancel [post]
+func (h *BookingHandlerImpl) CancelBooking(r *ginext.Request) (*ginext.Response, error) {
+	idStr := r.GinCtx.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Invalid booking ID",
-			Message: "Booking ID must be a valid UUID",
-		})
-		return
+		return nil, ginext.NewBadRequestError("invalid booking ID")
 	}
 
 	var req model.CancelBookingRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Error().Err(err).Msg("Failed to bind request")
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Invalid request format",
-			Message: err.Error(),
-		})
-		return
+	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
+		log.Debug().Err(err).Msg("Invalid request body")
+		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
-	if err := h.bookingService.CancelBooking(c.Request.Context(), id, req.UserID, req.Reason); err != nil {
-		log.Error().Err(err).Str("booking_id", id.String()).Msg("Failed to cancel booking")
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Failed to cancel booking",
-			Message: err.Error(),
-		})
-		return
+	if err := h.bookingService.CancelBooking(r.Context(), id, req.UserID, req.Reason); err != nil {
+		log.Error().Err(err).Str("booking_id", idStr).Msg("Failed to cancel booking")
+		return nil, err
 	}
 
-	c.JSON(http.StatusOK, model.SuccessResponse{
-		Message: "Booking cancelled successfully",
-	})
+	return ginext.NewSuccessResponse(nil, "Booking cancelled successfully"), nil
 }
 
 // UpdateBookingStatus godoc
@@ -277,458 +216,29 @@ func (h *BookingHandler) CancelBooking(c *gin.Context) {
 // @Tags bookings
 // @Accept json
 // @Produce json
-// @Param id path string true "Booking ID"
+// @Param id path string true "Booking ID" format(uuid)
 // @Param request body model.UpdateBookingStatusRequest true "Status update request"
-// @Success 200 {object} model.SuccessResponse
-// @Failure 400 {object} model.ErrorResponse
-// @Failure 404 {object} model.ErrorResponse
-// @Router /bookings/{id}/status [put]
-func (h *BookingHandler) UpdateBookingStatus(c *gin.Context) {
-	idStr := c.Param("id")
+// @Success 200 {object} ginext.Response
+// @Failure 400 {object} ginext.Response
+// @Failure 404 {object} ginext.Response
+// @Router /api/v1/bookings/{id}/status [put]
+func (h *BookingHandlerImpl) UpdateBookingStatus(r *ginext.Request) (*ginext.Response, error) {
+	idStr := r.GinCtx.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Invalid booking ID",
-			Message: "Booking ID must be a valid UUID",
-		})
-		return
+		return nil, ginext.NewBadRequestError("invalid booking ID")
 	}
 
 	var req model.UpdateBookingStatusRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Error().Err(err).Msg("Failed to bind request")
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Invalid request format",
-			Message: err.Error(),
-		})
-		return
+	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
+		log.Debug().Err(err).Msg("Invalid request body")
+		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
-	if err := h.bookingService.UpdateBookingStatus(c.Request.Context(), id, req.Status); err != nil {
-		log.Error().Err(err).Str("booking_id", id.String()).Msg("Failed to update booking status")
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Failed to update booking status",
-			Message: err.Error(),
-		})
-		return
+	if err := h.bookingService.UpdateBookingStatus(r.Context(), id, req.Status); err != nil {
+		log.Error().Err(err).Str("booking_id", idStr).Msg("Failed to update booking status")
+		return nil, err
 	}
 
-	c.JSON(http.StatusOK, model.SuccessResponse{
-		Message: "Booking status updated successfully",
-	})
-}
-
-// GetSeatAvailability godoc
-// @Summary Get seat availability for a trip
-// @Description Get available, reserved, and booked seats for a specific trip
-// @Tags seats
-// @Produce json
-// @Param trip_id path string true "Trip ID"
-// @Success 200 {object} model.SeatAvailabilityResponse
-// @Failure 400 {object} model.ErrorResponse
-// @Failure 500 {object} model.ErrorResponse
-// @Router /trips/{trip_id}/seats [get]
-func (h *BookingHandler) GetSeatAvailability(c *gin.Context) {
-	tripIDStr := c.Param("trip_id")
-	tripID, err := uuid.Parse(tripIDStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Invalid trip ID",
-			Message: "Trip ID must be a valid UUID",
-		})
-		return
-	}
-
-	availability, err := h.bookingService.GetSeatAvailability(c.Request.Context(), tripID)
-	if err != nil {
-		log.Error().Err(err).Str("trip_id", tripID.String()).Msg("Failed to get seat availability")
-		c.JSON(http.StatusInternalServerError, model.ErrorResponse{
-			Error:   "Failed to get seat availability",
-			Message: err.Error(),
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, availability)
-}
-
-// ReserveSeat godoc
-// @Summary Reserve a seat
-// @Description Reserve a seat for a user temporarily
-// @Tags seats
-// @Accept json
-// @Produce json
-// @Param request body model.ReserveSeatRequest true "Seat reservation request"
-// @Success 200 {object} model.SuccessResponse
-// @Failure 400 {object} model.ErrorResponse
-// @Failure 500 {object} model.ErrorResponse
-// @Router /seats/reserve [post]
-func (h *BookingHandler) ReserveSeat(c *gin.Context) {
-	var req model.ReserveSeatRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Error().Err(err).Msg("Failed to bind request")
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Invalid request format",
-			Message: err.Error(),
-		})
-		return
-	}
-
-	if err := h.bookingService.ReserveSeat(c.Request.Context(), &req); err != nil {
-		log.Error().Err(err).Msg("Failed to reserve seat")
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Failed to reserve seat",
-			Message: err.Error(),
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, model.SuccessResponse{
-		Message: "Seat reserved successfully",
-	})
-}
-
-// ReleaseSeat godoc
-// @Summary Release a reserved seat
-// @Description Release a reserved seat back to available status
-// @Tags seats
-// @Accept json
-// @Produce json
-// @Param request body model.ReleaseSeatRequest true "Seat release request"
-// @Success 200 {object} model.SuccessResponse
-// @Failure 400 {object} model.ErrorResponse
-// @Failure 500 {object} model.ErrorResponse
-// @Router /seats/release [post]
-func (h *BookingHandler) ReleaseSeat(c *gin.Context) {
-	var req model.ReleaseSeatRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Error().Err(err).Msg("Failed to bind request")
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Invalid request format",
-			Message: err.Error(),
-		})
-		return
-	}
-
-	if err := h.bookingService.ReleaseSeat(c.Request.Context(), req.TripID, req.SeatID); err != nil {
-		log.Error().Err(err).Msg("Failed to release seat")
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Failed to release seat",
-			Message: err.Error(),
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, model.SuccessResponse{
-		Message: "Seat released successfully",
-	})
-}
-
-// GetPaymentMethods godoc
-// @Summary Get payment methods
-// @Description Get all available payment methods
-// @Tags payment
-// @Produce json
-// @Success 200 {array} model.PaymentMethodResponse
-// @Failure 500 {object} model.ErrorResponse
-// @Router /payment/methods [get]
-func (h *BookingHandler) GetPaymentMethods(c *gin.Context) {
-	methods, err := h.bookingService.GetPaymentMethods(c.Request.Context())
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to get payment methods")
-		c.JSON(http.StatusInternalServerError, model.ErrorResponse{
-			Error:   "Failed to get payment methods",
-			Message: err.Error(),
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, methods)
-}
-
-// ProcessPayment godoc
-// @Summary Process payment
-// @Description Process payment for a booking
-// @Tags payment
-// @Accept json
-// @Produce json
-// @Param request body model.ProcessPaymentRequest true "Payment processing request"
-// @Success 200 {object} model.PaymentResponse
-// @Failure 400 {object} model.ErrorResponse
-// @Failure 500 {object} model.ErrorResponse
-// @Router /payment/process [post]
-func (h *BookingHandler) ProcessPayment(c *gin.Context) {
-	var req model.ProcessPaymentRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Error().Err(err).Msg("Failed to bind request")
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Invalid request format",
-			Message: err.Error(),
-		})
-		return
-	}
-
-	payment, err := h.bookingService.ProcessPayment(c.Request.Context(), &req)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to process payment")
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Failed to process payment",
-			Message: err.Error(),
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, payment)
-}
-
-// CreateFeedback godoc
-// @Summary Create feedback
-// @Description Create feedback for a completed booking
-// @Tags feedback
-// @Accept json
-// @Produce json
-// @Param request body model.CreateFeedbackRequest true "Feedback creation request"
-// @Success 201 {object} model.FeedbackResponse
-// @Failure 400 {object} model.ErrorResponse
-// @Failure 500 {object} model.ErrorResponse
-// @Router /feedback [post]
-func (h *BookingHandler) CreateFeedback(c *gin.Context) {
-	var req model.CreateFeedbackRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Error().Err(err).Msg("Failed to bind request")
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Invalid request format",
-			Message: err.Error(),
-		})
-		return
-	}
-
-	feedback, err := h.bookingService.CreateFeedback(c.Request.Context(), &req)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to create feedback")
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Failed to create feedback",
-			Message: err.Error(),
-		})
-		return
-	}
-
-	c.JSON(http.StatusCreated, feedback)
-}
-
-// GetBookingFeedback godoc
-// @Summary Get booking feedback
-// @Description Get feedback for a specific booking
-// @Tags feedback
-// @Produce json
-// @Param booking_id path string true "Booking ID"
-// @Success 200 {object} model.FeedbackResponse
-// @Failure 400 {object} model.ErrorResponse
-// @Failure 404 {object} model.ErrorResponse
-// @Router /feedback/booking/{booking_id} [get]
-func (h *BookingHandler) GetBookingFeedback(c *gin.Context) {
-	bookingIDStr := c.Param("booking_id")
-	bookingID, err := uuid.Parse(bookingIDStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Invalid booking ID",
-			Message: "Booking ID must be a valid UUID",
-		})
-		return
-	}
-
-	feedback, err := h.bookingService.GetBookingFeedback(c.Request.Context(), bookingID)
-	if err != nil {
-		log.Error().Err(err).Str("booking_id", bookingID.String()).Msg("Failed to get booking feedback")
-		c.JSON(http.StatusNotFound, model.ErrorResponse{
-			Error:   "Feedback not found",
-			Message: err.Error(),
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, feedback)
-}
-
-// GetTripFeedbacks godoc
-// @Summary Get trip feedbacks
-// @Description Get all feedbacks for a specific trip with pagination
-// @Tags feedback
-// @Produce json
-// @Param trip_id path string true "Trip ID"
-// @Param page query int false "Page number" default(1)
-// @Param limit query int false "Items per page" default(10)
-// @Success 200 {object} model.PaginatedFeedbackResponse
-// @Failure 400 {object} model.ErrorResponse
-// @Failure 500 {object} model.ErrorResponse
-// @Router /feedback/trip/{trip_id} [get]
-func (h *BookingHandler) GetTripFeedbacks(c *gin.Context) {
-	tripIDStr := c.Param("trip_id")
-	tripID, err := uuid.Parse(tripIDStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Invalid trip ID",
-			Message: "Trip ID must be a valid UUID",
-		})
-		return
-	}
-
-	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Invalid page number",
-			Message: "Page number must be a valid integer",
-		})
-		return
-	}
-
-	limit, err := strconv.Atoi(c.DefaultQuery("limit", "10"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Invalid limit number",
-			Message: "Limit must be a valid integer",
-		})
-		return
-	}
-
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 || limit > 100 {
-		limit = 10
-	}
-
-	feedbacks, err := h.bookingService.GetTripFeedbacks(c.Request.Context(), tripID, page, limit)
-	if err != nil {
-		log.Error().Err(err).Str("trip_id", tripID.String()).Msg("Failed to get trip feedbacks")
-		c.JSON(http.StatusInternalServerError, model.ErrorResponse{
-			Error:   "Failed to get feedbacks",
-			Message: err.Error(),
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, feedbacks)
-}
-
-// GetBookingStats godoc
-// @Summary Get booking statistics
-// @Description Get booking statistics for a date range
-// @Tags statistics
-// @Produce json
-// @Param start_date query string true "Start date (YYYY-MM-DD)"
-// @Param end_date query string true "End date (YYYY-MM-DD)"
-// @Success 200 {object} model.BookingStatsResponse
-// @Failure 400 {object} model.ErrorResponse
-// @Failure 500 {object} model.ErrorResponse
-// @Router /statistics/bookings [get]
-func (h *BookingHandler) GetBookingStats(c *gin.Context) {
-	startDateStr := c.Query("start_date")
-	endDateStr := c.Query("end_date")
-
-	if startDateStr == "" || endDateStr == "" {
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Missing date parameters",
-			Message: "Both start_date and end_date are required",
-		})
-		return
-	}
-
-	startDate, err := time.Parse("2006-01-02", startDateStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Invalid start date",
-			Message: "Date must be in YYYY-MM-DD format",
-		})
-		return
-	}
-
-	endDate, err := time.Parse("2006-01-02", endDateStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Invalid end date",
-			Message: "Date must be in YYYY-MM-DD format",
-		})
-		return
-	}
-
-	// Set end date to end of day
-	endDate = endDate.Add(23*time.Hour + 59*time.Minute + 59*time.Second)
-
-	stats, err := h.bookingService.GetBookingStats(c.Request.Context(), startDate, endDate)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to get booking statistics")
-		c.JSON(http.StatusInternalServerError, model.ErrorResponse{
-			Error:   "Failed to get statistics",
-			Message: err.Error(),
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, stats)
-}
-
-// GetPopularTrips godoc
-// @Summary Get popular trips
-// @Description Get popular trips based on booking statistics
-// @Tags statistics
-// @Produce json
-// @Param limit query int false "Number of trips to return" default(10)
-// @Param days query int false "Number of days to look back" default(30)
-// @Success 200 {array} model.TripStatsResponse
-// @Failure 400 {object} model.ErrorResponse
-// @Failure 500 {object} model.ErrorResponse
-// @Router /statistics/popular-trips [get]
-func (h *BookingHandler) GetPopularTrips(c *gin.Context) {
-	limit, err := strconv.Atoi(c.DefaultQuery("limit", "10"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Invalid limit number",
-			Message: "Limit must be a valid integer",
-		})
-		return
-	}
-
-	days, err := strconv.Atoi(c.DefaultQuery("days", "30"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, model.ErrorResponse{
-			Error:   "Invalid days number",
-			Message: "Days must be a valid integer",
-		})
-		return
-	}
-
-	if limit < 1 || limit > 100 {
-		limit = 10
-	}
-	if days < 1 || days > 365 {
-		days = 30
-	}
-
-	trips, err := h.bookingService.GetPopularTrips(c.Request.Context(), limit, days)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to get popular trips")
-		c.JSON(http.StatusInternalServerError, model.ErrorResponse{
-			Error:   "Failed to get popular trips",
-			Message: err.Error(),
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, trips)
-}
-
-// Health godoc
-// @Summary Health check
-// @Description Check service health
-// @Tags health
-// @Produce json
-// @Success 200 {object} model.HealthResponse
-// @Router /health [get]
-func (h *BookingHandler) Health(c *gin.Context) {
-	c.JSON(http.StatusOK, model.HealthResponse{
-		Status:    "healthy",
-		Timestamp: time.Now().UTC(),
-		Service:   "booking-service",
-	})
+	return ginext.NewSuccessResponse(nil, "Booking status updated successfully"), nil
 }

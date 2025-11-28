@@ -14,8 +14,18 @@ func (s *Server) buildHandler() http.Handler {
 	repositories := repository.NewRepositories(s.db.DB)
 
 	bookingService := service.NewBookingService(repositories)
+	seatLockService := service.NewSeatLockService(repositories.SeatLock)
+	paymentService := service.NewPaymentService(repositories.PaymentMethod, repositories.Booking)
+	feedbackService := service.NewFeedbackService(repositories)
+	statisticsService := service.NewStatisticsService(repositories)
+	seatService := service.NewSeatService(repositories)
 
 	bookingHandler := handler.NewBookingHandler(bookingService)
+	seatLockHandler := handler.NewSeatLockHandler(seatLockService)
+	paymentHandler := handler.NewPaymentHandler(paymentService)
+	feedbackHandler := handler.NewFeedbackHandler(feedbackService)
+	statisticsHandler := handler.NewStatisticsHandler(statisticsService)
+	seatHandler := handler.NewSeatHandler(seatService)
 
 	if s.cfg.Server.IsProduction {
 		gin.SetMode(gin.ReleaseMode)
@@ -25,7 +35,12 @@ func (s *Server) buildHandler() http.Handler {
 
 	engine := gin.New()
 	router.SetupRoutes(engine, s.cfg, &router.Handlers{
-		BookingHandler: bookingHandler,
+		BookingHandler:    bookingHandler,
+		SeatLockHandler:   seatLockHandler,
+		PaymentHandler:    paymentHandler,
+		FeedbackHandler:   feedbackHandler,
+		StatisticsHandler: statisticsHandler,
+		SeatHandler:       seatHandler,
 	})
 	return engine
 }

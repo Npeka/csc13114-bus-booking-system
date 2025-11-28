@@ -36,9 +36,9 @@ func (r *bookingRepositoryImpl) CreateBooking(ctx context.Context, booking *mode
 		}
 
 		// Update seat statuses to booked
-		for _, seat := range booking.BookingSeats {
+		for _, passenger := range booking.Passengers {
 			if err := tx.Model(&model.SeatStatus{}).
-				Where("trip_id = ? AND seat_id = ?", booking.TripID, seat.SeatID).
+				Where("trip_id = ? AND seat_id = ?", booking.TripID, passenger.SeatID).
 				Updates(map[string]interface{}{
 					"status":     "booked",
 					"user_id":    booking.UserID,
@@ -138,7 +138,7 @@ func (r *bookingRepositoryImpl) CancelBooking(ctx context.Context, id uuid.UUID,
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// Get booking
 		var booking model.Booking
-		if err := tx.Preload("BookingSeats").First(&booking, "id = ?", id).Error; err != nil {
+		if err := tx.Preload("Passengers").First(&booking, "id = ?", id).Error; err != nil {
 			return fmt.Errorf("failed to get booking: %w", err)
 		}
 
@@ -153,9 +153,9 @@ func (r *bookingRepositoryImpl) CancelBooking(ctx context.Context, id uuid.UUID,
 		}
 
 		// Release seats
-		for _, seat := range booking.BookingSeats {
+		for _, passenger := range booking.Passengers {
 			if err := tx.Model(&model.SeatStatus{}).
-				Where("trip_id = ? AND seat_id = ?", booking.TripID, seat.SeatID).
+				Where("trip_id = ? AND seat_id = ?", booking.TripID, passenger.SeatID).
 				Updates(map[string]interface{}{
 					"status":     "available",
 					"user_id":    nil,

@@ -4,69 +4,42 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 type BookingStatus string
+type PaymentStatus string
 
 const (
 	BookingStatusPending   BookingStatus = "pending"
 	BookingStatusConfirmed BookingStatus = "confirmed"
 	BookingStatusCancelled BookingStatus = "cancelled"
-	BookingStatusCompleted BookingStatus = "completed"
-	BookingStatusRefunded  BookingStatus = "refunded"
-)
+	BookingStatusExpired   BookingStatus = "expired"
 
-type SeatState string
-
-const (
-	SeatStateAvailable SeatState = "available"
-	SeatStateBooked    SeatState = "booked"
-	SeatStateLocked    SeatState = "locked"
+	PaymentStatusPending  PaymentStatus = "pending"
+	PaymentStatusPaid     PaymentStatus = "paid"
+	PaymentStatusRefunded PaymentStatus = "refunded"
+	PaymentStatusFailed   PaymentStatus = "failed"
 )
 
 type Booking struct {
-	ID                 uuid.UUID      `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
-	UserID             uuid.UUID      `gorm:"type:uuid;not null" json:"user_id" validate:"required"`
-	TripID             uuid.UUID      `gorm:"type:uuid;not null" json:"trip_id" validate:"required"`
-	PaymentMethodID    uuid.UUID      `gorm:"type:uuid;not null" json:"payment_method_id" validate:"required"`
-	Status             string         `gorm:"type:varchar(50);not null;default:'pending'" json:"status"`
-	TotalAmount        float64        `gorm:"type:decimal(10,2);not null" json:"total_amount" validate:"required,min=0"`
-	PassengerName      string         `gorm:"type:varchar(255);not null" json:"passenger_name" validate:"required"`
-	PassengerPhone     string         `gorm:"type:varchar(20);not null" json:"passenger_phone" validate:"required"`
-	PassengerEmail     string         `gorm:"type:varchar(255)" json:"passenger_email"`
-	SpecialRequests    string         `gorm:"type:text" json:"special_requests"`
-	CancellationReason string         `gorm:"type:text" json:"cancellation_reason"`
-	CreatedAt          time.Time      `gorm:"type:timestamptz;not null;default:now()" json:"created_at"`
-	UpdatedAt          time.Time      `gorm:"type:timestamptz;not null;default:now()" json:"updated_at"`
-	CompletedAt        *time.Time     `gorm:"type:timestamptz" json:"completed_at"`
-	CancelledAt        *time.Time     `gorm:"type:timestamptz" json:"cancelled_at"`
-	DeletedAt          gorm.DeletedAt `gorm:"index" json:"-"`
+	BaseModel
+	BookingReference   string        `json:"booking_reference" gorm:"type:varchar(10);unique;not null"`
+	TripID             uuid.UUID     `json:"trip_id" gorm:"type:uuid;not null"`
+	UserID             *uuid.UUID    `json:"user_id,omitempty" gorm:"type:uuid"`
+	GuestEmail         string        `json:"guest_email,omitempty" gorm:"type:varchar(255)"`
+	GuestPhone         string        `json:"guest_phone,omitempty" gorm:"type:varchar(20)"`
+	GuestName          string        `json:"guest_name,omitempty" gorm:"type:varchar(255)"`
+	TotalAmount        float64       `json:"total_amount" gorm:"type:decimal(10,2);not null"`
+	Status             BookingStatus `json:"status" gorm:"type:varchar(20);not null"`
+	PaymentStatus      PaymentStatus `json:"payment_status" gorm:"type:varchar(20);not null"`
+	PaymentMethod      string        `json:"payment_method,omitempty" gorm:"type:varchar(50)"`
+	PaymentID          string        `json:"payment_id,omitempty" gorm:"type:varchar(255)"`
+	ExpiresAt          *time.Time    `json:"expires_at,omitempty" gorm:"type:timestamptz"`
+	ConfirmedAt        *time.Time    `json:"confirmed_at,omitempty" gorm:"type:timestamptz"`
+	CancelledAt        *time.Time    `json:"cancelled_at,omitempty" gorm:"type:timestamptz"`
+	CancellationReason string        `json:"cancellation_reason,omitempty" gorm:"type:text"`
 
-	BookingSeats  []BookingSeat `gorm:"foreignKey:BookingID" json:"booking_seats,omitempty"`
-	PaymentMethod PaymentMethod `gorm:"foreignKey:PaymentMethodID" json:"payment_method,omitempty"`
+	Passengers []Passenger `json:"passengers,omitempty" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 
 func (Booking) TableName() string { return "bookings" }
-
-func (b *Booking) BeforeCreate(tx *gorm.DB) error {
-	if b.ID == uuid.Nil {
-		b.ID = uuid.New()
-	}
-	return nil
-}
-
-type BookingStats struct {
-	TotalBookings     int64   `json:"total_bookings"`
-	TotalRevenue      float64 `json:"total_revenue"`
-	CancelledBookings int64   `json:"cancelled_bookings"`
-	CompletedBookings int64   `json:"completed_bookings"`
-	AverageRating     float64 `json:"average_rating"`
-}
-
-type TripBookingStats struct {
-	TripID        uuid.UUID `json:"trip_id"`
-	TotalBookings int64     `json:"total_bookings"`
-	TotalRevenue  float64   `json:"total_revenue"`
-	AverageRating float64   `json:"average_rating"`
-}

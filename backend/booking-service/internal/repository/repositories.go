@@ -11,6 +11,7 @@ type Repositories struct {
 	Feedback      FeedbackRepository
 	BookingStats  BookingStatsRepository
 	SeatStatus    SeatStatusRepository
+	SeatLock      SeatLockRepository
 }
 
 // NewRepositories creates a new repositories instance with all implementations
@@ -21,5 +22,6 @@ func NewRepositories(db *gorm.DB) *Repositories {
 		Feedback:      NewFeedbackRepository(db),
 		BookingStats:  NewBookingStatsRepository(db),
 		SeatStatus:    NewSeatStatusRepository(db),
+		SeatLock:      NewSeatLockRepository(db),
 	}
 }
