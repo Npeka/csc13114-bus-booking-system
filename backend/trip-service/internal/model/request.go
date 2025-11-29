@@ -6,8 +6,8 @@ import (
 
 // PaginationRequest represents common pagination query parameters
 type PaginationRequest struct {
-	Page  int `form:"page,default=1"`
-	Limit int `form:"limit,default=20"`
+	Page     int `form:"page,default=1"`
+	PageSize int `form:"page_size,default=20"`
 }
 
 // ListBusesRequest represents query parameters for listing buses

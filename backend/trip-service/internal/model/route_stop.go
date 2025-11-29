@@ -33,7 +33,6 @@ func (rs *RouteStop) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// CreateRouteStopRequest is the request body for creating a route stop
 type CreateRouteStopRequest struct {
 	RouteID       uuid.UUID          `json:"route_id" validate:"required"`
 	StopOrder     int                `json:"stop_order" validate:"required,min=1"`
@@ -45,7 +44,6 @@ type CreateRouteStopRequest struct {
 	OffsetMinutes int                `json:"offset_minutes" validate:"min=0"`
 }
 
-// UpdateRouteStopRequest is the request body for updating a route stop
 type UpdateRouteStopRequest struct {
 	StopOrder     *int                `json:"stop_order,omitempty" validate:"omitempty,min=1"`
 	StopType      *constants.StopType `json:"stop_type,omitempty"`

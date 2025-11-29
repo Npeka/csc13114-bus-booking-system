@@ -12,6 +12,8 @@ import (
 type SeatRepository interface {
 	Create(ctx context.Context, seat *model.Seat) error
 	CreateBulk(ctx context.Context, seats []model.Seat) error
+	CreateWithTx(ctx context.Context, seat *model.Seat, tx *gorm.DB) error
+	CreateBulkWithTx(ctx context.Context, seats []model.Seat, tx *gorm.DB) error
 	Update(ctx context.Context, seat *model.Seat) error
 	Delete(ctx context.Context, id uuid.UUID) error
 	GetByID(ctx context.Context, id uuid.UUID) (*model.Seat, error)
@@ -34,6 +36,14 @@ func (r *SeatRepositoryImpl) Create(ctx context.Context, seat *model.Seat) error
 
 func (r *SeatRepositoryImpl) CreateBulk(ctx context.Context, seats []model.Seat) error {
 	return r.db.WithContext(ctx).Create(&seats).Error
+}
+
+func (r *SeatRepositoryImpl) CreateWithTx(ctx context.Context, seat *model.Seat, tx *gorm.DB) error {
+	return tx.WithContext(ctx).Create(seat).Error
+}
+
+func (r *SeatRepositoryImpl) CreateBulkWithTx(ctx context.Context, seats []model.Seat, tx *gorm.DB) error {
+	return tx.WithContext(ctx).Create(&seats).Error
 }
 
 func (r *SeatRepositoryImpl) Update(ctx context.Context, seat *model.Seat) error {

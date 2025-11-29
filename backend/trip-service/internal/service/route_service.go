@@ -124,15 +124,8 @@ func (s *RouteServiceImpl) DeleteRoute(ctx context.Context, id uuid.UUID) error 
 	return nil
 }
 
-func (s *RouteServiceImpl) ListRoutes(ctx context.Context, page, limit int) ([]model.RouteSummary, int64, error) {
-	if page <= 0 {
-		page = 1
-	}
-	if limit <= 0 {
-		limit = 20
-	}
-
-	routes, total, err := s.routeRepo.ListRoutes(ctx, page, limit)
+func (s *RouteServiceImpl) ListRoutes(ctx context.Context, page, pageSize int) ([]model.RouteSummary, int64, error) {
+	routes, total, err := s.routeRepo.ListRoutes(ctx, page, pageSize)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to list routes")
 		return nil, 0, fmt.Errorf("failed to list routes: %w", err)

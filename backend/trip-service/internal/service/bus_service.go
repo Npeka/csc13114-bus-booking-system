@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"bus-booking/shared/ginext"
@@ -40,7 +39,7 @@ func NewBusService(
 }
 
 func (s *BusServiceImpl) GetBusByID(ctx context.Context, id uuid.UUID) (*model.Bus, error) {
-	bus, err := s.busRepo.GetBusByID(ctx, id)
+	bus, err := s.busRepo.GetBusWithSeatsByID(ctx, id)
 	if err != nil {
 		log.Error().Err(err).Str("bus_id", id.String()).Msg("Failed to get bus")
 		return nil, ginext.NewInternalServerError("failed to get bus")
@@ -49,10 +48,10 @@ func (s *BusServiceImpl) GetBusByID(ctx context.Context, id uuid.UUID) (*model.B
 }
 
 func (s *BusServiceImpl) ListBuses(ctx context.Context, req model.ListBusesRequest) ([]model.Bus, int64, error) {
-	buses, total, err := s.busRepo.ListBuses(ctx, req.Page, req.Limit)
+	buses, total, err := s.busRepo.ListBuses(ctx, req.Page, req.PageSize)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to list buses")
-		return nil, 0, fmt.Errorf("failed to list buses: %w", err)
+		return nil, 0, ginext.NewInternalServerError("failed to list buses")
 	}
 
 	return buses, total, nil
@@ -69,8 +68,6 @@ func (s *BusServiceImpl) GetBusSeats(ctx context.Context, busID uuid.UUID) ([]mo
 }
 
 func (s *BusServiceImpl) CreateBus(ctx context.Context, req *model.CreateBusRequest) (*model.Bus, error) {
-	log.Info().Msg("Creating new bus")
-
 	existing, err := s.busRepo.GetBusByPlateNumber(ctx, req.PlateNumber)
 	if err == nil && existing != nil {
 		return nil, ginext.NewBadRequestError("plate number already exists")
@@ -82,6 +79,7 @@ func (s *BusServiceImpl) CreateBus(ctx context.Context, req *model.CreateBusRequ
 		SeatCapacity: req.SeatCapacity,
 		Amenities:    req.Amenities,
 		IsActive:     true,
+		Seats:        s.generateSeatsForBus(req.SeatCapacity),
 	}
 
 	if err := s.busRepo.CreateBus(ctx, bus); err != nil {
@@ -89,27 +87,21 @@ func (s *BusServiceImpl) CreateBus(ctx context.Context, req *model.CreateBusRequ
 		return nil, ginext.NewInternalServerError("failed to create bus")
 	}
 
-	// Create seats for the bus
-	if err := s.createSeatsForBus(ctx, bus); err != nil {
-		log.Error().Err(err).Str("bus_id", bus.ID.String()).Msg("Failed to create seats for bus")
-		return nil, ginext.NewInternalServerError("failed to create seats for bus")
-	}
-
 	return bus, nil
 }
 
-func (s *BusServiceImpl) createSeatsForBus(ctx context.Context, bus *model.Bus) error {
-	seats := make([]model.Seat, 0, bus.SeatCapacity)
+func (s *BusServiceImpl) generateSeatsForBus(seatCapacity int) []model.Seat {
+	seats := make([]model.Seat, 0, seatCapacity)
 
-	rowNames := []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J"}
+	rowNames := []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N"}
 	seatsPerRow := 4
-	if bus.SeatCapacity > 40 {
+	if seatCapacity > 40 {
 		seatsPerRow = 5
 	}
 
 	seatCount := 0
-	for rowIdx := 0; rowIdx < len(rowNames) && seatCount < bus.SeatCapacity; rowIdx++ {
-		for seatNum := 1; seatNum <= seatsPerRow && seatCount < bus.SeatCapacity; seatNum++ {
+	for rowIdx := 0; rowIdx < len(rowNames) && seatCount < seatCapacity; rowIdx++ {
+		for seatNum := 1; seatNum <= seatsPerRow && seatCount < seatCapacity; seatNum++ {
 			seatNumber := fmt.Sprintf("%s%d", rowNames[rowIdx], seatNum)
 			seatType := constants.SeatTypeStandard
 
@@ -119,7 +111,6 @@ func (s *BusServiceImpl) createSeatsForBus(ctx context.Context, bus *model.Bus) 
 			}
 
 			seat := model.Seat{
-				BusID:       bus.ID,
 				SeatNumber:  seatNumber,
 				SeatType:    seatType,
 				Row:         rowIdx + 1,
@@ -131,60 +122,54 @@ func (s *BusServiceImpl) createSeatsForBus(ctx context.Context, bus *model.Bus) 
 		}
 	}
 
-	return s.seatRepo.CreateBulk(ctx, seats)
+	return seats
 }
 
 func (s *BusServiceImpl) UpdateBus(ctx context.Context, id uuid.UUID, req *model.UpdateBusRequest) (*model.Bus, error) {
-	log.Info().Str("bus_id", id.String()).Msg("Updating bus")
-
-	// Get existing bus
 	bus, err := s.busRepo.GetBusByID(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("bus not found: %w", err)
+		return nil, ginext.NewInternalServerError("failed to get bus")
 	}
 
-	// Update fields
 	if req.PlateNumber != nil {
-		// Check if new plate number already exists (and it's not the same bus)
 		existing, err := s.busRepo.GetBusByPlateNumber(ctx, *req.PlateNumber)
 		if err == nil && existing != nil && existing.ID != id {
-			return nil, errors.New("plate number already exists")
+			return nil, ginext.NewBadRequestError("plate number already exists")
 		}
 		bus.PlateNumber = *req.PlateNumber
 	}
+
 	if req.Model != nil {
 		bus.Model = *req.Model
 	}
+
 	if req.SeatCapacity != nil {
 		if *req.SeatCapacity <= 0 || *req.SeatCapacity > 100 {
-			return nil, errors.New("seat capacity must be between 1 and 100")
+			return nil, ginext.NewBadRequestError("seat capacity must be between 1 and 100")
 		}
 		bus.SeatCapacity = *req.SeatCapacity
 	}
+
 	if req.Amenities != nil {
 		bus.Amenities = *req.Amenities
 	}
+
 	if req.IsActive != nil {
 		bus.IsActive = *req.IsActive
 	}
 
 	if err := s.busRepo.UpdateBus(ctx, bus); err != nil {
 		log.Error().Err(err).Str("bus_id", id.String()).Msg("Failed to update bus")
-		return nil, fmt.Errorf("failed to update bus: %w", err)
+		return nil, ginext.NewInternalServerError("failed to update bus")
 	}
 
-	log.Info().Str("bus_id", id.String()).Msg("Bus updated successfully")
 	return bus, nil
 }
 
 func (s *BusServiceImpl) DeleteBus(ctx context.Context, id uuid.UUID) error {
-	log.Info().Str("bus_id", id.String()).Msg("Deleting bus")
-
 	if err := s.busRepo.DeleteBus(ctx, id); err != nil {
 		log.Error().Err(err).Str("bus_id", id.String()).Msg("Failed to delete bus")
-		return fmt.Errorf("failed to delete bus: %w", err)
+		return ginext.NewInternalServerError("failed to delete bus")
 	}
-
-	log.Info().Str("bus_id", id.String()).Msg("Bus deleted successfully")
 	return nil
 }

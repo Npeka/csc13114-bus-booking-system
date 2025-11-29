@@ -1,0 +1,981 @@
+[
+  {
+    "plate_number": "29A-12345",
+    "model": "Mercedes-Benz Travego",
+    "seat_capacity": 45,
+    "amenities": ["wifi", "ac", "toilet", "charging", "blanket", "water"],
+    "is_active": true,
+    "seats": [
+      {
+        "seat_number": "A1",
+        "row": 1,
+        "column": 1,
+        "seat_type": "vip",
+        "floor": 1,
+        "price_multiplier": 1.5
+      },
+      {
+        "seat_number": "A2",
+        "row": 1,
+        "column": 2,
+        "seat_type": "vip",
+        "floor": 1,
+        "price_multiplier": 1.5
+      },
+      {
+        "seat_number": "B1",
+        "row": 2,
+        "column": 1,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "B2",
+        "row": 2,
+        "column": 2,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "B3",
+        "row": 2,
+        "column": 3,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "B4",
+        "row": 2,
+        "column": 4,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "C1",
+        "row": 3,
+        "column": 1,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "C2",
+        "row": 3,
+        "column": 2,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "C3",
+        "row": 3,
+        "column": 3,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "C4",
+        "row": 3,
+        "column": 4,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "D1",
+        "row": 4,
+        "column": 1,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "D2",
+        "row": 4,
+        "column": 2,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "D3",
+        "row": 4,
+        "column": 3,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "D4",
+        "row": 4,
+        "column": 4,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "E1",
+        "row": 5,
+        "column": 1,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "E2",
+        "row": 5,
+        "column": 2,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "E3",
+        "row": 5,
+        "column": 3,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "E4",
+        "row": 5,
+        "column": 4,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "F1",
+        "row": 6,
+        "column": 1,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "F2",
+        "row": 6,
+        "column": 2,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "F3",
+        "row": 6,
+        "column": 3,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "F4",
+        "row": 6,
+        "column": 4,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "G1",
+        "row": 1,
+        "column": 1,
+        "seat_type": "sleeper",
+        "floor": 2,
+        "price_multiplier": 2.0
+      },
+      {
+        "seat_number": "G2",
+        "row": 1,
+        "column": 2,
+        "seat_type": "sleeper",
+        "floor": 2,
+        "price_multiplier": 2.0
+      },
+      {
+        "seat_number": "G3",
+        "row": 1,
+        "column": 3,
+        "seat_type": "sleeper",
+        "floor": 2,
+        "price_multiplier": 2.0
+      },
+      {
+        "seat_number": "H1",
+        "row": 2,
+        "column": 1,
+        "seat_type": "sleeper",
+        "floor": 2,
+        "price_multiplier": 2.0
+      },
+      {
+        "seat_number": "H2",
+        "row": 2,
+        "column": 2,
+        "seat_type": "sleeper",
+        "floor": 2,
+        "price_multiplier": 2.0
+      },
+      {
+        "seat_number": "H3",
+        "row": 2,
+        "column": 3,
+        "seat_type": "sleeper",
+        "floor": 2,
+        "price_multiplier": 2.0
+      },
+      {
+        "seat_number": "I1",
+        "row": 3,
+        "column": 1,
+        "seat_type": "sleeper",
+        "floor": 2,
+        "price_multiplier": 2.0
+      },
+      {
+        "seat_number": "I2",
+        "row": 3,
+        "column": 2,
+        "seat_type": "sleeper",
+        "floor": 2,
+        "price_multiplier": 2.0
+      },
+      {
+        "seat_number": "I3",
+        "row": 3,
+        "column": 3,
+        "seat_type": "sleeper",
+        "floor": 2,
+        "price_multiplier": 2.0
+      },
+      {
+        "seat_number": "J1",
+        "row": 4,
+        "column": 1,
+        "seat_type": "sleeper",
+        "floor": 2,
+        "price_multiplier": 2.0
+      },
+      {
+        "seat_number": "J2",
+        "row": 4,
+        "column": 2,
+        "seat_type": "sleeper",
+        "floor": 2,
+        "price_multiplier": 2.0
+      },
+      {
+        "seat_number": "J3",
+        "row": 4,
+        "column": 3,
+        "seat_type": "sleeper",
+        "floor": 2,
+        "price_multiplier": 2.0
+      },
+      {
+        "seat_number": "K1",
+        "row": 5,
+        "column": 1,
+        "seat_type": "sleeper",
+        "floor": 2,
+        "price_multiplier": 2.0
+      },
+      {
+        "seat_number": "K2",
+        "row": 5,
+        "column": 2,
+        "seat_type": "sleeper",
+        "floor": 2,
+        "price_multiplier": 2.0
+      },
+      {
+        "seat_number": "K3",
+        "row": 5,
+        "column": 3,
+        "seat_type": "sleeper",
+        "floor": 2,
+        "price_multiplier": 2.0
+      },
+      {
+        "seat_number": "L1",
+        "row": 6,
+        "column": 1,
+        "seat_type": "sleeper",
+        "floor": 2,
+        "price_multiplier": 2.0
+      },
+      {
+        "seat_number": "L2",
+        "row": 6,
+        "column": 2,
+        "seat_type": "sleeper",
+        "floor": 2,
+        "price_multiplier": 2.0
+      },
+      {
+        "seat_number": "L3",
+        "row": 6,
+        "column": 3,
+        "seat_type": "sleeper",
+        "floor": 2,
+        "price_multiplier": 2.0
+      },
+      {
+        "seat_number": "M1",
+        "row": 7,
+        "column": 1,
+        "seat_type": "sleeper",
+        "floor": 2,
+        "price_multiplier": 2.0
+      },
+      {
+        "seat_number": "M2",
+        "row": 7,
+        "column": 2,
+        "seat_type": "sleeper",
+        "floor": 2,
+        "price_multiplier": 2.0
+      },
+      {
+        "seat_number": "M3",
+        "row": 7,
+        "column": 3,
+        "seat_type": "sleeper",
+        "floor": 2,
+        "price_multiplier": 2.0
+      },
+      {
+        "seat_number": "N1",
+        "row": 8,
+        "column": 1,
+        "seat_type": "vip",
+        "floor": 2,
+        "price_multiplier": 1.5
+      },
+      {
+        "seat_number": "N2",
+        "row": 8,
+        "column": 2,
+        "seat_type": "vip",
+        "floor": 2,
+        "price_multiplier": 1.5
+      }
+    ]
+  },
+  {
+    "plate_number": "30B-67890",
+    "model": "Hyundai Universe",
+    "seat_capacity": 40,
+    "amenities": ["wifi", "ac", "charging", "water"],
+    "is_active": true,
+    "seats": [
+      {
+        "seat_number": "A1",
+        "row": 1,
+        "column": 1,
+        "seat_type": "vip",
+        "floor": 1,
+        "price_multiplier": 1.5
+      },
+      {
+        "seat_number": "A2",
+        "row": 1,
+        "column": 2,
+        "seat_type": "vip",
+        "floor": 1,
+        "price_multiplier": 1.5
+      },
+      {
+        "seat_number": "A3",
+        "row": 1,
+        "column": 3,
+        "seat_type": "vip",
+        "floor": 1,
+        "price_multiplier": 1.5
+      },
+      {
+        "seat_number": "A4",
+        "row": 1,
+        "column": 4,
+        "seat_type": "vip",
+        "floor": 1,
+        "price_multiplier": 1.5
+      },
+      {
+        "seat_number": "B1",
+        "row": 2,
+        "column": 1,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "B2",
+        "row": 2,
+        "column": 2,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "B3",
+        "row": 2,
+        "column": 3,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "B4",
+        "row": 2,
+        "column": 4,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "C1",
+        "row": 3,
+        "column": 1,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "C2",
+        "row": 3,
+        "column": 2,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "C3",
+        "row": 3,
+        "column": 3,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "C4",
+        "row": 3,
+        "column": 4,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "D1",
+        "row": 4,
+        "column": 1,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "D2",
+        "row": 4,
+        "column": 2,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "D3",
+        "row": 4,
+        "column": 3,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "D4",
+        "row": 4,
+        "column": 4,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "E1",
+        "row": 5,
+        "column": 1,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "E2",
+        "row": 5,
+        "column": 2,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "E3",
+        "row": 5,
+        "column": 3,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "E4",
+        "row": 5,
+        "column": 4,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "F1",
+        "row": 6,
+        "column": 1,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "F2",
+        "row": 6,
+        "column": 2,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "F3",
+        "row": 6,
+        "column": 3,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "F4",
+        "row": 6,
+        "column": 4,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "G1",
+        "row": 7,
+        "column": 1,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "G2",
+        "row": 7,
+        "column": 2,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "G3",
+        "row": 7,
+        "column": 3,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "G4",
+        "row": 7,
+        "column": 4,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "H1",
+        "row": 8,
+        "column": 1,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "H2",
+        "row": 8,
+        "column": 2,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "H3",
+        "row": 8,
+        "column": 3,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "H4",
+        "row": 8,
+        "column": 4,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "I1",
+        "row": 9,
+        "column": 1,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "I2",
+        "row": 9,
+        "column": 2,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "I3",
+        "row": 9,
+        "column": 3,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "I4",
+        "row": 9,
+        "column": 4,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "J1",
+        "row": 10,
+        "column": 1,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "J2",
+        "row": 10,
+        "column": 2,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "J3",
+        "row": 10,
+        "column": 3,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "J4",
+        "row": 10,
+        "column": 4,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      }
+    ]
+  },
+  {
+    "plate_number": "51C-11111",
+    "model": "Thaco TB120S",
+    "seat_capacity": 34,
+    "amenities": ["ac", "charging", "blanket"],
+    "is_active": true,
+    "seats": [
+      {
+        "seat_number": "A1",
+        "row": 1,
+        "column": 1,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "A2",
+        "row": 1,
+        "column": 2,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "A3",
+        "row": 1,
+        "column": 3,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "A4",
+        "row": 1,
+        "column": 4,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "B1",
+        "row": 2,
+        "column": 1,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "B2",
+        "row": 2,
+        "column": 2,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "B3",
+        "row": 2,
+        "column": 3,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "B4",
+        "row": 2,
+        "column": 4,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "C1",
+        "row": 3,
+        "column": 1,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "C2",
+        "row": 3,
+        "column": 2,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "C3",
+        "row": 3,
+        "column": 3,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "C4",
+        "row": 3,
+        "column": 4,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "D1",
+        "row": 4,
+        "column": 1,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "D2",
+        "row": 4,
+        "column": 2,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "D3",
+        "row": 4,
+        "column": 3,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "D4",
+        "row": 4,
+        "column": 4,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "E1",
+        "row": 5,
+        "column": 1,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "E2",
+        "row": 5,
+        "column": 2,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "E3",
+        "row": 5,
+        "column": 3,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "E4",
+        "row": 5,
+        "column": 4,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "F1",
+        "row": 6,
+        "column": 1,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "F2",
+        "row": 6,
+        "column": 2,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "F3",
+        "row": 6,
+        "column": 3,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "F4",
+        "row": 6,
+        "column": 4,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "G1",
+        "row": 7,
+        "column": 1,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "G2",
+        "row": 7,
+        "column": 2,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "G3",
+        "row": 7,
+        "column": 3,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "G4",
+        "row": 7,
+        "column": 4,
+        "seat_type": "standard",
+        "floor": 1,
+        "price_multiplier": 1.0
+      },
+      {
+        "seat_number": "H1",
+        "row": 8,
+        "column": 1,
+        "seat_type": "vip",
+        "floor": 1,
+        "price_multiplier": 1.5
+      },
+      {
+        "seat_number": "H2",
+        "row": 8,
+        "column": 2,
+        "seat_type": "vip",
+        "floor": 1,
+        "price_multiplier": 1.5
+      },
+      {
+        "seat_number": "H3",
+        "row": 8,
+        "column": 3,
+        "seat_type": "vip",
+        "floor": 1,
+        "price_multiplier": 1.5
+      },
+      {
+        "seat_number": "H4",
+        "row": 8,
+        "column": 4,
+        "seat_type": "vip",
+        "floor": 1,
+        "price_multiplier": 1.5
+      },
+      {
+        "seat_number": "I1",
+        "row": 9,
+        "column": 1,
+        "seat_type": "vip",
+        "floor": 1,
+        "price_multiplier": 1.5
+      },
+      {
+        "seat_number": "I2",
+        "row": 9,
+        "column": 2,
+        "seat_type": "vip",
+        "floor": 1,
+        "price_multiplier": 1.5
+      }
+    ]
+  }
+]

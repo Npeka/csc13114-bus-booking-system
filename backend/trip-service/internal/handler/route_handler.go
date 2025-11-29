@@ -163,13 +163,13 @@ func (h *RouteHandlerImpl) ListRoutes(r *ginext.Request) (*ginext.Response, erro
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
-	routes, total, err := h.service.ListRoutes(r.Context(), req.Page, req.Limit)
+	routes, total, err := h.service.ListRoutes(r.Context(), req.Page, req.PageSize)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to list routes")
 		return nil, err
 	}
 
-	return ginext.NewPaginatedResponse(routes, req.Page, req.Limit, total), nil
+	return ginext.NewPaginatedResponse(routes, req.Page, req.PageSize, total), nil
 }
 
 // SearchRoutes godoc

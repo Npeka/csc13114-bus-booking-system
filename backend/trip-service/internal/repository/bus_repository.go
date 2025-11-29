@@ -11,7 +11,8 @@ import (
 
 type BusRepository interface {
 	GetBusByID(ctx context.Context, id uuid.UUID) (*model.Bus, error)
-	ListBuses(ctx context.Context, page, limit int) ([]model.Bus, int64, error)
+	GetBusWithSeatsByID(ctx context.Context, id uuid.UUID) (*model.Bus, error)
+	ListBuses(ctx context.Context, page, pageSize int) ([]model.Bus, int64, error)
 	GetBusByPlateNumber(ctx context.Context, plateNumber string) (*model.Bus, error)
 	CreateBus(ctx context.Context, bus *model.Bus) error
 	UpdateBus(ctx context.Context, bus *model.Bus) error
@@ -28,16 +29,23 @@ func NewBusRepository(db *gorm.DB) BusRepository {
 
 func (r *BusRepositoryImpl) GetBusByID(ctx context.Context, id uuid.UUID) (*model.Bus, error) {
 	var bus model.Bus
+	if err := r.db.WithContext(ctx).First(&bus, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	return &bus, nil
+}
+
+func (r *BusRepositoryImpl) GetBusWithSeatsByID(ctx context.Context, id uuid.UUID) (*model.Bus, error) {
+	var bus model.Bus
 	if err := r.db.WithContext(ctx).Model(&model.Bus{}).
 		Preload("Seats").
-		Preload("Trips").
 		First(&bus, "id = ?", id).Error; err != nil {
 		return nil, err
 	}
 	return &bus, nil
 }
 
-func (r *BusRepositoryImpl) ListBuses(ctx context.Context, page, limit int) ([]model.Bus, int64, error) {
+func (r *BusRepositoryImpl) ListBuses(ctx context.Context, page, pageSize int) ([]model.Bus, int64, error) {
 	var buses []model.Bus
 	var total int64
 
@@ -49,8 +57,8 @@ func (r *BusRepositoryImpl) ListBuses(ctx context.Context, page, limit int) ([]m
 		return nil, 0, err
 	}
 
-	offset := (page - 1) * limit
-	err := query.Offset(offset).Limit(limit).Order("created_at DESC").Find(&buses).Error
+	offset := (page - 1) * pageSize
+	err := query.Offset(offset).Limit(pageSize).Order("created_at DESC").Find(&buses).Error
 
 	return buses, total, err
 }
@@ -74,5 +82,13 @@ func (r *BusRepositoryImpl) UpdateBus(ctx context.Context, bus *model.Bus) error
 }
 
 func (r *BusRepositoryImpl) DeleteBus(ctx context.Context, id uuid.UUID) error {
-	return r.db.WithContext(ctx).Delete(&model.Bus{}, "id = ?", id).Error
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Delete(&model.Seat{}, "bus_id = ?", id).Error; err != nil {
+			return err
+		}
+		if err := tx.Delete(&model.Bus{}, "id = ?", id).Error; err != nil {
+			return err
+		}
+		return nil
+	})
 }

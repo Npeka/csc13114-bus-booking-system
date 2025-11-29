@@ -14,7 +14,7 @@ type Response struct {
 // GeneralBody represents the response body structure
 type GeneralBody struct {
 	Data    interface{} `json:"data,omitempty"`
-	Meta    MetaData    `json:"meta,omitempty"`
+	Meta    *MetaData   `json:"meta,omitempty"`
 	Message string      `json:"message,omitempty"`
 	Error   *ErrorBody  `json:"error,omitempty"`
 }
@@ -27,12 +27,12 @@ type MetaData struct {
 }
 
 // NewMetaData creates pagination metadata
-func NewMetaData(page, pageSize int, total int64) MetaData {
+func NewMetaData(page, pageSize int, total int64) *MetaData {
 	totalPages := int((total + int64(pageSize) - 1) / int64(pageSize))
 	if totalPages < 0 {
 		totalPages = 0
 	}
-	return MetaData{
+	return &MetaData{
 		Page:       page,
 		PageSize:   pageSize,
 		Total:      total,

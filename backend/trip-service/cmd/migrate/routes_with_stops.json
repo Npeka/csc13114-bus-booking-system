@@ -1,0 +1,562 @@
+[
+  {
+    "origin": "Hà Nội",
+    "destination": "TP. Hồ Chí Minh",
+    "distance_km": 1710,
+    "estimated_minutes": 1800,
+    "is_active": true,
+    "route_stops": [
+      {
+        "stop_order": 1,
+        "stop_type": "pickup",
+        "location": "Bến xe Mỹ Đình",
+        "address": "Phạm Hùng, Nam Từ Liêm, Hà Nội",
+        "latitude": 21.0285,
+        "longitude": 105.7783,
+        "offset_minutes": 0,
+        "is_active": true
+      },
+      {
+        "stop_order": 2,
+        "stop_type": "both",
+        "location": "Bến xe Vinh",
+        "address": "Đường Lê Lợi, TP. Vinh, Nghệ An",
+        "latitude": 18.6792,
+        "longitude": 105.6813,
+        "offset_minutes": 300,
+        "is_active": true
+      },
+      {
+        "stop_order": 3,
+        "stop_type": "both",
+        "location": "Bến xe Đông Hà",
+        "address": "Quốc lộ 1A, TP. Đông Hà, Quảng Trị",
+        "latitude": 16.8169,
+        "longitude": 107.1003,
+        "offset_minutes": 600,
+        "is_active": true
+      },
+      {
+        "stop_order": 4,
+        "stop_type": "both",
+        "location": "Bến xe Đà Nẵng",
+        "address": "Điện Biên Phủ, Thanh Khê, Đà Nẵng",
+        "latitude": 16.0545,
+        "longitude": 108.2022,
+        "offset_minutes": 780,
+        "is_active": true
+      },
+      {
+        "stop_order": 5,
+        "stop_type": "both",
+        "location": "Bến xe Quy Nhơn",
+        "address": "Nguyễn Tất Thành, TP. Quy Nhơn, Bình Định",
+        "latitude": 13.7667,
+        "longitude": 109.2333,
+        "offset_minutes": 1020,
+        "is_active": true
+      },
+      {
+        "stop_order": 6,
+        "stop_type": "both",
+        "location": "Bến xe Nha Trang",
+        "address": "23 Tháng 10, TP. Nha Trang, Khánh Hòa",
+        "latitude": 12.2451,
+        "longitude": 109.1943,
+        "offset_minutes": 1200,
+        "is_active": true
+      },
+      {
+        "stop_order": 7,
+        "stop_type": "both",
+        "location": "Bến xe Phan Thiết",
+        "address": "QL1A, TP. Phan Thiết, Bình Thuận",
+        "latitude": 10.9289,
+        "longitude": 108.1022,
+        "offset_minutes": 1440,
+        "is_active": true
+      },
+      {
+        "stop_order": 8,
+        "stop_type": "dropoff",
+        "location": "Bến xe Miền Đông",
+        "address": "292 Đinh Bộ Lĩnh, Bình Thạnh, TP.HCM",
+        "latitude": 10.8142,
+        "longitude": 106.7108,
+        "offset_minutes": 1800,
+        "is_active": true
+      }
+    ]
+  },
+  {
+    "origin": "Hà Nội",
+    "destination": "Đà Nẵng",
+    "distance_km": 763,
+    "estimated_minutes": 840,
+    "is_active": true,
+    "route_stops": [
+      {
+        "stop_order": 1,
+        "stop_type": "pickup",
+        "location": "Bến xe Giáp Bát",
+        "address": "Giải Phóng, Hoàng Mai, Hà Nội",
+        "latitude": 20.9806,
+        "longitude": 105.8372,
+        "offset_minutes": 0,
+        "is_active": true
+      },
+      {
+        "stop_order": 2,
+        "stop_type": "both",
+        "location": "Bến xe Ninh Bình",
+        "address": "Lê Đại Hành, TP. Ninh Bình",
+        "latitude": 20.2506,
+        "longitude": 105.9745,
+        "offset_minutes": 120,
+        "is_active": true
+      },
+      {
+        "stop_order": 3,
+        "stop_type": "both",
+        "location": "Bến xe Thanh Hóa",
+        "address": "Quang Trung, TP. Thanh Hóa",
+        "latitude": 19.8067,
+        "longitude": 105.7851,
+        "offset_minutes": 240,
+        "is_active": true
+      },
+      {
+        "stop_order": 4,
+        "stop_type": "both",
+        "location": "Bến xe Vinh",
+        "address": "Đường Lê Lợi, TP. Vinh, Nghệ An",
+        "latitude": 18.6792,
+        "longitude": 105.6813,
+        "offset_minutes": 360,
+        "is_active": true
+      },
+      {
+        "stop_order": 5,
+        "stop_type": "both",
+        "location": "Bến xe Huế",
+        "address": "An Cựu, TP. Huế, Thừa Thiên Huế",
+        "latitude": 16.4637,
+        "longitude": 107.5909,
+        "offset_minutes": 600,
+        "is_active": true
+      },
+      {
+        "stop_order": 6,
+        "stop_type": "dropoff",
+        "location": "Bến xe Đà Nẵng",
+        "address": "Điện Biên Phủ, Thanh Khê, Đà Nẵng",
+        "latitude": 16.0545,
+        "longitude": 108.2022,
+        "offset_minutes": 840,
+        "is_active": true
+      }
+    ]
+  },
+  {
+    "origin": "TP. Hồ Chí Minh",
+    "destination": "Nha Trang",
+    "distance_km": 448,
+    "estimated_minutes": 480,
+    "is_active": true,
+    "route_stops": [
+      {
+        "stop_order": 1,
+        "stop_type": "pickup",
+        "location": "Bến xe Miền Đông",
+        "address": "292 Đinh Bộ Lĩnh, Bình Thạnh, TP.HCM",
+        "latitude": 10.8142,
+        "longitude": 106.7108,
+        "offset_minutes": 0,
+        "is_active": true
+      },
+      {
+        "stop_order": 2,
+        "stop_type": "both",
+        "location": "Trạm dừng Phan Thiết",
+        "address": "QL1A, TP. Phan Thiết, Bình Thuận",
+        "latitude": 10.9289,
+        "longitude": 108.1022,
+        "offset_minutes": 180,
+        "is_active": true
+      },
+      {
+        "stop_order": 3,
+        "stop_type": "both",
+        "location": "Trạm dừng Cam Ranh",
+        "address": "QL1A, TP. Cam Ranh, Khánh Hòa",
+        "latitude": 11.9214,
+        "longitude": 109.1591,
+        "offset_minutes": 390,
+        "is_active": true
+      },
+      {
+        "stop_order": 4,
+        "stop_type": "dropoff",
+        "location": "Bến xe Nha Trang",
+        "address": "23 Tháng 10, TP. Nha Trang, Khánh Hòa",
+        "latitude": 12.2451,
+        "longitude": 109.1943,
+        "offset_minutes": 480,
+        "is_active": true
+      }
+    ]
+  },
+  {
+    "origin": "Hà Nội",
+    "destination": "Hải Phòng",
+    "distance_km": 103,
+    "estimated_minutes": 120,
+    "is_active": true,
+    "route_stops": [
+      {
+        "stop_order": 1,
+        "stop_type": "pickup",
+        "location": "Bến xe Nước Ngầm",
+        "address": "Giải Phóng, Hai Bà Trưng, Hà Nội",
+        "latitude": 20.9981,
+        "longitude": 105.8464,
+        "offset_minutes": 0,
+        "is_active": true
+      },
+      {
+        "stop_order": 2,
+        "stop_type": "both",
+        "location": "Trạm dừng Hưng Yên",
+        "address": "QL5, TP. Hưng Yên",
+        "latitude": 20.6464,
+        "longitude": 106.0512,
+        "offset_minutes": 45,
+        "is_active": true
+      },
+      {
+        "stop_order": 3,
+        "stop_type": "dropoff",
+        "location": "Bến xe Niệm Nghĩa",
+        "address": "Lê Hồng Phong, Ngô Quyền, Hải Phòng",
+        "latitude": 20.857,
+        "longitude": 106.6832,
+        "offset_minutes": 120,
+        "is_active": true
+      }
+    ]
+  },
+  {
+    "origin": "TP. Hồ Chí Minh",
+    "destination": "Cần Thơ",
+    "distance_km": 169,
+    "estimated_minutes": 180,
+    "is_active": true,
+    "route_stops": [
+      {
+        "stop_order": 1,
+        "stop_type": "pickup",
+        "location": "Bến xe Miền Tây",
+        "address": "Kinh Dương Vương, Bình Tân, TP.HCM",
+        "latitude": 10.7387,
+        "longitude": 106.6128,
+        "offset_minutes": 0,
+        "is_active": true
+      },
+      {
+        "stop_order": 2,
+        "stop_type": "both",
+        "location": "Trạm dừng Mỹ Tho",
+        "address": "QL1A, TP. Mỹ Tho, Tiền Giang",
+        "latitude": 10.3603,
+        "longitude": 106.3605,
+        "offset_minutes": 60,
+        "is_active": true
+      },
+      {
+        "stop_order": 3,
+        "stop_type": "both",
+        "location": "Trạm dừng Vĩnh Long",
+        "address": "QL1A, TP. Vĩnh Long",
+        "latitude": 10.2397,
+        "longitude": 105.9722,
+        "offset_minutes": 120,
+        "is_active": true
+      },
+      {
+        "stop_order": 4,
+        "stop_type": "dropoff",
+        "location": "Bến xe Cần Thơ",
+        "address": "Nguyễn Trãi, Ninh Kiều, Cần Thơ",
+        "latitude": 10.0452,
+        "longitude": 105.7469,
+        "offset_minutes": 180,
+        "is_active": true
+      }
+    ]
+  },
+  {
+    "origin": "Hà Nội",
+    "destination": "Hạ Long",
+    "distance_km": 156,
+    "estimated_minutes": 180,
+    "is_active": true,
+    "route_stops": [
+      {
+        "stop_order": 1,
+        "stop_type": "pickup",
+        "location": "Bến xe Gia Lâm",
+        "address": "Nguyễn Văn Linh, Gia Lâm, Hà Nội",
+        "latitude": 21.042,
+        "longitude": 105.9305,
+        "offset_minutes": 0,
+        "is_active": true
+      },
+      {
+        "stop_order": 2,
+        "stop_type": "both",
+        "location": "Trạm dừng Hải Dương",
+        "address": "QL5, TP. Hải Dương",
+        "latitude": 20.9373,
+        "longitude": 106.3145,
+        "offset_minutes": 60,
+        "is_active": true
+      },
+      {
+        "stop_order": 3,
+        "stop_type": "both",
+        "location": "Trạm dừng Uông Bí",
+        "address": "QL18, Uông Bí, Quảng Ninh",
+        "latitude": 21.0342,
+        "longitude": 106.7695,
+        "offset_minutes": 120,
+        "is_active": true
+      },
+      {
+        "stop_order": 4,
+        "stop_type": "dropoff",
+        "location": "Bến xe Hạ Long",
+        "address": "Trần Quốc Nghiễn, Hạ Long, Quảng Ninh",
+        "latitude": 20.9519,
+        "longitude": 107.0753,
+        "offset_minutes": 180,
+        "is_active": true
+      }
+    ]
+  },
+  {
+    "origin": "Đà Nẵng",
+    "destination": "TP. Hồ Chí Minh",
+    "distance_km": 947,
+    "estimated_minutes": 960,
+    "is_active": true,
+    "route_stops": [
+      {
+        "stop_order": 1,
+        "stop_type": "pickup",
+        "location": "Bến xe Đà Nẵng",
+        "address": "Điện Biên Phủ, Thanh Khê, Đà Nẵng",
+        "latitude": 16.0545,
+        "longitude": 108.2022,
+        "offset_minutes": 0,
+        "is_active": true
+      },
+      {
+        "stop_order": 2,
+        "stop_type": "both",
+        "location": "Bến xe Quảng Ngãi",
+        "address": "Quang Trung, TP. Quảng Ngãi",
+        "latitude": 15.1214,
+        "longitude": 108.8044,
+        "offset_minutes": 180,
+        "is_active": true
+      },
+      {
+        "stop_order": 3,
+        "stop_type": "both",
+        "location": "Bến xe Quy Nhơn",
+        "address": "Nguyễn Tất Thành, TP. Quy Nhơn, Bình Định",
+        "latitude": 13.7667,
+        "longitude": 109.2333,
+        "offset_minutes": 300,
+        "is_active": true
+      },
+      {
+        "stop_order": 4,
+        "stop_type": "both",
+        "location": "Bến xe Nha Trang",
+        "address": "23 Tháng 10, TP. Nha Trang, Khánh Hòa",
+        "latitude": 12.2451,
+        "longitude": 109.1943,
+        "offset_minutes": 480,
+        "is_active": true
+      },
+      {
+        "stop_order": 5,
+        "stop_type": "both",
+        "location": "Bến xe Phan Thiết",
+        "address": "QL1A, TP. Phan Thiết, Bình Thuận",
+        "latitude": 10.9289,
+        "longitude": 108.1022,
+        "offset_minutes": 720,
+        "is_active": true
+      },
+      {
+        "stop_order": 6,
+        "stop_type": "dropoff",
+        "location": "Bến xe Miền Đông",
+        "address": "292 Đinh Bộ Lĩnh, Bình Thạnh, TP.HCM",
+        "latitude": 10.8142,
+        "longitude": 106.7108,
+        "offset_minutes": 960,
+        "is_active": true
+      }
+    ]
+  },
+  {
+    "origin": "Hà Nội",
+    "destination": "Sapa",
+    "distance_km": 315,
+    "estimated_minutes": 360,
+    "is_active": true,
+    "route_stops": [
+      {
+        "stop_order": 1,
+        "stop_type": "pickup",
+        "location": "Bến xe Mỹ Đình",
+        "address": "Phạm Hùng, Nam Từ Liêm, Hà Nội",
+        "latitude": 21.0285,
+        "longitude": 105.7783,
+        "offset_minutes": 0,
+        "is_active": true
+      },
+      {
+        "stop_order": 2,
+        "stop_type": "both",
+        "location": "Trạm dừng Yên Bái",
+        "address": "QL32, TP. Yên Bái",
+        "latitude": 21.7167,
+        "longitude": 104.9,
+        "offset_minutes": 180,
+        "is_active": true
+      },
+      {
+        "stop_order": 3,
+        "stop_type": "both",
+        "location": "Trạm dừng Lào Cai",
+        "address": "QL4D, TP. Lào Cai",
+        "latitude": 22.4856,
+        "longitude": 103.9707,
+        "offset_minutes": 300,
+        "is_active": true
+      },
+      {
+        "stop_order": 4,
+        "stop_type": "dropoff",
+        "location": "Bến xe Sapa",
+        "address": "Fansipan, TT. Sapa, Lào Cai",
+        "latitude": 22.3364,
+        "longitude": 103.8438,
+        "offset_minutes": 360,
+        "is_active": true
+      }
+    ]
+  },
+  {
+    "origin": "TP. Hồ Chí Minh",
+    "destination": "Đà Lạt",
+    "distance_km": 308,
+    "estimated_minutes": 360,
+    "is_active": true,
+    "route_stops": [
+      {
+        "stop_order": 1,
+        "stop_type": "pickup",
+        "location": "Bến xe Miền Đông",
+        "address": "292 Đinh Bộ Lĩnh, Bình Thạnh, TP.HCM",
+        "latitude": 10.8142,
+        "longitude": 106.7108,
+        "offset_minutes": 0,
+        "is_active": true
+      },
+      {
+        "stop_order": 2,
+        "stop_type": "both",
+        "location": "Trạm dừng Dầu Giây",
+        "address": "QL20, Thống Nhất, Đồng Nai",
+        "latitude": 11.0333,
+        "longitude": 107.0667,
+        "offset_minutes": 60,
+        "is_active": true
+      },
+      {
+        "stop_order": 3,
+        "stop_type": "both",
+        "location": "Trạm dừng Bảo Lộc",
+        "address": "QL20, TP. Bảo Lộc, Lâm Đồng",
+        "latitude": 11.5333,
+        "longitude": 107.8,
+        "offset_minutes": 180,
+        "is_active": true
+      },
+      {
+        "stop_order": 4,
+        "stop_type": "dropoff",
+        "location": "Bến xe Đà Lạt",
+        "address": "1 Tô Hiến Thành, TP. Đà Lạt, Lâm Đồng",
+        "latitude": 11.9404,
+        "longitude": 108.4583,
+        "offset_minutes": 360,
+        "is_active": true
+      }
+    ]
+  },
+  {
+    "origin": "Hà Nội",
+    "destination": "Cao Bằng",
+    "distance_km": 272,
+    "estimated_minutes": 360,
+    "is_active": true,
+    "route_stops": [
+      {
+        "stop_order": 1,
+        "stop_type": "pickup",
+        "location": "Bến xe Mỹ Đình",
+        "address": "Phạm Hùng, Nam Từ Liêm, Hà Nội",
+        "latitude": 21.0285,
+        "longitude": 105.7783,
+        "offset_minutes": 0,
+        "is_active": true
+      },
+      {
+        "stop_order": 2,
+        "stop_type": "both",
+        "location": "Trạm dừng Thái Nguyên",
+        "address": "QL3, TP. Thái Nguyên",
+        "latitude": 21.5671,
+        "longitude": 105.8252,
+        "offset_minutes": 90,
+        "is_active": true
+      },
+      {
+        "stop_order": 3,
+        "stop_type": "both",
+        "location": "Trạm dừng Bắc Kạn",
+        "address": "QL3, TP. Bắc Kạn",
+        "latitude": 22.147,
+        "longitude": 105.8348,
+        "offset_minutes": 210,
+        "is_active": true
+      },
+      {
+        "stop_order": 4,
+        "stop_type": "dropoff",
+        "location": "Bến xe Cao Bằng",
+        "address": "Kim Đồng, TP. Cao Bằng",
+        "latitude": 22.6667,
+        "longitude": 106.25,
+        "offset_minutes": 360,
+        "is_active": true
+      }
+    ]
+  }
+]

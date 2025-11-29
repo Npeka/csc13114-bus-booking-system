@@ -15,7 +15,6 @@ type Bus struct {
 	IsActive     bool           `gorm:"type:boolean;not null;default:true" json:"is_active"`
 
 	Seats []Seat `gorm:"foreignKey:BusID" json:"seats"`
-	Trips []Trip `gorm:"foreignKey:BusID" json:"trips"`
 }
 
 func (Bus) TableName() string {
@@ -46,12 +45,13 @@ type CreateBusRequest struct {
 	Model        string   `json:"model" validate:"required,min=2,max=255"`
 	SeatCapacity int      `json:"seat_capacity" validate:"required,min=1,max=100"`
 	Amenities    []string `json:"amenities"`
+	IsActive     bool     `json:"is_active"`
 }
 
 type UpdateBusRequest struct {
-	PlateNumber  *string   `json:"plate_number" validate:",min=3,max=20"`
-	Model        *string   `json:"model" validate:",min=2,max=255"`
-	SeatCapacity *int      `json:"seat_capacity" validate:",min=1,max=100"`
+	PlateNumber  *string   `json:"plate_number" validate:"omitempty,min=3,max=20"`
+	Model        *string   `json:"model" validate:"omitempty,min=2,max=255"`
+	SeatCapacity *int      `json:"seat_capacity" validate:"omitempty,min=1,max=100"`
 	Amenities    *[]string `json:"amenities"`
 	IsActive     *bool     `json:"is_active"`
 }

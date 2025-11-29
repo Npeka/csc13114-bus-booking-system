@@ -113,6 +113,17 @@ func (c *ServerConfig) GetServerAddr() string {
 	return fmt.Sprintf("%s:%d", c.Host, c.Port)
 }
 
+func (c *DatabaseConfig) GetURL() string {
+	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
+		c.Username,
+		c.Password,
+		c.Host,
+		c.Port,
+		c.Name,
+		c.SSLMode,
+	)
+}
+
 func IsProduction(environment string) bool {
 	return environment == "production"
 }

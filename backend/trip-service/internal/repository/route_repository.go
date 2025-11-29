@@ -48,7 +48,7 @@ func (r *RouteRepositoryImpl) DeleteRoute(ctx context.Context, id uuid.UUID) err
 	return r.db.WithContext(ctx).Delete(&model.Route{}, "id = ?", id).Error
 }
 
-func (r *RouteRepositoryImpl) ListRoutes(ctx context.Context, page, limit int) ([]model.RouteSummary, int64, error) {
+func (r *RouteRepositoryImpl) ListRoutes(ctx context.Context, page, pageSize int) ([]model.RouteSummary, int64, error) {
 	var results []model.RouteSummary
 	var total int64
 
@@ -69,14 +69,8 @@ func (r *RouteRepositoryImpl) ListRoutes(ctx context.Context, page, limit int) (
 	}
 
 	// Apply pagination
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 {
-		limit = 20
-	}
-	offset := (page - 1) * limit
-	query = query.Offset(offset).Limit(limit).Order("r.created_at DESC")
+	offset := (page - 1) * pageSize
+	query = query.Offset(offset).Limit(pageSize).Order("r.created_at DESC")
 
 	// Execute query
 	rows, err := query.Rows()

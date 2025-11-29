@@ -5,6 +5,7 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
+	"bus-booking/shared/constants"
 	"bus-booking/shared/ginext"
 	"bus-booking/shared/health"
 	"bus-booking/shared/middleware"
@@ -19,6 +20,7 @@ type Handlers struct {
 	RouteStopHandler handler.RouteStopHandler
 	BusHandler       handler.BusHandler
 	SeatHandler      handler.SeatHandler
+	ConstantsHandler handler.ConstantsHandler
 }
 
 func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
@@ -30,6 +32,8 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 
 	v1 := router.Group("/api/v1")
 	{
+		v1.GET("/constants", ginext.WrapHandler(h.ConstantsHandler.GetConstants))
+
 		trips := v1.Group("/trips")
 		{
 			trips.POST("/search", ginext.WrapHandler(h.TripHandler.SearchTrips))
@@ -67,9 +71,9 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 
 	}
 
-	// adminV1.Use(middleware.RequireAuthMiddleware())
-	// adminV1.Use(middleware.RequireRoleMiddleware(constants.RoleAdmin))
 	adminV1 := router.Group("/api/v1")
+	adminV1.Use(middleware.RequireAuthMiddleware())
+	adminV1.Use(middleware.RequireRoleMiddleware(constants.RoleAdmin))
 	{
 		trips := adminV1.Group("/trips")
 		{

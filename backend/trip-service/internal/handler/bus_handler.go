@@ -44,6 +44,7 @@ func (h *BusHandlerImpl) GetBus(r *ginext.Request) (*ginext.Response, error) {
 	idStr := r.GinCtx.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
+		log.Error().Err(err).Msg("Invalid bus ID")
 		return nil, ginext.NewBadRequestError("invalid bus ID")
 	}
 
@@ -72,6 +73,7 @@ func (h *BusHandlerImpl) GetBus(r *ginext.Request) (*ginext.Response, error) {
 func (h *BusHandlerImpl) ListBuses(r *ginext.Request) (*ginext.Response, error) {
 	var req model.ListBusesRequest
 	if err := r.GinCtx.ShouldBindQuery(&req); err != nil {
+		log.Error().Err(err).Msg("Query binding failed")
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
@@ -81,7 +83,7 @@ func (h *BusHandlerImpl) ListBuses(r *ginext.Request) (*ginext.Response, error) 
 		return nil, err
 	}
 
-	return ginext.NewPaginatedResponse(buses, req.Page, req.Limit, total), nil
+	return ginext.NewPaginatedResponse(buses, req.Page, req.PageSize, total), nil
 }
 
 // GetBusSeats godoc
@@ -99,6 +101,7 @@ func (h *BusHandlerImpl) GetBusSeats(r *ginext.Request) (*ginext.Response, error
 	idStr := r.GinCtx.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
+		log.Error().Err(err).Msg("Invalid bus ID")
 		return nil, ginext.NewBadRequestError("invalid bus ID")
 	}
 
@@ -125,7 +128,7 @@ func (h *BusHandlerImpl) GetBusSeats(r *ginext.Request) (*ginext.Response, error
 func (h *BusHandlerImpl) CreateBus(r *ginext.Request) (*ginext.Response, error) {
 	var req model.CreateBusRequest
 	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
-		log.Debug().Err(err).Msg("JSON binding failed")
+		log.Error().Err(err).Msg("JSON binding failed")
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
@@ -154,12 +157,13 @@ func (h *BusHandlerImpl) UpdateBus(r *ginext.Request) (*ginext.Response, error) 
 	idStr := r.GinCtx.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
+		log.Error().Err(err).Msg("Invalid bus ID")
 		return nil, ginext.NewBadRequestError("invalid bus ID")
 	}
 
 	var req model.UpdateBusRequest
 	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
-		log.Debug().Err(err).Msg("JSON binding failed")
+		log.Error().Err(err).Msg("JSON binding failed")
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
@@ -187,6 +191,7 @@ func (h *BusHandlerImpl) DeleteBus(r *ginext.Request) (*ginext.Response, error) 
 	idStr := r.GinCtx.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
+		log.Error().Err(err).Msg("Invalid bus ID")
 		return nil, ginext.NewBadRequestError("invalid bus ID")
 	}
 
@@ -195,5 +200,5 @@ func (h *BusHandlerImpl) DeleteBus(r *ginext.Request) (*ginext.Response, error) 
 		return nil, err
 	}
 
-	return ginext.NewNoContentResponse(), nil
+	return ginext.NewSuccessResponse("Bus deleted successfully"), nil
 }

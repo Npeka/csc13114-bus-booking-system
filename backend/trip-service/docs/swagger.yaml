@@ -92,10 +92,6 @@ definitions:
         type: boolean
       model:
         type: string
-      operator:
-        $ref: '#/definitions/bus-booking_trip-service_internal_model.Operator'
-      operator_id:
-        type: string
       plate_number:
         type: string
       seat_capacity:
@@ -106,15 +102,10 @@ definitions:
         items:
           $ref: '#/definitions/bus-booking_trip-service_internal_model.Seat'
         type: array
-      trips:
-        items:
-          $ref: '#/definitions/bus-booking_trip-service_internal_model.Trip'
-        type: array
       updated_at:
         type: string
     required:
     - model
-    - operator_id
     - plate_number
     - seat_capacity
     type: object
@@ -124,11 +115,11 @@ definitions:
         items:
           type: string
         type: array
+      is_active:
+        type: boolean
       model:
         maxLength: 255
         minLength: 2
-        type: string
-      operator_id:
         type: string
       plate_number:
         maxLength: 20
@@ -140,7 +131,6 @@ definitions:
         type: integer
     required:
     - model
-    - operator_id
     - plate_number
     - seat_capacity
     type: object
@@ -156,8 +146,6 @@ definitions:
       estimated_minutes:
         minimum: 1
         type: integer
-      operator_id:
-        type: string
       origin:
         maxLength: 255
         minLength: 2
@@ -166,7 +154,6 @@ definitions:
     - destination
     - distance_km
     - estimated_minutes
-    - operator_id
     - origin
     type: object
   bus-booking_trip-service_internal_model.CreateRouteStopRequest:
@@ -244,51 +231,6 @@ definitions:
     - departure_time
     - route_id
     type: object
-  bus-booking_trip-service_internal_model.Operator:
-    properties:
-      approved_at:
-        type: string
-      buses:
-        items:
-          $ref: '#/definitions/bus-booking_trip-service_internal_model.Bus'
-        type: array
-      contact_email:
-        type: string
-      contact_phone:
-        type: string
-      created_at:
-        type: string
-      id:
-        type: string
-      name:
-        type: string
-      routes:
-        items:
-          $ref: '#/definitions/bus-booking_trip-service_internal_model.Route'
-        type: array
-      status:
-        enum:
-        - pending
-        - approved
-        - rejected
-        type: string
-      updated_at:
-        type: string
-    required:
-    - contact_email
-    - name
-    type: object
-  bus-booking_trip-service_internal_model.OperatorInfo:
-    properties:
-      id:
-        type: string
-      logo:
-        type: string
-      name:
-        type: string
-      trip_count:
-        type: integer
-    type: object
   bus-booking_trip-service_internal_model.PriceRange:
     properties:
       max:
@@ -325,12 +267,12 @@ definitions:
         type: string
       is_active:
         type: boolean
-      operator:
-        $ref: '#/definitions/bus-booking_trip-service_internal_model.Operator'
-      operator_id:
-        type: string
       origin:
         type: string
+      route_stops:
+        items:
+          $ref: '#/definitions/bus-booking_trip-service_internal_model.RouteStop'
+        type: array
       trips:
         items:
           $ref: '#/definitions/bus-booking_trip-service_internal_model.Trip'
@@ -341,7 +283,6 @@ definitions:
     - destination
     - distance_km
     - estimated_minutes
-    - operator_id
     - origin
     type: object
   bus-booking_trip-service_internal_model.RouteStop:
@@ -385,10 +326,6 @@ definitions:
       available_times:
         items:
           $ref: '#/definitions/bus-booking_trip-service_internal_model.TimeSlot'
-        type: array
-      operators:
-        items:
-          $ref: '#/definitions/bus-booking_trip-service_internal_model.OperatorInfo'
         type: array
       price_range:
         $ref: '#/definitions/bus-booking_trip-service_internal_model.PriceRange'
@@ -564,13 +501,6 @@ definitions:
         type: integer
       id:
         type: string
-      operator_id:
-        description: Operator info
-        type: string
-      operator_logo:
-        type: string
-      operator_name:
-        type: string
       origin:
         description: Route info
         type: string
@@ -611,10 +541,6 @@ definitions:
       min_price:
         minimum: 0
         type: number
-      operator_ids:
-        items:
-          type: string
-        type: array
       origin:
         description: Basic search
         type: string
@@ -779,6 +705,17 @@ definitions:
       message:
         type: string
     type: object
+  ginext.MetaData:
+    properties:
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
   ginext.Response:
     properties:
       code:
@@ -790,6 +727,8 @@ definitions:
         $ref: '#/definitions/http.Header'
       message:
         type: string
+      meta:
+        $ref: '#/definitions/ginext.MetaData'
     type: object
   http.Header:
     additionalProperties:
@@ -1204,6 +1143,39 @@ paths:
       summary: Bulk create seats
       tags:
       - seats
+  /api/v1/constants:
+    get:
+      consumes:
+      - application/json
+      description: Get constants by type (bus, route, trip). Returns all types if
+        type parameter is not specified.
+      parameters:
+      - description: Constant type
+        enum:
+        - bus
+        - route
+        - trip
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Constants
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "400":
+          description: Invalid type parameter
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: Get constants
+      tags:
+      - constants
   /api/v1/routes:
     get:
       consumes:
