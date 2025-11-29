@@ -63,7 +63,7 @@ jobs:
 
   # Quality checks per service - runs independently
   ci:
-    name: ${{ matrix.service.name && format('CI ({0})', matrix.service.name) || 'CI (skipped)' }}
+    name: ${{ matrix.service.changed == 'true' && format('✓ CI - {0}', matrix.service.name) || format('⊘ CI - {0} (skipped)', matrix.service.name) }}
     needs: detect-changes
     if: |
       needs.detect-changes.outputs.booking-service == 'true' ||
@@ -157,7 +157,7 @@ jobs:
 
   # Build and deploy - only if quality checks pass for that service
   cd:
-    name: ${{ matrix.service.name && format('CD ({0})', matrix.service.name) || 'CD (skipped)' }}
+    name: ${{ matrix.service.changed == 'true' && format('✓ CD - {0}', matrix.service.name) || format('⊘ CD - {0} (skipped)', matrix.service.name) }}
     needs: [detect-changes, ci]
     if: |
       needs.detect-changes.outputs.booking-service == 'true' ||
