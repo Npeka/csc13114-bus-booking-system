@@ -1,32 +1,26 @@
 package model
 
 import (
-	"encoding/json"
-	"time"
-
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
 type Bus struct {
-	ID            uuid.UUID      `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
-	OperatorID    uuid.UUID      `gorm:"type:uuid;not null" json:"operator_id" validate:"required"`
-	PlateNumber   string         `gorm:"type:varchar(20);unique;not null" json:"plate_number" validate:"required"`
-	Model         string         `gorm:"type:varchar(255);not null" json:"model" validate:"required"`
-	SeatCapacity  int            `gorm:"type:integer;not null" json:"seat_capacity" validate:"required,min=1,max=100"`
-	AmenitiesJSON string         `gorm:"type:text" json:"-"`
-	Amenities     []string       `gorm:"-" json:"amenities"`
-	IsActive      bool           `gorm:"type:boolean;not null;default:true" json:"is_active"`
-	CreatedAt     time.Time      `gorm:"type:timestamptz;not null;default:now()" json:"created_at"`
-	UpdatedAt     time.Time      `gorm:"type:timestamptz;not null;default:now()" json:"updated_at"`
-	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
+	BaseModel
+	PlateNumber  string         `gorm:"type:varchar(20);unique;not null" json:"plate_number" validate:"required"`
+	Model        string         `gorm:"type:varchar(255);not null" json:"model" validate:"required"`
+	SeatCapacity int            `gorm:"type:integer;not null" json:"seat_capacity" validate:"required,min=1,max=100"`
+	Amenities    pq.StringArray `gorm:"type:text[]" json:"amenities"`
+	IsActive     bool           `gorm:"type:boolean;not null;default:true" json:"is_active"`
 
-	Operator *Operator `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"operator,omitempty"`
-	Seats    []Seat    `gorm:"foreignKey:BusID" json:"seats,omitempty"`
-	Trips    []Trip    `gorm:"foreignKey:BusID" json:"trips,omitempty"`
+	Seats []Seat `gorm:"foreignKey:BusID" json:"seats"`
+	Trips []Trip `gorm:"foreignKey:BusID" json:"trips"`
 }
 
-func (Bus) TableName() string { return "buses" }
+func (Bus) TableName() string {
+	return "buses"
+}
 
 func (b *Bus) BeforeCreate(tx *gorm.DB) error {
 	if b.ID == uuid.Nil {
@@ -35,20 +29,29 @@ func (b *Bus) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-func (b *Bus) BeforeSave(tx *gorm.DB) error {
-	if len(b.Amenities) > 0 {
-		amenitiesJSON, err := json.Marshal(b.Amenities)
-		if err != nil {
-			return err
-		}
-		b.AmenitiesJSON = string(amenitiesJSON)
-	}
-	return nil
+type BusResponse struct {
+	ID           uuid.UUID `json:"id"`
+	PlateNumber  string    `json:"plate_number"`
+	Model        string    `json:"model"`
+	SeatCapacity int       `json:"seat_capacity"`
+	Amenities    []string  `json:"amenities"`
+	IsActive     bool      `json:"is_active"`
+
+	Seats []Seat `gorm:"foreignKey:BusID" json:"seats"`
+	Trips []Trip `gorm:"foreignKey:BusID" json:"trips"`
 }
 
-func (b *Bus) AfterFind(tx *gorm.DB) error {
-	if b.AmenitiesJSON != "" {
-		return json.Unmarshal([]byte(b.AmenitiesJSON), &b.Amenities)
-	}
-	return nil
+type CreateBusRequest struct {
+	PlateNumber  string   `json:"plate_number" validate:"required,min=3,max=20"`
+	Model        string   `json:"model" validate:"required,min=2,max=255"`
+	SeatCapacity int      `json:"seat_capacity" validate:"required,min=1,max=100"`
+	Amenities    []string `json:"amenities"`
+}
+
+type UpdateBusRequest struct {
+	PlateNumber  *string   `json:"plate_number" validate:",min=3,max=20"`
+	Model        *string   `json:"model" validate:",min=2,max=255"`
+	SeatCapacity *int      `json:"seat_capacity" validate:",min=1,max=100"`
+	Amenities    *[]string `json:"amenities"`
+	IsActive     *bool     `json:"is_active"`
 }

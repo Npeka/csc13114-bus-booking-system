@@ -48,7 +48,7 @@ func (h *ChatHandlerImpl) Chat(r *ginext.Request) (*ginext.Response, error) {
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(response, "Message processed successfully"), nil
+	return ginext.NewSuccessResponse(response), nil
 }
 
 // ExtractSearchParams godoc
@@ -74,7 +74,7 @@ func (h *ChatHandlerImpl) ExtractSearchParams(r *ginext.Request) (*ginext.Respon
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(params, "Search parameters extracted successfully"), nil
+	return ginext.NewSuccessResponse(params), nil
 }
 
 // GetFAQ godoc
@@ -100,5 +100,5 @@ func (h *ChatHandlerImpl) GetFAQ(r *ginext.Request) (*ginext.Response, error) {
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(answer, "FAQ answer retrieved successfully"), nil
+	return ginext.NewSuccessResponse(answer), nil
 }

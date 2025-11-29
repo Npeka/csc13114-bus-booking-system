@@ -5,27 +5,27 @@ import (
 	"bus-booking/trip-service/internal/model"
 	"bus-booking/trip-service/internal/service"
 
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
 
 type RouteHandler interface {
-	CreateRoute(r *ginext.Request) (*ginext.Response, error)
 	GetRoute(r *ginext.Request) (*ginext.Response, error)
-	UpdateRoute(r *ginext.Request) (*ginext.Response, error)
-	DeleteRoute(r *ginext.Request) (*ginext.Response, error)
 	ListRoutes(r *ginext.Request) (*ginext.Response, error)
 	SearchRoutes(r *ginext.Request) (*ginext.Response, error)
+
+	CreateRoute(r *ginext.Request) (*ginext.Response, error)
+	UpdateRoute(r *ginext.Request) (*ginext.Response, error)
+	DeleteRoute(r *ginext.Request) (*ginext.Response, error)
 }
 
 type RouteHandlerImpl struct {
-	routeService service.RouteService
+	service service.RouteService
 }
 
-func NewRouteHandler(routeService service.RouteService) RouteHandler {
+func NewRouteHandler(service service.RouteService) RouteHandler {
 	return &RouteHandlerImpl{
-		routeService: routeService,
+		service: service,
 	}
 }
 
@@ -47,13 +47,13 @@ func (h *RouteHandlerImpl) CreateRoute(r *ginext.Request) (*ginext.Response, err
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
-	route, err := h.routeService.CreateRoute(r.Context(), &req)
+	route, err := h.service.CreateRoute(r.Context(), &req)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create route")
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(route, "Route created successfully"), nil
+	return ginext.NewSuccessResponse(route), nil
 }
 
 // GetRoute godoc
@@ -74,13 +74,13 @@ func (h *RouteHandlerImpl) GetRoute(r *ginext.Request) (*ginext.Response, error)
 		return nil, ginext.NewBadRequestError("invalid route ID")
 	}
 
-	route, err := h.routeService.GetRouteByID(r.Context(), id)
+	route, err := h.service.GetRouteByID(r.Context(), id)
 	if err != nil {
 		log.Error().Err(err).Str("route_id", idStr).Msg("Failed to get route")
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(route, "Route retrieved successfully"), nil
+	return ginext.NewSuccessResponse(route), nil
 }
 
 // UpdateRoute godoc
@@ -108,13 +108,13 @@ func (h *RouteHandlerImpl) UpdateRoute(r *ginext.Request) (*ginext.Response, err
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
-	route, err := h.routeService.UpdateRoute(r.Context(), id, &req)
+	route, err := h.service.UpdateRoute(r.Context(), id, &req)
 	if err != nil {
 		log.Error().Err(err).Str("route_id", idStr).Msg("Failed to update route")
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(route, "Route updated successfully"), nil
+	return ginext.NewSuccessResponse(route), nil
 }
 
 // DeleteRoute godoc
@@ -135,13 +135,13 @@ func (h *RouteHandlerImpl) DeleteRoute(r *ginext.Request) (*ginext.Response, err
 		return nil, ginext.NewBadRequestError("invalid route ID")
 	}
 
-	err = h.routeService.DeleteRoute(r.Context(), id)
+	err = h.service.DeleteRoute(r.Context(), id)
 	if err != nil {
 		log.Error().Err(err).Str("route_id", idStr).Msg("Failed to delete route")
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(nil, "Route deleted successfully"), nil
+	return ginext.NewNoContentResponse(), nil
 }
 
 // ListRoutes godoc
@@ -163,32 +163,13 @@ func (h *RouteHandlerImpl) ListRoutes(r *ginext.Request) (*ginext.Response, erro
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
-	var operatorID *uuid.UUID
-	if req.OperatorID != "" {
-		id, err := uuid.Parse(req.OperatorID)
-		if err != nil {
-			return nil, ginext.NewBadRequestError("invalid operator ID")
-		}
-		operatorID = &id
-	}
-
-	routes, total, err := h.routeService.ListRoutes(r.Context(), operatorID, req.Page, req.Limit)
+	routes, total, err := h.service.ListRoutes(r.Context(), req.Page, req.Limit)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to list routes")
 		return nil, err
 	}
 
-	totalPages := int((total + int64(req.Limit) - 1) / int64(req.Limit))
-
-	response := gin.H{
-		"routes":      routes,
-		"total":       total,
-		"page":        req.Page,
-		"limit":       req.Limit,
-		"total_pages": totalPages,
-	}
-
-	return ginext.NewSuccessResponse(response, "Routes retrieved successfully"), nil
+	return ginext.NewPaginatedResponse(routes, req.Page, req.Limit, total), nil
 }
 
 // SearchRoutes godoc
@@ -209,11 +190,11 @@ func (h *RouteHandlerImpl) SearchRoutes(r *ginext.Request) (*ginext.Response, er
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
-	routes, err := h.routeService.GetRoutesByOriginDestination(r.Context(), req.Origin, req.Destination)
+	routes, err := h.service.GetRoutesByOriginDestination(r.Context(), req.Origin, req.Destination)
 	if err != nil {
 		log.Error().Err(err).Str("origin", req.Origin).Str("destination", req.Destination).Msg("Failed to search routes")
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(routes, "Routes retrieved successfully"), nil
+	return ginext.NewSuccessResponse(routes), nil
 }

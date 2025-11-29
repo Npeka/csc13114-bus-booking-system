@@ -1,8 +1,6 @@
 package model
 
 import (
-	"time"
-
 	"bus-booking/trip-service/internal/constants"
 
 	"github.com/google/uuid"
@@ -10,7 +8,7 @@ import (
 )
 
 type Seat struct {
-	ID              uuid.UUID          `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
+	BaseModel
 	BusID           uuid.UUID          `gorm:"type:uuid;not null;index:idx_seats_bus" json:"bus_id" validate:"required"`
 	SeatNumber      string             `gorm:"type:varchar(10);not null" json:"seat_number" validate:"required"`
 	Row             int                `gorm:"type:integer;not null" json:"row" validate:"required,min=1"`
@@ -19,9 +17,6 @@ type Seat struct {
 	PriceMultiplier float64            `gorm:"type:decimal(3,2);not null;default:1.0" json:"price_multiplier" validate:"min=0.5,max=5.0"`
 	IsAvailable     bool               `gorm:"type:boolean;not null;default:true" json:"is_available"`
 	Floor           int                `gorm:"type:integer;not null;default:1" json:"floor" validate:"min=1,max=2"`
-	CreatedAt       time.Time          `gorm:"type:timestamptz;not null;default:now()" json:"created_at"`
-	UpdatedAt       time.Time          `gorm:"type:timestamptz;not null;default:now()" json:"updated_at"`
-	DeletedAt       gorm.DeletedAt     `gorm:"index" json:"-"`
 
 	Bus *Bus `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"bus,omitempty"`
 }
@@ -41,7 +36,6 @@ func (s *Seat) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// CreateSeatRequest is the request body for creating a seat
 type CreateSeatRequest struct {
 	BusID           uuid.UUID          `json:"bus_id" validate:"required"`
 	SeatNumber      string             `json:"seat_number" validate:"required"`
@@ -52,7 +46,6 @@ type CreateSeatRequest struct {
 	Floor           int                `json:"floor" validate:"min=1,max=2"`
 }
 
-// UpdateSeatRequest is the request body for updating a seat
 type UpdateSeatRequest struct {
 	SeatNumber      *string             `json:"seat_number,omitempty"`
 	Row             *int                `json:"row,omitempty" validate:"omitempty,min=1"`
@@ -63,13 +56,11 @@ type UpdateSeatRequest struct {
 	Floor           *int                `json:"floor,omitempty" validate:"omitempty,min=1,max=2"`
 }
 
-// BulkCreateSeatsRequest is the request body for bulk creating seats
 type BulkCreateSeatsRequest struct {
 	BusID uuid.UUID           `json:"bus_id" validate:"required"`
 	Seats []CreateSeatRequest `json:"seats" validate:"required,min=1,dive"`
 }
 
-// SeatMapResponse represents the seat map for a bus
 type SeatMapResponse struct {
 	BusID      uuid.UUID      `json:"bus_id"`
 	TotalSeats int            `json:"total_seats"`
@@ -77,7 +68,6 @@ type SeatMapResponse struct {
 	Layout     SeatLayoutInfo `json:"layout"`
 }
 
-// SeatDetail represents detailed seat information
 type SeatDetail struct {
 	ID              uuid.UUID          `json:"id"`
 	SeatNumber      string             `json:"seat_number"`
@@ -89,9 +79,14 @@ type SeatDetail struct {
 	Floor           int                `json:"floor"`
 }
 
-// SeatLayoutInfo provides layout information
 type SeatLayoutInfo struct {
 	MaxRows    int `json:"max_rows"`
 	MaxColumns int `json:"max_columns"`
 	Floors     int `json:"floors"`
+}
+
+type LockSeatsRequest struct {
+	TripID    uuid.UUID   `json:"trip_id" validate:"required"`
+	SeatIDs   []uuid.UUID `json:"seat_ids" validate:"required,min=1,max=10"`
+	SessionID string      `json:"session_id" validate:"required"`
 }

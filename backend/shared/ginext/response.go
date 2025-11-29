@@ -14,8 +14,30 @@ type Response struct {
 // GeneralBody represents the response body structure
 type GeneralBody struct {
 	Data    interface{} `json:"data,omitempty"`
+	Meta    MetaData    `json:"meta,omitempty"`
 	Message string      `json:"message,omitempty"`
 	Error   *ErrorBody  `json:"error,omitempty"`
+}
+
+type MetaData struct {
+	Page       int   `json:"page,omitempty"`
+	PageSize   int   `json:"page_size,omitempty"`
+	Total      int64 `json:"total,omitempty"`
+	TotalPages int   `json:"total_pages,omitempty"`
+}
+
+// NewMetaData creates pagination metadata
+func NewMetaData(page, pageSize int, total int64) MetaData {
+	totalPages := int((total + int64(pageSize) - 1) / int64(pageSize))
+	if totalPages < 0 {
+		totalPages = 0
+	}
+	return MetaData{
+		Page:       page,
+		PageSize:   pageSize,
+		Total:      total,
+		TotalPages: totalPages,
+	}
 }
 
 // ErrorBody represents simplified error structure
@@ -79,12 +101,22 @@ func NewBody(data interface{}, errMsg string) *GeneralBody {
 }
 
 // Success response helpers
-func NewSuccessResponse(data interface{}, message string) *Response {
-	return NewResponseData(http.StatusOK, data, message)
+func NewSuccessResponse(data interface{}) *Response {
+	return &Response{
+		Code: http.StatusOK,
+		GeneralBody: &GeneralBody{
+			Data: data,
+		},
+	}
 }
 
-func NewCreatedResponse(data interface{}, message string) *Response {
-	return NewResponseData(http.StatusCreated, data, message)
+func NewCreatedResponse(data interface{}) *Response {
+	return &Response{
+		Code: http.StatusCreated,
+		GeneralBody: &GeneralBody{
+			Data: data,
+		},
+	}
 }
 
 func NewNoContentResponse() *Response {
@@ -127,4 +159,14 @@ func NewValidationErrorResponse(message string) *Response {
 
 func NewInternalServerErrorResponse(message string) *Response {
 	return NewErrorResponse(http.StatusInternalServerError, message)
+}
+
+func NewPaginatedResponse(data interface{}, page, pageSize int, total int64) *Response {
+	return &Response{
+		Code: http.StatusOK,
+		GeneralBody: &GeneralBody{
+			Data: data,
+			Meta: NewMetaData(page, pageSize, total),
+		},
+	}
 }

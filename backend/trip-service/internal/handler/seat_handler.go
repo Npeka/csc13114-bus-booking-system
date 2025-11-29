@@ -49,7 +49,7 @@ func (h *SeatHandlerImpl) CreateSeat(r *ginext.Request) (*ginext.Response, error
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(seat, "Seat created successfully"), nil
+	return ginext.NewCreatedResponse(seat), nil
 }
 
 // CreateSeatsFromTemplate godoc
@@ -72,11 +72,11 @@ func (h *SeatHandlerImpl) CreateSeatsFromTemplate(r *ginext.Request) (*ginext.Re
 
 	seats, err := h.seatService.CreateSeatsFromTemplate(r.Context(), &req)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to create seats in bulk")
+		log.Error().Err(err).Msg("Failed to create seats")
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(seats, "Seats created successfully"), nil
+	return ginext.NewCreatedResponse(seats), nil
 }
 
 // UpdateSeat godoc
@@ -107,11 +107,11 @@ func (h *SeatHandlerImpl) UpdateSeat(r *ginext.Request) (*ginext.Response, error
 
 	seat, err := h.seatService.UpdateSeat(r.Context(), id, &req)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to update seat")
+		log.Error().Err(err).Str("seat_id", idStr).Msg("Failed to update seat")
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(seat, "Seat updated successfully"), nil
+	return ginext.NewSuccessResponse(seat), nil
 }
 
 // DeleteSeat godoc
@@ -126,8 +126,7 @@ func (h *SeatHandlerImpl) UpdateSeat(r *ginext.Request) (*ginext.Response, error
 // @Failure 500 {object} ginext.Response "Internal server error"
 // @Router /api/v1/buses/seats/{id} [delete]
 func (h *SeatHandlerImpl) DeleteSeat(r *ginext.Request) (*ginext.Response, error) {
-	idStr := r.GinCtx.Param("id")
-	id, err := uuid.Parse(idStr)
+	id, err := uuid.Parse(r.GinCtx.Param("id"))
 	if err != nil {
 		return nil, ginext.NewBadRequestError("invalid seat ID")
 	}
@@ -137,7 +136,7 @@ func (h *SeatHandlerImpl) DeleteSeat(r *ginext.Request) (*ginext.Response, error
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(nil, "Seat deleted successfully"), nil
+	return ginext.NewSuccessResponse("Seat deleted successfully"), nil
 }
 
 // GetSeatMap godoc
@@ -152,8 +151,7 @@ func (h *SeatHandlerImpl) DeleteSeat(r *ginext.Request) (*ginext.Response, error
 // @Failure 500 {object} ginext.Response "Internal server error"
 // @Router /api/v1/buses/{id}/seat-map [get]
 func (h *SeatHandlerImpl) GetSeatMap(r *ginext.Request) (*ginext.Response, error) {
-	busIDStr := r.GinCtx.Param("id")
-	busID, err := uuid.Parse(busIDStr)
+	busID, err := uuid.Parse(r.GinCtx.Param("id"))
 	if err != nil {
 		return nil, ginext.NewBadRequestError("invalid bus ID")
 	}
@@ -164,5 +162,5 @@ func (h *SeatHandlerImpl) GetSeatMap(r *ginext.Request) (*ginext.Response, error
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(seatMap, "Seat map retrieved successfully"), nil
+	return ginext.NewSuccessResponse(seatMap), nil
 }

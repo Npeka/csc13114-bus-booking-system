@@ -1,8 +1,6 @@
 package model
 
 import (
-	"time"
-
 	"bus-booking/trip-service/internal/constants"
 
 	"github.com/google/uuid"
@@ -10,7 +8,7 @@ import (
 )
 
 type RouteStop struct {
-	ID            uuid.UUID          `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
+	BaseModel
 	RouteID       uuid.UUID          `gorm:"type:uuid;not null;index:idx_route_stops_route" json:"route_id" validate:"required"`
 	StopOrder     int                `gorm:"type:integer;not null" json:"stop_order" validate:"required,min=1"`
 	StopType      constants.StopType `gorm:"type:varchar(20);not null" json:"stop_type" validate:"required"`
@@ -20,9 +18,6 @@ type RouteStop struct {
 	Longitude     *float64           `gorm:"type:decimal(11,8)" json:"longitude,omitempty"`
 	OffsetMinutes int                `gorm:"type:integer;not null" json:"offset_minutes" validate:"min=0"`
 	IsActive      bool               `gorm:"type:boolean;not null;default:true" json:"is_active"`
-	CreatedAt     time.Time          `gorm:"type:timestamptz;not null;default:now()" json:"created_at"`
-	UpdatedAt     time.Time          `gorm:"type:timestamptz;not null;default:now()" json:"updated_at"`
-	DeletedAt     gorm.DeletedAt     `gorm:"index" json:"-"`
 
 	Route *Route `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"route,omitempty"`
 }

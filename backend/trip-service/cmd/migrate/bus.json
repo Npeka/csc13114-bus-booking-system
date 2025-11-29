@@ -1,0 +1,222 @@
+[
+  {
+    "plate_number": "29A-12345",
+    "model": "Mercedes-Benz Travego",
+    "seat_capacity": 45,
+    "amenities": ["wifi", "ac", "toilet", "charging", "blanket", "water"],
+    "is_active": true
+  },
+  {
+    "plate_number": "30B-67890",
+    "model": "Hyundai Universe",
+    "seat_capacity": 40,
+    "amenities": ["wifi", "ac", "charging", "water"],
+    "is_active": true
+  },
+  {
+    "plate_number": "51C-11111",
+    "model": "Thaco TB120S",
+    "seat_capacity": 34,
+    "amenities": ["ac", "charging", "blanket"],
+    "is_active": true
+  },
+  {
+    "plate_number": "92D-22222",
+    "model": "Hyundai Universe Noble",
+    "seat_capacity": 36,
+    "amenities": [
+      "wifi",
+      "ac",
+      "toilet",
+      "tv",
+      "charging",
+      "blanket",
+      "water",
+      "snacks"
+    ],
+    "is_active": true
+  },
+  {
+    "plate_number": "29E-33333",
+    "model": "Mercedes-Benz Sprinter",
+    "seat_capacity": 16,
+    "amenities": ["wifi", "ac", "charging"],
+    "is_active": true
+  },
+  {
+    "plate_number": "30F-44444",
+    "model": "Samco Primas",
+    "seat_capacity": 29,
+    "amenities": ["wifi", "ac", "toilet", "charging", "water"],
+    "is_active": true
+  },
+  {
+    "plate_number": "51G-55555",
+    "model": "Thaco TB85S",
+    "seat_capacity": 24,
+    "amenities": ["ac", "charging"],
+    "is_active": true
+  },
+  {
+    "plate_number": "92H-66666",
+    "model": "Hyundai County",
+    "seat_capacity": 29,
+    "amenities": ["ac", "charging", "water"],
+    "is_active": true
+  },
+  {
+    "plate_number": "29I-77777",
+    "model": "Mercedes-Benz OH 1836",
+    "seat_capacity": 47,
+    "amenities": ["wifi", "ac", "toilet", "tv", "charging", "blanket", "water"],
+    "is_active": true
+  },
+  {
+    "plate_number": "30J-88888",
+    "model": "Scania Touring",
+    "seat_capacity": 50,
+    "amenities": [
+      "wifi",
+      "ac",
+      "toilet",
+      "tv",
+      "charging",
+      "blanket",
+      "water",
+      "snacks"
+    ],
+    "is_active": true
+  },
+  {
+    "plate_number": "51K-99999",
+    "model": "Thaco TB120SL",
+    "seat_capacity": 40,
+    "amenities": ["wifi", "ac", "toilet", "charging", "blanket", "water"],
+    "is_active": true
+  },
+  {
+    "plate_number": "92L-10101",
+    "model": "Hyundai Universe Luxury",
+    "seat_capacity": 42,
+    "amenities": [
+      "wifi",
+      "ac",
+      "toilet",
+      "tv",
+      "charging",
+      "blanket",
+      "water",
+      "snacks"
+    ],
+    "is_active": true
+  },
+  {
+    "plate_number": "29M-20202",
+    "model": "Fuso Rosa",
+    "seat_capacity": 22,
+    "amenities": ["ac", "charging"],
+    "is_active": true
+  },
+  {
+    "plate_number": "30N-30303",
+    "model": "Samco Felix",
+    "seat_capacity": 20,
+    "amenities": ["wifi", "ac", "charging", "water"],
+    "is_active": true
+  },
+  {
+    "plate_number": "51O-40404",
+    "model": "Thaco TB79S",
+    "seat_capacity": 29,
+    "amenities": ["ac", "charging", "water"],
+    "is_active": true
+  },
+  {
+    "plate_number": "92P-50505",
+    "model": "Hyundai Aero Express",
+    "seat_capacity": 45,
+    "amenities": ["wifi", "ac", "toilet", "charging", "blanket", "water"],
+    "is_active": true
+  },
+  {
+    "plate_number": "29Q-60606",
+    "model": "Mercedes-Benz Tourismo",
+    "seat_capacity": 48,
+    "amenities": [
+      "wifi",
+      "ac",
+      "toilet",
+      "tv",
+      "charging",
+      "blanket",
+      "water",
+      "snacks"
+    ],
+    "is_active": true
+  },
+  {
+    "plate_number": "30R-70707",
+    "model": "Hyundai Universe Express Noble",
+    "seat_capacity": 38,
+    "amenities": ["wifi", "ac", "toilet", "charging", "blanket", "water"],
+    "is_active": true
+  },
+  {
+    "plate_number": "51S-80808",
+    "model": "Thaco TB120SL Luxury",
+    "seat_capacity": 35,
+    "amenities": ["wifi", "ac", "toilet", "tv", "charging", "blanket", "water"],
+    "is_active": true
+  },
+  {
+    "plate_number": "92T-90909",
+    "model": "Scania Irizar i6",
+    "seat_capacity": 44,
+    "amenities": [
+      "wifi",
+      "ac",
+      "toilet",
+      "tv",
+      "charging",
+      "blanket",
+      "water",
+      "snacks"
+    ],
+    "is_active": true
+  },
+  {
+    "plate_number": "29U-11122",
+    "model": "King Long XMQ6127",
+    "seat_capacity": 41,
+    "amenities": ["wifi", "ac", "toilet", "charging", "water"],
+    "is_active": true
+  },
+  {
+    "plate_number": "30V-22233",
+    "model": "Yutong ZK6122H9",
+    "seat_capacity": 43,
+    "amenities": ["wifi", "ac", "toilet", "tv", "charging", "blanket", "water"],
+    "is_active": true
+  },
+  {
+    "plate_number": "51W-33344",
+    "model": "Daewoo FX120",
+    "seat_capacity": 39,
+    "amenities": ["wifi", "ac", "charging", "water"],
+    "is_active": true
+  },
+  {
+    "plate_number": "92X-44455",
+    "model": "Hino RK8",
+    "seat_capacity": 28,
+    "amenities": ["ac", "charging"],
+    "is_active": true
+  },
+  {
+    "plate_number": "29Y-55566",
+    "model": "Isuzu Samco",
+    "seat_capacity": 25,
+    "amenities": ["ac", "charging", "water"],
+    "is_active": true
+  }
+]

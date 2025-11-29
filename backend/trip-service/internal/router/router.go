@@ -34,45 +34,26 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 		{
 			trips.POST("/search", ginext.WrapHandler(h.TripHandler.SearchTrips))
 			trips.GET("/:id", ginext.WrapHandler(h.TripHandler.GetTrip))
-			trips.POST("", ginext.WrapHandler(h.TripHandler.CreateTrip))
-			trips.PUT("/:id", ginext.WrapHandler(h.TripHandler.UpdateTrip))
-			trips.DELETE("/:id", ginext.WrapHandler(h.TripHandler.DeleteTrip))
 			trips.GET("/route/:route_id", ginext.WrapHandler(h.TripHandler.ListTripsByRoute))
-		}
-
-		routes := v1.Group("/routes")
-		{
-			routes.POST("", ginext.WrapHandler(h.RouteHandler.CreateRoute))
-			routes.GET("/:id", ginext.WrapHandler(h.RouteHandler.GetRoute))
-			routes.PUT("/:id", ginext.WrapHandler(h.RouteHandler.UpdateRoute))
-			routes.DELETE("/:id", ginext.WrapHandler(h.RouteHandler.DeleteRoute))
-			routes.GET("", ginext.WrapHandler(h.RouteHandler.ListRoutes))
-			routes.GET("/search", ginext.WrapHandler(h.RouteHandler.SearchRoutes))
-
-			// Route stops
-			routes.GET("/:id/stops", ginext.WrapHandler(h.RouteStopHandler.ListRouteStops))
-			routes.POST("/:id/stops/reorder", ginext.WrapHandler(h.RouteStopHandler.ReorderStops))
-		}
-
-		// Route stops (standalone)
-		routeStops := v1.Group("/routes/stops")
-		{
-			routeStops.POST("", ginext.WrapHandler(h.RouteStopHandler.CreateRouteStop))
-			routeStops.PUT("/:id", ginext.WrapHandler(h.RouteStopHandler.UpdateRouteStop))
-			routeStops.DELETE("/:id", ginext.WrapHandler(h.RouteStopHandler.DeleteRouteStop))
 		}
 
 		buses := v1.Group("/buses")
 		{
-			buses.POST("", ginext.WrapHandler(h.BusHandler.CreateBus))
 			buses.GET("/:id", ginext.WrapHandler(h.BusHandler.GetBus))
-			buses.PUT("/:id", ginext.WrapHandler(h.BusHandler.UpdateBus))
-			buses.DELETE("/:id", ginext.WrapHandler(h.BusHandler.DeleteBus))
 			buses.GET("", ginext.WrapHandler(h.BusHandler.ListBuses))
 			buses.GET("/:id/seats", ginext.WrapHandler(h.BusHandler.GetBusSeats))
-
-			// Seat map management
 			buses.GET("/:id/seat-map", ginext.WrapHandler(h.SeatHandler.GetSeatMap))
+		}
+
+		routes := v1.Group("/routes")
+		{
+			routes.GET("/search", ginext.WrapHandler(h.RouteHandler.SearchRoutes))
+			routes.GET("/:id", ginext.WrapHandler(h.RouteHandler.GetRoute))
+			routes.GET("", ginext.WrapHandler(h.RouteHandler.ListRoutes))
+
+			// Route stops
+			routes.GET("/:id/stops", ginext.WrapHandler(h.RouteStopHandler.ListRouteStops))
+			routes.POST("/:id/stops/reorder", ginext.WrapHandler(h.RouteStopHandler.ReorderStops))
 		}
 
 		// Seats (standalone)
@@ -82,6 +63,40 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 			seats.POST("/bulk", ginext.WrapHandler(h.SeatHandler.CreateSeatsFromTemplate))
 			seats.PUT("/:id", ginext.WrapHandler(h.SeatHandler.UpdateSeat))
 			seats.DELETE("/:id", ginext.WrapHandler(h.SeatHandler.DeleteSeat))
+		}
+
+	}
+
+	// adminV1.Use(middleware.RequireAuthMiddleware())
+	// adminV1.Use(middleware.RequireRoleMiddleware(constants.RoleAdmin))
+	adminV1 := router.Group("/api/v1")
+	{
+		trips := adminV1.Group("/trips")
+		{
+			trips.POST("", ginext.WrapHandler(h.TripHandler.CreateTrip))
+			trips.PUT("/:id", ginext.WrapHandler(h.TripHandler.UpdateTrip))
+			trips.DELETE("/:id", ginext.WrapHandler(h.TripHandler.DeleteTrip))
+		}
+
+		buses := adminV1.Group("/buses")
+		{
+			buses.POST("", ginext.WrapHandler(h.BusHandler.CreateBus))
+			buses.PUT("/:id", ginext.WrapHandler(h.BusHandler.UpdateBus))
+			buses.DELETE("/:id", ginext.WrapHandler(h.BusHandler.DeleteBus))
+		}
+
+		routes := adminV1.Group("/routes")
+		{
+			routes.POST("", ginext.WrapHandler(h.RouteHandler.CreateRoute))
+			routes.PUT("/:id", ginext.WrapHandler(h.RouteHandler.UpdateRoute))
+			routes.DELETE("/:id", ginext.WrapHandler(h.RouteHandler.DeleteRoute))
+		}
+
+		routeStops := adminV1.Group("/routes/stops")
+		{
+			routeStops.POST("", ginext.WrapHandler(h.RouteStopHandler.CreateRouteStop))
+			routeStops.PUT("/:id", ginext.WrapHandler(h.RouteStopHandler.UpdateRouteStop))
+			routeStops.DELETE("/:id", ginext.WrapHandler(h.RouteStopHandler.DeleteRouteStop))
 		}
 	}
 }

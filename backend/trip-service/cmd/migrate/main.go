@@ -21,11 +21,10 @@ func main() {
 	}()
 
 	models := []interface{}{
-		&model.Operator{},
-		&model.Route{},
 		&model.Bus{},
-		&model.Seat{},
-		&model.Trip{},
+		// &model.Route{},
+		// &model.Seat{},
+		// &model.Trip{},
 	}
 
 	if err := mm.RunMigrations(models...); err != nil {

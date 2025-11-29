@@ -53,7 +53,7 @@ func (h *UserHandlerImpl) GetProfile(r *ginext.Request) (*ginext.Response, error
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(user, "Profile retrieved successfully"), nil
+	return ginext.NewSuccessResponse(user), nil
 }
 
 // CreateUser godoc
@@ -81,7 +81,7 @@ func (h *UserHandlerImpl) CreateUser(r *ginext.Request) (*ginext.Response, error
 		return nil, err
 	}
 
-	return ginext.NewCreatedResponse(user, "User created successfully"), nil
+	return ginext.NewCreatedResponse(user), nil
 }
 
 // GetUser godoc
@@ -111,7 +111,7 @@ func (h *UserHandlerImpl) GetUser(r *ginext.Request) (*ginext.Response, error) {
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(user, "User retrieved successfully"), nil
+	return ginext.NewSuccessResponse(user), nil
 }
 
 // UpdateUser godoc
@@ -147,7 +147,7 @@ func (h *UserHandlerImpl) UpdateUser(r *ginext.Request) (*ginext.Response, error
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(user, "User updated successfully"), nil
+	return ginext.NewSuccessResponse(user), nil
 }
 
 // DeleteUser godoc
@@ -176,7 +176,7 @@ func (h *UserHandlerImpl) DeleteUser(r *ginext.Request) (*ginext.Response, error
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(nil, "User deleted successfully"), nil
+	return ginext.NewSuccessResponse("User deleted successfully"), nil
 }
 
 // ListUsers godoc
@@ -230,7 +230,7 @@ func (h *UserHandlerImpl) ListUsers(r *ginext.Request) (*ginext.Response, error)
 		"status":      query.Status,
 	}
 
-	return ginext.NewSuccessResponse(result, "Users retrieved successfully"), nil
+	return ginext.NewSuccessResponse(result), nil
 }
 
 func (h *UserHandlerImpl) ListUsersByRole(r *ginext.Request) (*ginext.Response, error) {
@@ -272,7 +272,7 @@ func (h *UserHandlerImpl) ListUsersByRole(r *ginext.Request) (*ginext.Response, 
 		"offset": offset,
 	}
 
-	return ginext.NewSuccessResponse(result, "Users retrieved successfully"), nil
+	return ginext.NewSuccessResponse(result), nil
 }
 
 // UpdateUserStatus godoc
@@ -307,5 +307,5 @@ func (h *UserHandlerImpl) UpdateUserStatus(r *ginext.Request) (*ginext.Response,
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(nil, "User status updated successfully"), nil
+	return ginext.NewSuccessResponse("User status updated successfully"), nil
 }

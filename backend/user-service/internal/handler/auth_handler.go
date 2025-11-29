@@ -47,13 +47,13 @@ func (h *AuthHandlerImpl) VerifyToken(r *ginext.Request) (*ginext.Response, erro
 		return nil, ginext.NewBadRequestError("Invalid request data")
 	}
 
-	verifyResp, err := h.as.VerifyToken(r.Context(), req.AccessToken)
+	res, err := h.as.VerifyToken(r.Context(), req.AccessToken)
 	if err != nil {
 		log.Error().Err(err).Msg("Token verification failed")
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(verifyResp, "Token verified successfully"), nil
+	return ginext.NewSuccessResponse(res), nil
 }
 
 // FirebaseAuth godoc
@@ -75,13 +75,13 @@ func (h *AuthHandlerImpl) FirebaseAuth(r *ginext.Request) (*ginext.Response, err
 		return nil, ginext.NewBadRequestError("Invalid request data")
 	}
 
-	authResp, err := h.as.FirebaseAuth(r.Context(), &req)
+	res, err := h.as.FirebaseAuth(r.Context(), &req)
 	if err != nil {
 		log.Error().Err(err).Msg("Firebase auth failed")
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(authResp, "Firebase authentication successful"), nil
+	return ginext.NewSuccessResponse(res), nil
 }
 
 // Register godoc
@@ -102,13 +102,13 @@ func (h *AuthHandlerImpl) Register(r *ginext.Request) (*ginext.Response, error) 
 		return nil, ginext.NewBadRequestError("Invalid request data")
 	}
 
-	authResp, err := h.as.Register(r.Context(), &req)
+	res, err := h.as.Register(r.Context(), &req)
 	if err != nil {
 		log.Error().Err(err).Msg("Registration failed")
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(authResp, "Registration successful"), nil
+	return ginext.NewSuccessResponse(res), nil
 }
 
 // EmailPasswordLogin godoc
@@ -131,13 +131,13 @@ func (h *AuthHandlerImpl) Login(r *ginext.Request) (*ginext.Response, error) {
 		return nil, ginext.NewBadRequestError("Invalid request data")
 	}
 
-	authResp, err := h.as.Login(r.Context(), &req)
+	res, err := h.as.Login(r.Context(), &req)
 	if err != nil {
 		log.Error().Err(err).Msg("Email/password login failed")
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(authResp, "Login successful"), nil
+	return ginext.NewSuccessResponse(res), nil
 }
 
 // Logout godoc
@@ -168,7 +168,7 @@ func (h *AuthHandlerImpl) Logout(r *ginext.Request) (*ginext.Response, error) {
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(nil, "User logged out successfully"), nil
+	return ginext.NewSuccessResponse("User logged out successfully"), nil
 }
 
 // ForgotPassword godoc
@@ -194,7 +194,7 @@ func (h *AuthHandlerImpl) ForgotPassword(r *ginext.Request) (*ginext.Response, e
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(nil, "If the email exists, a password reset link has been sent"), nil
+	return ginext.NewSuccessResponse("If the email exists, a password reset link has been sent"), nil
 }
 
 // ResetPassword godoc
@@ -220,7 +220,7 @@ func (h *AuthHandlerImpl) ResetPassword(r *ginext.Request) (*ginext.Response, er
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(nil, "Password reset successful"), nil
+	return ginext.NewSuccessResponse("Password reset successful"), nil
 }
 
 // RefreshToken godoc
@@ -245,11 +245,11 @@ func (h *AuthHandlerImpl) RefreshToken(r *ginext.Request) (*ginext.Response, err
 
 	userID := sharedcontext.GetUserID(r.GinCtx)
 
-	authResp, err := h.as.RefreshToken(r.Context(), &req, userID)
+	res, err := h.as.RefreshToken(r.Context(), &req, userID)
 	if err != nil {
 		log.Error().Err(err).Msg("Token refresh failed")
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(authResp, "Token refreshed successfully"), nil
+	return ginext.NewSuccessResponse(res), nil
 }

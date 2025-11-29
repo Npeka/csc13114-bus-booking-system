@@ -38,7 +38,7 @@ func (h *PaymentHandlerImpl) GetPaymentMethods(r *ginext.Request) (*ginext.Respo
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(methods, "Payment methods retrieved successfully"), nil
+	return ginext.NewSuccessResponse(methods), nil
 }
 
 // ProcessPayment godoc
@@ -65,5 +65,5 @@ func (h *PaymentHandlerImpl) ProcessPayment(r *ginext.Request) (*ginext.Response
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(payment, "Payment processed successfully"), nil
+	return ginext.NewSuccessResponse(payment), nil
 }

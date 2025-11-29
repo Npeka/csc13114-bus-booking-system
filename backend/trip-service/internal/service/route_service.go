@@ -13,12 +13,13 @@ import (
 )
 
 type RouteService interface {
-	CreateRoute(ctx context.Context, req *model.CreateRouteRequest) (*model.Route, error)
 	GetRouteByID(ctx context.Context, id uuid.UUID) (*model.Route, error)
+	ListRoutes(ctx context.Context, page, limit int) ([]model.RouteSummary, int64, error)
+	GetRoutesByOriginDestination(ctx context.Context, origin, destination string) ([]model.Route, error)
+
+	CreateRoute(ctx context.Context, req *model.CreateRouteRequest) (*model.Route, error)
 	UpdateRoute(ctx context.Context, id uuid.UUID, req *model.UpdateRouteRequest) (*model.Route, error)
 	DeleteRoute(ctx context.Context, id uuid.UUID) error
-	ListRoutes(ctx context.Context, operatorID *uuid.UUID, page, limit int) ([]model.RouteSummary, int64, error)
-	GetRoutesByOriginDestination(ctx context.Context, origin, destination string) ([]model.Route, error)
 }
 
 type RouteServiceImpl struct {
@@ -44,7 +45,6 @@ func (s *RouteServiceImpl) CreateRoute(ctx context.Context, req *model.CreateRou
 	}
 
 	route := &model.Route{
-		OperatorID:       req.OperatorID,
 		Origin:           req.Origin,
 		Destination:      req.Destination,
 		DistanceKm:       req.DistanceKm,
@@ -124,7 +124,7 @@ func (s *RouteServiceImpl) DeleteRoute(ctx context.Context, id uuid.UUID) error 
 	return nil
 }
 
-func (s *RouteServiceImpl) ListRoutes(ctx context.Context, operatorID *uuid.UUID, page, limit int) ([]model.RouteSummary, int64, error) {
+func (s *RouteServiceImpl) ListRoutes(ctx context.Context, page, limit int) ([]model.RouteSummary, int64, error) {
 	if page <= 0 {
 		page = 1
 	}
@@ -132,7 +132,7 @@ func (s *RouteServiceImpl) ListRoutes(ctx context.Context, operatorID *uuid.UUID
 		limit = 20
 	}
 
-	routes, total, err := s.routeRepo.ListRoutes(ctx, operatorID, page, limit)
+	routes, total, err := s.routeRepo.ListRoutes(ctx, page, limit)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to list routes")
 		return nil, 0, fmt.Errorf("failed to list routes: %w", err)

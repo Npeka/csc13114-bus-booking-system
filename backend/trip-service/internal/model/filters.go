@@ -22,7 +22,6 @@ type TripSearchRequest struct {
 	MaxPrice           *float64             `json:"max_price,omitempty" validate:"omitempty,min=0"`
 	SeatTypes          []constants.SeatType `json:"seat_types,omitempty"`
 	Amenities          []constants.Amenity  `json:"amenities,omitempty"`
-	OperatorIDs        []uuid.UUID          `json:"operator_ids,omitempty"`
 
 	// Sorting
 	SortBy    string `json:"sort_by" validate:"omitempty,oneof=price departure_time duration"`
@@ -47,7 +46,6 @@ type TripSearchResponse struct {
 type SearchFilters struct {
 	PriceRange     PriceRange     `json:"price_range"`
 	AvailableTimes []TimeSlot     `json:"available_times"`
-	Operators      []OperatorInfo `json:"operators"`
 	SeatTypes      []SeatTypeInfo `json:"seat_types"`
 }
 
@@ -63,14 +61,6 @@ type TimeSlot struct {
 	Start time.Time `json:"start"`
 	End   time.Time `json:"end"`
 	Count int       `json:"count"`
-}
-
-// OperatorInfo represents operator information in filters
-type OperatorInfo struct {
-	ID        uuid.UUID `json:"id"`
-	Name      string    `json:"name"`
-	Logo      string    `json:"logo,omitempty"`
-	TripCount int       `json:"trip_count"`
 }
 
 // SeatTypeInfo represents seat type availability
@@ -101,11 +91,6 @@ type TripDetail struct {
 	BusModel  string              `json:"bus_model"`
 	BusType   constants.BusType   `json:"bus_type,omitempty"`
 	Amenities []constants.Amenity `json:"amenities,omitempty"`
-
-	// Operator info
-	OperatorID   uuid.UUID `json:"operator_id"`
-	OperatorName string    `json:"operator_name"`
-	OperatorLogo string    `json:"operator_logo,omitempty"`
 
 	// Pricing tiers
 	PriceTiers []PriceTier `json:"price_tiers,omitempty"`

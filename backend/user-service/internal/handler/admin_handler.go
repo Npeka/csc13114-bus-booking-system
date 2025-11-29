@@ -75,7 +75,7 @@ func (h *AdminHandlerImpl) BlacklistUserTokens(r *ginext.Request) (*ginext.Respo
 		"user_id": req.UserID,
 		"action":  "tokens_blacklisted",
 		"reason":  req.Reason,
-	}, "All user tokens have been blacklisted"), nil
+	}), nil
 }
 
 func (h *AdminHandlerImpl) ForceLogoutUser(r *ginext.Request) (*ginext.Response, error) {
@@ -114,5 +114,5 @@ func (h *AdminHandlerImpl) ForceLogoutUser(r *ginext.Request) (*ginext.Response,
 		"user_id": req.UserID,
 		"action":  "force_logout",
 		"reason":  req.Reason,
-	}, "User has been forcefully logged out from all devices"), nil
+	}), nil
 }

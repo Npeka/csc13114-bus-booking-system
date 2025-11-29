@@ -15,7 +15,7 @@ type RouteRepository interface {
 	GetRouteByID(ctx context.Context, id uuid.UUID) (*model.Route, error)
 	UpdateRoute(ctx context.Context, route *model.Route) error
 	DeleteRoute(ctx context.Context, id uuid.UUID) error
-	ListRoutes(ctx context.Context, operatorID *uuid.UUID, page, limit int) ([]model.RouteSummary, int64, error)
+	ListRoutes(ctx context.Context, page, limit int) ([]model.RouteSummary, int64, error)
 	GetRoutesByOriginDestination(ctx context.Context, origin, destination string) ([]model.Route, error)
 }
 
@@ -33,9 +33,7 @@ func (r *RouteRepositoryImpl) CreateRoute(ctx context.Context, route *model.Rout
 
 func (r *RouteRepositoryImpl) GetRouteByID(ctx context.Context, id uuid.UUID) (*model.Route, error) {
 	var route model.Route
-	err := r.db.WithContext(ctx).
-		Preload("Operator").
-		First(&route, "id = ?", id).Error
+	err := r.db.WithContext(ctx).First(&route, "id = ?", id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -50,29 +48,22 @@ func (r *RouteRepositoryImpl) DeleteRoute(ctx context.Context, id uuid.UUID) err
 	return r.db.WithContext(ctx).Delete(&model.Route{}, "id = ?", id).Error
 }
 
-func (r *RouteRepositoryImpl) ListRoutes(ctx context.Context, operatorID *uuid.UUID, page, limit int) ([]model.RouteSummary, int64, error) {
+func (r *RouteRepositoryImpl) ListRoutes(ctx context.Context, page, limit int) ([]model.RouteSummary, int64, error) {
 	var results []model.RouteSummary
 	var total int64
 
 	query := r.db.WithContext(ctx).Table("routes r").
 		Select(`
 			r.id, r.origin, r.destination, r.distance_km, r.estimated_minutes,
-			r.is_active, r.created_at, o.name as operator_name,
+			r.is_active, r.created_at,
 			COUNT(t.id) as active_trips
 		`).
-		Joins("JOIN operators o ON r.operator_id = o.id").
 		Joins("LEFT JOIN trips t ON r.id = t.route_id AND t.is_active = true AND t.departure_time > NOW()").
 		Group("r.id, o.name")
 
-	if operatorID != nil {
-		query = query.Where("r.operator_id = ?", *operatorID)
-	}
-
 	// Count total
 	countQuery := r.db.WithContext(ctx).Model(&model.Route{})
-	if operatorID != nil {
-		countQuery = countQuery.Where("operator_id = ?", *operatorID)
-	}
+
 	if err := countQuery.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
@@ -101,8 +92,14 @@ func (r *RouteRepositoryImpl) ListRoutes(ctx context.Context, operatorID *uuid.U
 	for rows.Next() {
 		var result model.RouteSummary
 		err := rows.Scan(
-			&result.ID, &result.Origin, &result.Destination, &result.DistanceKm, &result.EstimatedMinutes,
-			&result.IsActive, &result.CreatedAt, &result.OperatorName, &result.ActiveTrips,
+			&result.ID,
+			&result.Origin,
+			&result.Destination,
+			&result.DistanceKm,
+			&result.EstimatedMinutes,
+			&result.IsActive,
+			&result.CreatedAt,
+			&result.ActiveTrips,
 		)
 		if err != nil {
 			return nil, 0, err
@@ -117,7 +114,6 @@ func (r *RouteRepositoryImpl) GetRoutesByOriginDestination(ctx context.Context, 
 	var routes []model.Route
 	err := r.db.WithContext(ctx).
 		Where("origin = ? AND destination = ? AND is_active = ?", origin, destination, true).
-		Preload("Operator").
 		Find(&routes).Error
 	return routes, err
 }

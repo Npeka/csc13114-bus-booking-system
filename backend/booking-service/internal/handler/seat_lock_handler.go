@@ -47,7 +47,7 @@ func (h *SeatLockHandlerImpl) LockSeats(r *ginext.Request) (*ginext.Response, er
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(nil, "Seats locked successfully"), nil
+	return ginext.NewSuccessResponse("Seats locked successfully"), nil
 }
 
 // UnlockSeats godoc
@@ -73,7 +73,7 @@ func (h *SeatLockHandlerImpl) UnlockSeats(r *ginext.Request) (*ginext.Response, 
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(nil, "Seats unlocked successfully"), nil
+	return ginext.NewSuccessResponse("Seats unlocked successfully"), nil
 }
 
 // GetLockedSeats godoc
@@ -100,5 +100,5 @@ func (h *SeatLockHandlerImpl) GetLockedSeats(r *ginext.Request) (*ginext.Respons
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(seatIDs, "Locked seats retrieved successfully"), nil
+	return ginext.NewSuccessResponse(seatIDs), nil
 }

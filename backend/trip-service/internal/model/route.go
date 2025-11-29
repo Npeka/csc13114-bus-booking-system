@@ -8,26 +8,58 @@ import (
 )
 
 type Route struct {
-	ID               uuid.UUID      `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
-	OperatorID       uuid.UUID      `gorm:"type:uuid;not null" json:"operator_id" validate:"required"`
-	Origin           string         `gorm:"type:varchar(255);not null" json:"origin" validate:"required"`
-	Destination      string         `gorm:"type:varchar(255);not null" json:"destination" validate:"required"`
-	DistanceKm       int            `gorm:"type:integer;not null" json:"distance_km" validate:"required,min=1"`
-	EstimatedMinutes int            `gorm:"type:integer;not null" json:"estimated_minutes" validate:"required,min=1"`
-	IsActive         bool           `gorm:"type:boolean;not null;default:true" json:"is_active"`
-	CreatedAt        time.Time      `gorm:"type:timestamptz;not null;default:now()" json:"created_at"`
-	UpdatedAt        time.Time      `gorm:"type:timestamptz;not null;default:now()" json:"updated_at"`
-	DeletedAt        gorm.DeletedAt `gorm:"index" json:"-"`
+	BaseModel
+	Origin           string `gorm:"type:varchar(255);not null" json:"origin" validate:"required"`
+	Destination      string `gorm:"type:varchar(255);not null" json:"destination" validate:"required"`
+	DistanceKm       int    `gorm:"type:integer;not null" json:"distance_km" validate:"required,min=1"`
+	EstimatedMinutes int    `gorm:"type:integer;not null" json:"estimated_minutes" validate:"required,min=1"`
+	IsActive         bool   `gorm:"type:boolean;not null;default:true" json:"is_active"`
 
-	Operator *Operator `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"operator,omitempty"`
-	Trips    []Trip    `gorm:"foreignKey:RouteID" json:"trips,omitempty"`
+	Trips      []Trip      `gorm:"foreignKey:RouteID" json:"trips"`
+	RouteStops []RouteStop `gorm:"foreignKey:RouteID" json:"route_stops"`
 }
 
-func (Route) TableName() string { return "routes" }
+func (Route) TableName() string {
+	return "routes"
+}
 
 func (r *Route) BeforeCreate(tx *gorm.DB) error {
 	if r.ID == uuid.Nil {
 		r.ID = uuid.New()
 	}
 	return nil
+}
+
+type RouteListResponse struct {
+	Routes     []RouteSummary `json:"routes"`
+	Total      int64          `json:"total"`
+	Page       int            `json:"page"`
+	Limit      int            `json:"limit"`
+	TotalPages int            `json:"total_pages"`
+}
+
+type RouteSummary struct {
+	ID               uuid.UUID `json:"id"`
+	Origin           string    `json:"origin"`
+	Destination      string    `json:"destination"`
+	DistanceKm       int       `json:"distance_km"`
+	EstimatedMinutes int       `json:"estimated_minutes"`
+	ActiveTrips      int       `json:"active_trips"`
+	IsActive         bool      `json:"is_active"`
+	CreatedAt        time.Time `json:"created_at"`
+}
+
+type CreateRouteRequest struct {
+	Origin           string `json:"origin" validate:"required,min=2,max=255"`
+	Destination      string `json:"destination" validate:"required,min=2,max=255"`
+	DistanceKm       int    `json:"distance_km" validate:"required,min=1"`
+	EstimatedMinutes int    `json:"estimated_minutes" validate:"required,min=1"`
+}
+
+type UpdateRouteRequest struct {
+	Origin           *string `json:"origin,omitempty" validate:"omitempty,min=2,max=255"`
+	Destination      *string `json:"destination,omitempty" validate:"omitempty,min=2,max=255"`
+	DistanceKm       *int    `json:"distance_km,omitempty" validate:"omitempty,min=1"`
+	EstimatedMinutes *int    `json:"estimated_minutes,omitempty" validate:"omitempty,min=1"`
+	IsActive         *bool   `json:"is_active,omitempty"`
 }

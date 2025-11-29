@@ -53,7 +53,7 @@ func (h *TransactionHandlerImpl) CreateTransaction(r *ginext.Request) (*ginext.R
 		return nil, ginext.NewInternalServerError("Failed to create transaction")
 	}
 
-	return ginext.NewSuccessResponse(resp, "Transaction created successfully"), nil
+	return ginext.NewSuccessResponse(resp), nil
 }
 
 // CreatePaymentLink godoc
@@ -80,7 +80,7 @@ func (h *TransactionHandlerImpl) CreatePaymentLink(r *ginext.Request) (*ginext.R
 		return nil, ginext.NewInternalServerError("Failed to create payment link")
 	}
 
-	return ginext.NewSuccessResponse(resp, "Payment link created successfully"), nil
+	return ginext.NewSuccessResponse(resp), nil
 }
 
 // HandlePaymentWebhook godoc
@@ -107,7 +107,7 @@ func (h *TransactionHandlerImpl) HandlePaymentWebhook(r *ginext.Request) (*ginex
 		return nil, ginext.NewInternalServerError("Failed to process webhook")
 	}
 
-	return ginext.NewSuccessResponse(nil, "Webhook processed successfully"), nil
+	return ginext.NewSuccessResponse("Webhook processed successfully"), nil
 }
 
 // HandlePaymentReturn godoc
@@ -150,7 +150,7 @@ func (h *TransactionHandlerImpl) HandlePaymentReturn(r *ginext.Request) (*ginext
 		"order_code": orderCode,
 		"status":     transaction.Status,
 		"booking_id": transaction.BookingID,
-	}, "Payment confirmed successfully"), nil
+	}), nil
 }
 
 // HandlePaymentCancel godoc
@@ -185,7 +185,7 @@ func (h *TransactionHandlerImpl) HandlePaymentCancel(r *ginext.Request) (*ginext
 	return ginext.NewSuccessResponse(map[string]interface{}{
 		"order_code": orderCode,
 		"status":     "CANCELLED",
-	}, "Payment cancelled"), nil
+	}), nil
 }
 
 // GetTransactionByOrderCode godoc
@@ -212,5 +212,5 @@ func (h *TransactionHandlerImpl) GetTransactionByOrderCode(r *ginext.Request) (*
 		return nil, ginext.NewNotFoundError("Transaction not found")
 	}
 
-	return ginext.NewSuccessResponse(transaction, "Transaction retrieved successfully"), nil
+	return ginext.NewSuccessResponse(transaction), nil
 }

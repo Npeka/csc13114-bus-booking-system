@@ -14,10 +14,12 @@ import (
 type TripHandler interface {
 	SearchTrips(r *ginext.Request) (*ginext.Response, error)
 	GetTrip(r *ginext.Request) (*ginext.Response, error)
+	ListTripsByRoute(r *ginext.Request) (*ginext.Response, error)
+
+	// Admin only
 	CreateTrip(r *ginext.Request) (*ginext.Response, error)
 	UpdateTrip(r *ginext.Request) (*ginext.Response, error)
 	DeleteTrip(r *ginext.Request) (*ginext.Response, error)
-	ListTripsByRoute(r *ginext.Request) (*ginext.Response, error)
 }
 
 type TripHandlerImpl struct {
@@ -67,7 +69,7 @@ func (h *TripHandlerImpl) SearchTrips(r *ginext.Request) (*ginext.Response, erro
 		TotalPages: totalPages,
 	}
 
-	return ginext.NewSuccessResponse(response, "Trips retrieved successfully"), nil
+	return ginext.NewSuccessResponse(response), nil
 }
 
 // GetTrip godoc
@@ -94,7 +96,7 @@ func (h *TripHandlerImpl) GetTrip(r *ginext.Request) (*ginext.Response, error) {
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(trip, "Trip retrieved successfully"), nil
+	return ginext.NewSuccessResponse(trip), nil
 }
 
 // CreateTrip godoc
@@ -121,7 +123,7 @@ func (h *TripHandlerImpl) CreateTrip(r *ginext.Request) (*ginext.Response, error
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(trip, "Trip created successfully"), nil
+	return ginext.NewCreatedResponse(trip), nil
 }
 
 // UpdateTrip godoc
@@ -155,7 +157,7 @@ func (h *TripHandlerImpl) UpdateTrip(r *ginext.Request) (*ginext.Response, error
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(trip, "Trip updated successfully"), nil
+	return ginext.NewSuccessResponse(trip), nil
 }
 
 // DeleteTrip godoc
@@ -182,7 +184,7 @@ func (h *TripHandlerImpl) DeleteTrip(r *ginext.Request) (*ginext.Response, error
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(nil, "Trip deleted successfully"), nil
+	return ginext.NewNoContentResponse(), nil
 }
 
 // ListTripsByRoute godoc
@@ -220,10 +222,9 @@ func (h *TripHandlerImpl) ListTripsByRoute(r *ginext.Request) (*ginext.Response,
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(trips, "Trips retrieved successfully"), nil
+	return ginext.NewSuccessResponse(trips), nil
 }
 
-// parseDate parses date string in YYYY-MM-DD format
 func parseDate(dateStr string) (time.Time, error) {
 	return time.Parse("2006-01-02", dateStr)
 }

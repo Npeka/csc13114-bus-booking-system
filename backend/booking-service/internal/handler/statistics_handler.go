@@ -66,7 +66,7 @@ func (h *StatisticsHandlerImpl) GetBookingStats(r *ginext.Request) (*ginext.Resp
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(stats, "Statistics retrieved successfully"), nil
+	return ginext.NewSuccessResponse(stats), nil
 }
 
 // GetPopularTrips godoc
@@ -100,5 +100,5 @@ func (h *StatisticsHandlerImpl) GetPopularTrips(r *ginext.Request) (*ginext.Resp
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(trips, "Popular trips retrieved successfully"), nil
+	return ginext.NewSuccessResponse(trips), nil
 }

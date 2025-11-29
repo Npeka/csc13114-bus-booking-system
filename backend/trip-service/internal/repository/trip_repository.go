@@ -37,9 +37,7 @@ func (r *TripRepositoryImpl) GetTripByID(ctx context.Context, id uuid.UUID) (*mo
 	var trip model.Trip
 	err := r.db.WithContext(ctx).
 		Preload("Route").
-		Preload("Route.Operator").
 		Preload("Bus").
-		Preload("Bus.Operator").
 		First(&trip, "id = ?", id).Error
 	if err != nil {
 		return nil, err
@@ -65,12 +63,10 @@ func (r *TripRepositoryImpl) SearchTrips(ctx context.Context, req *model.TripSea
 			t.base_price, t.status,
 			r.origin, r.destination, r.distance_km,
 			b.model as bus_model, b.amenities_json,
-			o.id as operator_id, o.name as operator_name, o.logo as operator_logo,
 			COALESCE((SELECT COUNT(*) FROM seats WHERE bus_id = b.id), 0) as total_seats
 		`).
 		Joins("JOIN routes r ON t.route_id = r.id").
 		Joins("JOIN buses b ON t.bus_id = b.id").
-		Joins("JOIN operators o ON r.operator_id = o.id").
 		Where("r.origin ILIKE ? AND r.destination ILIKE ?", "%"+req.Origin+"%", "%"+req.Destination+"%").
 		Where("DATE(t.departure_time) = DATE(?)", req.Date).
 		Where("t.is_active = ? AND r.is_active = ? AND b.is_active = ?", true, true, true).
@@ -88,9 +84,6 @@ func (r *TripRepositoryImpl) SearchTrips(ctx context.Context, req *model.TripSea
 	}
 	if req.MaxPrice != nil {
 		query = query.Where("t.base_price <= ?", *req.MaxPrice)
-	}
-	if len(req.OperatorIDs) > 0 {
-		query = query.Where("o.id IN (?)", req.OperatorIDs)
 	}
 
 	// Amenities filter (if bus has all requested amenities)
@@ -163,21 +156,23 @@ func (r *TripRepositoryImpl) SearchTrips(ctx context.Context, req *model.TripSea
 	for rows.Next() {
 		var result model.TripDetail
 		var amenitiesJSON string
-		var operatorLogo *string
 		err := rows.Scan(
-			&result.ID, &result.RouteID, &result.BusID, &result.DepartureTime, &result.ArrivalTime,
-			&result.BasePrice, &result.Status,
-			&result.Origin, &result.Destination, &result.DistanceKm,
-			&result.BusModel, &amenitiesJSON,
-			&result.OperatorID, &result.OperatorName, &operatorLogo,
+			&result.ID,
+			&result.RouteID,
+			&result.BusID,
+			&result.DepartureTime,
+			&result.ArrivalTime,
+			&result.BasePrice,
+			&result.Status,
+			&result.Origin,
+			&result.Destination,
+			&result.DistanceKm,
+			&result.BusModel,
+			&amenitiesJSON,
 			&result.TotalSeats,
 		)
 		if err != nil {
 			return nil, 0, err
-		}
-
-		if operatorLogo != nil {
-			result.OperatorLogo = *operatorLogo
 		}
 
 		// Calculate duration

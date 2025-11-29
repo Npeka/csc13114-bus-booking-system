@@ -49,7 +49,7 @@ func (h *FeedbackHandlerImpl) CreateFeedback(r *ginext.Request) (*ginext.Respons
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(feedback, "Feedback created successfully"), nil
+	return ginext.NewCreatedResponse(feedback), nil
 }
 
 // GetBookingFeedback godoc
@@ -75,7 +75,7 @@ func (h *FeedbackHandlerImpl) GetBookingFeedback(r *ginext.Request) (*ginext.Res
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(feedback, "Feedback retrieved successfully"), nil
+	return ginext.NewSuccessResponse(feedback), nil
 }
 
 // GetTripFeedbacks godoc
@@ -119,5 +119,5 @@ func (h *FeedbackHandlerImpl) GetTripFeedbacks(r *ginext.Request) (*ginext.Respo
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(feedbacks, "Feedbacks retrieved successfully"), nil
+	return ginext.NewSuccessResponse(feedbacks), nil
 }

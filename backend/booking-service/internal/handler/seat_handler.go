@@ -48,7 +48,7 @@ func (h *SeatHandlerImpl) GetSeatAvailability(r *ginext.Request) (*ginext.Respon
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(availability, "Seat availability retrieved successfully"), nil
+	return ginext.NewSuccessResponse(availability), nil
 }
 
 // ReserveSeat godoc
@@ -74,7 +74,7 @@ func (h *SeatHandlerImpl) ReserveSeat(r *ginext.Request) (*ginext.Response, erro
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(nil, "Seat reserved successfully"), nil
+	return ginext.NewSuccessResponse("Seat reserved successfully"), nil
 }
 
 // ReleaseSeat godoc
@@ -100,5 +100,5 @@ func (h *SeatHandlerImpl) ReleaseSeat(r *ginext.Request) (*ginext.Response, erro
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(nil, "Seat released successfully"), nil
+	return ginext.NewSuccessResponse("Seat released successfully"), nil
 }

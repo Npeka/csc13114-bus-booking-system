@@ -58,7 +58,7 @@ func (h *BookingHandlerImpl) CreateBooking(r *ginext.Request) (*ginext.Response,
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(booking, "Booking created successfully"), nil
+	return ginext.NewSuccessResponse(booking), nil
 }
 
 // GetBooking godoc
@@ -84,7 +84,7 @@ func (h *BookingHandlerImpl) GetBooking(r *ginext.Request) (*ginext.Response, er
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(booking, "Booking retrieved successfully"), nil
+	return ginext.NewSuccessResponse(booking), nil
 }
 
 // GetUserBookings godoc
@@ -129,7 +129,7 @@ func (h *BookingHandlerImpl) GetUserBookings(r *ginext.Request) (*ginext.Respons
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(bookings, "User bookings retrieved successfully"), nil
+	return ginext.NewSuccessResponse(bookings), nil
 }
 
 // GetTripBookings godoc
@@ -174,7 +174,7 @@ func (h *BookingHandlerImpl) GetTripBookings(r *ginext.Request) (*ginext.Respons
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(bookings, "Trip bookings retrieved successfully"), nil
+	return ginext.NewSuccessResponse(bookings), nil
 }
 
 // CancelBooking godoc
@@ -207,7 +207,7 @@ func (h *BookingHandlerImpl) CancelBooking(r *ginext.Request) (*ginext.Response,
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(nil, "Booking cancelled successfully"), nil
+	return ginext.NewSuccessResponse("Booking cancelled successfully"), nil
 }
 
 // UpdateBookingStatus godoc
@@ -240,5 +240,5 @@ func (h *BookingHandlerImpl) UpdateBookingStatus(r *ginext.Request) (*ginext.Res
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(nil, "Booking status updated successfully"), nil
+	return ginext.NewSuccessResponse("Booking status updated successfully"), nil
 }

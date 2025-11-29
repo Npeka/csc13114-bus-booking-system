@@ -15,10 +15,9 @@ func (s *Server) buildHandler() http.Handler {
 	routeRepo := repository.NewRouteRepository(s.db.DB)
 	routeStopRepo := repository.NewRouteStopRepository(s.db.DB)
 	busRepo := repository.NewBusRepository(s.db.DB)
-	operatorRepo := repository.NewOperatorRepository(s.db.DB)
 	seatRepo := repository.NewSeatRepository(s.db.DB)
 
-	tripService := service.NewTripService(tripRepo, routeRepo, routeStopRepo, busRepo, operatorRepo, seatRepo)
+	tripService := service.NewTripService(tripRepo, routeRepo, routeStopRepo, busRepo, seatRepo)
 	routeService := service.NewRouteService(routeRepo)
 	busService := service.NewBusService(busRepo, seatRepo)
 	routeStopService := service.NewRouteStopService(routeStopRepo, routeRepo)

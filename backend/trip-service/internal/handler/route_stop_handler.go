@@ -49,7 +49,7 @@ func (h *RouteStopHandlerImpl) CreateRouteStop(r *ginext.Request) (*ginext.Respo
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(stop, "Route stop created successfully"), nil
+	return ginext.NewCreatedResponse(stop), nil
 }
 
 // UpdateRouteStop godoc
@@ -80,11 +80,11 @@ func (h *RouteStopHandlerImpl) UpdateRouteStop(r *ginext.Request) (*ginext.Respo
 
 	stop, err := h.stopService.UpdateRouteStop(r.Context(), id, &req)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to update route stop")
+		log.Error().Err(err).Str("stop_id", idStr).Msg("Failed to update route stop")
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(stop, "Route stop updated successfully"), nil
+	return ginext.NewSuccessResponse(stop), nil
 }
 
 // DeleteRouteStop godoc
@@ -110,7 +110,7 @@ func (h *RouteStopHandlerImpl) DeleteRouteStop(r *ginext.Request) (*ginext.Respo
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(nil, "Route stop deleted successfully"), nil
+	return ginext.NewNoContentResponse(), nil
 }
 
 // ListRouteStops godoc
@@ -133,11 +133,11 @@ func (h *RouteStopHandlerImpl) ListRouteStops(r *ginext.Request) (*ginext.Respon
 
 	stops, err := h.stopService.ListRouteStops(r.Context(), routeID)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to list route stops")
+		log.Error().Err(err).Str("route_id", routeIDStr).Msg("Failed to list route stops")
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(stops, "Route stops retrieved successfully"), nil
+	return ginext.NewSuccessResponse(stops), nil
 }
 
 // ReorderStops godoc
@@ -170,5 +170,5 @@ func (h *RouteStopHandlerImpl) ReorderStops(r *ginext.Request) (*ginext.Response
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(nil, "Stops reordered successfully"), nil
+	return ginext.NewNoContentResponse(), nil
 }
