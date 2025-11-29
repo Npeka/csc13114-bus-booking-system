@@ -37,7 +37,7 @@ services:
   user-service:
     containerName: user-service
     image: npkhang22/bb-user-service
-    tag: user-service-3f70541
+    tag: user-service-f955830
     port: 8080
     env:
       SERVICE_NAME: "user-service"
