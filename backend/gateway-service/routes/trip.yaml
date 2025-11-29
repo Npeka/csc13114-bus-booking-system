@@ -1,13 +1,34 @@
 service: "trip"
 routes:
-  # Public routes
-  - path: "/api/v1/trips/search"
-    methods: ["GET", "POST"]
-
-  - path: "/api/v1/trips"
+  # Public routes - Constants
+  - path: "/api/v1/constants"
     methods: ["GET"]
 
+  # Public routes - Trips
+  - path: "/api/v1/trips/search"
+    methods: ["POST"]
+
   - path: "/api/v1/trips/:id"
+    methods: ["GET"]
+
+  - path: "/api/v1/trips/route/:route_id"
+    methods: ["GET"]
+
+  # Public routes - Buses
+  - path: "/api/v1/buses"
+    methods: ["GET"]
+
+  - path: "/api/v1/buses/:id"
+    methods: ["GET"]
+
+  - path: "/api/v1/buses/:id/seats"
+    methods: ["GET"]
+
+  - path: "/api/v1/buses/:id/seat-map"
+    methods: ["GET"]
+
+  # Public routes - Routes
+  - path: "/api/v1/routes/search"
     methods: ["GET"]
 
   - path: "/api/v1/routes"
@@ -16,46 +37,64 @@ routes:
   - path: "/api/v1/routes/:id"
     methods: ["GET"]
 
-  # Authenticated routes for operators/admins
-  - path: "/api/v1/trips/manage"
-    methods: ["POST", "PUT", "DELETE"]
-    auth:
-      required: true
-      roles: ["admin", "operator"]
+  - path: "/api/v1/routes/:id/stops"
+    methods: ["GET"]
 
-  - path: "/api/v1/trips/:id/manage"
+  - path: "/api/v1/routes/:id/stops/reorder"
+    methods: ["POST"]
+
+  # Public routes - Seats
+  - path: "/api/v1/buses/seats"
+    methods: ["POST"]
+
+  - path: "/api/v1/buses/seats/bulk"
+    methods: ["POST"]
+
+  - path: "/api/v1/buses/seats/:id"
     methods: ["PUT", "DELETE"]
-    auth:
-      required: true
-      roles: ["admin", "operator"]
 
-  - path: "/api/v1/routes/manage"
+  # Admin-only routes - Trips
+  - path: "/api/v1/trips"
     methods: ["POST", "PUT", "DELETE"]
-    auth:
-      required: true
-      roles: ["admin", "operator"]
-
-  - path: "/api/v1/routes/:id/manage"
-    methods: ["PUT", "DELETE"]
-    auth:
-      required: true
-      roles: ["admin", "operator"]
-
-  # Admin-only routes
-  - path: "/api/v1/admin/trips"
-    methods: ["GET", "POST"]
     auth:
       required: true
       roles: ["admin"]
 
-  - path: "/api/v1/admin/trips/:id"
-    methods: ["GET", "PUT", "DELETE", "PATCH"]
+  # Admin-only routes - Buses
+  - path: "/api/v1/buses"
+    methods: ["POST"]
     auth:
       required: true
       roles: ["admin"]
 
-  - path: "/api/v1/admin/trips/:id/status"
-    methods: ["PATCH"]
+  - path: "/api/v1/buses/:id"
+    methods: ["PUT", "DELETE"]
+    auth:
+      required: true
+      roles: ["admin"]
+
+  # Admin-only routes - Routes
+  - path: "/api/v1/routes"
+    methods: ["POST"]
+    auth:
+      required: true
+      roles: ["admin"]
+
+  - path: "/api/v1/routes/:id"
+    methods: ["PUT", "DELETE"]
+    auth:
+      required: true
+      roles: ["admin"]
+
+  # Admin-only routes - Route Stops
+  - path: "/api/v1/routes/stops"
+    methods: ["POST"]
+    auth:
+      required: true
+      roles: ["admin"]
+
+  - path: "/api/v1/routes/stops/:id"
+    methods: ["PUT", "DELETE"]
     auth:
       required: true
       roles: ["admin"]
