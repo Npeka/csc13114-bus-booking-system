@@ -1,36 +1,4 @@
 definitions:
-  bus-booking_trip-service_internal_constants.Amenity:
-    enum:
-    - wifi
-    - ac
-    - toilet
-    - tv
-    - charging
-    - blanket
-    - water
-    - snacks
-    type: string
-    x-enum-varnames:
-    - AmenityWiFi
-    - AmenityAC
-    - AmenityToilet
-    - AmenityTV
-    - AmenityCharging
-    - AmenityBlanket
-    - AmenityWater
-    - AmenitySnacks
-  bus-booking_trip-service_internal_constants.BusType:
-    enum:
-    - standard
-    - vip
-    - sleeper
-    - double_decker
-    type: string
-    x-enum-varnames:
-    - BusTypeStandard
-    - BusTypeVIP
-    - BusTypeSleeper
-    - BusTypeDoubleDecker
   bus-booking_trip-service_internal_constants.SeatType:
     enum:
     - standard
@@ -51,20 +19,6 @@ definitions:
     - StopTypePickup
     - StopTypeDropoff
     - StopTypeBoth
-  bus-booking_trip-service_internal_constants.TripStatus:
-    enum:
-    - scheduled
-    - in_progress
-    - completed
-    - cancelled
-    - delayed
-    type: string
-    x-enum-varnames:
-    - TripStatusScheduled
-    - TripStatusInProgress
-    - TripStatusCompleted
-    - TripStatusCancelled
-    - TripStatusDelayed
   bus-booking_trip-service_internal_model.BulkCreateSeatsRequest:
     properties:
       bus_id:
@@ -150,11 +104,16 @@ definitions:
         maxLength: 255
         minLength: 2
         type: string
+      route_stops:
+        items:
+          $ref: '#/definitions/bus-booking_trip-service_internal_model.CreateRouteStopRequest'
+        type: array
     required:
     - destination
     - distance_km
     - estimated_minutes
     - origin
+    - route_stops
     type: object
   bus-booking_trip-service_internal_model.CreateRouteStopRequest:
     properties:
@@ -169,8 +128,6 @@ definitions:
       offset_minutes:
         minimum: 0
         type: integer
-      route_id:
-        type: string
       stop_order:
         minimum: 1
         type: integer
@@ -178,7 +135,6 @@ definitions:
         $ref: '#/definitions/bus-booking_trip-service_internal_constants.StopType'
     required:
     - location
-    - route_id
     - stop_order
     - stop_type
     type: object
@@ -230,26 +186,6 @@ definitions:
     - bus_id
     - departure_time
     - route_id
-    type: object
-  bus-booking_trip-service_internal_model.PriceRange:
-    properties:
-      max:
-        type: number
-      min:
-        type: number
-    type: object
-  bus-booking_trip-service_internal_model.PriceTier:
-    properties:
-      available_count:
-        type: integer
-      base_price:
-        type: number
-      final_price:
-        type: number
-      price_multiplier:
-        type: number
-      seat_type:
-        $ref: '#/definitions/bus-booking_trip-service_internal_constants.SeatType'
     type: object
   bus-booking_trip-service_internal_model.Route:
     properties:
@@ -320,19 +256,6 @@ definitions:
     - route_id
     - stop_order
     - stop_type
-    type: object
-  bus-booking_trip-service_internal_model.SearchFilters:
-    properties:
-      available_times:
-        items:
-          $ref: '#/definitions/bus-booking_trip-service_internal_model.TimeSlot'
-        type: array
-      price_range:
-        $ref: '#/definitions/bus-booking_trip-service_internal_model.PriceRange'
-      seat_types:
-        items:
-          $ref: '#/definitions/bus-booking_trip-service_internal_model.SeatTypeInfo'
-        type: array
     type: object
   bus-booking_trip-service_internal_model.Seat:
     properties:
@@ -414,25 +337,6 @@ definitions:
       total_seats:
         type: integer
     type: object
-  bus-booking_trip-service_internal_model.SeatTypeInfo:
-    properties:
-      count:
-        type: integer
-      type:
-        $ref: '#/definitions/bus-booking_trip-service_internal_constants.SeatType'
-    type: object
-  bus-booking_trip-service_internal_model.TimeSlot:
-    properties:
-      count:
-        type: integer
-      end:
-        type: string
-      label:
-        description: '"Morning", "Afternoon", "Evening", "Night"'
-        type: string
-      start:
-        type: string
-    type: object
   bus-booking_trip-service_internal_model.Trip:
     properties:
       arrival_time:
@@ -471,120 +375,6 @@ definitions:
     - bus_id
     - departure_time
     - route_id
-    type: object
-  bus-booking_trip-service_internal_model.TripDetail:
-    properties:
-      amenities:
-        items:
-          $ref: '#/definitions/bus-booking_trip-service_internal_constants.Amenity'
-        type: array
-      arrival_time:
-        type: string
-      available_seats:
-        type: integer
-      base_price:
-        type: number
-      bus_id:
-        type: string
-      bus_model:
-        description: Bus info
-        type: string
-      bus_type:
-        $ref: '#/definitions/bus-booking_trip-service_internal_constants.BusType'
-      departure_time:
-        type: string
-      destination:
-        type: string
-      distance_km:
-        type: integer
-      duration_minutes:
-        type: integer
-      id:
-        type: string
-      origin:
-        description: Route info
-        type: string
-      price_tiers:
-        description: Pricing tiers
-        items:
-          $ref: '#/definitions/bus-booking_trip-service_internal_model.PriceTier'
-        type: array
-      route_id:
-        type: string
-      status:
-        $ref: '#/definitions/bus-booking_trip-service_internal_constants.TripStatus'
-      total_seats:
-        type: integer
-    type: object
-  bus-booking_trip-service_internal_model.TripSearchRequest:
-    properties:
-      amenities:
-        items:
-          $ref: '#/definitions/bus-booking_trip-service_internal_constants.Amenity'
-        type: array
-      date:
-        type: string
-      departure_time_end:
-        type: string
-      departure_time_start:
-        description: Advanced filters
-        type: string
-      destination:
-        type: string
-      limit:
-        maximum: 100
-        minimum: 1
-        type: integer
-      max_price:
-        minimum: 0
-        type: number
-      min_price:
-        minimum: 0
-        type: number
-      origin:
-        description: Basic search
-        type: string
-      page:
-        description: Pagination
-        minimum: 1
-        type: integer
-      seat_types:
-        items:
-          $ref: '#/definitions/bus-booking_trip-service_internal_constants.SeatType'
-        type: array
-      sort_by:
-        description: Sorting
-        enum:
-        - price
-        - departure_time
-        - duration
-        type: string
-      sort_order:
-        enum:
-        - asc
-        - desc
-        type: string
-    required:
-    - date
-    - destination
-    - origin
-    type: object
-  bus-booking_trip-service_internal_model.TripSearchResponse:
-    properties:
-      filters:
-        $ref: '#/definitions/bus-booking_trip-service_internal_model.SearchFilters'
-      limit:
-        type: integer
-      page:
-        type: integer
-      total:
-        type: integer
-      total_pages:
-        type: integer
-      trips:
-        items:
-          $ref: '#/definitions/bus-booking_trip-service_internal_model.TripDetail'
-        type: array
     type: object
   bus-booking_trip-service_internal_model.UpdateBusRequest:
     properties:
@@ -1147,14 +937,16 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get constants by type (bus, route, trip). Returns all types if
-        type parameter is not specified.
+      description: Get constants by type (bus, route, trip, search_filters, cities).
+        Returns all types if type parameter is not specified.
       parameters:
       - description: Constant type
         enum:
         - bus
         - route
         - trip
+        - search_filters
+        - cities
         in: query
         name: type
         type: string
@@ -1440,8 +1232,8 @@ paths:
         name: route_id
         required: true
         type: string
-      - description: Date in YYYY-MM-DD format
-        example: "2024-01-15"
+      - description: Date in DD/MM/YYYY format
+        example: 15/01/2024
         in: query
         name: date
         required: true
@@ -1622,6 +1414,39 @@ paths:
       tags:
       - route-stops
   /api/v1/trips:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of trips
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated trip list
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: List trips
+      tags:
+      - trips
     post:
       consumes:
       - application/json
@@ -1761,30 +1586,92 @@ paths:
       tags:
       - trips
   /api/v1/trips/search:
-    post:
+    get:
       consumes:
       - application/json
       description: Search for available trips based on origin, destination, and other
         criteria
       parameters:
-      - description: Trip search criteria
-        in: body
-        name: request
+      - description: Origin city
+        in: query
+        name: origin
         required: true
-        schema:
-          $ref: '#/definitions/bus-booking_trip-service_internal_model.TripSearchRequest'
+        type: string
+      - description: Destination city
+        in: query
+        name: destination
+        required: true
+        type: string
+      - description: Date in DD/MM/YYYY format
+        example: 01/12/2025
+        in: query
+        name: date
+        required: true
+        type: string
+      - description: Departure time start in HH:MM format
+        example: "06:00"
+        in: query
+        name: departure_time_start
+        type: string
+      - description: Departure time end in HH:MM format
+        example: "22:00"
+        in: query
+        name: departure_time_end
+        type: string
+      - description: Minimum price
+        in: query
+        name: min_price
+        type: number
+      - description: Maximum price
+        in: query
+        name: max_price
+        type: number
+      - collectionFormat: multi
+        description: Seat types
+        in: query
+        items:
+          type: string
+        name: seat_types
+        type: array
+      - collectionFormat: multi
+        description: Amenities
+        in: query
+        items:
+          type: string
+        name: amenities
+        type: array
+      - description: Sort by field
+        enum:
+        - price
+        - departure_time
+        - duration
+        in: query
+        name: sort_by
+        type: string
+      - description: Sort order
+        enum:
+        - asc
+        - desc
+        in: query
+        name: sort_order
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: page_size
+        type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: List of matching trips
+          description: List of matching trips with pagination
           schema:
-            allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/bus-booking_trip-service_internal_model.TripSearchResponse'
-              type: object
+            $ref: '#/definitions/ginext.Response'
         "400":
           description: Invalid request
           schema:

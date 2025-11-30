@@ -28,3 +28,17 @@ func AllStopTypes() []StopType {
 		StopTypeBoth,
 	}
 }
+
+// GetDisplayName returns a user-friendly display name for the stop type
+func (s StopType) GetDisplayName() string {
+	switch s {
+	case StopTypePickup:
+		return "Điểm đón"
+	case StopTypeDropoff:
+		return "Điểm trả"
+	case StopTypeBoth:
+		return "Điểm đón/trả"
+	default:
+		return string(s)
+	}
+}

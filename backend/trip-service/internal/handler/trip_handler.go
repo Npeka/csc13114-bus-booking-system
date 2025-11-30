@@ -14,6 +14,7 @@ import (
 type TripHandler interface {
 	SearchTrips(r *ginext.Request) (*ginext.Response, error)
 	GetTrip(r *ginext.Request) (*ginext.Response, error)
+	ListTrips(r *ginext.Request) (*ginext.Response, error)
 	ListTripsByRoute(r *ginext.Request) (*ginext.Response, error)
 
 	// Admin only
@@ -38,15 +39,27 @@ func NewTripHandler(tripService service.TripService) TripHandler {
 // @Tags trips
 // @Accept json
 // @Produce json
-// @Param request body model.TripSearchRequest true "Trip search criteria"
-// @Success 200 {object} ginext.Response{data=model.TripSearchResponse} "List of matching trips"
+// @Param origin query string true "Origin city"
+// @Param destination query string true "Destination city"
+// @Param date query string true "Date in DD/MM/YYYY format" example(01/12/2025)
+// @Param departure_time_start query string false "Departure time start in HH:MM format" example(06:00)
+// @Param departure_time_end query string false "Departure time end in HH:MM format" example(22:00)
+// @Param min_price query number false "Minimum price"
+// @Param max_price query number false "Maximum price"
+// @Param seat_types query []string false "Seat types" collectionFormat(multi)
+// @Param amenities query []string false "Amenities" collectionFormat(multi)
+// @Param sort_by query string false "Sort by field" Enums(price, departure_time, duration)
+// @Param sort_order query string false "Sort order" Enums(asc, desc)
+// @Param page query int false "Page number" default(1)
+// @Param page_size query int false "Items per page" default(20)
+// @Success 200 {object} ginext.Response "List of matching trips with pagination"
 // @Failure 400 {object} ginext.Response "Invalid request"
 // @Failure 500 {object} ginext.Response "Internal server error"
-// @Router /api/v1/trips/search [post]
+// @Router /api/v1/trips/search [get]
 func (h *TripHandlerImpl) SearchTrips(r *ginext.Request) (*ginext.Response, error) {
 	var req model.TripSearchRequest
-	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
-		log.Debug().Err(err).Msg("JSON binding failed")
+	if err := r.GinCtx.ShouldBindQuery(&req); err != nil {
+		log.Error().Err(err).Msg("Query binding failed")
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
@@ -56,20 +69,7 @@ func (h *TripHandlerImpl) SearchTrips(r *ginext.Request) (*ginext.Response, erro
 		return nil, err
 	}
 
-	totalPages := int((total + int64(req.Limit) - 1) / int64(req.Limit))
-	if req.Limit == 0 {
-		totalPages = 1
-	}
-
-	response := model.TripSearchResponse{
-		Trips:      trips,
-		Total:      total,
-		Page:       req.Page,
-		Limit:      req.Limit,
-		TotalPages: totalPages,
-	}
-
-	return ginext.NewSuccessResponse(response), nil
+	return ginext.NewPaginatedResponse(trips, req.Page, req.PageSize, total), nil
 }
 
 // GetTrip godoc
@@ -87,6 +87,7 @@ func (h *TripHandlerImpl) GetTrip(r *ginext.Request) (*ginext.Response, error) {
 	idStr := r.GinCtx.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
+		log.Error().Err(err).Str("trip_id", idStr).Msg("Invalid trip ID")
 		return nil, ginext.NewBadRequestError("invalid trip ID")
 	}
 
@@ -97,6 +98,78 @@ func (h *TripHandlerImpl) GetTrip(r *ginext.Request) (*ginext.Response, error) {
 	}
 
 	return ginext.NewSuccessResponse(trip), nil
+}
+
+// ListTrips godoc
+// @Summary List trips
+// @Description Get a paginated list of trips
+// @Tags trips
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number" default(1)
+// @Param page_size query int false "Items per page" default(20)
+// @Success 200 {object} ginext.Response "Paginated trip list"
+// @Failure 400 {object} ginext.Response "Invalid request"
+// @Failure 500 {object} ginext.Response "Internal server error"
+// @Router /api/v1/trips [get]
+func (h *TripHandlerImpl) ListTrips(r *ginext.Request) (*ginext.Response, error) {
+	var req model.ListTripsRequest
+	if err := r.GinCtx.ShouldBindQuery(&req); err != nil {
+		log.Error().Err(err).Msg("Query binding failed")
+		return nil, ginext.NewBadRequestError(err.Error())
+	}
+
+	trips, total, err := h.tripService.ListTrips(r.Context(), req.Page, req.PageSize)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to list trips")
+		return nil, err
+	}
+
+	return ginext.NewPaginatedResponse(trips, req.Page, req.PageSize, total), nil
+}
+
+// ListTripsByRoute godoc
+// @Summary List trips by route and date
+// @Description Get all trips for a specific route on a given date
+// @Tags trips
+// @Accept json
+// @Produce json
+// @Param route_id path string true "Route ID" format(uuid)
+// @Param date query string true "Date in DD/MM/YYYY format" example(15/01/2024)
+// @Success 200 {object} ginext.Response{data=[]model.Trip} "List of trips"
+// @Failure 400 {object} ginext.Response "Invalid request"
+// @Failure 500 {object} ginext.Response "Internal server error"
+// @Router /api/v1/routes/{route_id}/trips [get]
+func (h *TripHandlerImpl) ListTripsByRoute(r *ginext.Request) (*ginext.Response, error) {
+	routeIDStr := r.GinCtx.Param("route_id")
+	routeID, err := uuid.Parse(routeIDStr)
+	if err != nil {
+		log.Error().Err(err).Str("route_id", routeIDStr).Msg("Invalid route ID")
+		return nil, ginext.NewBadRequestError("invalid route ID")
+	}
+
+	var req model.ListTripsByRouteRequest
+	if err := r.GinCtx.ShouldBindQuery(&req); err != nil {
+		return nil, ginext.NewBadRequestError(err.Error())
+	}
+
+	date, err := parseDate(req.Date)
+	if err != nil {
+		log.Error().Err(err).Str("date", req.Date).Msg("Invalid date format")
+		return nil, ginext.NewBadRequestError("invalid date format")
+	}
+
+	trips, err := h.tripService.GetTripsByRouteAndDate(r.Context(), routeID, date)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to list trips by route")
+		return nil, err
+	}
+
+	return ginext.NewSuccessResponse(trips), nil
+}
+
+func parseDate(dateStr string) (time.Time, error) {
+	return time.Parse("02/01/2006", dateStr)
 }
 
 // CreateTrip godoc
@@ -113,7 +186,7 @@ func (h *TripHandlerImpl) GetTrip(r *ginext.Request) (*ginext.Response, error) {
 func (h *TripHandlerImpl) CreateTrip(r *ginext.Request) (*ginext.Response, error) {
 	var req model.CreateTripRequest
 	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
-		log.Debug().Err(err).Msg("JSON binding failed")
+		log.Error().Err(err).Msg("JSON binding failed")
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
@@ -147,7 +220,7 @@ func (h *TripHandlerImpl) UpdateTrip(r *ginext.Request) (*ginext.Response, error
 
 	var req model.UpdateTripRequest
 	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
-		log.Debug().Err(err).Msg("JSON binding failed")
+		log.Error().Err(err).Msg("JSON binding failed")
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
@@ -175,56 +248,14 @@ func (h *TripHandlerImpl) DeleteTrip(r *ginext.Request) (*ginext.Response, error
 	idStr := r.GinCtx.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
+		log.Error().Err(err).Str("trip_id", idStr).Msg("Invalid trip ID")
 		return nil, ginext.NewBadRequestError("invalid trip ID")
 	}
 
-	err = h.tripService.DeleteTrip(r.Context(), id)
-	if err != nil {
+	if err = h.tripService.DeleteTrip(r.Context(), id); err != nil {
 		log.Error().Err(err).Str("trip_id", idStr).Msg("Failed to delete trip")
 		return nil, err
 	}
 
-	return ginext.NewNoContentResponse(), nil
-}
-
-// ListTripsByRoute godoc
-// @Summary List trips by route and date
-// @Description Get all trips for a specific route on a given date
-// @Tags trips
-// @Accept json
-// @Produce json
-// @Param route_id path string true "Route ID" format(uuid)
-// @Param date query string true "Date in YYYY-MM-DD format" example(2024-01-15)
-// @Success 200 {object} ginext.Response{data=[]model.Trip} "List of trips"
-// @Failure 400 {object} ginext.Response "Invalid request"
-// @Failure 500 {object} ginext.Response "Internal server error"
-// @Router /api/v1/routes/{route_id}/trips [get]
-func (h *TripHandlerImpl) ListTripsByRoute(r *ginext.Request) (*ginext.Response, error) {
-	routeIDStr := r.GinCtx.Param("route_id")
-	routeID, err := uuid.Parse(routeIDStr)
-	if err != nil {
-		return nil, ginext.NewBadRequestError("invalid route ID")
-	}
-
-	var req model.ListTripsByRouteRequest
-	if err := r.GinCtx.ShouldBindQuery(&req); err != nil {
-		return nil, ginext.NewBadRequestError(err.Error())
-	}
-
-	date, err := parseDate(req.Date)
-	if err != nil {
-		return nil, ginext.NewBadRequestError("invalid date format")
-	}
-
-	trips, err := h.tripService.GetTripsByRouteAndDate(r.Context(), routeID, date)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to list trips by route")
-		return nil, err
-	}
-
-	return ginext.NewSuccessResponse(trips), nil
-}
-
-func parseDate(dateStr string) (time.Time, error) {
-	return time.Parse("2006-01-02", dateStr)
+	return ginext.NewSuccessResponse("Trip deleted successfully"), nil
 }

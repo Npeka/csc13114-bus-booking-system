@@ -15,15 +15,17 @@ import (
 )
 
 type Server struct {
-	cfg *config.Config
-	db  *db.DatabaseManager
+	cfg   *config.Config
+	db    *db.DatabaseManager
+	redis *db.RedisManager
 }
 
 func NewServer(
 	cfg *config.Config,
 	db *db.DatabaseManager,
+	redis *db.RedisManager,
 ) *Server {
-	return &Server{cfg: cfg, db: db}
+	return &Server{cfg: cfg, db: db, redis: redis}
 }
 
 func (s *Server) Run() {

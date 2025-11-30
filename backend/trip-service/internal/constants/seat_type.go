@@ -42,3 +42,17 @@ func AllSeatTypes() []SeatType {
 		SeatTypeSleeper,
 	}
 }
+
+// GetDisplayName returns a user-friendly display name for the seat type
+func (s SeatType) GetDisplayName() string {
+	switch s {
+	case SeatTypeStandard:
+		return "Ghế ngồi thường"
+	case SeatTypeVIP:
+		return "Ghế ngồi VIP"
+	case SeatTypeSleeper:
+		return "Giường nằm"
+	default:
+		return string(s)
+	}
+}

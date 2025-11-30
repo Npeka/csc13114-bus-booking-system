@@ -2,10 +2,10 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
+	"bus-booking/shared/ginext"
 	"bus-booking/trip-service/internal/model"
 	"bus-booking/trip-service/internal/repository"
 
@@ -14,28 +14,15 @@ import (
 )
 
 type TripService interface {
-	// Trip operations
 	SearchTrips(ctx context.Context, req *model.TripSearchRequest) ([]model.TripDetail, int64, error)
 	GetTripByID(ctx context.Context, id uuid.UUID) (*model.Trip, error)
-	CreateTrip(ctx context.Context, req *model.CreateTripRequest) (*model.Trip, error)
-	UpdateTrip(ctx context.Context, id uuid.UUID, req *model.UpdateTripRequest) (*model.Trip, error)
-	DeleteTrip(ctx context.Context, id uuid.UUID) error
+	ListTrips(ctx context.Context, page, pageSize int) ([]model.Trip, int64, error)
 	GetSeatAvailability(ctx context.Context, tripID uuid.UUID) (*model.SeatAvailabilityResponse, error)
 	GetTripsByRouteAndDate(ctx context.Context, routeID uuid.UUID, departureDate time.Time) ([]model.Trip, error)
 
-	// Route operations
-	ListRoutes(ctx context.Context, page, limit int) (*model.RouteListResponse, error)
-	GetRouteByID(ctx context.Context, id uuid.UUID) (*model.Route, error)
-	CreateRoute(ctx context.Context, req *model.CreateRouteRequest) (*model.Route, error)
-	UpdateRoute(ctx context.Context, id uuid.UUID, req *model.UpdateRouteRequest) (*model.Route, error)
-	DeleteRoute(ctx context.Context, id uuid.UUID) error
-
-	// Bus operations
-	ListBuses(ctx context.Context, page, limit int) ([]model.Bus, int64, error)
-	GetBusByID(ctx context.Context, id uuid.UUID) (*model.Bus, error)
-	CreateBus(ctx context.Context, req *model.CreateBusRequest) (*model.Bus, error)
-	UpdateBus(ctx context.Context, id uuid.UUID, req *model.UpdateBusRequest) (*model.Bus, error)
-	DeleteBus(ctx context.Context, id uuid.UUID) error
+	CreateTrip(ctx context.Context, req *model.CreateTripRequest) (*model.Trip, error)
+	UpdateTrip(ctx context.Context, id uuid.UUID, req *model.UpdateTripRequest) (*model.Trip, error)
+	DeleteTrip(ctx context.Context, id uuid.UUID) error
 }
 
 type TripServiceImpl struct {
@@ -62,32 +49,20 @@ func NewTripService(
 	}
 }
 
-// Trip operations
 func (s *TripServiceImpl) SearchTrips(ctx context.Context, req *model.TripSearchRequest) ([]model.TripDetail, int64, error) {
-	// Validate search request
-	if req.Origin == "" || req.Destination == "" {
-		return nil, 0, errors.New("origin and destination are required")
+	date, err := time.Parse("02/01/2006", req.Date)
+	if err != nil {
+		return nil, 0, ginext.NewBadRequestError("invalid date format, use DD/MM/YYYY")
 	}
 
-	if req.Date.Before(time.Now().Truncate(24 * time.Hour)) {
-		return nil, 0, errors.New("departure date cannot be in the past")
-	}
-
-	// Set default pagination
-	if req.Page < 1 {
-		req.Page = 1
-	}
-	if req.Limit < 1 {
-		req.Limit = 20
-	}
-	if req.Limit > 100 {
-		req.Limit = 100
+	if date.Before(time.Now().Truncate(24 * time.Hour)) {
+		return nil, 0, ginext.NewBadRequestError("search date cannot be in the past")
 	}
 
 	trips, total, err := s.tripRepo.SearchTrips(ctx, req)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to search trips")
-		return nil, 0, fmt.Errorf("failed to search trips: %w", err)
+		return nil, 0, ginext.NewInternalServerError("failed to search trips")
 	}
 
 	return trips, total, nil
@@ -96,146 +71,28 @@ func (s *TripServiceImpl) SearchTrips(ctx context.Context, req *model.TripSearch
 func (s *TripServiceImpl) GetTripByID(ctx context.Context, id uuid.UUID) (*model.Trip, error) {
 	trip, err := s.tripRepo.GetTripByID(ctx, id)
 	if err != nil {
-		log.Error().Err(err).Str("trip_id", id.String()).Msg("Failed to get trip by ID")
-		return nil, fmt.Errorf("failed to get trip: %w", err)
+		return nil, ginext.NewInternalServerError("failed to get trip")
 	}
 	return trip, nil
 }
 
-func (s *TripServiceImpl) CreateTrip(ctx context.Context, req *model.CreateTripRequest) (*model.Trip, error) {
-	// Validate trip times
-	if req.ArrivalTime.Before(req.DepartureTime) {
-		return nil, errors.New("arrival time must be after departure time")
-	}
-
-	if req.DepartureTime.Before(time.Now()) {
-		return nil, errors.New("departure time cannot be in the past")
-	}
-
-	// Check if route exists
-	_, err := s.routeRepo.GetRouteByID(ctx, req.RouteID)
+func (s *TripServiceImpl) ListTrips(ctx context.Context, page, pageSize int) ([]model.Trip, int64, error) {
+	trips, total, err := s.tripRepo.ListTrips(ctx, page, pageSize)
 	if err != nil {
-		return nil, fmt.Errorf("invalid route: %w", err)
+		return nil, 0, ginext.NewInternalServerError("failed to list trips")
 	}
-
-	// Check if bus exists and is available
-	bus, err := s.busRepo.GetBusByID(ctx, req.BusID)
-	if err != nil {
-		return nil, fmt.Errorf("invalid bus: %w", err)
-	}
-
-	if !bus.IsActive {
-		return nil, errors.New("bus is not active")
-	}
-
-	// Check for bus conflicts (same bus cannot have overlapping trips)
-	conflictTrips, err := s.tripRepo.GetTripsByBusAndDateRange(ctx, req.BusID,
-		req.DepartureTime.Add(-4*time.Hour), req.ArrivalTime.Add(4*time.Hour))
-	if err != nil {
-		return nil, fmt.Errorf("failed to check bus availability: %w", err)
-	}
-
-	for _, existingTrip := range conflictTrips {
-		if req.ArrivalTime.After(existingTrip.DepartureTime) && req.DepartureTime.Before(existingTrip.ArrivalTime) {
-			return nil, errors.New("bus is not available at the specified time")
-		}
-	}
-
-	trip := &model.Trip{
-		RouteID:       req.RouteID,
-		BusID:         req.BusID,
-		DepartureTime: req.DepartureTime,
-		ArrivalTime:   req.ArrivalTime,
-		BasePrice:     req.BasePrice,
-		Status:        "scheduled",
-		IsActive:      true,
-	}
-
-	if err := s.tripRepo.CreateTrip(ctx, trip); err != nil {
-		log.Error().Err(err).Msg("Failed to create trip")
-		return nil, fmt.Errorf("failed to create trip: %w", err)
-	}
-
-	// Load relationships
-	return s.GetTripByID(ctx, trip.ID)
-}
-
-func (s *TripServiceImpl) UpdateTrip(ctx context.Context, id uuid.UUID, req *model.UpdateTripRequest) (*model.Trip, error) {
-	trip, err := s.tripRepo.GetTripByID(ctx, id)
-	if err != nil {
-		return nil, fmt.Errorf("trip not found: %w", err)
-	}
-
-	// Update fields if provided
-	if req.DepartureTime != nil {
-		if req.DepartureTime.Before(time.Now()) {
-			return nil, errors.New("departure time cannot be in the past")
-		}
-		trip.DepartureTime = *req.DepartureTime
-	}
-
-	if req.ArrivalTime != nil {
-		if req.ArrivalTime.Before(trip.DepartureTime) {
-			return nil, errors.New("arrival time must be after departure time")
-		}
-		trip.ArrivalTime = *req.ArrivalTime
-	}
-
-	if req.BasePrice != nil {
-		if *req.BasePrice < 0 {
-			return nil, errors.New("base price must be non-negative")
-		}
-		trip.BasePrice = *req.BasePrice
-	}
-
-	if req.Status != nil {
-		trip.Status = *req.Status
-	}
-
-	if req.IsActive != nil {
-		trip.IsActive = *req.IsActive
-	}
-
-	if err := s.tripRepo.UpdateTrip(ctx, trip); err != nil {
-		log.Error().Err(err).Str("trip_id", id.String()).Msg("Failed to update trip")
-		return nil, fmt.Errorf("failed to update trip: %w", err)
-	}
-
-	return s.GetTripByID(ctx, id)
-}
-
-func (s *TripServiceImpl) DeleteTrip(ctx context.Context, id uuid.UUID) error {
-	trip, err := s.tripRepo.GetTripByID(ctx, id)
-	if err != nil {
-		return fmt.Errorf("trip not found: %w", err)
-	}
-
-	// Check if trip can be deleted (not started and no bookings)
-	if trip.Status != "scheduled" {
-		return errors.New("cannot delete trip that is not scheduled")
-	}
-
-	if trip.DepartureTime.Before(time.Now().Add(24 * time.Hour)) {
-		return errors.New("cannot delete trip within 24 hours of departure")
-	}
-
-	if err := s.tripRepo.DeleteTrip(ctx, id); err != nil {
-		log.Error().Err(err).Str("trip_id", id.String()).Msg("Failed to delete trip")
-		return fmt.Errorf("failed to delete trip: %w", err)
-	}
-
-	return nil
+	return trips, total, nil
 }
 
 func (s *TripServiceImpl) GetSeatAvailability(ctx context.Context, tripID uuid.UUID) (*model.SeatAvailabilityResponse, error) {
 	trip, err := s.tripRepo.GetTripByID(ctx, tripID)
 	if err != nil {
-		return nil, fmt.Errorf("trip not found: %w", err)
+		return nil, ginext.NewInternalServerError("trip not found")
 	}
 
 	seats, err := s.seatRepo.ListByBusID(ctx, trip.BusID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get seats: %w", err)
+		return nil, ginext.NewInternalServerError("failed to get seats")
 	}
 
 	// TODO: Check seat status from booking service
@@ -269,234 +126,11 @@ func (s *TripServiceImpl) GetSeatAvailability(ctx context.Context, tripID uuid.U
 	}, nil
 }
 
-// Route operations
-func (s *TripServiceImpl) ListRoutes(ctx context.Context, page, limit int) (*model.RouteListResponse, error) {
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 {
-		limit = 20
-	}
-	if limit > 100 {
-		limit = 100
-	}
-
-	routes, total, err := s.routeRepo.ListRoutes(ctx, page, limit)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to list routes")
-		return nil, fmt.Errorf("failed to list routes: %w", err)
-	}
-
-	totalPages := int((total + int64(limit) - 1) / int64(limit))
-
-	return &model.RouteListResponse{
-		Routes:     routes,
-		Total:      total,
-		Page:       page,
-		Limit:      limit,
-		TotalPages: totalPages,
-	}, nil
-}
-
-func (s *TripServiceImpl) GetRouteByID(ctx context.Context, id uuid.UUID) (*model.Route, error) {
-	route, err := s.routeRepo.GetRouteByID(ctx, id)
-	if err != nil {
-		return nil, fmt.Errorf("route not found: %w", err)
-	}
-	return route, nil
-}
-
-func (s *TripServiceImpl) CreateRoute(ctx context.Context, req *model.CreateRouteRequest) (*model.Route, error) {
-	if req.Origin == req.Destination {
-		return nil, errors.New("origin and destination must be different")
-	}
-
-	route := &model.Route{
-		Origin:           req.Origin,
-		Destination:      req.Destination,
-		DistanceKm:       req.DistanceKm,
-		EstimatedMinutes: req.EstimatedMinutes,
-		IsActive:         true,
-	}
-
-	if err := s.routeRepo.CreateRoute(ctx, route); err != nil {
-		log.Error().Err(err).Msg("Failed to create route")
-		return nil, fmt.Errorf("failed to create route: %w", err)
-	}
-
-	return s.GetRouteByID(ctx, route.ID)
-}
-
-func (s *TripServiceImpl) UpdateRoute(ctx context.Context, id uuid.UUID, req *model.UpdateRouteRequest) (*model.Route, error) {
-	route, err := s.routeRepo.GetRouteByID(ctx, id)
-	if err != nil {
-		return nil, fmt.Errorf("route not found: %w", err)
-	}
-
-	// Update fields if provided
-	if req.Origin != nil {
-		route.Origin = *req.Origin
-	}
-	if req.Destination != nil {
-		route.Destination = *req.Destination
-	}
-	if req.DistanceKm != nil {
-		route.DistanceKm = *req.DistanceKm
-	}
-	if req.EstimatedMinutes != nil {
-		route.EstimatedMinutes = *req.EstimatedMinutes
-	}
-	if req.IsActive != nil {
-		route.IsActive = *req.IsActive
-	}
-
-	// Validate origin != destination
-	if route.Origin == route.Destination {
-		return nil, errors.New("origin and destination must be different")
-	}
-
-	if err := s.routeRepo.UpdateRoute(ctx, route); err != nil {
-		log.Error().Err(err).Str("route_id", id.String()).Msg("Failed to update route")
-		return nil, fmt.Errorf("failed to update route: %w", err)
-	}
-
-	return s.GetRouteByID(ctx, id)
-}
-
-func (s *TripServiceImpl) DeleteRoute(ctx context.Context, id uuid.UUID) error {
-	// Check if route has active trips
-	_, err := s.routeRepo.GetRouteByID(ctx, id)
-	if err != nil {
-		return fmt.Errorf("route not found: %w", err)
-	}
-
-	// TODO: Check if route has active trips in the future
-
-	if err := s.routeRepo.DeleteRoute(ctx, id); err != nil {
-		log.Error().Err(err).Str("route_id", id.String()).Msg("Failed to delete route")
-		return fmt.Errorf("failed to delete route: %w", err)
-	}
-
-	return nil
-}
-
-// Bus operations
-func (s *TripServiceImpl) ListBuses(ctx context.Context, page, limit int) ([]model.Bus, int64, error) {
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 {
-		limit = 20
-	}
-	if limit > 100 {
-		limit = 100
-	}
-
-	buses, total, err := s.busRepo.ListBuses(ctx, page, limit)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to list buses")
-		return nil, 0, fmt.Errorf("failed to list buses: %w", err)
-	}
-
-	return buses, total, nil
-}
-
-func (s *TripServiceImpl) GetBusByID(ctx context.Context, id uuid.UUID) (*model.Bus, error) {
-	bus, err := s.busRepo.GetBusByID(ctx, id)
-	if err != nil {
-		return nil, fmt.Errorf("bus not found: %w", err)
-	}
-	return bus, nil
-}
-
-func (s *TripServiceImpl) CreateBus(ctx context.Context, req *model.CreateBusRequest) (*model.Bus, error) {
-	// Check plate number uniqueness
-	existingBus, err := s.busRepo.GetBusByPlateNumber(ctx, req.PlateNumber)
-	if err == nil && existingBus != nil {
-		return nil, errors.New("plate number already exists")
-	}
-
-	bus := &model.Bus{
-		PlateNumber:  req.PlateNumber,
-		Model:        req.Model,
-		SeatCapacity: req.SeatCapacity,
-		Amenities:    req.Amenities,
-		IsActive:     true,
-	}
-
-	if err := s.busRepo.CreateBus(ctx, bus); err != nil {
-		log.Error().Err(err).Msg("Failed to create bus")
-		return nil, fmt.Errorf("failed to create bus: %w", err)
-	}
-
-	// Generate seats for the bus
-	// Note: Seat generation is now handled by BusService
-	// if err := s.generateSeatsForBus(ctx, bus.ID, req.SeatCapacity); err != nil {
-	// 	log.Error().Err(err).Str("bus_id", bus.ID.String()).Msg("Failed to generate seats for bus")
-	// }
-
-	return s.GetBusByID(ctx, bus.ID)
-}
-
-func (s *TripServiceImpl) UpdateBus(ctx context.Context, id uuid.UUID, req *model.UpdateBusRequest) (*model.Bus, error) {
-	bus, err := s.busRepo.GetBusByID(ctx, id)
-	if err != nil {
-		return nil, fmt.Errorf("bus not found: %w", err)
-	}
-
-	// Update fields if provided
-	if req.PlateNumber != nil {
-		// Check uniqueness if changing plate number
-		if *req.PlateNumber != bus.PlateNumber {
-			existingBus, err := s.busRepo.GetBusByPlateNumber(ctx, *req.PlateNumber)
-			if err == nil && existingBus != nil {
-				return nil, errors.New("plate number already exists")
-			}
-		}
-		bus.PlateNumber = *req.PlateNumber
-	}
-
-	if req.Model != nil {
-		bus.Model = *req.Model
-	}
-
-	if req.SeatCapacity != nil {
-		bus.SeatCapacity = *req.SeatCapacity
-		// TODO: Handle seat capacity changes (may need to update seats)
-	}
-
-	if req.Amenities != nil {
-		bus.Amenities = *req.Amenities
-	}
-
-	if req.IsActive != nil {
-		bus.IsActive = *req.IsActive
-	}
-
-	if err := s.busRepo.UpdateBus(ctx, bus); err != nil {
-		log.Error().Err(err).Str("bus_id", id.String()).Msg("Failed to update bus")
-		return nil, fmt.Errorf("failed to update bus: %w", err)
-	}
-
-	return s.GetBusByID(ctx, id)
-}
-
-func (s *TripServiceImpl) DeleteBus(ctx context.Context, id uuid.UUID) error {
-	// TODO: Check if bus has active trips
-
-	if err := s.busRepo.DeleteBus(ctx, id); err != nil {
-		log.Error().Err(err).Str("bus_id", id.String()).Msg("Failed to delete bus")
-		return fmt.Errorf("failed to delete bus: %w", err)
-	}
-
-	return nil
-}
-
 // GetTripsByRouteAndDate gets trips by route and departure date
 func (s *TripServiceImpl) GetTripsByRouteAndDate(ctx context.Context, routeID uuid.UUID, departureDate time.Time) ([]model.Trip, error) {
 	// Validate inputs
 	if routeID == uuid.Nil {
-		return nil, errors.New("route ID is required")
+		return nil, ginext.NewBadRequestError("route ID is required")
 	}
 
 	// Check if route exists
@@ -512,4 +146,125 @@ func (s *TripServiceImpl) GetTripsByRouteAndDate(ctx context.Context, routeID uu
 	}
 
 	return trips, nil
+}
+
+func (s *TripServiceImpl) CreateTrip(ctx context.Context, req *model.CreateTripRequest) (*model.Trip, error) {
+	if req.ArrivalTime.Before(req.DepartureTime) {
+		return nil, ginext.NewBadRequestError("arrival time must be after departure time")
+	}
+
+	if req.DepartureTime.Before(time.Now()) {
+		return nil, ginext.NewBadRequestError("departure time cannot be in the past")
+	}
+
+	// Check if route exists
+	_, err := s.routeRepo.GetRouteByID(ctx, req.RouteID)
+	if err != nil {
+		return nil, ginext.NewBadRequestError("invalid route")
+	}
+
+	// Check if bus exists and is available
+	bus, err := s.busRepo.GetBusByID(ctx, req.BusID)
+	if err != nil {
+		return nil, ginext.NewBadRequestError("invalid bus")
+	}
+
+	if !bus.IsActive {
+		return nil, ginext.NewBadRequestError("bus is not active")
+	}
+
+	// Check for bus conflicts (same bus cannot have overlapping trips)
+	conflictTrips, err := s.tripRepo.GetTripsByBusAndDateRange(ctx, req.BusID,
+		req.DepartureTime.Add(-4*time.Hour), req.ArrivalTime.Add(4*time.Hour))
+	if err != nil {
+		return nil, ginext.NewInternalServerError("failed to check bus availability")
+	}
+
+	for _, existingTrip := range conflictTrips {
+		if req.ArrivalTime.After(existingTrip.DepartureTime) && req.DepartureTime.Before(existingTrip.ArrivalTime) {
+			return nil, ginext.NewBadRequestError("bus is already assigned to another trip during the specified time")
+		}
+	}
+
+	trip := &model.Trip{
+		RouteID:       req.RouteID,
+		BusID:         req.BusID,
+		DepartureTime: req.DepartureTime,
+		ArrivalTime:   req.ArrivalTime,
+		BasePrice:     req.BasePrice,
+		Status:        "scheduled",
+		IsActive:      true,
+	}
+
+	if err := s.tripRepo.CreateTrip(ctx, trip); err != nil {
+		log.Error().Err(err).Msg("Failed to create trip")
+		return nil, ginext.NewInternalServerError("failed to create trip")
+	}
+
+	// Load relationships
+	return s.GetTripByID(ctx, trip.ID)
+}
+
+func (s *TripServiceImpl) UpdateTrip(ctx context.Context, id uuid.UUID, req *model.UpdateTripRequest) (*model.Trip, error) {
+	trip, err := s.tripRepo.GetTripByID(ctx, id)
+	if err != nil {
+		return nil, ginext.NewInternalServerError("failed to get trip")
+	}
+
+	// Update fields if provided
+	if req.DepartureTime != nil {
+		if req.DepartureTime.Before(time.Now()) {
+			return nil, ginext.NewBadRequestError("departure time cannot be in the past")
+		}
+		trip.DepartureTime = *req.DepartureTime
+	}
+
+	if req.ArrivalTime != nil {
+		if req.ArrivalTime.Before(trip.DepartureTime) {
+			return nil, ginext.NewBadRequestError("arrival time must be after departure time")
+		}
+		trip.ArrivalTime = *req.ArrivalTime
+	}
+
+	if req.BasePrice != nil {
+		if *req.BasePrice < 0 {
+			return nil, ginext.NewBadRequestError("base price must be non-negative")
+		}
+		trip.BasePrice = *req.BasePrice
+	}
+
+	if req.Status != nil {
+		trip.Status = *req.Status
+	}
+
+	if req.IsActive != nil {
+		trip.IsActive = *req.IsActive
+	}
+
+	if err := s.tripRepo.UpdateTrip(ctx, trip); err != nil {
+		return nil, ginext.NewInternalServerError("failed to update trip")
+	}
+
+	return s.GetTripByID(ctx, id)
+}
+
+func (s *TripServiceImpl) DeleteTrip(ctx context.Context, id uuid.UUID) error {
+	trip, err := s.tripRepo.GetTripByID(ctx, id)
+	if err != nil {
+		return fmt.Errorf("trip not found: %w", err)
+	}
+
+	if trip.Status != "scheduled" {
+		return ginext.NewBadRequestError("only scheduled trips can be deleted")
+	}
+
+	if trip.DepartureTime.Before(time.Now().Add(24 * time.Hour)) {
+		return ginext.NewBadRequestError("cannot delete trip within 24 hours of departure")
+	}
+
+	if err := s.tripRepo.DeleteTrip(ctx, id); err != nil {
+		return ginext.NewInternalServerError("failed to delete trip")
+	}
+
+	return nil
 }

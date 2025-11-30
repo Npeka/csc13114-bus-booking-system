@@ -30,7 +30,8 @@ func main() {
 	validator.MustSetupValidator()
 
 	pg := db.MustNewPostgresConnection(&cfg.Database)
-	sv := server.NewServer(cfg, pg)
+	rd := db.MustNewRedisConnection(&cfg.Redis)
+	sv := server.NewServer(cfg, pg, rd)
 	defer sv.Close()
 
 	sv.Run()

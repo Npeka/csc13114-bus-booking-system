@@ -1,0 +1,177 @@
+[
+  {
+    "route_id": "2d70fa4a-a146-4c19-92bc-e33a51a517c5",
+    "bus_id": "2799008e-13ce-4c22-90db-d1e0ead79ce7",
+    "departure_time": "2025-12-01T06:00:00+07:00",
+    "arrival_time": "2025-12-02T12:00:00+07:00",
+    "base_price": 450000
+  },
+  {
+    "route_id": "2d70fa4a-a146-4c19-92bc-e33a51a517c5",
+    "bus_id": "d4955ce2-885e-4c0d-891c-09640bc5d835",
+    "departure_time": "2025-12-01T18:00:00+07:00",
+    "arrival_time": "2025-12-03T00:00:00+07:00",
+    "base_price": 480000
+  },
+  {
+    "route_id": "1a3baca5-b105-43c1-91c5-5fad154a4dce",
+    "bus_id": "e6fa78ac-e16a-4b26-a479-0d885d30ca73",
+    "departure_time": "2025-12-01T07:00:00+07:00",
+    "arrival_time": "2025-12-01T21:00:00+07:00",
+    "base_price": 320000
+  },
+  {
+    "route_id": "1a3baca5-b105-43c1-91c5-5fad154a4dce",
+    "bus_id": "2799008e-13ce-4c22-90db-d1e0ead79ce7",
+    "departure_time": "2025-12-01T20:00:00+07:00",
+    "arrival_time": "2025-12-02T10:00:00+07:00",
+    "base_price": 350000
+  },
+  {
+    "route_id": "011269a3-48c9-4e25-85a7-a1f493a3e55f",
+    "bus_id": "d4955ce2-885e-4c0d-891c-09640bc5d835",
+    "departure_time": "2025-12-01T08:00:00+07:00",
+    "arrival_time": "2025-12-01T16:00:00+07:00",
+    "base_price": 200000
+  },
+  {
+    "route_id": "011269a3-48c9-4e25-85a7-a1f493a3e55f",
+    "bus_id": "e6fa78ac-e16a-4b26-a479-0d885d30ca73",
+    "departure_time": "2025-12-01T14:00:00+07:00",
+    "arrival_time": "2025-12-01T22:00:00+07:00",
+    "base_price": 220000
+  },
+  {
+    "route_id": "aaa145b8-7280-4bb2-8172-2e8ac43b9443",
+    "bus_id": "2799008e-13ce-4c22-90db-d1e0ead79ce7",
+    "departure_time": "2025-12-01T06:30:00+07:00",
+    "arrival_time": "2025-12-01T08:30:00+07:00",
+    "base_price": 120000
+  },
+  {
+    "route_id": "aaa145b8-7280-4bb2-8172-2e8ac43b9443",
+    "bus_id": "d4955ce2-885e-4c0d-891c-09640bc5d835",
+    "departure_time": "2025-12-01T10:00:00+07:00",
+    "arrival_time": "2025-12-01T12:00:00+07:00",
+    "base_price": 110000
+  },
+  {
+    "route_id": "bd656d0c-3bac-4ac4-8c09-2fff22e3e90d",
+    "bus_id": "e6fa78ac-e16a-4b26-a479-0d885d30ca73",
+    "departure_time": "2025-12-01T07:30:00+07:00",
+    "arrival_time": "2025-12-01T10:30:00+07:00",
+    "base_price": 150000
+  },
+  {
+    "route_id": "bd656d0c-3bac-4ac4-8c09-2fff22e3e90d",
+    "bus_id": "2799008e-13ce-4c22-90db-d1e0ead79ce7",
+    "departure_time": "2025-12-01T13:00:00+07:00",
+    "arrival_time": "2025-12-01T16:00:00+07:00",
+    "base_price": 160000
+  },
+  {
+    "route_id": "78fdd0a1-0a2c-498f-9293-d1fca7599c15",
+    "bus_id": "d4955ce2-885e-4c0d-891c-09640bc5d835",
+    "departure_time": "2025-12-01T08:00:00+07:00",
+    "arrival_time": "2025-12-01T11:00:00+07:00",
+    "base_price": 180000
+  },
+  {
+    "route_id": "78fdd0a1-0a2c-498f-9293-d1fca7599c15",
+    "bus_id": "e6fa78ac-e16a-4b26-a479-0d885d30ca73",
+    "departure_time": "2025-12-01T15:00:00+07:00",
+    "arrival_time": "2025-12-01T18:00:00+07:00",
+    "base_price": 170000
+  },
+  {
+    "route_id": "5124fb9e-2fd4-436a-82fe-efc270a33b08",
+    "bus_id": "2799008e-13ce-4c22-90db-d1e0ead79ce7",
+    "departure_time": "2025-12-01T19:00:00+07:00",
+    "arrival_time": "2025-12-02T11:00:00+07:00",
+    "base_price": 380000
+  },
+  {
+    "route_id": "5124fb9e-2fd4-436a-82fe-efc270a33b08",
+    "bus_id": "d4955ce2-885e-4c0d-891c-09640bc5d835",
+    "departure_time": "2025-12-01T21:00:00+07:00",
+    "arrival_time": "2025-12-02T13:00:00+07:00",
+    "base_price": 400000
+  },
+  {
+    "route_id": "270cd14d-4bae-441d-9d69-d5ea14f8f86b",
+    "bus_id": "e6fa78ac-e16a-4b26-a479-0d885d30ca73",
+    "departure_time": "2025-12-01T20:00:00+07:00",
+    "arrival_time": "2025-12-02T02:00:00+07:00",
+    "base_price": 280000
+  },
+  {
+    "route_id": "270cd14d-4bae-441d-9d69-d5ea14f8f86b",
+    "bus_id": "2799008e-13ce-4c22-90db-d1e0ead79ce7",
+    "departure_time": "2025-12-02T06:00:00+07:00",
+    "arrival_time": "2025-12-02T12:00:00+07:00",
+    "base_price": 300000
+  },
+  {
+    "route_id": "3449c443-2c0e-48f7-b9e9-48e0626e5fd2",
+    "bus_id": "d4955ce2-885e-4c0d-891c-09640bc5d835",
+    "departure_time": "2025-12-01T06:00:00+07:00",
+    "arrival_time": "2025-12-01T12:00:00+07:00",
+    "base_price": 250000
+  },
+  {
+    "route_id": "3449c443-2c0e-48f7-b9e9-48e0626e5fd2",
+    "bus_id": "e6fa78ac-e16a-4b26-a479-0d885d30ca73",
+    "departure_time": "2025-12-01T14:00:00+07:00",
+    "arrival_time": "2025-12-01T20:00:00+07:00",
+    "base_price": 240000
+  },
+  {
+    "route_id": "fa703cfd-716c-4892-879c-4dc4e24b1074",
+    "bus_id": "2799008e-13ce-4c22-90db-d1e0ead79ce7",
+    "departure_time": "2025-12-01T05:00:00+07:00",
+    "arrival_time": "2025-12-01T11:00:00+07:00",
+    "base_price": 260000
+  },
+  {
+    "route_id": "fa703cfd-716c-4892-879c-4dc4e24b1074",
+    "bus_id": "d4955ce2-885e-4c0d-891c-09640bc5d835",
+    "departure_time": "2025-12-01T16:00:00+07:00",
+    "arrival_time": "2025-12-01T22:00:00+07:00",
+    "base_price": 270000
+  },
+  {
+    "route_id": "2d70fa4a-a146-4c19-92bc-e33a51a517c5",
+    "bus_id": "e6fa78ac-e16a-4b26-a479-0d885d30ca73",
+    "departure_time": "2025-12-02T06:00:00+07:00",
+    "arrival_time": "2025-12-03T12:00:00+07:00",
+    "base_price": 470000
+  },
+  {
+    "route_id": "1a3baca5-b105-43c1-91c5-5fad154a4dce",
+    "bus_id": "d4955ce2-885e-4c0d-891c-09640bc5d835",
+    "departure_time": "2025-12-02T07:00:00+07:00",
+    "arrival_time": "2025-12-02T21:00:00+07:00",
+    "base_price": 330000
+  },
+  {
+    "route_id": "011269a3-48c9-4e25-85a7-a1f493a3e55f",
+    "bus_id": "2799008e-13ce-4c22-90db-d1e0ead79ce7",
+    "departure_time": "2025-12-02T08:00:00+07:00",
+    "arrival_time": "2025-12-02T16:00:00+07:00",
+    "base_price": 210000
+  },
+  {
+    "route_id": "aaa145b8-7280-4bb2-8172-2e8ac43b9443",
+    "bus_id": "e6fa78ac-e16a-4b26-a479-0d885d30ca73",
+    "departure_time": "2025-12-02T06:30:00+07:00",
+    "arrival_time": "2025-12-02T08:30:00+07:00",
+    "base_price": 115000
+  },
+  {
+    "route_id": "bd656d0c-3bac-4ac4-8c09-2fff22e3e90d",
+    "bus_id": "d4955ce2-885e-4c0d-891c-09640bc5d835",
+    "departure_time": "2025-12-02T07:30:00+07:00",
+    "arrival_time": "2025-12-02T10:30:00+07:00",
+    "base_price": 155000
+  }
+]

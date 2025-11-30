@@ -29,33 +29,6 @@ func NewRouteHandler(service service.RouteService) RouteHandler {
 	}
 }
 
-// CreateRoute godoc
-// @Summary Create a new route
-// @Description Create a new route with origin, destination, and distance information
-// @Tags routes
-// @Accept json
-// @Produce json
-// @Param request body model.CreateRouteRequest true "Route creation data"
-// @Success 201 {object} ginext.Response{data=model.Route} "Created route"
-// @Failure 400 {object} ginext.Response "Invalid request"
-// @Failure 500 {object} ginext.Response "Internal server error"
-// @Router /api/v1/routes [post]
-func (h *RouteHandlerImpl) CreateRoute(r *ginext.Request) (*ginext.Response, error) {
-	var req model.CreateRouteRequest
-	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
-		log.Debug().Err(err).Msg("JSON binding failed")
-		return nil, ginext.NewBadRequestError(err.Error())
-	}
-
-	route, err := h.service.CreateRoute(r.Context(), &req)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to create route")
-		return nil, err
-	}
-
-	return ginext.NewSuccessResponse(route), nil
-}
-
 // GetRoute godoc
 // @Summary Get route by ID
 // @Description Get detailed information about a specific route
@@ -77,6 +50,88 @@ func (h *RouteHandlerImpl) GetRoute(r *ginext.Request) (*ginext.Response, error)
 	route, err := h.service.GetRouteByID(r.Context(), id)
 	if err != nil {
 		log.Error().Err(err).Str("route_id", idStr).Msg("Failed to get route")
+		return nil, err
+	}
+
+	return ginext.NewSuccessResponse(route), nil
+}
+
+// ListRoutes godoc
+// @Summary List routes
+// @Description Get a paginated list of routes, optionally filtered by operator
+// @Tags routes
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number" default(1)
+// @Param limit query int false "Items per page" default(20)
+// @Param operator_id query string false "Filter by operator ID" format(uuid)
+// @Success 200 {object} ginext.Response "Paginated route list"
+// @Failure 400 {object} ginext.Response "Invalid request"
+// @Failure 500 {object} ginext.Response "Internal server error"
+// @Router /api/v1/routes [get]
+func (h *RouteHandlerImpl) ListRoutes(r *ginext.Request) (*ginext.Response, error) {
+	var req model.ListRoutesRequest
+	if err := r.GinCtx.ShouldBindQuery(&req); err != nil {
+		return nil, ginext.NewBadRequestError(err.Error())
+	}
+
+	routes, total, err := h.service.ListRoutes(r.Context(), req.Page, req.PageSize)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to list routes")
+		return nil, err
+	}
+
+	return ginext.NewPaginatedResponse(routes, req.Page, req.PageSize, total), nil
+}
+
+// SearchRoutes godoc
+// @Summary Search routes
+// @Description Search routes by origin and destination
+// @Tags routes
+// @Accept json
+// @Produce json
+// @Param origin query string true "Origin city"
+// @Param destination query string true "Destination city"
+// @Success 200 {object} ginext.Response{data=[]model.Route} "List of matching routes"
+// @Failure 400 {object} ginext.Response "Invalid request"
+// @Failure 500 {object} ginext.Response "Internal server error"
+// @Router /api/v1/routes/search [get]
+func (h *RouteHandlerImpl) SearchRoutes(r *ginext.Request) (*ginext.Response, error) {
+	var req model.SearchRoutesQueryRequest
+	if err := r.GinCtx.ShouldBindQuery(&req); err != nil {
+		return nil, ginext.NewBadRequestError(err.Error())
+	}
+
+	routes, err := h.service.GetRoutesByOriginDestination(r.Context(), req.Origin, req.Destination)
+	if err != nil {
+		log.Error().Err(err).Str("origin", req.Origin).Str("destination", req.Destination).Msg("Failed to search routes")
+		return nil, err
+	}
+
+	return ginext.NewSuccessResponse(routes), nil
+}
+
+// CreateRoute godoc
+// @Summary Create a new route
+// @Description Create a new route with origin, destination, and distance information
+// @Tags routes
+// @Accept json
+// @Produce json
+// @Param request body model.CreateRouteRequest true "Route creation data"
+// @Success 201 {object} ginext.Response{data=model.Route} "Created route"
+// @Failure 400 {object} ginext.Response "Invalid request"
+// @Failure 500 {object} ginext.Response "Internal server error"
+// @Router /api/v1/routes [post]
+func (h *RouteHandlerImpl) CreateRoute(r *ginext.Request) (*ginext.Response, error) {
+	var req model.CreateRouteRequest
+	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
+		log.Debug().Err(err).Msg("JSON binding failed")
+		return nil, ginext.NewBadRequestError(err.Error())
+	}
+
+	route, err := h.service.CreateRoute(r.Context(), &req)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to create route")
 		return nil, err
 	}
 
@@ -141,60 +196,5 @@ func (h *RouteHandlerImpl) DeleteRoute(r *ginext.Request) (*ginext.Response, err
 		return nil, err
 	}
 
-	return ginext.NewNoContentResponse(), nil
-}
-
-// ListRoutes godoc
-// @Summary List routes
-// @Description Get a paginated list of routes, optionally filtered by operator
-// @Tags routes
-// @Accept json
-// @Produce json
-// @Param page query int false "Page number" default(1)
-// @Param limit query int false "Items per page" default(20)
-// @Param operator_id query string false "Filter by operator ID" format(uuid)
-// @Success 200 {object} ginext.Response "Paginated route list"
-// @Failure 400 {object} ginext.Response "Invalid request"
-// @Failure 500 {object} ginext.Response "Internal server error"
-// @Router /api/v1/routes [get]
-func (h *RouteHandlerImpl) ListRoutes(r *ginext.Request) (*ginext.Response, error) {
-	var req model.ListRoutesRequest
-	if err := r.GinCtx.ShouldBindQuery(&req); err != nil {
-		return nil, ginext.NewBadRequestError(err.Error())
-	}
-
-	routes, total, err := h.service.ListRoutes(r.Context(), req.Page, req.PageSize)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to list routes")
-		return nil, err
-	}
-
-	return ginext.NewPaginatedResponse(routes, req.Page, req.PageSize, total), nil
-}
-
-// SearchRoutes godoc
-// @Summary Search routes
-// @Description Search routes by origin and destination
-// @Tags routes
-// @Accept json
-// @Produce json
-// @Param origin query string true "Origin city"
-// @Param destination query string true "Destination city"
-// @Success 200 {object} ginext.Response{data=[]model.Route} "List of matching routes"
-// @Failure 400 {object} ginext.Response "Invalid request"
-// @Failure 500 {object} ginext.Response "Internal server error"
-// @Router /api/v1/routes/search [get]
-func (h *RouteHandlerImpl) SearchRoutes(r *ginext.Request) (*ginext.Response, error) {
-	var req model.SearchRoutesQueryRequest
-	if err := r.GinCtx.ShouldBindQuery(&req); err != nil {
-		return nil, ginext.NewBadRequestError(err.Error())
-	}
-
-	routes, err := h.service.GetRoutesByOriginDestination(r.Context(), req.Origin, req.Destination)
-	if err != nil {
-		log.Error().Err(err).Str("origin", req.Origin).Str("destination", req.Destination).Msg("Failed to search routes")
-		return nil, err
-	}
-
-	return ginext.NewSuccessResponse(routes), nil
+	return ginext.NewSuccessResponse("Route deleted successfully"), nil
 }

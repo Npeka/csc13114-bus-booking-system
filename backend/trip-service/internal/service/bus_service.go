@@ -10,7 +10,6 @@ import (
 	"bus-booking/trip-service/internal/repository"
 
 	"github.com/google/uuid"
-	"github.com/rs/zerolog/log"
 )
 
 type BusService interface {
@@ -41,7 +40,6 @@ func NewBusService(
 func (s *BusServiceImpl) GetBusByID(ctx context.Context, id uuid.UUID) (*model.Bus, error) {
 	bus, err := s.busRepo.GetBusWithSeatsByID(ctx, id)
 	if err != nil {
-		log.Error().Err(err).Str("bus_id", id.String()).Msg("Failed to get bus")
 		return nil, ginext.NewInternalServerError("failed to get bus")
 	}
 	return bus, nil
@@ -50,7 +48,6 @@ func (s *BusServiceImpl) GetBusByID(ctx context.Context, id uuid.UUID) (*model.B
 func (s *BusServiceImpl) ListBuses(ctx context.Context, req model.ListBusesRequest) ([]model.Bus, int64, error) {
 	buses, total, err := s.busRepo.ListBuses(ctx, req.Page, req.PageSize)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to list buses")
 		return nil, 0, ginext.NewInternalServerError("failed to list buses")
 	}
 
@@ -60,8 +57,7 @@ func (s *BusServiceImpl) ListBuses(ctx context.Context, req model.ListBusesReque
 func (s *BusServiceImpl) GetBusSeats(ctx context.Context, busID uuid.UUID) ([]model.Seat, error) {
 	seats, err := s.seatRepo.ListByBusID(ctx, busID)
 	if err != nil {
-		log.Error().Err(err).Str("bus_id", busID.String()).Msg("Failed to get bus seats")
-		return nil, fmt.Errorf("failed to get bus seats: %w", err)
+		return nil, ginext.NewInternalServerError("failed to get bus seats")
 	}
 
 	return seats, nil
@@ -83,7 +79,6 @@ func (s *BusServiceImpl) CreateBus(ctx context.Context, req *model.CreateBusRequ
 	}
 
 	if err := s.busRepo.CreateBus(ctx, bus); err != nil {
-		log.Error().Err(err).Msg("Failed to create bus")
 		return nil, ginext.NewInternalServerError("failed to create bus")
 	}
 
@@ -159,7 +154,6 @@ func (s *BusServiceImpl) UpdateBus(ctx context.Context, id uuid.UUID, req *model
 	}
 
 	if err := s.busRepo.UpdateBus(ctx, bus); err != nil {
-		log.Error().Err(err).Str("bus_id", id.String()).Msg("Failed to update bus")
 		return nil, ginext.NewInternalServerError("failed to update bus")
 	}
 
@@ -168,7 +162,6 @@ func (s *BusServiceImpl) UpdateBus(ctx context.Context, id uuid.UUID, req *model
 
 func (s *BusServiceImpl) DeleteBus(ctx context.Context, id uuid.UUID) error {
 	if err := s.busRepo.DeleteBus(ctx, id); err != nil {
-		log.Error().Err(err).Str("bus_id", id.String()).Msg("Failed to delete bus")
 		return ginext.NewInternalServerError("failed to delete bus")
 	}
 	return nil

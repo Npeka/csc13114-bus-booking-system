@@ -22,6 +22,7 @@ func (s *Server) buildHandler() http.Handler {
 	busService := service.NewBusService(busRepo, seatRepo)
 	routeStopService := service.NewRouteStopService(routeStopRepo, routeRepo)
 	seatService := service.NewSeatService(seatRepo, busRepo)
+	cacheService := service.NewCacheService(s.redis)
 	constantsService := service.NewConstantsService()
 
 	tripHandler := handler.NewTripHandler(tripService)
@@ -29,7 +30,7 @@ func (s *Server) buildHandler() http.Handler {
 	busHandler := handler.NewBusHandler(busService)
 	routeStopHandler := handler.NewRouteStopHandler(routeStopService)
 	seatHandler := handler.NewSeatHandler(seatService)
-	constantsHandler := handler.NewConstantsHandler(constantsService)
+	constantsHandler := handler.NewConstantsHandler(constantsService, cacheService)
 
 	if s.cfg.Server.IsProduction {
 		gin.SetMode(gin.ReleaseMode)

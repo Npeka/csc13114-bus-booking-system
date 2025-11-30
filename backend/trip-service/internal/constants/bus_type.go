@@ -30,3 +30,19 @@ func AllBusTypes() []BusType {
 		BusTypeDoubleDecker,
 	}
 }
+
+// GetDisplayName returns a user-friendly display name for the bus type
+func (b BusType) GetDisplayName() string {
+	switch b {
+	case BusTypeStandard:
+		return "Ghế ngồi thường"
+	case BusTypeVIP:
+		return "Ghế ngồi VIP"
+	case BusTypeSleeper:
+		return "Giường nằm"
+	case BusTypeDoubleDecker:
+		return "Xe 2 tầng"
+	default:
+		return string(b)
+	}
+}

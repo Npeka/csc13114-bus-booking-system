@@ -38,14 +38,14 @@ func NewRouteStopService(stopRepo repository.RouteStopRepository, routeRepo repo
 
 func (s *RouteStopServiceImpl) CreateRouteStop(ctx context.Context, req *model.CreateRouteStopRequest) (*model.RouteStop, error) {
 	// Verify route exists
-	_, err := s.routeRepo.GetRouteByID(ctx, req.RouteID)
-	if err != nil {
-		log.Error().Err(err).Str("route_id", req.RouteID.String()).Msg("Route not found")
-		return nil, fmt.Errorf("route not found: %w", err)
-	}
+	// _, err := s.routeRepo.GetRouteByID(ctx, req.RouteID)
+	// if err != nil {
+	// 	log.Error().Err(err).Str("route_id", req.RouteID.String()).Msg("Route not found")
+	// 	return nil, fmt.Errorf("route not found: %w", err)
+	// }
 
 	stop := &model.RouteStop{
-		RouteID:       req.RouteID,
+		// RouteID:       req.RouteID,
 		StopOrder:     req.StopOrder,
 		StopType:      req.StopType,
 		Location:      req.Location,

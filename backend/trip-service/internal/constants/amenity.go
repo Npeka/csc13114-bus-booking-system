@@ -44,19 +44,19 @@ func (a Amenity) GetDisplayName() string {
 	case AmenityWiFi:
 		return "Wi-Fi"
 	case AmenityAC:
-		return "Air Conditioning"
+		return "Điều hòa"
 	case AmenityToilet:
-		return "Toilet"
+		return "Nhà vệ sinh"
 	case AmenityTV:
-		return "TV/Entertainment"
+		return "TV/Giải trí"
 	case AmenityCharging:
-		return "Charging Ports"
+		return "Cổng sạc điện thoại"
 	case AmenityBlanket:
-		return "Blanket & Pillow"
+		return "Chăn & Gối"
 	case AmenityWater:
-		return "Complimentary Water"
+		return "Nước uống miễn phí"
 	case AmenitySnacks:
-		return "Snacks"
+		return "Đồ ăn nhẹ"
 	default:
 		return string(a)
 	}

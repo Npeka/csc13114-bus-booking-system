@@ -33,3 +33,21 @@ func AllTripStatuses() []TripStatus {
 		TripStatusDelayed,
 	}
 }
+
+// GetDisplayName returns a user-friendly display name for the trip status
+func (t TripStatus) GetDisplayName() string {
+	switch t {
+	case TripStatusScheduled:
+		return "Đã lên lịch"
+	case TripStatusInProgress:
+		return "Đang di chuyển"
+	case TripStatusCompleted:
+		return "Hoàn thành"
+	case TripStatusCancelled:
+		return "Đã hủy"
+	case TripStatusDelayed:
+		return "Chậm trễ"
+	default:
+		return string(t)
+	}
+}

@@ -4,21 +4,23 @@ import (
 	"context"
 	"time"
 
+	"bus-booking/trip-service/internal/constants"
 	"bus-booking/trip-service/internal/model"
 
 	"github.com/google/uuid"
-	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
 
 type TripRepository interface {
-	CreateTrip(ctx context.Context, trip *model.Trip) error
-	GetTripByID(ctx context.Context, id uuid.UUID) (*model.Trip, error)
-	UpdateTrip(ctx context.Context, trip *model.Trip) error
-	DeleteTrip(ctx context.Context, id uuid.UUID) error
 	SearchTrips(ctx context.Context, req *model.TripSearchRequest) ([]model.TripDetail, int64, error)
+	GetTripByID(ctx context.Context, id uuid.UUID) (*model.Trip, error)
+	ListTrips(ctx context.Context, page, pageSize int) ([]model.Trip, int64, error)
 	GetTripsByRouteAndDate(ctx context.Context, routeID uuid.UUID, date time.Time) ([]model.Trip, error)
 	GetTripsByBusAndDateRange(ctx context.Context, busID uuid.UUID, startDate, endDate time.Time) ([]model.Trip, error)
+
+	CreateTrip(ctx context.Context, trip *model.Trip) error
+	UpdateTrip(ctx context.Context, trip *model.Trip) error
+	DeleteTrip(ctx context.Context, id uuid.UUID) error
 }
 
 type TripRepositoryImpl struct {
@@ -29,99 +31,85 @@ func NewTripRepository(db *gorm.DB) TripRepository {
 	return &TripRepositoryImpl{db: db}
 }
 
-func (r *TripRepositoryImpl) CreateTrip(ctx context.Context, trip *model.Trip) error {
-	return r.db.WithContext(ctx).Create(trip).Error
-}
-
-func (r *TripRepositoryImpl) GetTripByID(ctx context.Context, id uuid.UUID) (*model.Trip, error) {
-	var trip model.Trip
-	err := r.db.WithContext(ctx).
-		Preload("Route").
-		Preload("Bus").
-		First(&trip, "id = ?", id).Error
-	if err != nil {
-		return nil, err
-	}
-	return &trip, nil
-}
-
-func (r *TripRepositoryImpl) UpdateTrip(ctx context.Context, trip *model.Trip) error {
-	return r.db.WithContext(ctx).Model(trip).Updates(trip).Error
-}
-
-func (r *TripRepositoryImpl) DeleteTrip(ctx context.Context, id uuid.UUID) error {
-	return r.db.WithContext(ctx).Delete(&model.Trip{}, "id = ?", id).Error
-}
-
 func (r *TripRepositoryImpl) SearchTrips(ctx context.Context, req *model.TripSearchRequest) ([]model.TripDetail, int64, error) {
-	var results []model.TripDetail
+	var trips []model.Trip
 	var total int64
 
-	query := r.db.WithContext(ctx).Table("trips t").
-		Select(`
-			t.id, t.route_id, t.bus_id, t.departure_time, t.arrival_time, 
-			t.base_price, t.status,
-			r.origin, r.destination, r.distance_km,
-			b.model as bus_model, b.amenities_json,
-			COALESCE((SELECT COUNT(*) FROM seats WHERE bus_id = b.id), 0) as total_seats
-		`).
-		Joins("JOIN routes r ON t.route_id = r.id").
-		Joins("JOIN buses b ON t.bus_id = b.id").
-		Where("r.origin ILIKE ? AND r.destination ILIKE ?", "%"+req.Origin+"%", "%"+req.Destination+"%").
-		Where("DATE(t.departure_time) = DATE(?)", req.Date).
-		Where("t.is_active = ? AND r.is_active = ? AND b.is_active = ?", true, true, true).
-		Where("t.status IN (?)", []string{"scheduled"})
-
-	// Advanced filters
-	if req.DepartureTimeStart != nil {
-		query = query.Where("t.departure_time >= ?", *req.DepartureTimeStart)
+	// Parse date string
+	date, err := time.Parse("02/01/2006", req.Date)
+	if err != nil {
+		return nil, 0, err
 	}
-	if req.DepartureTimeEnd != nil {
-		query = query.Where("t.departure_time <= ?", *req.DepartureTimeEnd)
+
+	// Build base query with Preload
+	query := r.db.WithContext(ctx).Model(&model.Trip{}).
+		Preload("Route", "is_active = ?", true).
+		Preload("Bus", "is_active = ?", true).
+		Joins("JOIN routes ON routes.id = trips.route_id").
+		Joins("JOIN buses ON buses.id = trips.bus_id")
+
+	// Basic filters
+	query = query.Where("trips.is_active = ?", true).
+		Where("trips.status = ?", "scheduled").
+		Where("routes.origin ILIKE ?", "%"+req.Origin+"%").
+		Where("routes.destination ILIKE ?", "%"+req.Destination+"%").
+		Where("DATE(trips.departure_time) = DATE(?)", date)
+
+	// Advanced filters - parse time strings
+	if req.DepartureTimeStart != nil && *req.DepartureTimeStart != "" {
+		startTime, err := time.Parse("02/01/2006 15:04", req.Date+" "+*req.DepartureTimeStart)
+		if err == nil {
+			query = query.Where("trips.departure_time >= ?", startTime)
+		}
+	}
+	if req.DepartureTimeEnd != nil && *req.DepartureTimeEnd != "" {
+		endTime, err := time.Parse("02/01/2006 15:04", req.Date+" "+*req.DepartureTimeEnd)
+		if err == nil {
+			query = query.Where("trips.departure_time <= ?", endTime)
+		}
 	}
 	if req.MinPrice != nil {
-		query = query.Where("t.base_price >= ?", *req.MinPrice)
+		query = query.Where("trips.base_price >= ?", *req.MinPrice)
 	}
 	if req.MaxPrice != nil {
-		query = query.Where("t.base_price <= ?", *req.MaxPrice)
+		query = query.Where("trips.base_price <= ?", *req.MaxPrice)
 	}
 
-	// Amenities filter (if bus has all requested amenities)
+	// Amenities filter
 	if len(req.Amenities) > 0 {
 		for _, amenity := range req.Amenities {
-			query = query.Where("b.amenities_json LIKE ?", "%"+string(amenity)+"%")
+			query = query.Where("? = ANY(buses.amenities)", string(amenity))
 		}
 	}
 
-	// Seat types filter (check if bus has seats of requested types)
+	// Seat types filter
 	if len(req.SeatTypes) > 0 {
 		seatTypeStrs := make([]string, len(req.SeatTypes))
 		for i, st := range req.SeatTypes {
 			seatTypeStrs[i] = string(st)
 		}
 		query = query.Where(`EXISTS (
-			SELECT 1 FROM seats s 
-			WHERE s.bus_id = b.id 
-			AND s.seat_type IN (?)
+			SELECT 1 FROM seats 
+			WHERE seats.bus_id = buses.id 
+			AND seats.seat_type IN (?)
 		)`, seatTypeStrs)
 	}
 
 	// Count total
-	countQuery := query
-	if err := countQuery.Count(&total).Error; err != nil {
+	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
 	// Apply sorting
-	sortBy := "t.departure_time"
+	sortBy := "trips.departure_time"
 	if req.SortBy != "" {
 		switch req.SortBy {
 		case "price":
-			sortBy = "t.base_price"
+			sortBy = "trips.base_price"
 		case "departure_time":
-			sortBy = "t.departure_time"
+			sortBy = "trips.departure_time"
 		case "duration":
-			sortBy = "(t.arrival_time - t.departure_time)"
+			sortBy = "(trips.arrival_time - trips.departure_time)"
 		}
 	}
 	sortOrder := "ASC"
@@ -135,7 +123,7 @@ func (r *TripRepositoryImpl) SearchTrips(ctx context.Context, req *model.TripSea
 	if page < 1 {
 		page = 1
 	}
-	limit := req.Limit
+	limit := req.PageSize
 	if limit < 1 {
 		limit = 20
 	}
@@ -143,49 +131,117 @@ func (r *TripRepositoryImpl) SearchTrips(ctx context.Context, req *model.TripSea
 	query = query.Offset(offset).Limit(limit)
 
 	// Execute query
-	rows, err := query.Rows()
-	if err != nil {
+	if err := query.Find(&trips).Error; err != nil {
 		return nil, 0, err
 	}
-	defer func() {
-		if err := rows.Close(); err != nil {
-			log.Error().Err(err).Msg("Failed to close rows")
-		}
-	}()
 
-	for rows.Next() {
-		var result model.TripDetail
-		var amenitiesJSON string
-		err := rows.Scan(
-			&result.ID,
-			&result.RouteID,
-			&result.BusID,
-			&result.DepartureTime,
-			&result.ArrivalTime,
-			&result.BasePrice,
-			&result.Status,
-			&result.Origin,
-			&result.Destination,
-			&result.DistanceKm,
-			&result.BusModel,
-			&amenitiesJSON,
-			&result.TotalSeats,
-		)
-		if err != nil {
-			return nil, 0, err
+	// Map to TripDetail
+	results := make([]model.TripDetail, 0, len(trips))
+	for _, trip := range trips {
+		// Map status with display name
+		status := constants.TripStatus(trip.Status)
+		detail := model.TripDetail{
+			ID:            trip.ID,
+			RouteID:       trip.RouteID,
+			BusID:         trip.BusID,
+			DepartureTime: trip.DepartureTime,
+			ArrivalTime:   trip.ArrivalTime,
+			BasePrice:     trip.BasePrice,
+			Status: model.ConstantDisplay{
+				Value:       status.String(),
+				DisplayName: status.GetDisplayName(),
+			},
 		}
 
-		// Calculate duration
-		duration := result.ArrivalTime.Sub(result.DepartureTime)
-		result.DurationMinutes = int(duration.Minutes())
+		// Map Route details
+		if trip.Route != nil {
+			detail.Route = &model.RouteDetail{
+				ID:              trip.Route.ID,
+				Origin:          trip.Route.Origin,
+				Destination:     trip.Route.Destination,
+				DistanceKm:      trip.Route.DistanceKm,
+				DurationMinutes: trip.Route.EstimatedMinutes,
+			}
+		}
+
+		// Map Bus details
+		if trip.Bus != nil {
+			// Count seats to get total seats
+			var seatCount int64
+			r.db.Model(&model.Seat{}).Where("bus_id = ?", trip.Bus.ID).Count(&seatCount)
+
+			// Convert pq.StringArray to []ConstantDisplay with display names
+			amenities := make([]model.ConstantDisplay, len(trip.Bus.Amenities))
+			for i, a := range trip.Bus.Amenities {
+				amenity := constants.Amenity(a)
+				amenities[i] = model.ConstantDisplay{
+					Value:       amenity.String(),
+					DisplayName: amenity.GetDisplayName(),
+				}
+			}
+
+			// Map bus type with display name
+			busType := constants.BusTypeStandard // Default, could be derived from model or separate field
+			detail.Bus = &model.BusDetail{
+				ID:    trip.Bus.ID,
+				Model: trip.Bus.Model,
+				BusType: model.ConstantDisplay{
+					Value:       busType.String(),
+					DisplayName: busType.GetDisplayName(),
+				},
+				TotalSeats: int(seatCount),
+				Amenities:  amenities,
+			}
+			detail.TotalSeats = int(seatCount)
+		}
 
 		// TODO: Calculate available seats by checking bookings
-		result.AvailableSeats = result.TotalSeats
+		detail.AvailableSeats = detail.TotalSeats
 
-		results = append(results, result)
+		results = append(results, detail)
 	}
 
 	return results, total, nil
+}
+
+func (r *TripRepositoryImpl) GetTripByID(ctx context.Context, id uuid.UUID) (*model.Trip, error) {
+	var trip model.Trip
+	err := r.db.WithContext(ctx).
+		Preload("Route", func(db *gorm.DB) *gorm.DB {
+			return db.Preload("RouteStops", func(db *gorm.DB) *gorm.DB {
+				return db.Order("stop_order ASC")
+			})
+		}).
+		Preload("Bus", func(db *gorm.DB) *gorm.DB {
+			return db.Preload("Seats", func(db *gorm.DB) *gorm.DB {
+				return db.Order("seat_number ASC")
+			})
+		}).
+		First(&trip, "id = ?", id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &trip, nil
+}
+
+func (r *TripRepositoryImpl) ListTrips(ctx context.Context, page, pageSize int) ([]model.Trip, int64, error) {
+	var trips []model.Trip
+	var total int64
+
+	query := r.db.WithContext(ctx).Model(&model.Trip{}).
+		Preload("Route").
+		Preload("Bus")
+
+	// Count total
+	countQuery := r.db.WithContext(ctx).Model(&model.Trip{})
+	if err := countQuery.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * pageSize
+	err := query.Offset(offset).Limit(pageSize).Order("departure_time DESC").Find(&trips).Error
+
+	return trips, total, err
 }
 
 func (r *TripRepositoryImpl) GetTripsByRouteAndDate(ctx context.Context, routeID uuid.UUID, date time.Time) ([]model.Trip, error) {
@@ -206,4 +262,16 @@ func (r *TripRepositoryImpl) GetTripsByBusAndDateRange(ctx context.Context, busI
 		Order("departure_time ASC").
 		Find(&trips).Error
 	return trips, err
+}
+
+func (r *TripRepositoryImpl) CreateTrip(ctx context.Context, trip *model.Trip) error {
+	return r.db.WithContext(ctx).Create(trip).Error
+}
+
+func (r *TripRepositoryImpl) UpdateTrip(ctx context.Context, trip *model.Trip) error {
+	return r.db.WithContext(ctx).Model(trip).Updates(trip).Error
+}
+
+func (r *TripRepositoryImpl) DeleteTrip(ctx context.Context, id uuid.UUID) error {
+	return r.db.WithContext(ctx).Delete(&model.Trip{}, "id = ?", id).Error
 }

@@ -1,0 +1,130 @@
+{
+  "data": [
+    {
+      "id": "fa703cfd-716c-4892-879c-4dc4e24b1074",
+      "created_at": "2025-11-30T16:42:03.545278+07:00",
+      "updated_at": "2025-11-30T16:42:03.545278+07:00",
+      "origin": "Hà Nội",
+      "destination": "Cao Bằng",
+      "distance_km": 272,
+      "estimated_minutes": 360,
+      "is_active": true,
+      "trips": null,
+      "route_stops": null
+    },
+    {
+      "id": "3449c443-2c0e-48f7-b9e9-48e0626e5fd2",
+      "created_at": "2025-11-30T16:41:56.134324+07:00",
+      "updated_at": "2025-11-30T16:41:56.134324+07:00",
+      "origin": "TP. Hồ Chí Minh",
+      "destination": "Đà Lạt",
+      "distance_km": 308,
+      "estimated_minutes": 360,
+      "is_active": true,
+      "trips": null,
+      "route_stops": null
+    },
+    {
+      "id": "270cd14d-4bae-441d-9d69-d5ea14f8f86b",
+      "created_at": "2025-11-30T16:41:47.786875+07:00",
+      "updated_at": "2025-11-30T16:41:47.786875+07:00",
+      "origin": "Hà Nội",
+      "destination": "Sapa",
+      "distance_km": 315,
+      "estimated_minutes": 360,
+      "is_active": true,
+      "trips": null,
+      "route_stops": null
+    },
+    {
+      "id": "5124fb9e-2fd4-436a-82fe-efc270a33b08",
+      "created_at": "2025-11-30T16:41:28.216805+07:00",
+      "updated_at": "2025-11-30T16:41:28.216805+07:00",
+      "origin": "Đà Nẵng",
+      "destination": "TP. Hồ Chí Minh",
+      "distance_km": 947,
+      "estimated_minutes": 960,
+      "is_active": true,
+      "trips": null,
+      "route_stops": null
+    },
+    {
+      "id": "78fdd0a1-0a2c-498f-9293-d1fca7599c15",
+      "created_at": "2025-11-30T16:41:15.623074+07:00",
+      "updated_at": "2025-11-30T16:41:15.623074+07:00",
+      "origin": "Hà Nội",
+      "destination": "Hạ Long",
+      "distance_km": 156,
+      "estimated_minutes": 180,
+      "is_active": true,
+      "trips": null,
+      "route_stops": null
+    },
+    {
+      "id": "bd656d0c-3bac-4ac4-8c09-2fff22e3e90d",
+      "created_at": "2025-11-30T16:41:07.010741+07:00",
+      "updated_at": "2025-11-30T16:41:07.010741+07:00",
+      "origin": "TP. Hồ Chí Minh",
+      "destination": "Cần Thơ",
+      "distance_km": 169,
+      "estimated_minutes": 180,
+      "is_active": true,
+      "trips": null,
+      "route_stops": null
+    },
+    {
+      "id": "aaa145b8-7280-4bb2-8172-2e8ac43b9443",
+      "created_at": "2025-11-30T16:40:57.314753+07:00",
+      "updated_at": "2025-11-30T16:40:57.314753+07:00",
+      "origin": "Hà Nội",
+      "destination": "Hải Phòng",
+      "distance_km": 103,
+      "estimated_minutes": 120,
+      "is_active": true,
+      "trips": null,
+      "route_stops": null
+    },
+    {
+      "id": "011269a3-48c9-4e25-85a7-a1f493a3e55f",
+      "created_at": "2025-11-30T16:40:46.583734+07:00",
+      "updated_at": "2025-11-30T16:40:46.583734+07:00",
+      "origin": "TP. Hồ Chí Minh",
+      "destination": "Nha Trang",
+      "distance_km": 448,
+      "estimated_minutes": 480,
+      "is_active": true,
+      "trips": null,
+      "route_stops": null
+    },
+    {
+      "id": "1a3baca5-b105-43c1-91c5-5fad154a4dce",
+      "created_at": "2025-11-30T16:40:34.220806+07:00",
+      "updated_at": "2025-11-30T16:40:34.220806+07:00",
+      "origin": "Hà Nội",
+      "destination": "Đà Nẵng",
+      "distance_km": 763,
+      "estimated_minutes": 840,
+      "is_active": true,
+      "trips": null,
+      "route_stops": null
+    },
+    {
+      "id": "2d70fa4a-a146-4c19-92bc-e33a51a517c5",
+      "created_at": "2025-11-30T16:40:21.86758+07:00",
+      "updated_at": "2025-11-30T16:40:21.86758+07:00",
+      "origin": "Hà Nội",
+      "destination": "TP. Hồ Chí Minh",
+      "distance_km": 1710,
+      "estimated_minutes": 1800,
+      "is_active": true,
+      "trips": null,
+      "route_stops": null
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "page_size": 20,
+    "total": 10,
+    "total_pages": 1
+  }
+}

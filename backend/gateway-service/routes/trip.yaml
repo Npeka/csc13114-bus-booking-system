@@ -6,82 +6,52 @@ routes:
 
   # Public routes - Trips
   - path: "/api/v1/trips/search"
-    methods: ["POST"]
+    methods: ["GET"]
 
   - path: "/api/v1/trips/:id"
     methods: ["GET"]
 
-  - path: "/api/v1/trips/route/:route_id"
-    methods: ["GET"]
-
-  # Public routes - Buses
-  - path: "/api/v1/buses"
-    methods: ["GET"]
-
-  - path: "/api/v1/buses/:id"
-    methods: ["GET"]
-
-  - path: "/api/v1/buses/:id/seats"
-    methods: ["GET"]
-
-  - path: "/api/v1/buses/:id/seat-map"
-    methods: ["GET"]
-
-  # Public routes - Routes
-  - path: "/api/v1/routes/search"
-    methods: ["GET"]
-
-  - path: "/api/v1/routes"
-    methods: ["GET"]
-
-  - path: "/api/v1/routes/:id"
-    methods: ["GET"]
-
-  - path: "/api/v1/routes/:id/stops"
-    methods: ["GET"]
-
-  - path: "/api/v1/routes/:id/stops/reorder"
-    methods: ["POST"]
-
-  # Public routes - Seats
-  - path: "/api/v1/buses/seats"
-    methods: ["POST"]
-
-  - path: "/api/v1/buses/seats/bulk"
-    methods: ["POST"]
-
-  - path: "/api/v1/buses/seats/:id"
-    methods: ["PUT", "DELETE"]
-
   # Admin-only routes - Trips
   - path: "/api/v1/trips"
-    methods: ["POST", "PUT", "DELETE"]
+    methods: ["GET"]
+    auth:
+      required: true
+      roles: ["admin"]
+
+  - path: "/api/v1/trips"
+    methods: ["POST"]
+    auth:
+      required: true
+      roles: ["admin"]
+
+  - path: "/api/v1/trips/:id"
+    methods: ["PUT", "DELETE"]
     auth:
       required: true
       roles: ["admin"]
 
   # Admin-only routes - Buses
   - path: "/api/v1/buses"
-    methods: ["POST"]
+    methods: ["GET", "POST"]
     auth:
       required: true
       roles: ["admin"]
 
   - path: "/api/v1/buses/:id"
-    methods: ["PUT", "DELETE"]
+    methods: ["GET", "PUT", "DELETE"]
     auth:
       required: true
       roles: ["admin"]
 
   # Admin-only routes - Routes
   - path: "/api/v1/routes"
-    methods: ["POST"]
+    methods: ["GET", "POST"]
     auth:
       required: true
       roles: ["admin"]
 
   - path: "/api/v1/routes/:id"
-    methods: ["PUT", "DELETE"]
+    methods: ["GET", "PUT", "DELETE"]
     auth:
       required: true
       roles: ["admin"]

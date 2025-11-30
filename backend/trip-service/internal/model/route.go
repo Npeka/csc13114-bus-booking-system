@@ -50,10 +50,11 @@ type RouteSummary struct {
 }
 
 type CreateRouteRequest struct {
-	Origin           string `json:"origin" validate:"required,min=2,max=255"`
-	Destination      string `json:"destination" validate:"required,min=2,max=255"`
-	DistanceKm       int    `json:"distance_km" validate:"required,min=1"`
-	EstimatedMinutes int    `json:"estimated_minutes" validate:"required,min=1"`
+	Origin           string                   `json:"origin" validate:"required,min=2,max=255"`
+	Destination      string                   `json:"destination" validate:"required,min=2,max=255"`
+	DistanceKm       int                      `json:"distance_km" validate:"required,min=1"`
+	EstimatedMinutes int                      `json:"estimated_minutes" validate:"required,min=1"`
+	RouteStops       []CreateRouteStopRequest `json:"route_stops" validate:"required,dive"`
 }
 
 type UpdateRouteRequest struct {

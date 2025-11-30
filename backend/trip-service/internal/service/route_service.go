@@ -2,9 +2,8 @@ package service
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
+	"bus-booking/shared/ginext"
 	"bus-booking/trip-service/internal/model"
 	"bus-booking/trip-service/internal/repository"
 
@@ -14,7 +13,7 @@ import (
 
 type RouteService interface {
 	GetRouteByID(ctx context.Context, id uuid.UUID) (*model.Route, error)
-	ListRoutes(ctx context.Context, page, limit int) ([]model.RouteSummary, int64, error)
+	ListRoutes(ctx context.Context, page, pageSize int) ([]model.Route, int64, error)
 	GetRoutesByOriginDestination(ctx context.Context, origin, destination string) ([]model.Route, error)
 
 	CreateRoute(ctx context.Context, req *model.CreateRouteRequest) (*model.Route, error)
@@ -32,18 +31,35 @@ func NewRouteService(routeRepo repository.RouteRepository) RouteService {
 	}
 }
 
+func (s *RouteServiceImpl) GetRouteByID(ctx context.Context, id uuid.UUID) (*model.Route, error) {
+	route, err := s.routeRepo.GetRouteByID(ctx, id)
+	if err != nil {
+		log.Error().Err(err).Str("route_id", id.String()).Msg("Failed to get route")
+		return nil, ginext.NewInternalServerError("failed to get route")
+	}
+	return route, nil
+}
+
+func (s *RouteServiceImpl) ListRoutes(ctx context.Context, page, pageSize int) ([]model.Route, int64, error) {
+	routes, total, err := s.routeRepo.ListRoutes(ctx, page, pageSize)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to list routes")
+		return nil, 0, ginext.NewInternalServerError("failed to list routes")
+	}
+	return routes, total, nil
+}
+
+func (s *RouteServiceImpl) GetRoutesByOriginDestination(ctx context.Context, origin, destination string) ([]model.Route, error) {
+	routes, err := s.routeRepo.GetRoutesByOriginDestination(ctx, origin, destination)
+	if err != nil {
+		log.Error().Err(err).Str("origin", origin).Str("destination", destination).Msg("Failed to get routes by origin/destination")
+		return nil, ginext.NewInternalServerError("failed to get routes by origin/destination")
+	}
+	return routes, nil
+}
+
 func (s *RouteServiceImpl) CreateRoute(ctx context.Context, req *model.CreateRouteRequest) (*model.Route, error) {
-	log.Info().Msg("Creating new route")
-
-	// Validate request
-	if req.Origin == "" || req.Destination == "" {
-		return nil, errors.New("origin and destination are required")
-	}
-
-	if req.DistanceKm <= 0 || req.EstimatedMinutes <= 0 {
-		return nil, errors.New("distance and estimated time must be positive")
-	}
-
+	// Create route
 	route := &model.Route{
 		Origin:           req.Origin,
 		Destination:      req.Destination,
@@ -52,50 +68,56 @@ func (s *RouteServiceImpl) CreateRoute(ctx context.Context, req *model.CreateRou
 		IsActive:         true,
 	}
 
+	// Generate route stops from request
+	routeStops := make([]model.RouteStop, len(req.RouteStops))
+	for i, stopReq := range req.RouteStops {
+		routeStops[i] = model.RouteStop{
+			StopOrder:     stopReq.StopOrder,
+			StopType:      stopReq.StopType,
+			Location:      stopReq.Location,
+			Address:       stopReq.Address,
+			Latitude:      stopReq.Latitude,
+			Longitude:     stopReq.Longitude,
+			OffsetMinutes: stopReq.OffsetMinutes,
+			IsActive:      true,
+		}
+	}
+	route.RouteStops = routeStops
+
+	// Create route with stops in single transaction
 	if err := s.routeRepo.CreateRoute(ctx, route); err != nil {
 		log.Error().Err(err).Msg("Failed to create route")
-		return nil, fmt.Errorf("failed to create route: %w", err)
-	}
-
-	log.Info().Str("route_id", route.ID.String()).Msg("Route created successfully")
-	return route, nil
-}
-
-func (s *RouteServiceImpl) GetRouteByID(ctx context.Context, id uuid.UUID) (*model.Route, error) {
-	route, err := s.routeRepo.GetRouteByID(ctx, id)
-	if err != nil {
-		log.Error().Err(err).Str("route_id", id.String()).Msg("Failed to get route")
-		return nil, fmt.Errorf("failed to get route: %w", err)
+		return nil, ginext.NewInternalServerError("failed to create route")
 	}
 
 	return route, nil
 }
 
 func (s *RouteServiceImpl) UpdateRoute(ctx context.Context, id uuid.UUID, req *model.UpdateRouteRequest) (*model.Route, error) {
-	log.Info().Str("route_id", id.String()).Msg("Updating route")
-
-	// Get existing route
 	route, err := s.routeRepo.GetRouteByID(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("route not found: %w", err)
+		return nil, ginext.NewInternalServerError("failed to get route")
 	}
 
 	// Update fields
 	if req.Origin != nil {
 		route.Origin = *req.Origin
 	}
+
 	if req.Destination != nil {
 		route.Destination = *req.Destination
 	}
+
 	if req.DistanceKm != nil {
 		if *req.DistanceKm <= 0 {
-			return nil, errors.New("distance must be positive")
+			return nil, ginext.NewBadRequestError("distance must be positive")
 		}
 		route.DistanceKm = *req.DistanceKm
 	}
+
 	if req.EstimatedMinutes != nil {
 		if *req.EstimatedMinutes <= 0 {
-			return nil, errors.New("estimated time must be positive")
+			return nil, ginext.NewBadRequestError("estimated time must be positive")
 		}
 		route.EstimatedMinutes = *req.EstimatedMinutes
 	}
@@ -105,45 +127,16 @@ func (s *RouteServiceImpl) UpdateRoute(ctx context.Context, id uuid.UUID, req *m
 
 	if err := s.routeRepo.UpdateRoute(ctx, route); err != nil {
 		log.Error().Err(err).Str("route_id", id.String()).Msg("Failed to update route")
-		return nil, fmt.Errorf("failed to update route: %w", err)
+		return nil, ginext.NewInternalServerError("failed to update route")
 	}
 
-	log.Info().Str("route_id", id.String()).Msg("Route updated successfully")
 	return route, nil
 }
 
 func (s *RouteServiceImpl) DeleteRoute(ctx context.Context, id uuid.UUID) error {
-	log.Info().Str("route_id", id.String()).Msg("Deleting route")
-
 	if err := s.routeRepo.DeleteRoute(ctx, id); err != nil {
 		log.Error().Err(err).Str("route_id", id.String()).Msg("Failed to delete route")
-		return fmt.Errorf("failed to delete route: %w", err)
+		return ginext.NewInternalServerError("failed to delete route")
 	}
-
-	log.Info().Str("route_id", id.String()).Msg("Route deleted successfully")
 	return nil
-}
-
-func (s *RouteServiceImpl) ListRoutes(ctx context.Context, page, pageSize int) ([]model.RouteSummary, int64, error) {
-	routes, total, err := s.routeRepo.ListRoutes(ctx, page, pageSize)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to list routes")
-		return nil, 0, fmt.Errorf("failed to list routes: %w", err)
-	}
-
-	return routes, total, nil
-}
-
-func (s *RouteServiceImpl) GetRoutesByOriginDestination(ctx context.Context, origin, destination string) ([]model.Route, error) {
-	if origin == "" || destination == "" {
-		return nil, errors.New("origin and destination are required")
-	}
-
-	routes, err := s.routeRepo.GetRoutesByOriginDestination(ctx, origin, destination)
-	if err != nil {
-		log.Error().Err(err).Str("origin", origin).Str("destination", destination).Msg("Failed to get routes by origin/destination")
-		return nil, fmt.Errorf("failed to get routes: %w", err)
-	}
-
-	return routes, nil
 }

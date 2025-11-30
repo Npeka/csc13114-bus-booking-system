@@ -13,8 +13,10 @@ import (
 )
 
 type CacheService interface {
-	GetSearchResults(ctx context.Context, key string) (*model.TripSearchResponse, error)
-	SetSearchResults(ctx context.Context, key string, response *model.TripSearchResponse, ttl time.Duration) error
+	GetSearchResults(ctx context.Context, key string) ([]model.TripDetail, int64, error)
+	SetSearchResults(ctx context.Context, key string, trips []model.TripDetail, total int64, ttl time.Duration) error
+	GetConstants(ctx context.Context, key string) (interface{}, error)
+	SetConstants(ctx context.Context, key string, data interface{}, ttl time.Duration) error
 	InvalidateTripCache(ctx context.Context, tripID string) error
 	InvalidateRouteCache(ctx context.Context, routeID string) error
 	InvalidateSearchCache(ctx context.Context, pattern string) error
@@ -29,33 +31,44 @@ func NewCacheService(redis *db.RedisManager) CacheService {
 }
 
 const (
-	searchCachePrefix = "trip:search:"
-	tripCachePrefix   = "trip:detail:"
-	routeCachePrefix  = "route:detail:"
-	searchCacheTTL    = 5 * time.Minute
-	detailCacheTTL    = 1 * time.Hour
+	searchCachePrefix    = "trip:search:"
+	tripCachePrefix      = "trip:detail:"
+	routeCachePrefix     = "route:detail:"
+	constantsCachePrefix = "constants:"
+	searchCacheTTL       = 5 * time.Minute
+	detailCacheTTL       = 1 * time.Hour
+	constantsCacheTTL    = 24 * time.Hour // Constants rarely change
 )
 
-func (s *CacheServiceImpl) GetSearchResults(ctx context.Context, key string) (*model.TripSearchResponse, error) {
+type cachedSearchResult struct {
+	Trips []model.TripDetail `json:"trips"`
+	Total int64              `json:"total"`
+}
+
+func (s *CacheServiceImpl) GetSearchResults(ctx context.Context, key string) ([]model.TripDetail, int64, error) {
 	cacheKey := searchCachePrefix + key
 	data, err := s.redis.Get(ctx, cacheKey)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	var response model.TripSearchResponse
-	if err := json.Unmarshal([]byte(data), &response); err != nil {
+	var result cachedSearchResult
+	if err := json.Unmarshal([]byte(data), &result); err != nil {
 		log.Error().Err(err).Msg("Failed to unmarshal cached search results")
-		return nil, err
+		return nil, 0, err
 	}
 
 	log.Debug().Str("key", key).Msg("Cache hit for search results")
-	return &response, nil
+	return result.Trips, result.Total, nil
 }
 
-func (s *CacheServiceImpl) SetSearchResults(ctx context.Context, key string, response *model.TripSearchResponse, ttl time.Duration) error {
+func (s *CacheServiceImpl) SetSearchResults(ctx context.Context, key string, trips []model.TripDetail, total int64, ttl time.Duration) error {
 	cacheKey := searchCachePrefix + key
-	data, err := json.Marshal(response)
+	result := cachedSearchResult{
+		Trips: trips,
+		Total: total,
+	}
+	data, err := json.Marshal(result)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to marshal search results")
 		return err
@@ -99,13 +112,47 @@ func (s *CacheServiceImpl) InvalidateSearchCache(ctx context.Context, pattern st
 	return nil
 }
 
+func (s *CacheServiceImpl) GetConstants(ctx context.Context, key string) (interface{}, error) {
+	cacheKey := constantsCachePrefix + key
+	data, err := s.redis.Get(ctx, cacheKey)
+	if err != nil {
+		return nil, err
+	}
+
+	var result interface{}
+	if err := json.Unmarshal([]byte(data), &result); err != nil {
+		log.Error().Err(err).Msg("Failed to unmarshal cached constants")
+		return nil, err
+	}
+
+	log.Debug().Str("key", key).Msg("Cache hit for constants")
+	return result, nil
+}
+
+func (s *CacheServiceImpl) SetConstants(ctx context.Context, key string, data interface{}, ttl time.Duration) error {
+	cacheKey := constantsCachePrefix + key
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to marshal constants")
+		return err
+	}
+
+	if err := s.redis.Set(ctx, cacheKey, string(jsonData), ttl); err != nil {
+		log.Error().Err(err).Msg("Failed to cache constants")
+		return err
+	}
+
+	log.Debug().Str("key", key).Dur("ttl", ttl).Msg("Cached constants")
+	return nil
+}
+
 // GenerateSearchCacheKey creates a cache key from search parameters
 func GenerateSearchCacheKey(req *model.TripSearchRequest) string {
 	return fmt.Sprintf("%s:%s:%s:%d:%d",
 		req.Origin,
 		req.Destination,
-		req.Date.Format("2006-01-02"),
+		req.Date,
 		req.Page,
-		req.Limit,
+		req.PageSize,
 	)
 }
