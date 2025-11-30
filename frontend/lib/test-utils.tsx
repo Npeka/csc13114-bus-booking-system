@@ -109,19 +109,6 @@ export function createMockAdmin(overrides?: Partial<User>): User {
 }
 
 /**
- * Create a mock operator user
- */
-export function createMockOperator(overrides?: Partial<User>): User {
-  return createMockUser({
-    id: "operator-1",
-    email: "operator@example.com",
-    full_name: "Operator User",
-    role: Role.OPERATOR,
-    ...overrides,
-  });
-}
-
-/**
  * Create a mock access token
  */
 export function createMockAccessToken(): string {
@@ -201,7 +188,7 @@ export const waitFor = async (
     try {
       await callback();
       return;
-    } catch (error) {
+    } catch {
       await new Promise((resolve) => setTimeout(resolve, 50));
     }
   }
