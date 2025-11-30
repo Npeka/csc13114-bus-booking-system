@@ -6,6 +6,7 @@ import { ChatBot } from "@/components/chatbot/chatbot";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { HydrationGuard } from "@/components/auth/hydration-guard";
 import { ThemeProvider } from "@/components/theme-provider";
+import { QueryProvider } from "@/components/providers/query-provider";
 
 export const metadata: Metadata = {
   title: {
@@ -48,16 +49,18 @@ export default function RootLayout({
   return (
     <html lang="vi" suppressHydrationWarning>
       <body className="flex min-h-screen flex-col antialiased">
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <AuthProvider>
-            <HydrationGuard>
-              <Header />
-            </HydrationGuard>
-            <main className="flex-1">{children}</main>
-            <Footer />
-            <ChatBot />
-          </AuthProvider>
-        </ThemeProvider>
+        <QueryProvider>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <AuthProvider>
+              <HydrationGuard>
+                <Header />
+              </HydrationGuard>
+              <main className="flex-1">{children}</main>
+              <Footer />
+              <ChatBot />
+            </AuthProvider>
+          </ThemeProvider>
+        </QueryProvider>
       </body>
     </html>
   );

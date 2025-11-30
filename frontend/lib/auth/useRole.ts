@@ -3,7 +3,7 @@
  */
 
 import { useAuthStore } from "@/lib/stores/auth-store";
-import { isAdmin, isOperator, isSupport, isPassenger } from "./roles";
+import { isAdmin, isSupport, isPassenger } from "./roles";
 
 export function useRole() {
   const user = useAuthStore((state) => state.user);
@@ -12,7 +12,6 @@ export function useRole() {
   return {
     role: userRole,
     isAdmin: isAdmin(userRole),
-    isOperator: isOperator(userRole),
     isSupport: isSupport(userRole),
     isPassenger: isPassenger(userRole),
   };

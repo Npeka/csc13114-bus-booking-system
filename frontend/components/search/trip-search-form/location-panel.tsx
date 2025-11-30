@@ -12,6 +12,7 @@ export type LocationPanelProps = {
   locations: string[];
   onSelect: (city: string) => void;
   recentLocations: string[];
+  isLoading?: boolean;
 };
 
 export function LocationPanel({
@@ -21,11 +22,12 @@ export function LocationPanel({
   locations,
   onSelect,
   recentLocations,
+  isLoading = false,
 }: LocationPanelProps) {
   return (
     <Card
       data-location-panel
-      className="shadow-elevated absolute top-0 left-1/2 z-40 w-[min(28rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-4 animate-in rounded-2xl border p-4 fade-in-0 zoom-in-95"
+      className="absolute top-0 left-1/2 z-40 w-[min(28rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-4 animate-in rounded-2xl border p-4 shadow-elevated fade-in-0 zoom-in-95"
       style={{ transformOrigin: "top" }}
     >
       <div className="space-y-5">
@@ -40,7 +42,11 @@ export function LocationPanel({
             TỈNH/THÀNH PHỐ
           </p>
           <div className="custom-scroll max-h-64 overflow-y-auto pr-1">
-            {locations.length > 0 ? (
+            {isLoading ? (
+              <div className="px-4 py-3 text-sm text-muted-foreground">
+                Đang tìm kiếm...
+              </div>
+            ) : locations.length > 0 ? (
               locations.map((city) => (
                 <button
                   key={city}

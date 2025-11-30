@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
@@ -16,14 +17,20 @@ import { PassengerField } from "./passenger-field";
 import { PopularRoutes } from "./popular-routes";
 import { VIETNAM_CITIES } from "./constants";
 import { fuzzyMatchCity } from "./utils";
+import { getCityAutocomplete } from "@/lib/api/trip-service";
 
 export function TripSearchForm() {
   const router = useRouter();
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
   // Initialize as undefined to avoid hydration mismatch with PPR
-  // Set the date in useEffect to ensure it only runs on client
-  const [date, setDate] = useState<Date | undefined>(undefined);
+  // Use function initializer to set date only on client side
+  const [date, setDate] = useState<Date | undefined>(() => {
+    if (typeof window !== "undefined") {
+      return new Date();
+    }
+    return undefined;
+  });
   const [isRoundTrip, setIsRoundTrip] = useState(false);
   const [returnDate, setReturnDate] = useState<Date | undefined>(undefined);
   const [passengers, setPassengers] = useState(1);
@@ -132,27 +139,36 @@ export function TripSearchForm() {
     });
   };
 
+  // Fetch city autocomplete from API when search query is at least 2 characters
+  const { data: apiCities = [], isLoading: isLoadingCities } = useQuery({
+    queryKey: ["cityAutocomplete", locationPicker.search],
+    queryFn: () => getCityAutocomplete(locationPicker.search),
+    enabled: locationPicker.open && locationPicker.search.trim().length >= 2,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+
   const filteredLocations = useMemo(() => {
-    if (!locationPicker.search.trim()) {
+    const searchQuery = locationPicker.search.trim();
+
+    // If search query is empty, show all cities
+    if (!searchQuery) {
       return VIETNAM_CITIES;
     }
-    return VIETNAM_CITIES.filter((city) =>
-      fuzzyMatchCity(city, locationPicker.search),
-    );
-  }, [locationPicker.search]);
+
+    // If search query is at least 2 characters, use API results
+    if (searchQuery.length >= 2 && apiCities.length > 0) {
+      return apiCities;
+    }
+
+    // Fallback to local fuzzy matching for single character or when API returns no results
+    return VIETNAM_CITIES.filter((city) => fuzzyMatchCity(city, searchQuery));
+  }, [locationPicker.search, apiCities]);
 
   useEffect(() => {
     if (locationPicker.open) {
       searchInputRef.current?.focus();
     }
   }, [locationPicker.open, locationPicker.field]);
-
-  // Initialize date on client side only to avoid hydration mismatch
-  useEffect(() => {
-    if (date === undefined) {
-      setDate(new Date());
-    }
-  }, [date]);
 
   useEffect(() => {
     if (!locationPicker.open) {
@@ -200,6 +216,7 @@ export function TripSearchForm() {
                   locations={filteredLocations}
                   onSelect={handleSelectLocation}
                   recentLocations={recentLocations}
+                  isLoading={isLoadingCities}
                 />
               )}
             </LocationField>
@@ -226,6 +243,7 @@ export function TripSearchForm() {
                     locations={filteredLocations}
                     onSelect={handleSelectLocation}
                     recentLocations={recentLocations}
+                    isLoading={isLoadingCities}
                   />
                 )}
             </LocationField>

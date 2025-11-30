@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect, Suspense, startTransition } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, Suspense, useMemo } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
 import {
   TripCard,
   TripCardSkeleton,
@@ -12,20 +14,39 @@ import { TripSearchForm } from "@/components/search/trip-search-form";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Pagination } from "@/components/ui/pagination";
 import { Filter, ArrowUpDown } from "lucide-react";
+import {
+  searchTrips,
+  type TripDetail,
+  type TripSearchParams,
+} from "@/lib/api/trip-service";
 
 function TripsContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const [trips, setTrips] = useState<Trip[]>([]);
-  const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<"price" | "departure" | "duration">(
     "price",
   );
+  const pageSize = 20;
 
   const origin = searchParams.get("from") || "";
   const destination = searchParams.get("to") || "";
   const date = searchParams.get("date") || "";
-  const passengers = searchParams.get("passengers") || "1";
+  const passengers = parseInt(searchParams.get("passengers") || "1", 10);
+
+  // Track search key to reset page when search params change
+  // Per React docs: "To reset a particular bit of state in response to a prop change, set it during rendering"
+  const currentSearchKey = `${origin}-${destination}-${date}`;
+  const [prevSearchKey, setPrevSearchKey] = useState(currentSearchKey);
+  const [page, setPage] = useState(1);
+
+  // Reset page during render when search params change (React docs pattern)
+  // This is the recommended approach for adjusting state when props change
+  if (currentSearchKey !== prevSearchKey) {
+    setPrevSearchKey(currentSearchKey);
+    setPage(1);
+  }
 
   const [filters, setFilters] = useState<Filters>({
     priceRange: [0, 1000000],
@@ -35,25 +56,139 @@ function TripsContent() {
     operators: [],
   });
 
-  useEffect(() => {
-    let isSubscribed = true;
-    startTransition(() => {
-      setLoading(true);
-    });
+  // Map departure time slots to time ranges
+  const getTimeRange = (slots: string[]) => {
+    if (slots.length === 0) return { min: undefined, max: undefined };
 
-    const timeoutId = window.setTimeout(() => {
-      if (!isSubscribed) return;
-      startTransition(() => {
-        setTrips(mockTrips);
-        setLoading(false);
-      });
-    }, 1000);
-
-    return () => {
-      isSubscribed = false;
-      window.clearTimeout(timeoutId);
+    const timeRanges: Record<string, { min: string; max: string }> = {
+      morning: { min: "00:00", max: "06:00" },
+      daytime: { min: "06:00", max: "12:00" },
+      afternoon: { min: "12:00", max: "18:00" },
+      evening: { min: "18:00", max: "24:00" },
     };
-  }, [origin, destination, date]);
+
+    const mins = slots.map((s) => timeRanges[s]?.min).filter(Boolean);
+    const maxs = slots.map((s) => timeRanges[s]?.max).filter(Boolean);
+
+    return {
+      min: mins.length > 0 ? mins.sort()[0] : undefined,
+      max: maxs.length > 0 ? maxs.sort().reverse()[0] : undefined,
+    };
+  };
+
+  // Build search params for API
+  const searchParams_api: TripSearchParams = useMemo(() => {
+    const params: TripSearchParams = {
+      origin,
+      destination,
+      departure_date: date || new Date().toISOString().split("T")[0],
+      passengers,
+      page,
+      limit: pageSize,
+    };
+
+    // Add sorting
+    if (sortBy === "price") {
+      params.sort_by = "price";
+      params.sort_order = "asc";
+    } else if (sortBy === "departure") {
+      params.sort_by = "departure_time";
+      params.sort_order = "asc";
+    }
+
+    // Add price filter
+    if (filters.priceRange[0] > 0) {
+      params.price_min = filters.priceRange[0];
+    }
+    if (filters.priceRange[1] < 1000000) {
+      params.price_max = filters.priceRange[1];
+    }
+
+    // Add time range filter
+    if (filters.departureTime.length > 0) {
+      const timeRange = getTimeRange(filters.departureTime);
+      if (timeRange.min) params.departure_time_min = timeRange.min;
+      if (timeRange.max) params.departure_time_max = timeRange.max;
+    }
+
+    // Add amenities filter
+    if (filters.amenities.length > 0) {
+      params.amenities = filters.amenities;
+    }
+
+    // Add bus type filter (map Vietnamese names to search terms)
+    if (filters.busTypes.length > 0) {
+      // Use first bus type for now (can be enhanced to support multiple)
+      const busTypeMap: Record<string, string> = {
+        "Ghế ngồi": "seat",
+        "Giường nằm": "bed",
+        Limousine: "limousine",
+        "Cabin đôi": "cabin",
+      };
+      const mappedType = busTypeMap[filters.busTypes[0]] || filters.busTypes[0];
+      params.bus_type = mappedType;
+    }
+
+    return params;
+  }, [
+    origin,
+    destination,
+    date,
+    passengers,
+    page,
+    sortBy,
+    filters.priceRange,
+    filters.departureTime,
+    filters.amenities,
+    filters.busTypes,
+  ]);
+
+  // Fetch trips from API
+  const {
+    data: searchResponse,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["trips", searchParams_api],
+    queryFn: () => searchTrips(searchParams_api),
+    enabled: !!origin && !!destination && !!date,
+  });
+
+  // Convert API TripDetail to Trip format for TripCard
+  const trips: Trip[] = useMemo(() => {
+    if (!searchResponse?.trips) return [];
+
+    return searchResponse.trips.map((tripDetail: TripDetail) => {
+      const departureDate = new Date(tripDetail.departure_time);
+      const arrivalDate = new Date(tripDetail.arrival_time);
+      const durationMs = arrivalDate.getTime() - departureDate.getTime();
+      const hours = Math.floor(durationMs / (1000 * 60 * 60));
+      const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+
+      // Map bus type from amenities or use default
+      let busType = "Ghế ngồi";
+      if (tripDetail.bus_amenities?.some((a) => a.includes("Giường"))) {
+        busType = "Giường nằm";
+      } else if (tripDetail.bus_model?.toLowerCase().includes("limousine")) {
+        busType = "Limousine";
+      }
+
+      return {
+        id: tripDetail.id,
+        operator: tripDetail.operator_name || "Nhà xe",
+        operatorRating: 4.5, // Default rating, can be enhanced later
+        departureTime: format(departureDate, "HH:mm"),
+        arrivalTime: format(arrivalDate, "HH:mm"),
+        duration: `${hours}h ${minutes}m`,
+        origin: tripDetail.origin,
+        destination: tripDetail.destination,
+        price: tripDetail.base_price,
+        availableSeats: tripDetail.available_seats,
+        busType,
+        amenities: tripDetail.bus_amenities || [],
+      };
+    });
+  }, [searchResponse]);
 
   const handleClearFilters = () => {
     setFilters({
@@ -66,18 +201,11 @@ function TripsContent() {
   };
 
   const handleSelectTrip = (tripId: string) => {
-    // Navigate to seat selection
-    window.location.href = `/trips/${tripId}/seats`;
+    router.push(`/trips/${tripId}`);
   };
 
+  // Apply client-side filters (for bus types and amenities that aren't in API yet)
   const filteredTrips = trips.filter((trip) => {
-    // Apply filters
-    if (
-      trip.price < filters.priceRange[0] ||
-      trip.price > filters.priceRange[1]
-    ) {
-      return false;
-    }
     if (
       filters.busTypes.length > 0 &&
       !filters.busTypes.includes(trip.busType)
@@ -90,22 +218,19 @@ function TripsContent() {
       );
       if (!hasAllAmenities) return false;
     }
-    // Add departure time filtering logic
+    // Departure time filtering will be handled by backend in future
     return true;
   });
 
-  const sortedTrips = [...filteredTrips].sort((a, b) => {
-    switch (sortBy) {
-      case "price":
-        return a.price - b.price;
-      case "departure":
-        return a.departureTime.localeCompare(b.departureTime);
-      case "duration":
-        return a.duration.localeCompare(b.duration);
-      default:
-        return 0;
-    }
-  });
+  // Client-side sorting for duration (API handles price and departure)
+  const sortedTrips =
+    sortBy === "duration"
+      ? [...filteredTrips].sort((a, b) => {
+          const aDuration = parseInt(a.duration.replace(/[^\d]/g, "")) || 0;
+          const bDuration = parseInt(b.duration.replace(/[^\d]/g, "")) || 0;
+          return aDuration - bDuration;
+        })
+      : filteredTrips;
 
   const activeFiltersCount =
     (filters.priceRange[0] !== 0 || filters.priceRange[1] !== 1000000 ? 1 : 0) +
@@ -176,17 +301,27 @@ function TripsContent() {
               origin={origin}
               destination={destination}
               date={date}
-              passengers={passengers}
-              resultsCount={sortedTrips.length}
+              passengers={passengers.toString()}
+              resultsCount={searchResponse?.total || sortedTrips.length}
               sortBy={sortBy}
               onToggleSort={handleToggleSort}
             />
             <TripResults
-              loading={loading}
+              loading={isLoading}
               trips={sortedTrips}
               onSelect={handleSelectTrip}
               onClearFilters={handleClearFilters}
+              error={error}
             />
+            {searchResponse && searchResponse.total_pages > 1 && (
+              <div className="mt-6">
+                <Pagination
+                  currentPage={page}
+                  totalPages={searchResponse.total_pages}
+                  onPageChange={setPage}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -201,80 +336,6 @@ export default function TripsPage() {
     </Suspense>
   );
 }
-
-// Mock data
-const mockTrips: Trip[] = [
-  {
-    id: "1",
-    operator: "Phương Trang FUTA Bus Lines",
-    operatorRating: 4.8,
-    departureTime: "06:00",
-    arrivalTime: "14:30",
-    duration: "8h 30m",
-    origin: "TP. Hồ Chí Minh",
-    destination: "Đà Lạt",
-    price: 180000,
-    availableSeats: 15,
-    busType: "Giường nằm",
-    amenities: ["WiFi", "Điều hòa", "Nước uống", "Sạc điện thoại"],
-  },
-  {
-    id: "2",
-    operator: "Mai Linh Express",
-    operatorRating: 4.6,
-    departureTime: "07:30",
-    arrivalTime: "16:00",
-    duration: "8h 30m",
-    origin: "TP. Hồ Chí Minh",
-    destination: "Đà Lạt",
-    price: 165000,
-    availableSeats: 8,
-    busType: "Ghế ngồi",
-    amenities: ["Điều hòa", "Nước uống"],
-  },
-  {
-    id: "3",
-    operator: "Thành Bưởi Limousine",
-    operatorRating: 4.9,
-    departureTime: "08:00",
-    arrivalTime: "16:15",
-    duration: "8h 15m",
-    origin: "TP. Hồ Chí Minh",
-    destination: "Đà Lạt",
-    price: 250000,
-    availableSeats: 12,
-    busType: "Limousine",
-    amenities: ["WiFi", "Điều hòa", "Nước uống", "Sạc điện thoại", "TV"],
-  },
-  {
-    id: "4",
-    operator: "Kumho Samco",
-    operatorRating: 4.5,
-    departureTime: "09:30",
-    arrivalTime: "18:00",
-    duration: "8h 30m",
-    origin: "TP. Hồ Chí Minh",
-    destination: "Đà Lạt",
-    price: 175000,
-    availableSeats: 20,
-    busType: "Giường nằm",
-    amenities: ["WiFi", "Điều hòa", "Nước uống"],
-  },
-  {
-    id: "5",
-    operator: "Hanh Cafe",
-    operatorRating: 4.7,
-    departureTime: "22:00",
-    arrivalTime: "06:30",
-    duration: "8h 30m",
-    origin: "TP. Hồ Chí Minh",
-    destination: "Đà Lạt",
-    price: 190000,
-    availableSeats: 10,
-    busType: "Giường nằm",
-    amenities: ["WiFi", "Điều hòa", "Nước uống", "Sạc điện thoại", "Toilet"],
-  },
-];
 
 type TripSummaryHeaderProps = {
   origin: string;
@@ -329,6 +390,7 @@ type TripResultsProps = {
   trips: Trip[];
   onSelect: (tripId: string) => void;
   onClearFilters: () => void;
+  error?: Error | null;
 };
 
 function TripResults({
@@ -336,6 +398,7 @@ function TripResults({
   trips,
   onSelect,
   onClearFilters,
+  error,
 }: TripResultsProps) {
   if (loading) {
     return (
@@ -343,6 +406,25 @@ function TripResults({
         {[...Array(5)].map((_, i) => (
           <TripCardSkeleton key={i} />
         ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-2xl border bg-white py-12 text-center shadow-sm">
+        <p className="text-lg text-muted-foreground">
+          {error instanceof Error
+            ? error.message
+            : "Đã xảy ra lỗi khi tải dữ liệu"}
+        </p>
+        <Button
+          variant="outline"
+          className="mt-4"
+          onClick={() => window.location.reload()}
+        >
+          Thử lại
+        </Button>
       </div>
     );
   }

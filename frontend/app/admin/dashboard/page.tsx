@@ -9,6 +9,7 @@ import {
   DollarSign,
   Calendar,
   ChevronRight,
+  MapPin,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -246,9 +247,25 @@ export default function AdminDashboardPage() {
                 <Users className="mb-2 h-5 w-5" />
                 <span>Quản lý người dùng</span>
               </Button>
-              <Button variant="outline" className="h-auto flex-col py-4">
-                <Calendar className="mb-2 h-5 w-5" />
-                <span>Quản lý chuyến</span>
+              <Button
+                variant="outline"
+                className="h-auto flex-col py-4"
+                asChild
+              >
+                <Link href="/admin/trips">
+                  <Calendar className="mb-2 h-5 w-5" />
+                  <span>Quản lý chuyến</span>
+                </Link>
+              </Button>
+              <Button
+                variant="outline"
+                className="h-auto flex-col py-4"
+                asChild
+              >
+                <Link href="/admin/routes">
+                  <MapPin className="mb-2 h-5 w-5" />
+                  <span>Quản lý tuyến đường</span>
+                </Link>
               </Button>
               <Button variant="outline" className="h-auto flex-col py-4">
                 <DollarSign className="mb-2 h-5 w-5" />

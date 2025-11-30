@@ -1,26 +1,24 @@
 /**
- * Role-based access control utilities
- * Backend role model: Bit-flag based (Passenger=1, Admin=2, Operator=4, Support=8)
+ * User Role System
+ * Backend role model: Bit-flag based (Passenger=1, Admin=2, Support=8)
+ * Frontend role model: Priority-based (highest role takes precedence)
  */
 
 export enum Role {
   PASSENGER = 1,
   ADMIN = 2,
-  OPERATOR = 4,
   SUPPORT = 8,
 }
 
 export const ROLE_NAMES: Record<Role, string> = {
   [Role.PASSENGER]: "Passenger",
   [Role.ADMIN]: "Admin",
-  [Role.OPERATOR]: "Operator",
   [Role.SUPPORT]: "Support",
 };
 
 export const ROLE_LABELS: Record<Role, string> = {
-  [Role.PASSENGER]: "Khách hàng",
+  [Role.PASSENGER]: "Hành khách",
   [Role.ADMIN]: "Quản trị viên",
-  [Role.OPERATOR]: "Nhà điều hành",
   [Role.SUPPORT]: "Hỗ trợ",
 };
 
@@ -37,13 +35,6 @@ export function hasRole(userRole: number, role: Role): boolean {
  */
 export function isAdmin(userRole: number): boolean {
   return hasRole(userRole, Role.ADMIN);
-}
-
-/**
- * Check if user is operator
- */
-export function isOperator(userRole: number): boolean {
-  return hasRole(userRole, Role.OPERATOR);
 }
 
 /**
@@ -67,7 +58,6 @@ export function getUserRoles(userRole: number): Role[] {
   const roles: Role[] = [];
   if (isPassenger(userRole)) roles.push(Role.PASSENGER);
   if (isAdmin(userRole)) roles.push(Role.ADMIN);
-  if (isOperator(userRole)) roles.push(Role.OPERATOR);
   if (isSupport(userRole)) roles.push(Role.SUPPORT);
   return roles;
 }
@@ -82,9 +72,9 @@ export function getUserRoleLabels(userRole: number): string[] {
 /**
  * Get primary role name (for display)
  */
-export function getPrimaryRoleName(userRole: number): string {
+export function getRoleName(userRole: number): string {
+  // Return the highest priority role name
   if (isAdmin(userRole)) return ROLE_NAMES[Role.ADMIN];
-  if (isOperator(userRole)) return ROLE_NAMES[Role.OPERATOR];
   if (isSupport(userRole)) return ROLE_NAMES[Role.SUPPORT];
   return ROLE_NAMES[Role.PASSENGER];
 }
@@ -92,9 +82,9 @@ export function getPrimaryRoleName(userRole: number): string {
 /**
  * Get primary role label in Vietnamese (for display)
  */
-export function getPrimaryRoleLabel(userRole: number): string {
+export function getRoleLabel(userRole: number): string {
+  // Return the highest priority role label (Vietnamese)
   if (isAdmin(userRole)) return ROLE_LABELS[Role.ADMIN];
-  if (isOperator(userRole)) return ROLE_LABELS[Role.OPERATOR];
   if (isSupport(userRole)) return ROLE_LABELS[Role.SUPPORT];
   return ROLE_LABELS[Role.PASSENGER];
 }
