@@ -55,7 +55,7 @@ func RequireAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID := sharedcontext.GetUserID(c)
 		if userID == uuid.Nil {
-			c.JSON(401, gin.H{
+			c.JSON(http.StatusUnauthorized, gin.H{
 				"error": gin.H{
 					"message": constants.ErrUnauthorized,
 				},

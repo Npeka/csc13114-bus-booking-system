@@ -22,6 +22,41 @@ func NewConstantsService() ConstantsService {
 	return &ConstantsServiceImpl{}
 }
 
+var vietnamCities = []string{
+	"Hà Nội",
+	"TP. Hồ Chí Minh",
+	"Đà Nẵng",
+	"Đà Lạt",
+	"Hải Phòng",
+	"Cần Thơ",
+	"Huế",
+	"Nha Trang",
+	"Quảng Ninh",
+	"Bắc Ninh",
+	"Bình Dương",
+	"Bình Định",
+	"Bình Phước",
+	"Bến Tre",
+	"Gia Lai",
+	"Kiên Giang",
+	"Lâm Đồng",
+	"Long An",
+	"Nam Định",
+	"Nghệ An",
+	"Phú Yên",
+	"Quảng Bình",
+	"Quảng Nam",
+	"Quảng Ngãi",
+	"Sóc Trăng",
+	"Tây Ninh",
+	"Thái Nguyên",
+	"Thanh Hóa",
+	"Tiền Giang",
+	"Trà Vinh",
+	"Vĩnh Long",
+	"Vũng Tàu",
+}
+
 func (s *ConstantsServiceImpl) GetBusConstants(ctx context.Context) (*model.BusConstants, error) {
 	seatTypes := make([]model.SeatTypeConstant, 0)
 	for _, st := range constants.AllSeatTypes() {
@@ -131,87 +166,18 @@ func (s *ConstantsServiceImpl) GetSearchFilterConstants(ctx context.Context) (*m
 		{Value: "duration", DisplayName: "Thời gian hành trình"},
 	}
 
-	// Vietnam cities
-	cities := []string{
-		"Hà Nội",
-		"TP. Hồ Chí Minh",
-		"Đà Nẵng",
-		"Đà Lạt",
-		"Hải Phòng",
-		"Cần Thơ",
-		"Huế",
-		"Nha Trang",
-		"Quảng Ninh",
-		"Bắc Ninh",
-		"Bình Dương",
-		"Bình Định",
-		"Bình Phước",
-		"Bến Tre",
-		"Gia Lai",
-		"Kiên Giang",
-		"Lâm Đồng",
-		"Long An",
-		"Nam Định",
-		"Nghệ An",
-		"Phú Yên",
-		"Quảng Bình",
-		"Quảng Nam",
-		"Quảng Ngãi",
-		"Sóc Trăng",
-		"Tây Ninh",
-		"Thái Nguyên",
-		"Thanh Hóa",
-		"Tiền Giang",
-		"Trà Vinh",
-		"Vĩnh Long",
-		"Vũng Tàu",
-	}
-
 	return &model.SearchFilterConstants{
 		SortOptions: sortOptions,
 		PriceRanges: priceRanges,
 		TimeSlots:   timeSlots,
 		SeatTypes:   seatTypes,
 		Amenities:   amenities,
-		Cities:      cities,
+		Cities:      vietnamCities,
 	}, nil
 }
 
 func (s *ConstantsServiceImpl) GetCities(ctx context.Context) ([]string, error) {
-	return []string{
-		"Hà Nội",
-		"TP. Hồ Chí Minh",
-		"Đà Nẵng",
-		"Đà Lạt",
-		"Hải Phòng",
-		"Cần Thơ",
-		"Huế",
-		"Nha Trang",
-		"Quảng Ninh",
-		"Bắc Ninh",
-		"Bình Dương",
-		"Bình Định",
-		"Bình Phước",
-		"Bến Tre",
-		"Gia Lai",
-		"Kiên Giang",
-		"Lâm Đồng",
-		"Long An",
-		"Nam Định",
-		"Nghệ An",
-		"Phú Yên",
-		"Quảng Bình",
-		"Quảng Nam",
-		"Quảng Ngãi",
-		"Sóc Trăng",
-		"Tây Ninh",
-		"Thái Nguyên",
-		"Thanh Hóa",
-		"Tiền Giang",
-		"Trà Vinh",
-		"Vĩnh Long",
-		"Vũng Tàu",
-	}, nil
+	return vietnamCities, nil
 }
 
 func (s *ConstantsServiceImpl) GetAllConstants(ctx context.Context) (*model.ConstantsResponse, error) {
