@@ -29,7 +29,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { getTripById, deleteTrip, type Trip } from "@/lib/api/trip-service";
+import { getTripById, deleteTrip } from "@/lib/api/trip-service";
+import type { Trip } from "@/lib/types/trip";
 import { handleApiError } from "@/lib/api/client";
 
 // Note: We'll need to add a list trips endpoint or use search with empty filters

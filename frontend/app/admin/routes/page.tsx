@@ -14,7 +14,7 @@ import { MapPin, Plus, Settings } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { listRoutes, Route } from "@/lib/api/trip-service";
+import { listRoutes } from "@/lib/api/trip-service";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";

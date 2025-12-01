@@ -53,11 +53,12 @@ import {
   createRouteStop,
   updateRouteStop,
   deleteRouteStop,
-  updateRouteStopSequence,
+} from "@/lib/api/trip-service";
+import type {
   RouteStop,
   CreateRouteStopRequest,
   UpdateRouteStopRequest,
-} from "@/lib/api/trip-service";
+} from "@/lib/types/trip";
 import { toast } from "sonner";
 
 export default function RouteStopsPage() {
@@ -87,7 +88,8 @@ export default function RouteStopsPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: CreateRouteStopRequest) => createRouteStop(data),
+    mutationFn: (data: CreateRouteStopRequest) =>
+      createRouteStop(routeId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["route-stops", routeId] });
       setCreateDialogOpen(false);
@@ -100,7 +102,7 @@ export default function RouteStopsPage() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateRouteStopRequest }) =>
-      updateRouteStop(id, data),
+      updateRouteStop(routeId, id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["route-stops", routeId] });
       setEditDialogOpen(false);
@@ -113,7 +115,7 @@ export default function RouteStopsPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteRouteStop(id),
+    mutationFn: (id: string) => deleteRouteStop(routeId, id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["route-stops", routeId] });
       setDeleteDialogOpen(false);
@@ -262,31 +264,25 @@ export default function RouteStopsPage() {
                         <GripVertical className="h-4 w-4 text-muted-foreground" />
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{stop.sequence}</Badge>
+                        <Badge variant="outline">{stop.stop_order}</Badge>
                       </TableCell>
-                      <TableCell className="font-medium">{stop.name}</TableCell>
+                      <TableCell className="font-medium">
+                        {stop.location}
+                      </TableCell>
                       <TableCell className="text-muted-foreground">
                         {stop.address || "-"}
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-2">
-                          {stop.is_pickup && (
-                            <Badge
-                              variant="secondary"
-                              className="bg-blue-100 text-blue-800"
-                            >
-                              Điểm đón
-                            </Badge>
-                          )}
-                          {stop.is_dropoff && (
-                            <Badge
-                              variant="secondary"
-                              className="bg-green-100 text-green-800"
-                            >
-                              Điểm trả
-                            </Badge>
-                          )}
-                        </div>
+                        <Badge
+                          variant="secondary"
+                          className="bg-blue-100 text-blue-800"
+                        >
+                          {stop.stop_type === "pickup"
+                            ? "Đón"
+                            : stop.stop_type === "dropoff"
+                              ? "Trả"
+                              : "Cả hai"}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -320,7 +316,7 @@ export default function RouteStopsPage() {
                                 </AlertDialogTitle>
                                 <AlertDialogDescription>
                                   Bạn có chắc chắn muốn xóa điểm dừng &quot;
-                                  {stop.name}&quot;? Hành động này không thể
+                                  {stop.location}&quot;? Hành động này không thể
                                   hoàn tác.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
@@ -374,25 +370,26 @@ function CreateStopDialog({
   onSubmit: (data: CreateRouteStopRequest) => void;
   isLoading: boolean;
 }) {
-  const [name, setName] = useState("");
+  const [location, setLocation] = useState("");
   const [address, setAddress] = useState("");
-  const [sequence, setSequence] = useState(
+  const [stopOrder, setStopOrder] = useState(
     existingStops.length > 0
-      ? Math.max(...existingStops.map((s) => s.sequence)) + 1
+      ? Math.max(...existingStops.map((s) => s.stop_order)) + 1
       : 1,
   );
-  const [isPickup, setIsPickup] = useState(true);
-  const [isDropoff, setIsDropoff] = useState(true);
+  const [stopType, setStopType] = useState<"pickup" | "dropoff" | "both">(
+    "both",
+  );
+  const [offsetMinutes, setOffsetMinutes] = useState(0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({
-      route_id: routeId,
-      name,
+      location,
       address,
-      sequence,
-      is_pickup: isPickup,
-      is_dropoff: isDropoff,
+      stop_order: stopOrder,
+      stop_type: stopType,
+      offset_minutes: offsetMinutes,
     });
   };
 
@@ -406,11 +403,11 @@ function CreateStopDialog({
       </DialogHeader>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="name">Tên điểm dừng *</Label>
+          <Label htmlFor="location">Tên điểm dừng *</Label>
           <Input
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            id="location"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
             required
             placeholder="VD: Bến xe Miền Đông"
           />
@@ -425,33 +422,41 @@ function CreateStopDialog({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="sequence">Thứ tự *</Label>
+          <Label htmlFor="stop_order">Thứ tự *</Label>
           <Input
-            id="sequence"
+            id="stop_order"
             type="number"
             min="1"
-            value={sequence}
-            onChange={(e) => setSequence(parseInt(e.target.value) || 1)}
+            value={stopOrder}
+            onChange={(e) => setStopOrder(parseInt(e.target.value) || 1)}
             required
           />
         </div>
-        <div className="flex items-center space-x-6">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="isPickup"
-              checked={isPickup}
-              onCheckedChange={(checked) => setIsPickup(checked === true)}
-            />
-            <Label htmlFor="isPickup">Điểm đón</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="isDropoff"
-              checked={isDropoff}
-              onCheckedChange={(checked) => setIsDropoff(checked === true)}
-            />
-            <Label htmlFor="isDropoff">Điểm trả</Label>
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="stop_type">Loại điểm dừng *</Label>
+          <select
+            id="stop_type"
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            value={stopType}
+            onChange={(e) =>
+              setStopType(e.target.value as "pickup" | "dropoff" | "both")
+            }
+          >
+            <option value="both">Cả hai (Đón và Trả)</option>
+            <option value="pickup">Chỉ đón</option>
+            <option value="dropoff">Chỉ trả</option>
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="offset_minutes">Thời gian offset (phút)</Label>
+          <Input
+            id="offset_minutes"
+            type="number"
+            min="0"
+            value={offsetMinutes}
+            onChange={(e) => setOffsetMinutes(parseInt(e.target.value) || 0)}
+            placeholder="Số phút từ điểm xuất phát"
+          />
         </div>
         <DialogFooter>
           <Button type="submit" disabled={isLoading}>
@@ -474,20 +479,22 @@ function EditStopDialog({
   onSubmit: (data: UpdateRouteStopRequest) => void;
   isLoading: boolean;
 }) {
-  const [name, setName] = useState(stop.name);
+  const [location, setLocation] = useState(stop.location);
   const [address, setAddress] = useState(stop.address || "");
-  const [sequence, setSequence] = useState(stop.sequence);
-  const [isPickup, setIsPickup] = useState(stop.is_pickup);
-  const [isDropoff, setIsDropoff] = useState(stop.is_dropoff);
+  const [stopOrder, setStopOrder] = useState(stop.stop_order);
+  const [stopType, setStopType] = useState<"pickup" | "dropoff" | "both">(
+    stop.stop_type as "pickup" | "dropoff" | "both",
+  );
+  const [offsetMinutes, setOffsetMinutes] = useState(stop.offset_minutes);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({
-      name,
+      location,
       address,
-      sequence,
-      is_pickup: isPickup,
-      is_dropoff: isDropoff,
+      stop_order: stopOrder,
+      stop_type: stopType,
+      offset_minutes: offsetMinutes,
     });
   };
 
@@ -499,11 +506,11 @@ function EditStopDialog({
       </DialogHeader>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="edit-name">Tên điểm dừng *</Label>
+          <Label htmlFor="edit-location">Tên điểm dừng *</Label>
           <Input
-            id="edit-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            id="edit-location"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
             required
             placeholder="VD: Bến xe Miền Đông"
           />
@@ -518,33 +525,41 @@ function EditStopDialog({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="edit-sequence">Thứ tự *</Label>
+          <Label htmlFor="edit-stop_order">Thứ tự *</Label>
           <Input
-            id="edit-sequence"
+            id="edit-stop_order"
             type="number"
             min="1"
-            value={sequence}
-            onChange={(e) => setSequence(parseInt(e.target.value) || 1)}
+            value={stopOrder}
+            onChange={(e) => setStopOrder(parseInt(e.target.value) || 1)}
             required
           />
         </div>
-        <div className="flex items-center space-x-6">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="edit-isPickup"
-              checked={isPickup}
-              onCheckedChange={(checked) => setIsPickup(checked === true)}
-            />
-            <Label htmlFor="edit-isPickup">Điểm đón</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="edit-isDropoff"
-              checked={isDropoff}
-              onCheckedChange={(checked) => setIsDropoff(checked === true)}
-            />
-            <Label htmlFor="edit-isDropoff">Điểm trả</Label>
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="edit-stop_type">Loại điểm dừng *</Label>
+          <select
+            id="edit-stop_type"
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            value={stopType}
+            onChange={(e) =>
+              setStopType(e.target.value as "pickup" | "dropoff" | "both")
+            }
+          >
+            <option value="both">Cả hai (Đón và Trả)</option>
+            <option value="pickup">Chỉ đón</option>
+            <option value="dropoff">Chỉ trả</option>
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="edit-offset_minutes">Thời gian offset (phút)</Label>
+          <Input
+            id="edit-offset_minutes"
+            type="number"
+            min="0"
+            value={offsetMinutes}
+            onChange={(e) => setOffsetMinutes(parseInt(e.target.value) || 0)}
+            placeholder="Số phút từ điểm xuất phát"
+          />
         </div>
         <DialogFooter>
           <Button type="submit" disabled={isLoading}>

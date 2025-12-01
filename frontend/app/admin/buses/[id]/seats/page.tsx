@@ -32,11 +32,11 @@ import {
   getBusById,
   getBusSeats,
   updateBusSeats,
-  Seat,
 } from "@/lib/api/trip-service";
+import type { Seat } from "@/lib/types/trip";
 import { toast } from "sonner";
 
-type SeatType = "standard" | "premium" | "vip";
+type SeatType = "standard" | "vip" | "sleeper";
 
 interface EditableSeat extends Seat {
   row?: number;
@@ -173,7 +173,7 @@ export default function BusSeatConfigPage() {
     switch (seat.seat_type) {
       case "vip":
         return "bg-warning/20 hover:bg-warning/30 border-warning";
-      case "premium":
+      case "sleeper":
         return "bg-info/20 hover:bg-info/30 border-info";
       default:
         return "bg-success/20 hover:bg-success/30 border-success";
@@ -269,7 +269,7 @@ export default function BusSeatConfigPage() {
                     </div>
                     <div className="flex items-center space-x-2">
                       <div className="h-8 w-8 rounded border-2 border-info bg-info/20" />
-                      <span>Ghế premium</span>
+                      <span>Giường nằm</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <div className="h-8 w-8 rounded border-2 border-warning bg-warning/20" />
@@ -366,9 +366,9 @@ export default function BusSeatConfigPage() {
                       </Badge>
                     </div>
                     <div className="flex justify-between">
-                      <span>Premium:</span>
+                      <span>Giường nằm:</span>
                       <Badge>
-                        {seats.filter((s) => s.seat_type === "premium").length}
+                        {seats.filter((s) => s.seat_type === "sleeper").length}
                       </Badge>
                     </div>
                     <div className="flex justify-between">
@@ -455,7 +455,7 @@ function SeatEditDialog({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="standard">Thường</SelectItem>
-              <SelectItem value="premium">Premium</SelectItem>
+              <SelectItem value="sleeper">Giường nằm</SelectItem>
               <SelectItem value="vip">VIP</SelectItem>
             </SelectContent>
           </Select>

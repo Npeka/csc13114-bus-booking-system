@@ -44,14 +44,14 @@ export default function SeatSelectionPage({
       const isBooked = (i * 17 + 7) % 10 < 3;
 
       // Assign seat types based on position
-      let type: "standard" | "premium" | "vip" = "standard";
+      let type: "standard" | "vip" | "sleeper" = "standard";
       let price = 180000;
 
       if (row <= 2) {
         type = "vip";
         price = 220000;
       } else if (row <= 5) {
-        type = "premium";
+        type = "sleeper";
         price = 200000;
       }
 
@@ -97,12 +97,12 @@ export default function SeatSelectionPage({
         <div className="container py-6">
           <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
             <div className="flex-1">
-              <div className="flex items-center space-x-2 mb-2">
+              <div className="mb-2 flex items-center space-x-2">
                 <Badge variant="secondary">{trip.busType}</Badge>
                 <Badge variant="outline">{trip.licensePlate}</Badge>
               </div>
-              <h1 className="text-2xl font-bold mb-2">{trip.operator}</h1>
-              <div className="flex items-center text-sm text-muted-foreground space-x-4">
+              <h1 className="mb-2 text-2xl font-bold">{trip.operator}</h1>
+              <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                 <div className="flex items-center">
                   <Star className="mr-1 h-4 w-4 fill-warning text-warning" />
                   <span>{trip.operatorRating}</span>
