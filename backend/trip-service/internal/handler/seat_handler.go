@@ -49,7 +49,7 @@ func (h *SeatHandlerImpl) CreateSeat(r *ginext.Request) (*ginext.Response, error
 		return nil, err
 	}
 
-	return ginext.NewCreatedResponse(seat), nil
+	return ginext.NewCreatedResponse(model.ToSeatResponse(seat)), nil
 }
 
 // CreateSeatsFromTemplate godoc
@@ -76,7 +76,7 @@ func (h *SeatHandlerImpl) CreateSeatsFromTemplate(r *ginext.Request) (*ginext.Re
 		return nil, err
 	}
 
-	return ginext.NewCreatedResponse(seats), nil
+	return ginext.NewCreatedResponse(model.ToSeatResponseList(seats)), nil
 }
 
 // UpdateSeat godoc
@@ -111,7 +111,7 @@ func (h *SeatHandlerImpl) UpdateSeat(r *ginext.Request) (*ginext.Response, error
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(seat), nil
+	return ginext.NewSuccessResponse(model.ToSeatResponse(seat)), nil
 }
 
 // DeleteSeat godoc

@@ -33,6 +33,19 @@ func (rs *RouteStop) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
+type RouteStopResponse struct {
+	ID            uuid.UUID       `json:"id"`
+	RouteID       uuid.UUID       `json:"route_id"`
+	StopOrder     int             `json:"stop_order"`
+	StopType      ConstantDisplay `json:"stop_type"`
+	Location      string          `json:"location"`
+	Address       string          `json:"address"`
+	Latitude      *float64        `json:"latitude,omitempty"`
+	Longitude     *float64        `json:"longitude,omitempty"`
+	OffsetMinutes int             `json:"offset_minutes"`
+	IsActive      bool            `json:"is_active"`
+}
+
 type CreateRouteStopRequest struct {
 	StopOrder     int                `json:"stop_order" validate:"required,min=1"`
 	StopType      constants.StopType `json:"stop_type" validate:"required"`

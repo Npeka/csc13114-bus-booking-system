@@ -53,7 +53,7 @@ func (h *RouteHandlerImpl) GetRoute(r *ginext.Request) (*ginext.Response, error)
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(route), nil
+	return ginext.NewSuccessResponse(model.ToRouteResponse(route)), nil
 }
 
 // ListRoutes godoc
@@ -81,7 +81,7 @@ func (h *RouteHandlerImpl) ListRoutes(r *ginext.Request) (*ginext.Response, erro
 		return nil, err
 	}
 
-	return ginext.NewPaginatedResponse(routes, req.Page, req.PageSize, total), nil
+	return ginext.NewPaginatedResponse(model.ToRouteResponseList(routes), req.Page, req.PageSize, total), nil
 }
 
 // SearchRoutes godoc
@@ -108,7 +108,7 @@ func (h *RouteHandlerImpl) SearchRoutes(r *ginext.Request) (*ginext.Response, er
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(routes), nil
+	return ginext.NewSuccessResponse(model.ToRouteResponseList(routes)), nil
 }
 
 // CreateRoute godoc
@@ -135,7 +135,7 @@ func (h *RouteHandlerImpl) CreateRoute(r *ginext.Request) (*ginext.Response, err
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(route), nil
+	return ginext.NewSuccessResponse(model.ToRouteResponse(route)), nil
 }
 
 // UpdateRoute godoc
@@ -169,7 +169,7 @@ func (h *RouteHandlerImpl) UpdateRoute(r *ginext.Request) (*ginext.Response, err
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(route), nil
+	return ginext.NewSuccessResponse(model.ToRouteResponse(route)), nil
 }
 
 // DeleteRoute godoc

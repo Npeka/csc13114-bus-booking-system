@@ -98,6 +98,21 @@ type ListTripsRequest struct {
 	PaginationRequest
 }
 
+type TripResponse struct {
+	ID            uuid.UUID       `json:"id"`
+	RouteID       uuid.UUID       `json:"route_id"`
+	BusID         uuid.UUID       `json:"bus_id"`
+	DepartureTime time.Time       `json:"departure_time"`
+	ArrivalTime   time.Time       `json:"arrival_time"`
+	BasePrice     float64         `json:"base_price"`
+	Status        ConstantDisplay `json:"status"`
+	IsActive      bool            `json:"is_active"`
+	Route         *RouteResponse  `json:"route,omitempty"`
+	Bus           *BusResponse    `json:"bus,omitempty"`
+	CreatedAt     time.Time       `json:"created_at"`
+	UpdatedAt     time.Time       `json:"updated_at"`
+}
+
 type CreateTripRequest struct {
 	RouteID       uuid.UUID `json:"route_id" validate:"required"`
 	BusID         uuid.UUID `json:"bus_id" validate:"required"`

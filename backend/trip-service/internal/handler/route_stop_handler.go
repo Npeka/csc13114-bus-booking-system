@@ -49,7 +49,7 @@ func (h *RouteStopHandlerImpl) CreateRouteStop(r *ginext.Request) (*ginext.Respo
 		return nil, err
 	}
 
-	return ginext.NewCreatedResponse(stop), nil
+	return ginext.NewCreatedResponse(model.ToRouteStopResponse(stop)), nil
 }
 
 // UpdateRouteStop godoc
@@ -84,7 +84,7 @@ func (h *RouteStopHandlerImpl) UpdateRouteStop(r *ginext.Request) (*ginext.Respo
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(stop), nil
+	return ginext.NewSuccessResponse(model.ToRouteStopResponse(stop)), nil
 }
 
 // DeleteRouteStop godoc
@@ -137,7 +137,13 @@ func (h *RouteStopHandlerImpl) ListRouteStops(r *ginext.Request) (*ginext.Respon
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(stops), nil
+	// Convert to response with mapped constants
+	responses := make([]model.RouteStopResponse, len(stops))
+	for i, stop := range stops {
+		responses[i] = *model.ToRouteStopResponse(&stop)
+	}
+
+	return ginext.NewSuccessResponse(responses), nil
 }
 
 // ReorderStops godoc

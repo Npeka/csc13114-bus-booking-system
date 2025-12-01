@@ -97,7 +97,7 @@ func (h *TripHandlerImpl) GetTrip(r *ginext.Request) (*ginext.Response, error) {
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(trip), nil
+	return ginext.NewSuccessResponse(model.ToTripResponse(trip)), nil
 }
 
 // ListTrips godoc
@@ -125,7 +125,7 @@ func (h *TripHandlerImpl) ListTrips(r *ginext.Request) (*ginext.Response, error)
 		return nil, err
 	}
 
-	return ginext.NewPaginatedResponse(trips, req.Page, req.PageSize, total), nil
+	return ginext.NewPaginatedResponse(model.ToTripResponseList(trips), req.Page, req.PageSize, total), nil
 }
 
 // ListTripsByRoute godoc
@@ -165,7 +165,7 @@ func (h *TripHandlerImpl) ListTripsByRoute(r *ginext.Request) (*ginext.Response,
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(trips), nil
+	return ginext.NewSuccessResponse(model.ToTripResponseList(trips)), nil
 }
 
 func parseDate(dateStr string) (time.Time, error) {
@@ -196,7 +196,7 @@ func (h *TripHandlerImpl) CreateTrip(r *ginext.Request) (*ginext.Response, error
 		return nil, err
 	}
 
-	return ginext.NewCreatedResponse(trip), nil
+	return ginext.NewCreatedResponse(model.ToTripResponse(trip)), nil
 }
 
 // UpdateTrip godoc
@@ -230,7 +230,7 @@ func (h *TripHandlerImpl) UpdateTrip(r *ginext.Request) (*ginext.Response, error
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(trip), nil
+	return ginext.NewSuccessResponse(model.ToTripResponse(trip)), nil
 }
 
 // DeleteTrip godoc

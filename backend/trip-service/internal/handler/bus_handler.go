@@ -54,7 +54,7 @@ func (h *BusHandlerImpl) GetBus(r *ginext.Request) (*ginext.Response, error) {
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(bus), nil
+	return ginext.NewSuccessResponse(model.ToBusResponse(bus)), nil
 }
 
 // ListBuses godoc
@@ -83,7 +83,7 @@ func (h *BusHandlerImpl) ListBuses(r *ginext.Request) (*ginext.Response, error) 
 		return nil, err
 	}
 
-	return ginext.NewPaginatedResponse(buses, req.Page, req.PageSize, total), nil
+	return ginext.NewPaginatedResponse(model.ToBusResponseList(buses), req.Page, req.PageSize, total), nil
 }
 
 // GetBusSeats godoc
@@ -111,7 +111,7 @@ func (h *BusHandlerImpl) GetBusSeats(r *ginext.Request) (*ginext.Response, error
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(seats), nil
+	return ginext.NewSuccessResponse(model.ToSeatResponseList(seats)), nil
 }
 
 // CreateBus godoc
@@ -138,7 +138,7 @@ func (h *BusHandlerImpl) CreateBus(r *ginext.Request) (*ginext.Response, error) 
 		return nil, err
 	}
 
-	return ginext.NewCreatedResponse(bus), nil
+	return ginext.NewCreatedResponse(model.ToBusResponse(bus)), nil
 }
 
 // UpdateBus godoc
@@ -173,7 +173,7 @@ func (h *BusHandlerImpl) UpdateBus(r *ginext.Request) (*ginext.Response, error) 
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(bus), nil
+	return ginext.NewSuccessResponse(model.ToBusResponse(bus)), nil
 }
 
 // DeleteBus godoc

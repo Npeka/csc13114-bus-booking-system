@@ -30,6 +30,18 @@ func (r *Route) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
+type RouteResponse struct {
+	ID               uuid.UUID           `json:"id"`
+	CreatedAt        time.Time           `json:"created_at"`
+	UpdatedAt        time.Time           `json:"updated_at"`
+	Origin           string              `json:"origin"`
+	Destination      string              `json:"destination"`
+	DistanceKm       int                 `json:"distance_km"`
+	EstimatedMinutes int                 `json:"estimated_minutes"`
+	IsActive         bool                `json:"is_active"`
+	RouteStops       []RouteStopResponse `json:"route_stops,omitempty"`
+}
+
 type RouteListResponse struct {
 	Routes     []RouteSummary `json:"routes"`
 	Total      int64          `json:"total"`

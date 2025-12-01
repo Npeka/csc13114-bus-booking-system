@@ -29,15 +29,14 @@ func (b *Bus) BeforeCreate(tx *gorm.DB) error {
 }
 
 type BusResponse struct {
-	ID           uuid.UUID `json:"id"`
-	PlateNumber  string    `json:"plate_number"`
-	Model        string    `json:"model"`
-	SeatCapacity int       `json:"seat_capacity"`
-	Amenities    []string  `json:"amenities"`
-	IsActive     bool      `json:"is_active"`
+	ID           uuid.UUID         `json:"id"`
+	PlateNumber  string            `json:"plate_number"`
+	Model        string            `json:"model"`
+	SeatCapacity int               `json:"seat_capacity"`
+	Amenities    []ConstantDisplay `json:"amenities"`
+	IsActive     bool              `json:"is_active"`
 
-	Seats []Seat `gorm:"foreignKey:BusID" json:"seats"`
-	Trips []Trip `gorm:"foreignKey:BusID" json:"trips"`
+	Seats []SeatResponse `json:"seats,omitempty"`
 }
 
 type CreateBusRequest struct {

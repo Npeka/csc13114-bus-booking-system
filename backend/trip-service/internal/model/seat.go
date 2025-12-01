@@ -36,6 +36,18 @@ func (s *Seat) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
+type SeatResponse struct {
+	ID              uuid.UUID       `json:"id"`
+	BusID           uuid.UUID       `json:"bus_id"`
+	SeatNumber      string          `json:"seat_number"`
+	Row             int             `json:"row"`
+	Column          int             `json:"column"`
+	SeatType        ConstantDisplay `json:"seat_type"`
+	PriceMultiplier float64         `json:"price_multiplier"`
+	IsAvailable     bool            `json:"is_available"`
+	Floor           int             `json:"floor"`
+}
+
 type CreateSeatRequest struct {
 	BusID           uuid.UUID          `json:"bus_id" validate:"required"`
 	SeatNumber      string             `json:"seat_number" validate:"required"`
@@ -69,14 +81,14 @@ type SeatMapResponse struct {
 }
 
 type SeatDetail struct {
-	ID              uuid.UUID          `json:"id"`
-	SeatNumber      string             `json:"seat_number"`
-	Row             int                `json:"row"`
-	Column          int                `json:"column"`
-	SeatType        constants.SeatType `json:"seat_type"`
-	PriceMultiplier float64            `json:"price_multiplier"`
-	IsAvailable     bool               `json:"is_available"`
-	Floor           int                `json:"floor"`
+	ID              uuid.UUID       `json:"id"`
+	SeatNumber      string          `json:"seat_number"`
+	Row             int             `json:"row"`
+	Column          int             `json:"column"`
+	SeatType        ConstantDisplay `json:"seat_type"`
+	PriceMultiplier float64         `json:"price_multiplier"`
+	IsAvailable     bool            `json:"is_available"`
+	Floor           int             `json:"floor"`
 }
 
 type SeatLayoutInfo struct {
