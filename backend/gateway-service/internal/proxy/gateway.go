@@ -36,13 +36,6 @@ func NewGateway(cfg *config.Config, routes *config.RouteConfig) *Gateway {
 }
 
 func (g *Gateway) SetupRoutes(router *gin.Engine) {
-	router.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"status":  "ok",
-			"service": "gateway-service",
-		})
-	})
-
 	// Setup proxy routes
 	log.Info().Msgf("Total routes to setup: %d", len(g.routes.Routes))
 	for i, route := range g.routes.Routes {
