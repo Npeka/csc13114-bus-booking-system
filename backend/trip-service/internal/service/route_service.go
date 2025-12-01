@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"sort"
 
 	"bus-booking/shared/ginext"
 	"bus-booking/trip-service/internal/model"
@@ -68,11 +69,16 @@ func (s *RouteServiceImpl) CreateRoute(ctx context.Context, req *model.CreateRou
 		IsActive:         true,
 	}
 
-	// Generate route stops from request
+	// Sort route stops by stop_order from frontend
+	sort.Slice(req.RouteStops, func(i, j int) bool {
+		return req.RouteStops[i].StopOrder < req.RouteStops[j].StopOrder
+	})
+
+	// Generate route stops with normalized order (100, 200, 300...)
 	routeStops := make([]model.RouteStop, len(req.RouteStops))
 	for i, stopReq := range req.RouteStops {
 		routeStops[i] = model.RouteStop{
-			StopOrder:     stopReq.StopOrder,
+			StopOrder:     (i + 1) * 100, // Normalize to multiples of 100
 			StopType:      stopReq.StopType,
 			Location:      stopReq.Location,
 			Address:       stopReq.Address,

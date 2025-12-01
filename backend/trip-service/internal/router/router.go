@@ -53,15 +53,6 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 		// 	routes.GET("/:id/stops", ginext.WrapHandler(h.RouteStopHandler.ListRouteStops))
 		// 	routes.POST("/:id/stops/reorder", ginext.WrapHandler(h.RouteStopHandler.ReorderStops))
 		// }
-
-		// Seats (standalone)
-		// seats := v1.Group("/buses/seats")
-		// {
-		// 	seats.POST("", ginext.WrapHandler(h.SeatHandler.CreateSeat))
-		// 	seats.POST("/bulk", ginext.WrapHandler(h.SeatHandler.CreateSeatsFromTemplate))
-		// 	seats.PUT("/:id", ginext.WrapHandler(h.SeatHandler.UpdateSeat))
-		// 	seats.DELETE("/:id", ginext.WrapHandler(h.SeatHandler.DeleteSeat))
-		// }
 	}
 
 	adminV1 := router.Group("/api/v1")
@@ -85,6 +76,14 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 			buses.DELETE("/:id", ginext.WrapHandler(h.BusHandler.DeleteBus))
 		}
 
+		seats := v1.Group("/buses/seats")
+		{
+			seats.POST("", ginext.WrapHandler(h.SeatHandler.CreateSeat))
+			seats.POST("/bulk", ginext.WrapHandler(h.SeatHandler.CreateSeatsFromTemplate))
+			seats.PUT("/:id", ginext.WrapHandler(h.SeatHandler.UpdateSeat))
+			seats.DELETE("/:id", ginext.WrapHandler(h.SeatHandler.DeleteSeat))
+		}
+
 		routes := adminV1.Group("/routes")
 		{
 			routes.GET("", ginext.WrapHandler(h.RouteHandler.ListRoutes))
@@ -94,11 +93,11 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 			routes.DELETE("/:id", ginext.WrapHandler(h.RouteHandler.DeleteRoute))
 		}
 
-		// routeStops := adminV1.Group("/routes/stops")
-		// {
-		// 	routeStops.POST("", ginext.WrapHandler(h.RouteStopHandler.CreateRouteStop))
-		// 	routeStops.PUT("/:id", ginext.WrapHandler(h.RouteStopHandler.UpdateRouteStop))
-		// 	routeStops.DELETE("/:id", ginext.WrapHandler(h.RouteStopHandler.DeleteRouteStop))
-		// }
+		routeStops := adminV1.Group("/routes/stops")
+		{
+			routeStops.POST("", ginext.WrapHandler(h.RouteStopHandler.CreateRouteStop))
+			routeStops.PUT("/:id", ginext.WrapHandler(h.RouteStopHandler.UpdateRouteStop))
+			routeStops.DELETE("/:id", ginext.WrapHandler(h.RouteStopHandler.DeleteRouteStop))
+		}
 	}
 }

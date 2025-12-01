@@ -110,7 +110,7 @@ func (h *RouteStopHandlerImpl) DeleteRouteStop(r *ginext.Request) (*ginext.Respo
 		return nil, err
 	}
 
-	return ginext.NewNoContentResponse(), nil
+	return ginext.NewSuccessResponse("Route stop deleted successfully"), nil
 }
 
 // ListRouteStops godoc
