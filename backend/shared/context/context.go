@@ -82,7 +82,7 @@ func GetUserRole(c *gin.Context) constants.UserRole {
 
 // SetUserRole sets user role in context
 func SetUserRole(c *gin.Context, userRole int) {
-	c.Set(string(UserRoleKey), userRole)
+	c.Set(string(UserRoleKey), constants.UserRole(userRole))
 }
 
 // GetUserEmail gets user email from context

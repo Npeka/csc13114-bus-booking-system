@@ -44,7 +44,7 @@ func (g *Gateway) SetupRoutes(router *gin.Engine) {
 	})
 
 	// Setup proxy routes
-	log.Printf("Total routes to setup: %d", len(g.routes.Routes))
+	log.Info().Msgf("Total routes to setup: %d", len(g.routes.Routes))
 	for i, route := range g.routes.Routes {
 		// Create route with service prefix
 		prefixedPath := "/" + route.Service + route.Path
@@ -135,7 +135,7 @@ func (g *Gateway) createProxyHandler(route config.Route) gin.HandlerFunc {
 
 		// Get service configuration (case-insensitive lookup)
 		serviceConfig, exists := g.getServiceConfig(route.Service)
-		log.Printf("Service config for %s: %+v", route.Service, serviceConfig)
+		log.Info().Msgf("Service config for %s: %+v", route.Service, serviceConfig)
 		if !exists {
 			c.JSON(500, gin.H{
 				"error": gin.H{

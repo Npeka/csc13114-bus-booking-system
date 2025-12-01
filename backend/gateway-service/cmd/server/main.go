@@ -7,6 +7,7 @@ import (
 
 	"bus-booking/gateway-service/config"
 	"bus-booking/gateway-service/internal/proxy"
+	"bus-booking/shared/health"
 	"bus-booking/shared/logger"
 	"bus-booking/shared/middleware"
 
@@ -41,9 +42,10 @@ func main() {
 	router := gin.New()
 
 	// Add global middleware
-	router.Use(middleware.RequestContextMiddleware("gateway-service"))
-	router.Use(middleware.SetupCORS(&cfg.CORS))
 	router.Use(middleware.Logger())
+	router.Use(middleware.SetupCORS(&cfg.CORS))
+	router.Use(middleware.RequestContextMiddleware(cfg.ServiceName))
+	router.GET(health.Path, health.Handler(cfg.ServiceName))
 	router.Use(gin.Recovery())
 
 	// Setup routes
@@ -51,8 +53,8 @@ func main() {
 
 	// Start server
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
-	log.Printf("Gateway server starting on %s", addr)
-	log.Printf("Loaded %d routes", len(routes.Routes))
+	log.Info().Msgf("Gateway server starting on %s", addr)
+	log.Info().Msgf("Loaded %d routes", len(routes.Routes))
 
 	if err := router.Run(addr); err != nil {
 		log.Fatal().Msgf("Failed to start server: %v", err)

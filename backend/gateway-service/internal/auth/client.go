@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -133,7 +134,7 @@ func (uc *UserContext) ToHeaders() map[sharedCtx.ContextKey]string {
 	return map[sharedCtx.ContextKey]string{
 		sharedCtx.UserIDKey:      uc.UserID,
 		sharedCtx.UserEmailKey:   uc.Email,
-		sharedCtx.UserRoleKey:    uc.Role.String(),
+		sharedCtx.UserRoleKey:    strconv.Itoa(uc.Role.ToInt()),
 		sharedCtx.UserNameKey:    uc.Name,
 		sharedCtx.AccessTokenKey: uc.AccessToken,
 	}
