@@ -13,12 +13,13 @@ type ContextKey string
 
 const (
 	// Request context keys
-	RequestIDKey   ContextKey = "request_id"
-	UserIDKey      ContextKey = "user_id"
-	UserRoleKey    ContextKey = "user_role"
-	UserEmailKey   ContextKey = "user_email"
-	ServiceNameKey ContextKey = "service_name"
-	AccessTokenKey ContextKey = "access_token"
+	RequestIDKey   ContextKey = "X-Request-ID"
+	UserIDKey      ContextKey = "X-User-ID"
+	UserRoleKey    ContextKey = "X-User-Role"
+	UserEmailKey   ContextKey = "X-User-Email"
+	UserNameKey    ContextKey = "X-User-Name"
+	ServiceNameKey ContextKey = "X-Service-Name"
+	AccessTokenKey ContextKey = "X-Access-Token"
 )
 
 // RequestContext contains request-scoped information

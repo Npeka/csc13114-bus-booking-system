@@ -246,7 +246,7 @@ func (g *Gateway) proxyRequest(c *gin.Context, targetURL string, userContext *au
 	if userContext != nil {
 		userHeaders := userContext.ToHeaders()
 		for key, value := range userHeaders {
-			req.Header.Set(key, value)
+			req.Header.Set(string(key), value)
 		}
 	}
 
