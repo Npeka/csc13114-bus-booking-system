@@ -91,7 +91,7 @@ func (s *ConstantsServiceImpl) GetSearchFilterConstants(ctx context.Context) (*m
 
 	// Time slots
 	timeSlots := []model.FilterTimeSlot{
-		{StartTime: "00:00", EndTime: "06:00", DisplayName: "Sáng sớtm (00:00 - 06:00)"},
+		{StartTime: "00:00", EndTime: "06:00", DisplayName: "Sáng sớm (00:00 - 06:00)"},
 		{StartTime: "06:00", EndTime: "12:00", DisplayName: "Ban ngày (06:00 - 12:00)"},
 		{StartTime: "12:00", EndTime: "18:00", DisplayName: "Chiều (12:00 - 18:00)"},
 		{StartTime: "18:00", EndTime: "24:00", DisplayName: "Tối (18:00 - 24:00)"},
