@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 
 	"bus-booking/gateway-service/config"
@@ -52,7 +50,7 @@ func main() {
 	gateway.SetupRoutes(router)
 
 	// Start server
-	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
+	addr := cfg.GetServerAddr()
 	log.Info().Msgf("Gateway server starting on %s", addr)
 	log.Info().Msgf("Loaded %d routes", len(routes.Routes))
 
