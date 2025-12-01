@@ -15,8 +15,8 @@ type Route struct {
 	EstimatedMinutes int    `gorm:"type:integer;not null" json:"estimated_minutes" validate:"required,min=1"`
 	IsActive         bool   `gorm:"type:boolean;not null;default:true" json:"is_active"`
 
-	Trips      []Trip      `gorm:"foreignKey:RouteID" json:"trips"`
-	RouteStops []RouteStop `gorm:"foreignKey:RouteID" json:"route_stops"`
+	Trips      []Trip      `gorm:"foreignKey:RouteID" json:"trips,omitempty"`
+	RouteStops []RouteStop `gorm:"foreignKey:RouteID" json:"route_stops,omitempty"`
 }
 
 func (Route) TableName() string {

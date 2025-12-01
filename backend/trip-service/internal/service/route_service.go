@@ -32,7 +32,7 @@ func NewRouteService(routeRepo repository.RouteRepository) RouteService {
 }
 
 func (s *RouteServiceImpl) GetRouteByID(ctx context.Context, id uuid.UUID) (*model.Route, error) {
-	route, err := s.routeRepo.GetRouteByID(ctx, id)
+	route, err := s.routeRepo.GetRoutesWithRouteStops(ctx, id)
 	if err != nil {
 		log.Error().Err(err).Str("route_id", id.String()).Msg("Failed to get route")
 		return nil, ginext.NewInternalServerError("failed to get route")

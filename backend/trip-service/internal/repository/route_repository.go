@@ -39,7 +39,7 @@ func (r *RouteRepositoryImpl) GetRouteByID(ctx context.Context, id uuid.UUID) (*
 func (r *RouteRepositoryImpl) GetRoutesWithRouteStops(ctx context.Context, id uuid.UUID) (*model.Route, error) {
 	var route model.Route
 	if err := r.db.WithContext(ctx).Preload("RouteStops", func(db *gorm.DB) *gorm.DB {
-		return db.Order("stop_number ASC")
+		return db.Order("stop_order ASC")
 	}).First(&route, "id = ?", id).Error; err != nil {
 		return nil, err
 	}
