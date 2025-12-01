@@ -31,12 +31,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import {
-  createTrip,
-  listRoutes,
-  listBuses,
-  type Route,
-} from "@/lib/api/trip-service";
+import { createTrip, listRoutes, listBuses } from "@/lib/api/trip-service";
+import type { Route } from "@/lib/types/trip";
 
 const tripFormSchema = z
   .object({
@@ -93,13 +89,12 @@ export default function NewTripPage() {
 
   // Fetch buses (filtered by route's operator when route is selected)
   const { data: busesData, isLoading: busesLoading } = useQuery({
-    queryKey: ["buses", selectedRoute?.operator_id],
+    queryKey: ["buses"],
     queryFn: () =>
       listBuses({
         limit: 100,
-        operator_id: selectedRoute?.operator_id,
       }),
-    enabled: !!selectedRoute?.operator_id,
+    enabled: !!selectedRoute,
   });
 
   const createMutation = useMutation({

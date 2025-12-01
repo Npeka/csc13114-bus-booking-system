@@ -18,6 +18,7 @@ import { PopularRoutes } from "./popular-routes";
 import { VIETNAM_CITIES } from "./constants";
 import { fuzzyMatchCity } from "./utils";
 import { getCityAutocomplete } from "@/lib/api/trip-service";
+import { formatDateForApi } from "@/lib/utils";
 
 export function TripSearchForm() {
   const router = useRouter();
@@ -65,11 +66,11 @@ export function TripSearchForm() {
     const params = new URLSearchParams({
       from: origin,
       to: destination,
-      date: format(date, "yyyy-MM-dd"),
+      date: formatDateForApi(date),
       passengers: passengers.toString(),
     });
     if (isRoundTrip && returnDate) {
-      params.append("returnDate", format(returnDate, "yyyy-MM-dd"));
+      params.append("returnDate", formatDateForApi(returnDate));
     }
     router.push(`/trips?${params.toString()}`);
   };

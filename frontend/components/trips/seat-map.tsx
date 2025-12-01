@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 export type SeatStatus = "available" | "selected" | "booked" | "driver";
-export type SeatType = "standard" | "premium" | "vip";
+export type SeatType = "standard" | "vip" | "sleeper";
 
 export interface Seat {
   id: string;
@@ -65,7 +65,7 @@ export function SeatMap({
     switch (seat.type) {
       case "vip":
         return "bg-warning/20 hover:bg-warning/30 border-warning";
-      case "premium":
+      case "sleeper":
         return "bg-info/20 hover:bg-info/30 border-info";
       default:
         return "bg-success/20 hover:bg-success/30 border-success";
@@ -82,7 +82,7 @@ export function SeatMap({
         </div>
         <div className="flex items-center space-x-2">
           <div className="h-8 w-8 rounded border-2 border-info bg-info/20" />
-          <span>Ghế premium</span>
+          <span>Giường nằm</span>
         </div>
         <div className="flex items-center space-x-2">
           <div className="h-8 w-8 rounded border-2 border-warning bg-warning/20" />
@@ -166,7 +166,7 @@ export function SeatSelectionSummary({
         </h3>
 
         {selectedSeats.length === 0 ? (
-          <p className="text-center text-sm text-muted-foreground py-4">
+          <p className="py-4 text-center text-sm text-muted-foreground">
             Chưa chọn chỗ nào
           </p>
         ) : (
@@ -185,8 +185,8 @@ export function SeatSelectionSummary({
                     <p className="text-xs text-muted-foreground">
                       {seat.type === "vip"
                         ? "VIP"
-                        : seat.type === "premium"
-                          ? "Premium"
+                        : seat.type === "sleeper"
+                          ? "Giường nằm"
                           : "Thường"}
                     </p>
                   </div>
@@ -219,7 +219,7 @@ export function SeatSelectionSummary({
               </span>
             </div>
             <Button
-              className="mt-4 w-full bg-primary hover:bg-primary/90 text-white"
+              className="mt-4 w-full bg-primary text-white hover:bg-primary/90"
               size="lg"
               onClick={onProceed}
             >

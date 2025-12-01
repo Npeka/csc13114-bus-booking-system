@@ -38,10 +38,9 @@ import {
   updateTrip,
   listRoutes,
   listBuses,
-  type Route,
-  type Bus,
-  type Trip,
 } from "@/lib/api/trip-service";
+import type { Route, Bus, Trip } from "@/lib/types/trip";
+import { formatDateForApi } from "@/lib/utils";
 
 const tripFormSchema = z
   .object({
@@ -104,13 +103,12 @@ export default function EditTripPage({
 
   // Fetch buses
   const { data: busesData, isLoading: busesLoading } = useQuery({
-    queryKey: ["buses", selectedRoute?.operator_id],
+    queryKey: ["buses"],
     queryFn: () =>
       listBuses({
         limit: 100,
-        operator_id: selectedRoute?.operator_id,
       }),
-    enabled: !!selectedRoute?.operator_id,
+    enabled: !!selectedRoute,
   });
 
   // Derive selected route during render (per React docs: "You don't need Effects to transform data")
@@ -139,9 +137,9 @@ export default function EditTripPage({
       form.reset({
         route_id: trip.route_id,
         bus_id: trip.bus_id,
-        departure_date: format(departure, "yyyy-MM-dd"),
+        departure_date: formatDateForApi(departure),
         departure_time: format(departure, "HH:mm"),
-        arrival_date: format(arrival, "yyyy-MM-dd"),
+        arrival_date: formatDateForApi(arrival),
         arrival_time: format(arrival, "HH:mm"),
         base_price: trip.base_price,
       });

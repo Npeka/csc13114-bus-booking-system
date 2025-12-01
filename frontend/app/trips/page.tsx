@@ -14,13 +14,11 @@ import { TripSearchForm } from "@/components/search/trip-search-form";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Pagination } from "@/components/ui/pagination";
+import { PaginationWithLinks } from "@/components/ui/pagination-with-links";
 import { Filter, ArrowUpDown } from "lucide-react";
-import {
-  searchTrips,
-  type TripDetail,
-  type TripSearchParams,
-} from "@/lib/api/trip-service";
+import { searchTrips } from "@/lib/api/trip-service";
+import type { TripDetail, TripSearchParams } from "@/lib/types/trip";
+import { formatDateForApi } from "@/lib/utils";
 
 function TripsContent() {
   const router = useRouter();
@@ -35,18 +33,13 @@ function TripsContent() {
   const date = searchParams.get("date") || "";
   const passengers = parseInt(searchParams.get("passengers") || "1", 10);
 
-  // Track search key to reset page when search params change
-  // Per React docs: "To reset a particular bit of state in response to a prop change, set it during rendering"
-  const currentSearchKey = `${origin}-${destination}-${date}`;
-  const [prevSearchKey, setPrevSearchKey] = useState(currentSearchKey);
-  const [page, setPage] = useState(1);
+  const currentPage = Number(searchParams.get("page")) || 1;
 
-  // Reset page during render when search params change (React docs pattern)
-  // This is the recommended approach for adjusting state when props change
-  if (currentSearchKey !== prevSearchKey) {
-    setPrevSearchKey(currentSearchKey);
-    setPage(1);
-  }
+  const createPageURL = (pageNumber: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", pageNumber.toString());
+    return `/trips?${params.toString()}`;
+  };
 
   const [filters, setFilters] = useState<Filters>({
     priceRange: [0, 1000000],
@@ -81,9 +74,9 @@ function TripsContent() {
     const params: TripSearchParams = {
       origin,
       destination,
-      departure_date: date || new Date().toISOString().split("T")[0],
+      date: date || formatDateForApi(new Date()),
       passengers,
-      page,
+      page: currentPage,
       limit: pageSize,
     };
 
@@ -135,7 +128,7 @@ function TripsContent() {
     destination,
     date,
     passengers,
-    page,
+    currentPage,
     sortBy,
     filters.priceRange,
     filters.departureTime,
@@ -315,10 +308,10 @@ function TripsContent() {
             />
             {searchResponse && searchResponse.total_pages > 1 && (
               <div className="mt-6">
-                <Pagination
-                  currentPage={page}
+                <PaginationWithLinks
+                  page={currentPage}
                   totalPages={searchResponse.total_pages}
-                  onPageChange={setPage}
+                  createPageURL={createPageURL}
                 />
               </div>
             )}

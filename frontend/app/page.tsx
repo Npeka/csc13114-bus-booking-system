@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { TripSearchForm } from "@/components/search/trip-search-form";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,8 +14,20 @@ import {
   Users,
   Bus,
 } from "lucide-react";
+import { getSearchFilterConstants } from "@/lib/api/constants-service";
 
 export default function Home() {
+  const queryClient = useQueryClient();
+
+  // Prefetch constants on page load for instant availability on search page
+  useEffect(() => {
+    queryClient.prefetchQuery({
+      queryKey: ["search-filter-constants"],
+      queryFn: getSearchFilterConstants,
+      staleTime: Infinity,
+      gcTime: Infinity,
+    });
+  }, [queryClient]);
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
@@ -131,8 +147,8 @@ export default function Home() {
 
             <Card className="border-2 transition-colors hover:border-primary">
               <CardContent className="pt-6">
-                <div className="bg-success/10 mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg">
-                  <Clock className="text-success h-6 w-6" />
+                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-success/10">
+                  <Clock className="h-6 w-6 text-success" />
                 </div>
                 <h3 className="mb-2 text-xl font-semibold">Đặt vé nhanh</h3>
                 <p className="text-sm text-muted-foreground">
@@ -144,8 +160,8 @@ export default function Home() {
 
             <Card className="border-2 transition-colors hover:border-primary">
               <CardContent className="pt-6">
-                <div className="bg-info/10 mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg">
-                  <CreditCard className="text-info h-6 w-6" />
+                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-info/10">
+                  <CreditCard className="h-6 w-6 text-info" />
                 </div>
                 <h3 className="mb-2 text-xl font-semibold">
                   Thanh toán linh hoạt

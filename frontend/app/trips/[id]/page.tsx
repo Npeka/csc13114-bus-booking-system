@@ -23,12 +23,8 @@ import {
   SeatSelectionSummary,
   type Seat,
 } from "@/components/trips/seat-map";
-import {
-  getTripById,
-  getTripSeats,
-  type Trip,
-  type SeatDetail,
-} from "@/lib/api/trip-service";
+import { getTripById, getTripSeats } from "@/lib/api/trip-service";
+import type { Trip, SeatDetail } from "@/lib/types/trip";
 import { handleApiError } from "@/lib/api/client";
 
 function TripDetailsContent({ tripId }: { tripId: string }) {
@@ -75,7 +71,7 @@ function TripDetailsContent({ tripId }: { tripId: string }) {
         status: (seat.is_booked || seat.is_locked ? "booked" : "available") as
           | "available"
           | "booked",
-        type: (seat.seat_type || "standard") as "standard" | "premium" | "vip",
+        type: (seat.seat_type || "standard") as "standard" | "vip" | "sleeper",
         price: seat.price,
         label: seat.seat_code,
       };
@@ -240,26 +236,8 @@ function TripDetailsContent({ tripId }: { tripId: string }) {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {trip.route?.operator && (
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-semibold">
-                          {trip.route.operator.name}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {trip.route.operator.contact_email}
-                          {trip.route.operator.contact_phone &&
-                            ` • ${trip.route.operator.contact_phone}`}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 fill-warning text-warning" />
-                        <span className="font-semibold">4.8</span>
-                      </div>
-                    </div>
-                  )}
                   {trip.bus && (
-                    <div className="border-t pt-4">
+                    <div className="pt-4">
                       <div className="mb-2 flex items-center gap-2">
                         <Bus className="h-5 w-5 text-primary" />
                         <h3 className="font-semibold">{trip.bus.model}</h3>

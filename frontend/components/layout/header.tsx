@@ -10,8 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, User } from "lucide-react";
+import { User } from "lucide-react";
 import { useState } from "react";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { useRole } from "@/lib/auth/useRole";
@@ -19,7 +18,6 @@ import { logout as authLogout } from "@/lib/api/auth-service";
 import { LoginDialog } from "@/components/auth/login-dialog";
 
 export function Header() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
 
   // Get auth state from store
@@ -61,39 +59,27 @@ export function Header() {
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden items-center space-x-6 md:flex">
-          {isAdmin && (
-            <Link
-              href="/admin/dashboard"
-              className="text-sm font-semibold text-foreground/80 transition-colors hover:text-foreground"
-            >
-              Quản trị
-            </Link>
-          )}
-          <Link
-            href="/"
-            className="text-sm font-semibold text-foreground/80 transition-colors hover:text-foreground"
-          >
-            Trang chủ
-          </Link>
-          <Link
-            href="/trips"
-            className="text-sm font-semibold text-foreground/80 transition-colors hover:text-foreground"
-          >
-            Tìm chuyến
-          </Link>
-          {isAuthenticated && (
-            <Link
-              href="/my-bookings"
-              className="text-sm font-semibold text-foreground/80 transition-colors hover:text-foreground"
-            >
-              Vé của tôi
-            </Link>
-          )}
-        </nav>
 
         {/* Right side: Auth + Mobile Menu */}
         <div className="flex items-center space-x-4">
+          <nav className="hidden items-center space-x-6 md:flex">
+            {isAdmin && (
+              <Link
+                href="/admin/dashboard"
+                className="text-sm font-semibold text-foreground/80 transition-colors hover:text-foreground"
+              >
+                Quản trị
+              </Link>
+            )}
+            {isAuthenticated && (
+              <Link
+                href="/my-bookings"
+                className="text-sm font-semibold text-foreground/80 transition-colors hover:text-foreground"
+              >
+                Vé của tôi
+              </Link>
+            )}
+          </nav>
           {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -110,9 +96,6 @@ export function Header() {
                 <DropdownMenuItem asChild>
                   <Link href="/profile">Hồ sơ</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/trips">Chuyến đi của tôi</Link>
-                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
                   Đăng xuất
@@ -122,50 +105,6 @@ export function Header() {
           ) : (
             <Button onClick={() => setIsLoginOpen(true)}>Đăng nhập</Button>
           )}
-
-          {/* Mobile menu */}
-          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-            <SheetTrigger asChild className="md:hidden">
-              <Button variant="ghost" size="icon">
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent>
-              <nav className="flex flex-col space-y-4">
-                <Link
-                  href="/"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-foreground transition-colors hover:text-foreground/80"
-                >
-                  Trang chủ
-                </Link>
-                <Link
-                  href="/trips"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-foreground/60 transition-colors hover:text-foreground/80"
-                >
-                  Tìm chuyến
-                </Link>
-                <Link
-                  href="/schedule"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-foreground/60 transition-colors hover:text-foreground/80"
-                >
-                  Lịch trình
-                </Link>
-                {isAdmin && (
-                  <Link
-                    href="/admin"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="text-foreground/60 transition-colors hover:text-foreground/80"
-                  >
-                    Quản trị
-                  </Link>
-                )}
-              </nav>
-            </SheetContent>
-          </Sheet>
         </div>
       </div>
 
