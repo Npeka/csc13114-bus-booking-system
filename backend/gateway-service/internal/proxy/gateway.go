@@ -114,8 +114,9 @@ func (g *Gateway) createProxyHandler(route config.Route) gin.HandlerFunc {
 			userContext, err = g.authenticateRequest(c)
 			if err != nil {
 				c.JSON(401, gin.H{
-					"error":   "authentication failed",
-					"message": err.Error(),
+					"error": gin.H{
+						"message": err.Error(),
+					},
 				})
 				return
 			}
@@ -123,8 +124,9 @@ func (g *Gateway) createProxyHandler(route config.Route) gin.HandlerFunc {
 			// Check roles if specified
 			if len(route.Auth.Roles) > 0 && !userContext.HasAnyRoleString(route.Auth.Roles) {
 				c.JSON(403, gin.H{
-					"error":   "insufficient permissions",
-					"message": fmt.Sprintf("required roles: %v", route.Auth.Roles),
+					"error": gin.H{
+						"message": fmt.Sprintf("required roles: %v", route.Auth.Roles),
+					},
 				})
 				return
 			}
@@ -135,8 +137,9 @@ func (g *Gateway) createProxyHandler(route config.Route) gin.HandlerFunc {
 		log.Printf("Service config for %s: %+v", route.Service, serviceConfig)
 		if !exists {
 			c.JSON(500, gin.H{
-				"error":   "service not configured",
-				"service": route.Service,
+				"error": gin.H{
+					"message": "service not configured: " + route.Service,
+				},
 			})
 			return
 		}
@@ -145,8 +148,9 @@ func (g *Gateway) createProxyHandler(route config.Route) gin.HandlerFunc {
 		targetURL, err := g.buildTargetURL(serviceConfig, route, c)
 		if err != nil {
 			c.JSON(500, gin.H{
-				"error":   "failed to build target URL",
-				"message": err.Error(),
+				"error": gin.H{
+					"message": "failed to build target URL: " + err.Error(),
+				},
 			})
 			return
 		}
@@ -154,8 +158,9 @@ func (g *Gateway) createProxyHandler(route config.Route) gin.HandlerFunc {
 		// Proxy the request
 		if err := g.proxyRequest(c, targetURL, userContext, route); err != nil {
 			c.JSON(502, gin.H{
-				"error":   "proxy request failed",
-				"message": err.Error(),
+				"error": gin.H{
+					"message": "proxy request failed: " + err.Error(),
+				},
 			})
 			return
 		}
