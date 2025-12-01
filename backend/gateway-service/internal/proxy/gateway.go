@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -14,6 +13,8 @@ import (
 
 	"bus-booking/gateway-service/config"
 	"bus-booking/gateway-service/internal/auth"
+
+	"github.com/rs/zerolog/log"
 )
 
 type Gateway struct {
@@ -47,7 +48,7 @@ func (g *Gateway) SetupRoutes(router *gin.Engine) {
 	for i, route := range g.routes.Routes {
 		// Create route with service prefix
 		prefixedPath := "/" + route.Service + route.Path
-		log.Printf("Route %d: Setting up route: %s -> %s %v -> service: %s", i+1, route.Path, prefixedPath, route.Methods, route.Service)
+		log.Info().Msgf("Route %d: Setting up route: %s -> %s %v -> service: %s", i+1, route.Path, prefixedPath, route.Methods, route.Service)
 
 		// Create new route with prefixed path
 		prefixedRoute := route
@@ -55,18 +56,18 @@ func (g *Gateway) SetupRoutes(router *gin.Engine) {
 
 		// Validate route path before setting up
 		if err := g.validateRoutePath(prefixedRoute.Path); err != nil {
-			log.Printf("Skipping invalid route %s: %v", prefixedRoute.Path, err)
+			log.Error().Err(err).Str("route", prefixedRoute.Path).Msg("Skipping invalid route")
 			continue
 		}
 
 		// Add extra safety check
 		if strings.HasSuffix(prefixedRoute.Path, "/*") {
-			log.Printf("ERROR: Route %s ends with /* which is invalid for Gin router", prefixedRoute.Path)
+			log.Error().Str("route", prefixedRoute.Path).Msg("Route ends with /* which is invalid for Gin router")
 			continue
 		}
 
 		g.setupRoute(router, prefixedRoute)
-		log.Printf("Successfully registered route %d: %s", i+1, prefixedRoute.Path)
+		log.Info().Msgf("Successfully registered route %d: %s", i+1, prefixedRoute.Path)
 	}
 
 	router.NoRoute(func(c *gin.Context) {
@@ -84,7 +85,7 @@ func (g *Gateway) setupRoute(router *gin.Engine, route config.Route) {
 
 	for _, method := range route.Methods {
 		methodUpper := strings.ToUpper(method)
-		log.Printf("Registering %s %s", methodUpper, route.Path)
+		log.Info().Msgf("Registering %s %s", methodUpper, route.Path)
 
 		switch methodUpper {
 		case "GET":
@@ -196,7 +197,7 @@ func (g *Gateway) buildTargetURL(serviceConfig config.ServiceConfig, route confi
 	if strings.HasPrefix(actualPath, servicePrefix) {
 		// Strip service prefix: /user/api/v1/auth -> /api/v1/auth
 		targetPath = strings.TrimPrefix(actualPath, servicePrefix)
-		log.Printf("Stripped service prefix: %s -> %s", actualPath, targetPath)
+		log.Info().Msgf("Stripped service prefix: %s -> %s", actualPath, targetPath)
 	}
 
 	// Handle path rewriting
@@ -269,11 +270,12 @@ func (g *Gateway) proxyRequest(c *gin.Context, targetURL string, userContext *au
 	// Make the request
 	resp, err := g.httpClient.Do(req)
 	if err != nil {
+		log.Error().Err(err).Str("url", targetURL).Msg("Failed to proxy request")
 		return fmt.Errorf("failed to proxy request: %w", err)
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("Failed to close response body: %v", err)
+			log.Error().Err(err).Msg("Failed to close response body")
 		}
 	}()
 

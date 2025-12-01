@@ -2,29 +2,32 @@ package main
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/gin-gonic/gin"
 
 	"bus-booking/gateway-service/config"
 	"bus-booking/gateway-service/internal/proxy"
+	"bus-booking/shared/logger"
 	"bus-booking/shared/middleware"
+
+	"github.com/rs/zerolog/log"
 )
 
 func main() {
 	cfg := config.MustLoadConfig()
 	routes := config.MustLoadRoutes()
+	logger.MustSetupLogger(&cfg.Log)
 
 	// Debug: Print loaded services configuration
-	log.Printf("Loaded services configuration:")
+	log.Info().Msg("Loaded services configuration:")
 	for serviceName, serviceConfig := range cfg.ServicesMap {
-		log.Printf("Service %s: URL=%s, Timeout=%d, Retries=%d", serviceName, serviceConfig.URL, serviceConfig.Timeout, serviceConfig.Retries)
+		log.Info().Msgf("Service %s: URL=%s, Timeout=%d, Retries=%d", serviceName, serviceConfig.URL, serviceConfig.Timeout, serviceConfig.Retries)
 	}
 
 	// Debug: Print loaded routes
-	log.Printf("Loaded %d routes:", len(routes.Routes))
+	log.Info().Msgf("Loaded %d routes:", len(routes.Routes))
 	for i, route := range routes.Routes {
-		log.Printf("Route %d: %s %v -> %s", i+1, route.Path, route.Methods, route.Service)
+		log.Info().Msgf("Route %d: %s %v -> %s", i+1, route.Path, route.Methods, route.Service)
 	}
 
 	// Create gateway
@@ -52,6 +55,6 @@ func main() {
 	log.Printf("Loaded %d routes", len(routes.Routes))
 
 	if err := router.Run(addr); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+		log.Fatal().Msgf("Failed to start server: %v", err)
 	}
 }
