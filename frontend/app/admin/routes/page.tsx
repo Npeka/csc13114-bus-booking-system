@@ -10,9 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { MapPin, Plus, Settings } from "lucide-react";
+import { MapPin, Plus } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { listRoutes } from "@/lib/api/trip-service";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -20,8 +19,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 
 export default function AdminRoutesPage() {
-  const router = useRouter();
-
   const {
     data: routesData,
     isLoading,
@@ -97,7 +94,6 @@ export default function AdminRoutesPage() {
                     <TableHead>Khoảng cách</TableHead>
                     <TableHead>Thời gian ước tính</TableHead>
                     <TableHead>Trạng thái</TableHead>
-                    <TableHead className="text-right">Thao tác</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -129,18 +125,6 @@ export default function AdminRoutesPage() {
                             Tạm dừng
                           </Badge>
                         )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() =>
-                            router.push(`/admin/routes/${route.id}/stops`)
-                          }
-                        >
-                          <Settings className="mr-2 h-4 w-4" />
-                          Quản lý điểm dừng
-                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}

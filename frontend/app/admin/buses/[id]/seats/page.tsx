@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Plus, Trash2, Save } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, Grid3x3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -226,6 +226,15 @@ export default function BusSeatConfigPage() {
               </p>
             </div>
             <div className="flex gap-2">
+              <Button
+                variant="default"
+                onClick={() =>
+                  router.push(`/admin/buses/${busId}/seats/layout`)
+                }
+              >
+                <Grid3x3 className="mr-2 h-4 w-4" />
+                Trình chỉnh sửa sơ đồ
+              </Button>
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" onClick={handleAddSeat}>

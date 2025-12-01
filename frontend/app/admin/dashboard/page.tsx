@@ -10,6 +10,7 @@ import {
   Calendar,
   ChevronRight,
   MapPin,
+  Bus,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -265,6 +266,16 @@ export default function AdminDashboardPage() {
                 <Link href="/admin/routes">
                   <MapPin className="mb-2 h-5 w-5" />
                   <span>Quản lý tuyến đường</span>
+                </Link>
+              </Button>
+              <Button
+                variant="outline"
+                className="h-auto flex-col py-4"
+                asChild
+              >
+                <Link href="/admin/buses">
+                  <Bus className="mb-2 h-5 w-5" />
+                  <span>Quản lý xe</span>
                 </Link>
               </Button>
               <Button variant="outline" className="h-auto flex-col py-4">
