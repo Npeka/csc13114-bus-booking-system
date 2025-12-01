@@ -19,6 +19,19 @@ export function formatDateForApi(date: Date): string {
 }
 
 /**
+ * Format a Date object to HTML5 date input format (yyyy-MM-dd)
+ * @param date - The date to format
+ * @returns Date string in yyyy-MM-dd format
+ * @example formatDateForInput(new Date('2024-12-25')) // returns "2024-12-25"
+ */
+export function formatDateForInput(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
  * Parse a Vietnamese date format (dd/MM/yyyy) string to a Date object
  * @param dateString - The date string in dd/MM/yyyy format
  * @returns Date object or null if invalid

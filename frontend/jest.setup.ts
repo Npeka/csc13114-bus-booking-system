@@ -8,7 +8,7 @@ global.fetch = jest.fn(() =>
     text: () => Promise.resolve(""),
     ok: true,
     status: 200,
-  } as Response)
+  } as Response),
 );
 
 // Mock next/navigation
@@ -73,7 +73,7 @@ global.IntersectionObserver = class IntersectionObserver {
     return [];
   }
   unobserve() {}
-} as any;
+} as IntersectionObserver;
 
 // Mock localStorage
 const localStorageMock = (() => {

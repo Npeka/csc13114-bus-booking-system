@@ -99,8 +99,9 @@ export default function NewTripPage() {
 
   const createMutation = useMutation({
     mutationFn: (data: TripFormValues) => {
-      const departureDateTime = `${data.departure_date}T${data.departure_time}:00`;
-      const arrivalDateTime = `${data.arrival_date}T${data.arrival_time}:00`;
+      // Append timezone offset (+07:00) for backend compatibility
+      const departureDateTime = `${data.departure_date}T${data.departure_time}:00+07:00`;
+      const arrivalDateTime = `${data.arrival_date}T${data.arrival_time}:00+07:00`;
 
       return createTrip({
         route_id: data.route_id,

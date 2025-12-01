@@ -10,13 +10,12 @@ import {
   Pencil,
   Trash2,
   Calendar,
-  MapPin,
   Bus,
   Clock,
   DollarSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -29,17 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { getTripById, deleteTrip } from "@/lib/api/trip-service";
-import type { Trip } from "@/lib/types/trip";
-import { handleApiError } from "@/lib/api/client";
-
-// Note: We'll need to add a list trips endpoint or use search with empty filters
-// For now, using a placeholder that will need backend support
-async function listTrips(): Promise<Trip[]> {
-  // TODO: Implement list trips endpoint in backend
-  // For now, return empty array - this will be implemented when backend adds the endpoint
-  return [];
-}
+import { listTrips, deleteTrip } from "@/lib/api/trip-service";
 
 export default function AdminTripsPage() {
   const router = useRouter();
@@ -48,12 +37,12 @@ export default function AdminTripsPage() {
   const [tripToDelete, setTripToDelete] = useState<string | null>(null);
 
   const {
-    data: trips,
+    data: tripsData,
     isLoading,
     error,
-  } = useQuery<Trip[]>({
+  } = useQuery({
     queryKey: ["admin-trips"],
-    queryFn: listTrips,
+    queryFn: () => listTrips({ page: 1, page_size: 100 }),
   });
 
   const deleteMutation = useMutation({
@@ -125,9 +114,9 @@ export default function AdminTripsPage() {
               </Button>
             </CardContent>
           </Card>
-        ) : trips && trips.length > 0 ? (
+        ) : tripsData?.trips && tripsData.trips.length > 0 ? (
           <div className="space-y-4">
-            {trips.map((trip) => (
+            {tripsData.trips.map((trip) => (
               <Card key={trip.id}>
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
@@ -139,20 +128,26 @@ export default function AdminTripsPage() {
                         </h3>
                         <Badge
                           variant={
+                            (typeof trip.status === "object" &&
+                              trip.status.value === "scheduled") ||
                             trip.status === "scheduled"
                               ? "secondary"
-                              : trip.status === "in_progress"
+                              : (typeof trip.status === "object" &&
+                                    trip.status.value === "in_progress") ||
+                                  trip.status === "in_progress"
                                 ? "default"
                                 : "outline"
                           }
                         >
-                          {trip.status === "scheduled"
-                            ? "Đã lên lịch"
-                            : trip.status === "in_progress"
-                              ? "Đang di chuyển"
-                              : trip.status === "completed"
-                                ? "Hoàn thành"
-                                : "Đã hủy"}
+                          {typeof trip.status === "object"
+                            ? trip.status.display_name
+                            : trip.status === "scheduled"
+                              ? "Đã lên lịch"
+                              : trip.status === "in_progress"
+                                ? "Đang di chuyển"
+                                : trip.status === "completed"
+                                  ? "Hoàn thành"
+                                  : "Đã hủy"}
                         </Badge>
                         {!trip.is_active && (
                           <Badge variant="outline">Không hoạt động</Badge>

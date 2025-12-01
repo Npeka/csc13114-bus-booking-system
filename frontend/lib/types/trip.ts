@@ -140,6 +140,7 @@ export interface Route {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  route_stops?: RouteStop[]; // Optional as it might not be returned in list views
 }
 
 // Bus Seat type from API
@@ -152,6 +153,48 @@ export interface BusSeat {
   seat_type: "standard" | "vip" | "sleeper";
   price_multiplier: number;
   is_available: boolean;
+}
+
+// Seat layout editor types
+export type SeatCellType = "seat" | "empty" | "blocked" | "driver";
+
+export interface SeatLayoutCell {
+  id?: string; // Seat ID if it's a seat
+  type: SeatCellType;
+  seatType?: "standard" | "vip" | "sleeper";
+  seatNumber?: string;
+  priceMultiplier?: number;
+  isAvailable?: boolean;
+  row: number;
+  column: number;
+  floor: number;
+}
+
+export interface SeatLayoutFloor {
+  floor: number;
+  rows: number;
+  cols: number;
+  cells: SeatLayoutCell[][];
+}
+
+export interface SeatLayoutConfig {
+  busId: string;
+  floors: SeatLayoutFloor[];
+}
+
+export interface CreateSeatRequest {
+  bus_id: string;
+  seat_number: string;
+  row: number;
+  column: number;
+  seat_type: "standard" | "vip" | "sleeper";
+  price_multiplier?: number;
+  floor: number;
+}
+
+export interface BulkCreateSeatsRequest {
+  bus_id: string;
+  seats: CreateSeatRequest[];
 }
 
 // Bus types

@@ -8,12 +8,10 @@ import {
   SeatAvailabilityResponse,
   SeatDetail,
   Route,
-  ApiPaginatedResponse,
   Bus,
   Seat,
-  RouteStop,
-  CreateRouteStopRequest,
-  UpdateRouteStopRequest,
+  BulkCreateSeatsRequest,
+  CreateSeatRequest,
 } from "@/lib/types/trip";
 
 /**
@@ -185,6 +183,59 @@ export const deleteTrip = async (id: string): Promise<void> => {
 };
 
 /**
+ * List trips with pagination (admin only)
+ */
+export const listTrips = async (params?: {
+  page?: number;
+  page_size?: number;
+}): Promise<{
+  trips: Trip[];
+  total: number;
+  page: number;
+  page_size: number;
+}> => {
+  try {
+    // The backend returns { data: Trip[], meta: { page, page_size, total, total_pages } }
+    // We need to map this to our internal return type
+    const response = await apiClient.get<
+      ApiResponse<Trip[]> & {
+        meta: {
+          page: number;
+          page_size: number;
+          total: number;
+          total_pages: number;
+        };
+      }
+    >("/trip/api/v1/trips", {
+      params: {
+        page: params?.page || 1,
+        page_size: params?.page_size || 20,
+      },
+    });
+
+    if (!response.data.data) {
+      // If data is null/undefined, return empty list
+      return {
+        trips: [],
+        total: 0,
+        page: params?.page || 1,
+        page_size: params?.page_size || 20,
+      };
+    }
+
+    return {
+      trips: response.data.data,
+      total: response.data.meta?.total || 0,
+      page: response.data.meta?.page || 1,
+      page_size: response.data.meta?.page_size || 20,
+    };
+  } catch (error) {
+    const errorMessage = handleApiError(error);
+    throw new Error(errorMessage);
+  }
+};
+
+/**
  * List routes
  */
 export const listRoutes = async (params?: {
@@ -199,22 +250,32 @@ export const listRoutes = async (params?: {
 }> => {
   try {
     const response = await apiClient.get<
-      ApiResponse<ApiPaginatedResponse<Route>>
+      ApiResponse<Route[]> & {
+        meta: {
+          page: number;
+          page_size: number;
+          total: number;
+          total_pages: number;
+        };
+      }
     >("/trip/api/v1/routes", { params });
 
     if (!response.data.data) {
-      throw new Error(
-        response.data.message || response.data.error || "Failed to list routes",
-      );
+      return {
+        routes: [],
+        total: 0,
+        page: params?.page || 1,
+        limit: params?.limit || 10,
+        total_pages: 0,
+      };
     }
 
-    const paginatedData = response.data.data;
     return {
-      routes: paginatedData.data,
-      total: paginatedData.meta.total,
-      page: paginatedData.meta.page,
-      limit: paginatedData.meta.page_size,
-      total_pages: paginatedData.meta.total_pages,
+      routes: response.data.data,
+      total: response.data.meta?.total || 0,
+      page: response.data.meta?.page || 1,
+      limit: response.data.meta?.page_size || 20,
+      total_pages: response.data.meta?.total_pages || 0,
     };
   } catch (error) {
     const errorMessage = handleApiError(error);
@@ -237,22 +298,32 @@ export const listBuses = async (params?: {
 }> => {
   try {
     const response = await apiClient.get<
-      ApiResponse<ApiPaginatedResponse<Bus>>
+      ApiResponse<Bus[]> & {
+        meta: {
+          page: number;
+          page_size: number;
+          total: number;
+          total_pages: number;
+        };
+      }
     >("/trip/api/v1/buses", { params });
 
     if (!response.data.data) {
-      throw new Error(
-        response.data.message || response.data.error || "Failed to list buses",
-      );
+      return {
+        buses: [],
+        total: 0,
+        page: params?.page || 1,
+        limit: params?.limit || 10,
+        total_pages: 0,
+      };
     }
 
-    const paginatedData = response.data.data;
     return {
-      buses: paginatedData.data,
-      total: paginatedData.meta.total,
-      page: paginatedData.meta.page,
-      limit: paginatedData.meta.page_size,
-      total_pages: paginatedData.meta.total_pages,
+      buses: response.data.data,
+      total: response.data.meta?.total || 0,
+      page: response.data.meta?.page || 1,
+      limit: response.data.meta?.page_size || 20,
+      total_pages: response.data.meta?.total_pages || 0,
     };
   } catch (error) {
     const errorMessage = handleApiError(error);
@@ -503,6 +574,88 @@ export const updateBusSeats = async (
 };
 
 /**
+ * Bulk create seats for a bus (admin only)
+ */
+export const bulkCreateSeats = async (
+  request: BulkCreateSeatsRequest,
+): Promise<Seat[]> => {
+  try {
+    const response = await apiClient.post<ApiResponse<Seat[]>>(
+      "/trip/api/v1/buses/seats/bulk",
+      request,
+    );
+    if (!response.data.data) {
+      throw new Error(
+        response.data.message ||
+          response.data.error ||
+          "Failed to create seats",
+      );
+    }
+    return response.data.data;
+  } catch (error) {
+    const errorMessage = handleApiError(error);
+    throw new Error(errorMessage);
+  }
+};
+
+/**
+ * Create a single seat (admin only)
+ */
+export const createSeat = async (request: CreateSeatRequest): Promise<Seat> => {
+  try {
+    const response = await apiClient.post<ApiResponse<Seat>>(
+      "/trip/api/v1/buses/seats",
+      request,
+    );
+    if (!response.data.data) {
+      throw new Error(
+        response.data.message || response.data.error || "Failed to create seat",
+      );
+    }
+    return response.data.data;
+  } catch (error) {
+    const errorMessage = handleApiError(error);
+    throw new Error(errorMessage);
+  }
+};
+
+/**
+ * Update a single seat (admin only)
+ */
+export const updateSeat = async (
+  seatId: string,
+  request: Partial<CreateSeatRequest>,
+): Promise<Seat> => {
+  try {
+    const response = await apiClient.put<ApiResponse<Seat>>(
+      `/trip/api/v1/buses/seats/${seatId}`,
+      request,
+    );
+    if (!response.data.data) {
+      throw new Error(
+        response.data.message || response.data.error || "Failed to update seat",
+      );
+    }
+    return response.data.data;
+  } catch (error) {
+    const errorMessage = handleApiError(error);
+    throw new Error(errorMessage);
+  }
+};
+
+/**
+ * Delete a seat (admin only)
+ */
+export const deleteSeat = async (seatId: string): Promise<void> => {
+  try {
+    await apiClient.delete(`/trip/api/v1/buses/seats/${seatId}`);
+  } catch (error) {
+    const errorMessage = handleApiError(error);
+    throw new Error(errorMessage);
+  }
+};
+
+/**
  * Get city autocomplete suggestions
  */
 export const getCityAutocomplete = async (query: string): Promise<string[]> => {
@@ -521,97 +674,6 @@ export const getCityAutocomplete = async (query: string): Promise<string[]> => {
       );
     }
     return response.data.data;
-  } catch (error) {
-    const errorMessage = handleApiError(error);
-    throw new Error(errorMessage);
-  }
-};
-
-/**
- * Get route stops for a specific route
- */
-export const getRouteStops = async (routeId: string): Promise<RouteStop[]> => {
-  try {
-    const response = await apiClient.get<ApiResponse<RouteStop[]>>(
-      `/trip/api/v1/routes/${routeId}/stops`,
-    );
-    if (!response.data.data) {
-      throw new Error(
-        response.data.message ||
-          response.data.error ||
-          "Failed to get route stops",
-      );
-    }
-    return response.data.data;
-  } catch (error) {
-    const errorMessage = handleApiError(error);
-    throw new Error(errorMessage);
-  }
-};
-
-/**
- * Create a new route stop (admin only)
- * Note: route_id is passed in the path, not in the request body
- */
-export const createRouteStop = async (
-  routeId: string,
-  stopData: CreateRouteStopRequest,
-): Promise<RouteStop> => {
-  try {
-    const response = await apiClient.post<ApiResponse<RouteStop>>(
-      `/trip/api/v1/routes/${routeId}/stops`,
-      stopData,
-    );
-    if (!response.data.data) {
-      throw new Error(
-        response.data.message ||
-          response.data.error ||
-          "Failed to create route stop",
-      );
-    }
-    return response.data.data;
-  } catch (error) {
-    const errorMessage = handleApiError(error);
-    throw new Error(errorMessage);
-  }
-};
-
-/**
- * Update a route stop (admin only)
- */
-export const updateRouteStop = async (
-  routeId: string,
-  stopId: string,
-  stopData: UpdateRouteStopRequest,
-): Promise<RouteStop> => {
-  try {
-    const response = await apiClient.put<ApiResponse<RouteStop>>(
-      `/trip/api/v1/routes/${routeId}/stops/${stopId}`,
-      stopData,
-    );
-    if (!response.data.data) {
-      throw new Error(
-        response.data.message ||
-          response.data.error ||
-          "Failed to update route stop",
-      );
-    }
-    return response.data.data;
-  } catch (error) {
-    const errorMessage = handleApiError(error);
-    throw new Error(errorMessage);
-  }
-};
-
-/**
- * Delete a route stop (admin only)
- */
-export const deleteRouteStop = async (
-  routeId: string,
-  stopId: string,
-): Promise<void> => {
-  try {
-    await apiClient.delete(`/trip/api/v1/routes/${routeId}/stops/${stopId}`);
   } catch (error) {
     const errorMessage = handleApiError(error);
     throw new Error(errorMessage);
