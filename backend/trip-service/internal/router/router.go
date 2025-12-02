@@ -47,6 +47,11 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 		// 	buses.GET("/:id/seat-map", ginext.WrapHandler(h.SeatHandler.GetSeatMap))
 		// }
 
+		// seats := v1.Group("/buses/seats")
+		// {
+		// 	seats.POST("/bulk", ginext.WrapHandler(h.SeatHandler.CreateSeatsFromTemplate))
+		// }
+
 		// routes := v1.Group("/routes")
 		// {
 		// 	routes.GET("/search", ginext.WrapHandler(h.RouteHandler.SearchRoutes))
@@ -79,7 +84,6 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 		seats := v1.Group("/buses/seats")
 		{
 			seats.POST("", ginext.WrapHandler(h.SeatHandler.CreateSeat))
-			seats.POST("/bulk", ginext.WrapHandler(h.SeatHandler.CreateSeatsFromTemplate))
 			seats.PUT("/:id", ginext.WrapHandler(h.SeatHandler.UpdateSeat))
 			seats.DELETE("/:id", ginext.WrapHandler(h.SeatHandler.DeleteSeat))
 		}

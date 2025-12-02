@@ -1,0 +1,160 @@
+[
+  {
+    "plate_number": "29A-11111",
+    "model": "Mercedes-Benz Travego",
+    "floors": [
+      {
+        "floor": 1,
+        "seat_capacity": 45
+      }
+    ],
+    "amenities": ["wifi", "ac", "toilet", "charging", "blanket", "water"],
+    "is_active": true
+  },
+  {
+    "plate_number": "30B-22222",
+    "model": "Hyundai Universe Noble",
+    "floors": [
+      {
+        "floor": 1,
+        "seat_capacity": 24
+      },
+      {
+        "floor": 2,
+        "seat_capacity": 20
+      }
+    ],
+    "amenities": ["wifi", "ac", "tv", "charging"],
+    "is_active": true
+  },
+  {
+    "plate_number": "51G-33333",
+    "model": "Thaco Mobihome TB120S",
+    "floors": [
+      {
+        "floor": 1,
+        "seat_capacity": 36
+      }
+    ],
+    "amenities": ["ac", "charging", "water"],
+    "is_active": true
+  },
+  {
+    "plate_number": "79C-44444",
+    "model": "Samco Primas 3400",
+    "floors": [
+      {
+        "floor": 1,
+        "seat_capacity": 16
+      },
+      {
+        "floor": 2,
+        "seat_capacity": 18
+      }
+    ],
+    "amenities": ["wifi", "ac", "toilet", "tv", "charging", "pillow"],
+    "is_active": true
+  },
+  {
+    "plate_number": "43T-55555",
+    "model": "Scania Touring HD",
+    "floors": [
+      {
+        "floor": 1,
+        "seat_capacity": 28
+      }
+    ],
+    "amenities": ["wifi", "ac", "charging"],
+    "is_active": true
+  },
+  {
+    "plate_number": "92Z-66666",
+    "model": "Isuzu Samco Vios",
+    "floors": [
+      {
+        "floor": 1,
+        "seat_capacity": 18
+      }
+    ],
+    "amenities": ["ac"],
+    "is_active": true
+  },
+  {
+    "plate_number": "60H-77777",
+    "model": "Hyundai County Limousine",
+    "floors": [
+      {
+        "floor": 1,
+        "seat_capacity": 12
+      },
+      {
+        "floor": 2,
+        "seat_capacity": 10
+      }
+    ],
+    "amenities": [
+      "wifi",
+      "ac",
+      "tv",
+      "charging",
+      "blanket",
+      "water",
+      "minibar"
+    ],
+    "is_active": true
+  },
+  {
+    "plate_number": "50F-88888",
+    "model": "Thaco TB85S",
+    "floors": [
+      {
+        "floor": 1,
+        "seat_capacity": 40
+      }
+    ],
+    "amenities": ["ac", "toilet", "charging", "water"],
+    "is_active": true
+  },
+  {
+    "plate_number": "72N-99999",
+    "model": "Mercedes-Benz Sprinter VIP",
+    "floors": [
+      {
+        "floor": 1,
+        "seat_capacity": 20
+      },
+      {
+        "floor": 2,
+        "seat_capacity": 15
+      }
+    ],
+    "amenities": [
+      "wifi",
+      "ac",
+      "tv",
+      "toilet",
+      "charging",
+      "pillow",
+      "blanket",
+      "minibar",
+      "karaoke"
+    ],
+    "is_active": true
+  },
+  {
+    "plate_number": "37D-10101",
+    "model": "Fuso Rosa Deluxe",
+    "floors": [
+      {
+        "floor": 1,
+        "seat_capacity": 20
+      },
+      {
+        "floor": 2,
+        "seat_capacity": 5
+      }
+    ],
+    "amenities": ["wifi", "ac", "charging", "water"],
+    "is_active": true
+  }
+]

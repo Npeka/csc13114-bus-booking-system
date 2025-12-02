@@ -39,12 +39,17 @@ type BusResponse struct {
 	Seats []SeatResponse `json:"seats,omitempty"`
 }
 
+type FloorConfig struct {
+	Floor        int `json:"floor" validate:"required,min=1"`
+	SeatCapacity int `json:"seat_capacity" validate:"required,min=1"`
+}
+
 type CreateBusRequest struct {
-	PlateNumber  string   `json:"plate_number" validate:"required,min=3,max=20"`
-	Model        string   `json:"model" validate:"required,min=2,max=255"`
-	SeatCapacity int      `json:"seat_capacity" validate:"required,min=1,max=100"`
-	Amenities    []string `json:"amenities"`
-	IsActive     bool     `json:"is_active"`
+	PlateNumber string        `json:"plate_number" validate:"required,min=3,max=20"`
+	Model       string        `json:"model" validate:"required,min=2,max=255"`
+	Floors      []FloorConfig `json:"floors" validate:"required,min=1,dive"`
+	Amenities   []string      `json:"amenities"`
+	IsActive    bool          `json:"is_active"`
 }
 
 type UpdateBusRequest struct {

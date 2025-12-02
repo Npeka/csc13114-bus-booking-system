@@ -1,43 +1,367 @@
 {
   "data": [
     {
+      "id": "c29c58fe-dddc-40b4-994f-dece8982d2c1",
+      "plate_number": "37D-10101",
+      "model": "Fuso Rosa Deluxe",
+      "seat_capacity": 25,
+      "amenities": [
+        {
+          "value": "wifi",
+          "display_name": "Wi-Fi"
+        },
+        {
+          "value": "ac",
+          "display_name": "Điều hòa"
+        },
+        {
+          "value": "charging",
+          "display_name": "Cổng sạc điện thoại"
+        },
+        {
+          "value": "water",
+          "display_name": "Nước uống miễn phí"
+        }
+      ],
+      "is_active": true
+    },
+    {
+      "id": "2a28f716-0fa2-4e67-bd91-fb948142d0ad",
+      "plate_number": "72N-99999",
+      "model": "Mercedes-Benz Sprinter VIP",
+      "seat_capacity": 35,
+      "amenities": [
+        {
+          "value": "wifi",
+          "display_name": "Wi-Fi"
+        },
+        {
+          "value": "ac",
+          "display_name": "Điều hòa"
+        },
+        {
+          "value": "tv",
+          "display_name": "TV/Giải trí"
+        },
+        {
+          "value": "toilet",
+          "display_name": "Nhà vệ sinh"
+        },
+        {
+          "value": "charging",
+          "display_name": "Cổng sạc điện thoại"
+        },
+        {
+          "value": "pillow",
+          "display_name": "pillow"
+        },
+        {
+          "value": "blanket",
+          "display_name": "Chăn & Gối"
+        },
+        {
+          "value": "minibar",
+          "display_name": "minibar"
+        },
+        {
+          "value": "karaoke",
+          "display_name": "karaoke"
+        }
+      ],
+      "is_active": true
+    },
+    {
+      "id": "56284209-4a1a-421a-8f9a-41c8f93d768d",
+      "plate_number": "50F-88888",
+      "model": "Thaco TB85S",
+      "seat_capacity": 40,
+      "amenities": [
+        {
+          "value": "ac",
+          "display_name": "Điều hòa"
+        },
+        {
+          "value": "toilet",
+          "display_name": "Nhà vệ sinh"
+        },
+        {
+          "value": "charging",
+          "display_name": "Cổng sạc điện thoại"
+        },
+        {
+          "value": "water",
+          "display_name": "Nước uống miễn phí"
+        }
+      ],
+      "is_active": true
+    },
+    {
+      "id": "e8c342e1-428a-40a2-812d-46c742d214eb",
+      "plate_number": "60H-77777",
+      "model": "Hyundai County Limousine",
+      "seat_capacity": 22,
+      "amenities": [
+        {
+          "value": "wifi",
+          "display_name": "Wi-Fi"
+        },
+        {
+          "value": "ac",
+          "display_name": "Điều hòa"
+        },
+        {
+          "value": "tv",
+          "display_name": "TV/Giải trí"
+        },
+        {
+          "value": "charging",
+          "display_name": "Cổng sạc điện thoại"
+        },
+        {
+          "value": "blanket",
+          "display_name": "Chăn & Gối"
+        },
+        {
+          "value": "water",
+          "display_name": "Nước uống miễn phí"
+        },
+        {
+          "value": "minibar",
+          "display_name": "minibar"
+        }
+      ],
+      "is_active": true
+    },
+    {
+      "id": "2389cb6f-360e-43a0-b8df-c03a05382691",
+      "plate_number": "92Z-66666",
+      "model": "Isuzu Samco Vios",
+      "seat_capacity": 18,
+      "amenities": [
+        {
+          "value": "ac",
+          "display_name": "Điều hòa"
+        }
+      ],
+      "is_active": true
+    },
+    {
+      "id": "999fddcd-08db-47d3-9d7f-a2d9d2e839a0",
+      "plate_number": "43T-55555",
+      "model": "Scania Touring HD",
+      "seat_capacity": 28,
+      "amenities": [
+        {
+          "value": "wifi",
+          "display_name": "Wi-Fi"
+        },
+        {
+          "value": "ac",
+          "display_name": "Điều hòa"
+        },
+        {
+          "value": "charging",
+          "display_name": "Cổng sạc điện thoại"
+        }
+      ],
+      "is_active": true
+    },
+    {
+      "id": "2a6d6938-fc66-4d91-8e8f-b92854329d7a",
+      "plate_number": "79C-44444",
+      "model": "Samco Primas 3400",
+      "seat_capacity": 34,
+      "amenities": [
+        {
+          "value": "wifi",
+          "display_name": "Wi-Fi"
+        },
+        {
+          "value": "ac",
+          "display_name": "Điều hòa"
+        },
+        {
+          "value": "toilet",
+          "display_name": "Nhà vệ sinh"
+        },
+        {
+          "value": "tv",
+          "display_name": "TV/Giải trí"
+        },
+        {
+          "value": "charging",
+          "display_name": "Cổng sạc điện thoại"
+        },
+        {
+          "value": "pillow",
+          "display_name": "pillow"
+        }
+      ],
+      "is_active": true
+    },
+    {
+      "id": "b1659416-87bc-4bd5-bdf4-f22e081b10bf",
+      "plate_number": "51G-33333",
+      "model": "Thaco Mobihome TB120S",
+      "seat_capacity": 36,
+      "amenities": [
+        {
+          "value": "ac",
+          "display_name": "Điều hòa"
+        },
+        {
+          "value": "charging",
+          "display_name": "Cổng sạc điện thoại"
+        },
+        {
+          "value": "water",
+          "display_name": "Nước uống miễn phí"
+        }
+      ],
+      "is_active": true
+    },
+    {
+      "id": "e357ad66-2b74-4097-aced-ce43979ee862",
+      "plate_number": "30B-22222",
+      "model": "Hyundai Universe Noble",
+      "seat_capacity": 44,
+      "amenities": [
+        {
+          "value": "wifi",
+          "display_name": "Wi-Fi"
+        },
+        {
+          "value": "ac",
+          "display_name": "Điều hòa"
+        },
+        {
+          "value": "tv",
+          "display_name": "TV/Giải trí"
+        },
+        {
+          "value": "charging",
+          "display_name": "Cổng sạc điện thoại"
+        }
+      ],
+      "is_active": true
+    },
+    {
+      "id": "39acceb1-e047-4142-bd99-85ef780a850f",
+      "plate_number": "29A-11111",
+      "model": "Mercedes-Benz Travego",
+      "seat_capacity": 45,
+      "amenities": [
+        {
+          "value": "wifi",
+          "display_name": "Wi-Fi"
+        },
+        {
+          "value": "ac",
+          "display_name": "Điều hòa"
+        },
+        {
+          "value": "toilet",
+          "display_name": "Nhà vệ sinh"
+        },
+        {
+          "value": "charging",
+          "display_name": "Cổng sạc điện thoại"
+        },
+        {
+          "value": "blanket",
+          "display_name": "Chăn & Gối"
+        },
+        {
+          "value": "water",
+          "display_name": "Nước uống miễn phí"
+        }
+      ],
+      "is_active": true
+    },
+    {
       "id": "2799008e-13ce-4c22-90db-d1e0ead79ce7",
-      "created_at": "2025-11-30T16:54:18.572441+07:00",
-      "updated_at": "2025-11-30T16:54:18.572441+07:00",
       "plate_number": "29A-12345",
       "model": "Mercedes-Benz Travego",
       "seat_capacity": 45,
-      "amenities": ["wifi", "ac", "toilet", "charging", "blanket", "water"],
-      "is_active": true,
-      "seats": null
+      "amenities": [
+        {
+          "value": "wifi",
+          "display_name": "Wi-Fi"
+        },
+        {
+          "value": "ac",
+          "display_name": "Điều hòa"
+        },
+        {
+          "value": "toilet",
+          "display_name": "Nhà vệ sinh"
+        },
+        {
+          "value": "charging",
+          "display_name": "Cổng sạc điện thoại"
+        },
+        {
+          "value": "blanket",
+          "display_name": "Chăn & Gối"
+        },
+        {
+          "value": "water",
+          "display_name": "Nước uống miễn phí"
+        }
+      ],
+      "is_active": true
     },
     {
       "id": "d4955ce2-885e-4c0d-891c-09640bc5d835",
-      "created_at": "2025-11-30T16:54:12.369971+07:00",
-      "updated_at": "2025-11-30T16:54:12.369971+07:00",
       "plate_number": "30B-67890",
       "model": "Hyundai Universe",
       "seat_capacity": 40,
-      "amenities": ["wifi", "ac", "charging", "water"],
-      "is_active": true,
-      "seats": null
+      "amenities": [
+        {
+          "value": "wifi",
+          "display_name": "Wi-Fi"
+        },
+        {
+          "value": "ac",
+          "display_name": "Điều hòa"
+        },
+        {
+          "value": "charging",
+          "display_name": "Cổng sạc điện thoại"
+        },
+        {
+          "value": "water",
+          "display_name": "Nước uống miễn phí"
+        }
+      ],
+      "is_active": true
     },
     {
       "id": "e6fa78ac-e16a-4b26-a479-0d885d30ca73",
-      "created_at": "2025-11-30T01:04:22.929517+07:00",
-      "updated_at": "2025-11-30T01:04:22.929517+07:00",
       "plate_number": "51C-11111",
       "model": "Thaco TB120S",
       "seat_capacity": 34,
-      "amenities": ["ac", "charging", "blanket"],
-      "is_active": true,
-      "seats": null
+      "amenities": [
+        {
+          "value": "ac",
+          "display_name": "Điều hòa"
+        },
+        {
+          "value": "charging",
+          "display_name": "Cổng sạc điện thoại"
+        },
+        {
+          "value": "blanket",
+          "display_name": "Chăn & Gối"
+        }
+      ],
+      "is_active": true
     }
   ],
   "meta": {
     "page": 1,
     "page_size": 20,
-    "total": 3,
+    "total": 13,
     "total_pages": 1
   }
 }

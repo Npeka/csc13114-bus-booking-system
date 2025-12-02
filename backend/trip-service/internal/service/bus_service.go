@@ -69,13 +69,23 @@ func (s *BusServiceImpl) CreateBus(ctx context.Context, req *model.CreateBusRequ
 		return nil, ginext.NewBadRequestError("plate number already exists")
 	}
 
+	// Calculate total seat capacity from all floors
+	totalCapacity := 0
+	for _, floor := range req.Floors {
+		totalCapacity += floor.SeatCapacity
+	}
+
+	if totalCapacity > 100 {
+		return nil, ginext.NewBadRequestError("total seat capacity cannot exceed 100")
+	}
+
 	bus := &model.Bus{
 		PlateNumber:  req.PlateNumber,
 		Model:        req.Model,
-		SeatCapacity: req.SeatCapacity,
+		SeatCapacity: totalCapacity,
 		Amenities:    req.Amenities,
 		IsActive:     true,
-		Seats:        s.generateSeatsForBus(req.SeatCapacity),
+		Seats:        s.generateSeatsForBus(req.Floors),
 	}
 
 	if err := s.busRepo.CreateBus(ctx, bus); err != nil {
@@ -85,35 +95,43 @@ func (s *BusServiceImpl) CreateBus(ctx context.Context, req *model.CreateBusRequ
 	return bus, nil
 }
 
-func (s *BusServiceImpl) generateSeatsForBus(seatCapacity int) []model.Seat {
-	seats := make([]model.Seat, 0, seatCapacity)
-
+func (s *BusServiceImpl) generateSeatsForBus(floors []model.FloorConfig) []model.Seat {
+	seats := make([]model.Seat, 0)
 	rowNames := []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N"}
-	seatsPerRow := 4
-	if seatCapacity > 40 {
-		seatsPerRow = 5
-	}
 
-	seatCount := 0
-	for rowIdx := 0; rowIdx < len(rowNames) && seatCount < seatCapacity; rowIdx++ {
-		for seatNum := 1; seatNum <= seatsPerRow && seatCount < seatCapacity; seatNum++ {
-			seatNumber := fmt.Sprintf("%s%d", rowNames[rowIdx], seatNum)
-			seatType := constants.SeatTypeStandard
+	for _, floorConfig := range floors {
+		seatsPerRow := 4
+		if floorConfig.SeatCapacity > 40 {
+			seatsPerRow = 5
+		}
 
-			// First and last rows are premium (VIP)
-			if rowIdx == 0 || rowIdx == len(rowNames)-1 {
-				seatType = constants.SeatTypeVIP
+		floorSeatCount := 0
+		for rowIdx := 0; rowIdx < len(rowNames) && floorSeatCount < floorConfig.SeatCapacity; rowIdx++ {
+			for seatNum := 1; seatNum <= seatsPerRow && floorSeatCount < floorConfig.SeatCapacity; seatNum++ {
+				seatType := constants.SeatTypeStandard
+
+				// First and last rows are premium (VIP)
+				if rowIdx == 0 || rowIdx == len(rowNames)-1 {
+					seatType = constants.SeatTypeVIP
+				}
+
+				// Add floor prefix to seat number if multiple floors
+				seatNumber := fmt.Sprintf("%s%d", rowNames[rowIdx], seatNum)
+				if len(floors) > 1 {
+					seatNumber = fmt.Sprintf("F%d-%s%d", floorConfig.Floor, rowNames[rowIdx], seatNum)
+				}
+
+				seat := model.Seat{
+					SeatNumber:  seatNumber,
+					SeatType:    seatType,
+					Row:         rowIdx + 1,
+					Column:      seatNum,
+					Floor:       floorConfig.Floor,
+					IsAvailable: true,
+				}
+				seats = append(seats, seat)
+				floorSeatCount++
 			}
-
-			seat := model.Seat{
-				SeatNumber:  seatNumber,
-				SeatType:    seatType,
-				Row:         rowIdx + 1,
-				Column:      seatNum,
-				IsAvailable: true,
-			}
-			seats = append(seats, seat)
-			seatCount++
 		}
 	}
 
