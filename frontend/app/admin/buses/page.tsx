@@ -36,6 +36,7 @@ import {
 import { listBuses, deleteBus } from "@/lib/api/trip-service";
 import type { Bus } from "@/lib/types/trip";
 import { toast } from "sonner";
+import { getDisplayName } from "@/lib/utils";
 
 export default function AdminBusesPage() {
   const router = useRouter();
@@ -202,7 +203,7 @@ export default function AdminBusesPage() {
                               variant="secondary"
                               className="text-xs"
                             >
-                              {amenity}
+                              {getDisplayName(amenity)}
                             </Badge>
                           ))}
                           {bus.amenities && bus.amenities.length > 2 && (

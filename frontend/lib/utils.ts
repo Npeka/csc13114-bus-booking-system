@@ -61,6 +61,53 @@ export function parseDateFromVnFormat(dateString: string): Date | null {
   return date;
 }
 
+import { DisplayValue, type ConstantDisplay } from "@/lib/types/trip";
+
+/**
+ * Type guard to check if a value is a DisplayValue object
+ * @param value - Value to check
+ * @returns True if value is a DisplayValue object
+ */
+export function isDisplayValue(value: unknown): value is DisplayValue<string> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "value" in value &&
+    "display_name" in value
+  );
+}
+
+/**
+ * Extract display name from DisplayValue object or return string as-is
+ * Provides backward compatibility with raw string values
+ * @param value - DisplayValue object or raw string
+ * @param fallback - Fallback string if extraction fails
+ * @returns Extracted display name or fallback
+ */
+export function getDisplayName(
+  value: string | ConstantDisplay | undefined | null,
+  fallback: string = "N/A",
+): string {
+  if (!value) return fallback;
+  if (typeof value === "string") return value;
+  if (isDisplayValue(value)) return value.display_name;
+  return fallback;
+}
+
+/**
+ * Extract raw value from DisplayValue object or return string as-is
+ * @param value - DisplayValue object or raw string
+ * @returns Extracted value or original string
+ */
+export function getValue(
+  value: string | ConstantDisplay | undefined | null,
+): string {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (isDisplayValue(value)) return value.value;
+  return "";
+}
+
 import { ApiTripItem, TripDetail } from "@/lib/types/trip";
 
 /**

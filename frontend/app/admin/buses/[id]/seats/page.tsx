@@ -27,20 +27,29 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { cn } from "@/lib/utils";
+import { cn, getValue } from "@/lib/utils";
 import {
   getBusById,
   getBusSeats,
-  updateBusSeats,
+  createSeat,
+  updateSeat,
+  deleteSeat,
 } from "@/lib/api/trip-service";
-import type { Seat } from "@/lib/types/trip";
+import type { BusSeat } from "@/lib/types/trip";
 import { toast } from "sonner";
 
 type SeatType = "standard" | "vip" | "sleeper";
 
-interface EditableSeat extends Seat {
-  row?: number;
-  column?: number;
+// EditableSeat matches BusSeat structure but with optional row/column for UI state
+interface EditableSeat {
+  id: string;
+  seat_number: string;
+  row: number;
+  column: number;
+  floor: number;
+  seat_type: import("@/lib/types/trip").ConstantDisplay | SeatType; // Can be either during editing
+  price_multiplier: number;
+  is_available: boolean;
 }
 
 export default function BusSeatConfigPage() {
@@ -68,12 +77,17 @@ export default function BusSeatConfigPage() {
     if (!existingSeats) return [];
     // Parse seat codes to extract row and column
     return existingSeats.map((seat) => {
-      const match = seat.seat_code.match(/^(\d+)([A-Z])$/);
+      const match = seat.seat_number.match(/^(\d+)([A-Z])$/);
       return {
-        ...seat,
-        row: match ? parseInt(match[1]) : 1,
-        column: match ? match[2].charCodeAt(0) - 64 : 1,
-      };
+        id: seat.id,
+        seat_number: seat.seat_number,
+        row: match ? parseInt(match[1]) : seat.row,
+        column: match ? match[2].charCodeAt(0) - 64 : seat.column,
+        floor: seat.floor,
+        seat_type: seat.seat_type,
+        price_multiplier: seat.price_multiplier,
+        is_available: seat.is_available,
+      } as EditableSeat;
     });
   }, [existingSeats]);
 
@@ -93,10 +107,49 @@ export default function BusSeatConfigPage() {
   }
 
   const saveMutation = useMutation({
-    mutationFn: (seatsToSave: Seat[]) =>
-      updateBusSeats(busId, { seats: seatsToSave }),
+    mutationFn: async (seatsToSave: EditableSeat[]) => {
+      // Get current existing seats from query cache
+      const currentExistingSeats = queryClient.getQueryData<BusSeat[]>(["bus-seats", busId]) || [];
+      
+      // Process each seat individually
+      for (const seat of seatsToSave) {
+        const seatTypeValue = typeof seat.seat_type === "string"
+          ? seat.seat_type
+          : getValue(seat.seat_type);
+
+        const seatData = {
+          bus_id: busId,
+          seat_number: seat.seat_number,
+          row: seat.row,
+          column: seat.column,
+          floor: seat.floor,
+          seat_type: seatTypeValue as "standard" | "vip" | "sleeper",
+          price_multiplier: seat.price_multiplier,
+        };
+
+        if (seat.id && !seat.id.startsWith("temp")) {
+          // Update existing seat
+          await updateSeat(seat.id, seatData);
+        } else if (seat.id && seat.id.startsWith("temp")) {
+          // Create new seat
+          await createSeat(seatData);
+        }
+      }
+      
+      // Handle deleted seats (seats in currentExistingSeats but not in seatsToSave)
+      const seatIdsToKeep = new Set(
+        seatsToSave.filter(s => s.id && !s.id.startsWith("temp")).map(s => s.id)
+      );
+      
+      for (const existingSeat of currentExistingSeats) {
+        if (!seatIdsToKeep.has(existingSeat.id)) {
+          await deleteSeat(existingSeat.id);
+        }
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bus-seats", busId] });
+      queryClient.invalidateQueries({ queryKey: ["bus", busId] });
       toast.success("Đã lưu cấu hình ghế thành công");
     },
     onError: (error: Error) => {
@@ -107,12 +160,13 @@ export default function BusSeatConfigPage() {
   const handleAddSeat = () => {
     const newSeat: EditableSeat = {
       id: `temp-${Date.now()}`,
-      bus_id: busId,
-      seat_code: "",
-      seat_type: "standard",
-      is_active: true,
+      seat_number: "",
+      seat_type: "standard", // Plain string during creation
       row: 1,
       column: 1,
+      floor: 1,
+      price_multiplier: 1.0,
+      is_available: true,
     };
     setEditingSeat(newSeat);
     setDialogOpen(true);
@@ -124,7 +178,7 @@ export default function BusSeatConfigPage() {
   };
 
   const handleSaveSeat = (seatData: {
-    seat_code: string;
+    seat_number: string;
     seat_type: SeatType;
     row: number;
     column: number;
@@ -146,14 +200,7 @@ export default function BusSeatConfigPage() {
   };
 
   const handleSave = () => {
-    const seatsToSave: Seat[] = seats.map((seat) => ({
-      id: seat.id.startsWith("temp") ? "" : seat.id,
-      bus_id: busId,
-      seat_code: seat.seat_code,
-      seat_type: seat.seat_type as SeatType,
-      is_active: seat.is_active,
-    }));
-    saveMutation.mutate(seatsToSave);
+    saveMutation.mutate(seats);
   };
 
   // Group seats by row
@@ -170,7 +217,11 @@ export default function BusSeatConfigPage() {
   }, [seats]);
 
   const getSeatColor = (seat: EditableSeat) => {
-    switch (seat.seat_type) {
+    const seatTypeValue =
+      typeof seat.seat_type === "string"
+        ? seat.seat_type
+        : getValue(seat.seat_type);
+    switch (seatTypeValue) {
       case "vip":
         return "bg-warning/20 hover:bg-warning/30 border-warning";
       case "sleeper":
@@ -319,7 +370,7 @@ export default function BusSeatConfigPage() {
                                     onClick={() => handleEditSeat(seat)}
                                   >
                                     <span className="text-xs font-semibold">
-                                      {seat.seat_code || "?"}
+                                      {seat.seat_number || "?"}
                                     </span>
                                   </Button>
                                   <Button
@@ -371,19 +422,43 @@ export default function BusSeatConfigPage() {
                     <div className="flex justify-between">
                       <span>Thường:</span>
                       <Badge>
-                        {seats.filter((s) => s.seat_type === "standard").length}
+                        {
+                          seats.filter((s) => {
+                            const type =
+                              typeof s.seat_type === "string"
+                                ? s.seat_type
+                                : getValue(s.seat_type);
+                            return type === "standard";
+                          }).length
+                        }
                       </Badge>
                     </div>
                     <div className="flex justify-between">
                       <span>Giường nằm:</span>
                       <Badge>
-                        {seats.filter((s) => s.seat_type === "sleeper").length}
+                        {
+                          seats.filter((s) => {
+                            const type =
+                              typeof s.seat_type === "string"
+                                ? s.seat_type
+                                : getValue(s.seat_type);
+                            return type === "sleeper";
+                          }).length
+                        }
                       </Badge>
                     </div>
                     <div className="flex justify-between">
                       <span>VIP:</span>
                       <Badge>
-                        {seats.filter((s) => s.seat_type === "vip").length}
+                        {
+                          seats.filter((s) => {
+                            const type =
+                              typeof s.seat_type === "string"
+                                ? s.seat_type
+                                : getValue(s.seat_type);
+                            return type === "vip";
+                          }).length
+                        }
                       </Badge>
                     </div>
                   </div>
@@ -406,25 +481,27 @@ function SeatEditDialog({
   seat: EditableSeat;
   existingSeats: EditableSeat[];
   onSave: (data: {
-    seat_code: string;
+    seat_number: string;
     seat_type: SeatType;
     row: number;
     column: number;
   }) => void;
   onClose: () => void;
 }) {
-  const [seatCode, setSeatCode] = useState(seat.seat_code || "");
+  const [seatNumber, setSeatNumber] = useState(seat.seat_number || "");
   const [seatType, setSeatType] = useState<SeatType>(
-    (seat.seat_type as SeatType) || "standard",
+    ((typeof seat.seat_type === "string"
+      ? seat.seat_type
+      : getValue(seat.seat_type)) as SeatType) || "standard",
   );
   const [row, setRow] = useState(seat.row || 1);
   const [column, setColumn] = useState(seat.column || 1);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const code = seatCode || `${row}${String.fromCharCode(64 + column)}`;
+    const code = seatNumber || `${row}${String.fromCharCode(64 + column)}`;
     onSave({
-      seat_code: code,
+      seat_number: code,
       seat_type: seatType,
       row,
       column,
@@ -447,8 +524,8 @@ function SeatEditDialog({
           <Label htmlFor="seat-code">Mã ghế *</Label>
           <Input
             id="seat-code"
-            value={seatCode}
-            onChange={(e) => setSeatCode(e.target.value.toUpperCase())}
+            value={seatNumber}
+            onChange={(e) => setSeatNumber(e.target.value.toUpperCase())}
             placeholder="VD: 1A, 2B"
             required
           />

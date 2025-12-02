@@ -59,7 +59,7 @@ import {
   listBuses,
 } from "@/lib/api/trip-service";
 import type { Route, Trip, RouteStop } from "@/lib/types/trip";
-import { formatDateForInput } from "@/lib/utils";
+import { formatDateForInput, getValue, getDisplayName } from "@/lib/utils";
 
 const tripFormSchema = z
   .object({
@@ -281,24 +281,24 @@ export default function EditTripPage({
             )}
             <Badge
               variant={
-                trip?.status === "scheduled"
+                getValue(trip?.status) === "scheduled"
                   ? "secondary"
-                  : trip?.status === "in_progress"
+                  : getValue(trip?.status) === "in_progress"
                     ? "default"
-                    : trip?.status === "completed"
+                    : getValue(trip?.status) === "completed"
                       ? "outline"
                       : "destructive"
               }
             >
-              {trip?.status === "scheduled"
+              {getValue(trip?.status) === "scheduled"
                 ? "Đã lên lịch"
-                : trip?.status === "in_progress"
+                : getValue(trip?.status) === "in_progress"
                   ? "Đang di chuyển"
-                  : trip?.status === "completed"
+                  : getValue(trip?.status) === "completed"
                     ? "Hoàn thành"
-                    : trip?.status === "cancelled"
+                    : getValue(trip?.status) === "cancelled"
                       ? "Đã hủy"
-                      : trip?.status || "N/A"}
+                      : getDisplayName(trip?.status)}
             </Badge>
           </div>
         </div>
@@ -462,9 +462,10 @@ export default function EditTripPage({
                                           variant="secondary"
                                           className="ml-auto text-xs"
                                         >
-                                          {stop.stop_type === "pickup"
+                                          {getValue(stop.stop_type) === "pickup"
                                             ? "Đón"
-                                            : stop.stop_type === "dropoff"
+                                            : getValue(stop.stop_type) ===
+                                                "dropoff"
                                               ? "Trả"
                                               : "Cả hai"}
                                         </Badge>
@@ -531,12 +532,7 @@ export default function EditTripPage({
                           <div className="flex flex-wrap gap-2">
                             {trip.bus.amenities.map((amenity, index) => (
                               <Badge key={index} variant="secondary">
-                                {typeof amenity === "object" &&
-                                amenity !== null &&
-                                "display_name" in amenity
-                                  ? (amenity as { display_name: string })
-                                      .display_name
-                                  : String(amenity)}
+                                {getDisplayName(amenity)}
                               </Badge>
                             ))}
                           </div>
@@ -555,7 +551,7 @@ export default function EditTripPage({
                               <p className="text-lg font-semibold">
                                 {
                                   trip.bus.seats.filter(
-                                    (s) => s.seat_type === "vip",
+                                    (s) => getValue(s.seat_type) === "vip",
                                   ).length
                                 }
                               </p>
@@ -567,7 +563,7 @@ export default function EditTripPage({
                               <p className="text-lg font-semibold">
                                 {
                                   trip.bus.seats.filter(
-                                    (s) => s.seat_type === "standard",
+                                    (s) => getValue(s.seat_type) === "standard",
                                   ).length
                                 }
                               </p>

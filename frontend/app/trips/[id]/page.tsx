@@ -17,6 +17,7 @@ import {
 } from "@/components/trips/seat-map";
 import { getTripById, getTripSeats } from "@/lib/api/trip-service";
 import type { Trip, SeatDetail } from "@/lib/types/trip";
+import { getValue, getDisplayName } from "@/lib/utils";
 
 function TripDetailsContent({ tripId }: { tripId: string }) {
   const router = useRouter();
@@ -171,26 +172,14 @@ function TripDetailsContent({ tripId }: { tripId: string }) {
                   </div>
                   <Badge
                     variant={
-                      (typeof trip.status === "object" &&
-                        trip.status.value === "scheduled") ||
-                      trip.status === "scheduled"
+                      getValue(trip.status) === "scheduled"
                         ? "secondary"
-                        : (typeof trip.status === "object" &&
-                              trip.status.value === "in_progress") ||
-                            trip.status === "in_progress"
+                        : getValue(trip.status) === "in_progress"
                           ? "default"
                           : "outline"
                     }
                   >
-                    {typeof trip.status === "object"
-                      ? trip.status.display_name
-                      : trip.status === "scheduled"
-                        ? "Đã lên lịch"
-                        : trip.status === "in_progress"
-                          ? "Đang di chuyển"
-                          : trip.status === "completed"
-                            ? "Hoàn thành"
-                            : "Đã hủy"}
+                    {getDisplayName(trip.status)}
                   </Badge>
                 </div>
               </CardHeader>
@@ -250,12 +239,7 @@ function TripDetailsContent({ tripId }: { tripId: string }) {
                         <div className="mt-3 flex flex-wrap gap-2">
                           {trip.bus.amenities.map((amenity, index) => (
                             <Badge key={index} variant="secondary">
-                              {typeof amenity === "object" &&
-                              amenity !== null &&
-                              "display_name" in amenity
-                                ? (amenity as { display_name: string })
-                                    .display_name
-                                : String(amenity)}
+                              {getDisplayName(amenity)}
                             </Badge>
                           ))}
                         </div>

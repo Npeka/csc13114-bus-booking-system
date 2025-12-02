@@ -29,6 +29,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { listTrips, deleteTrip } from "@/lib/api/trip-service";
+import { getValue, getDisplayName } from "@/lib/utils";
 
 export default function AdminTripsPage() {
   const router = useRouter();
@@ -128,26 +129,14 @@ export default function AdminTripsPage() {
                         </h3>
                         <Badge
                           variant={
-                            (typeof trip.status === "object" &&
-                              trip.status.value === "scheduled") ||
-                            trip.status === "scheduled"
+                            getValue(trip.status) === "scheduled"
                               ? "secondary"
-                              : (typeof trip.status === "object" &&
-                                    trip.status.value === "in_progress") ||
-                                  trip.status === "in_progress"
+                              : getValue(trip.status) === "in_progress"
                                 ? "default"
                                 : "outline"
                           }
                         >
-                          {typeof trip.status === "object"
-                            ? trip.status.display_name
-                            : trip.status === "scheduled"
-                              ? "Đã lên lịch"
-                              : trip.status === "in_progress"
-                                ? "Đang di chuyển"
-                                : trip.status === "completed"
-                                  ? "Hoàn thành"
-                                  : "Đã hủy"}
+                          {getDisplayName(trip.status)}
                         </Badge>
                         {!trip.is_active && (
                           <Badge variant="outline">Không hoạt động</Badge>

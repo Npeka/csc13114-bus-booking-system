@@ -17,7 +17,7 @@ import { PassengerField } from "./passenger-field";
 import { PopularRoutes } from "./popular-routes";
 import { VIETNAM_CITIES } from "./constants";
 import { fuzzyMatchCity } from "./utils";
-import { getCityAutocomplete } from "@/lib/api/trip-service";
+import { getCities } from "@/lib/api/constants-service";
 import { formatDateForApi } from "@/lib/utils";
 
 export function TripSearchForm() {
@@ -140,29 +140,26 @@ export function TripSearchForm() {
     });
   };
 
-  // Fetch city autocomplete from API when search query is at least 2 characters
+  // Fetch cities from API (cached for 5 minutes)
   const { data: apiCities = [], isLoading: isLoadingCities } = useQuery({
-    queryKey: ["cityAutocomplete", locationPicker.search],
-    queryFn: () => getCityAutocomplete(locationPicker.search),
-    enabled: locationPicker.open && locationPicker.search.trim().length >= 2,
+    queryKey: ["cities"],
+    queryFn: getCities,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
   const filteredLocations = useMemo(() => {
     const searchQuery = locationPicker.search.trim();
+    
+    // Determine the source: Use API cities if available, otherwise fallback to local VIETNAM_CITIES
+    const citySource = apiCities.length > 0 ? apiCities : VIETNAM_CITIES;
 
     // If search query is empty, show all cities
     if (!searchQuery) {
-      return VIETNAM_CITIES;
+      return citySource;
     }
 
-    // If search query is at least 2 characters, use API results
-    if (searchQuery.length >= 2 && apiCities.length > 0) {
-      return apiCities;
-    }
-
-    // Fallback to local fuzzy matching for single character or when API returns no results
-    return VIETNAM_CITIES.filter((city) => fuzzyMatchCity(city, searchQuery));
+    // Apply local fuzzy matching on the city source
+    return citySource.filter((city) => fuzzyMatchCity(city, searchQuery));
   }, [locationPicker.search, apiCities]);
 
   useEffect(() => {

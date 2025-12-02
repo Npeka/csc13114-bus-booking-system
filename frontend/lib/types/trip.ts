@@ -20,11 +20,17 @@ export interface TripSearchParams {
 
 /**
  * Generic type for API enum values with display names
+ * Backend returns enums as {value, display_name} objects
  */
 export interface DisplayValue<T = string> {
   value: T;
   display_name: string;
 }
+
+/**
+ * Type alias for string-based constant displays (most common case)
+ */
+export type ConstantDisplay = DisplayValue<string>;
 
 /**
  * Route information from API response
@@ -150,7 +156,7 @@ export interface BusSeat {
   row: number;
   column: number;
   floor: number;
-  seat_type: "standard" | "vip" | "sleeper";
+  seat_type: ConstantDisplay; // Backend returns {value, display_name}
   price_multiplier: number;
   is_available: boolean;
 }
@@ -203,7 +209,7 @@ export interface Bus {
   plate_number: string;
   model: string;
   seat_capacity: number;
-  amenities: string[];
+  amenities: ConstantDisplay[]; // Backend returns array of {value, display_name}
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -218,7 +224,7 @@ export interface Trip {
   departure_time: string; // ISO datetime string
   arrival_time: string; // ISO datetime string
   base_price: number;
-  status: string;
+  status: ConstantDisplay; // Backend returns {value, display_name}
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -257,7 +263,7 @@ export interface RouteStop {
   id: string;
   route_id: string;
   stop_order: number;
-  stop_type: string; // "pickup" | "dropoff" | "both"
+  stop_type: ConstantDisplay; // Backend returns {value, display_name} for "pickup" | "dropoff" | "both"
   location: string;
   address?: string;
   latitude?: number;

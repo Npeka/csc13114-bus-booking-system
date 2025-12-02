@@ -1,5 +1,5 @@
 import apiClient, { ApiResponse, handleApiError } from "./client";
-import { transformApiTripToTripDetail } from "@/lib/utils";
+import { transformApiTripToTripDetail, getValue } from "@/lib/utils";
 import {
   TripSearchParams,
   TripSearchResponse,
@@ -9,6 +9,7 @@ import {
   SeatDetail,
   Route,
   Bus,
+  BusSeat,
   Seat,
   BulkCreateSeatsRequest,
   CreateSeatRequest,
@@ -89,7 +90,7 @@ export const getTripSeats = async (
     const seats: SeatDetail[] = trip.bus.seats.map((seat) => ({
       id: seat.id,
       seat_code: seat.seat_number,
-      seat_type: seat.seat_type,
+      seat_type: getValue(seat.seat_type), // Extract value from ConstantDisplay
       is_booked: !seat.is_available, // In the new API, is_available=true means NOT booked
       is_locked: false, // No locking info in current API response
       price: trip.base_price * seat.price_multiplier,
@@ -525,48 +526,18 @@ export const deleteBus = async (id: string): Promise<void> => {
 
 /**
  * Get bus seats configuration
+ * Note: Seats are included in the bus details endpoint, not a separate endpoint
  */
-export const getBusSeats = async (busId: string): Promise<Seat[]> => {
+export const getBusSeats = async (busId: string): Promise<BusSeat[]> => {
   try {
-    const response = await apiClient.get<ApiResponse<Seat[]>>(
-      `/trip/api/v1/buses/${busId}/seats`,
-    );
+    // Fetch bus details which includes seats array
+    const bus = await getBusById(busId);
 
-    if (!response.data.data) {
-      throw new Error(
-        response.data.message ||
-          response.data.error ||
-          "Failed to get bus seats",
-      );
+    if (!bus.seats) {
+      throw new Error("Bus seat information not available");
     }
 
-    return response.data.data;
-  } catch (error) {
-    const errorMessage = handleApiError(error);
-    throw new Error(errorMessage);
-  }
-};
-
-/**
- * Update bus seat configuration (admin only)
- */
-export const updateBusSeats = async (
-  busId: string,
-  seatData: { seats: Seat[] },
-): Promise<Bus> => {
-  try {
-    const response = await apiClient.put<ApiResponse<Bus>>(
-      `/trip/api/v1/buses/${busId}/seats`,
-      seatData,
-    );
-    if (!response.data.data) {
-      throw new Error(
-        response.data.message ||
-          response.data.error ||
-          "Failed to update bus seats",
-      );
-    }
-    return response.data.data;
+    return bus.seats;
   } catch (error) {
     const errorMessage = handleApiError(error);
     throw new Error(errorMessage);
@@ -575,6 +546,10 @@ export const updateBusSeats = async (
 
 /**
  * Bulk create seats for a bus (admin only)
+ * 
+ * ⚠️ NOTE: Backend handler exists but route is commented out in backend/trip-service/internal/router/router.go (line 52)
+ * Backend route needs to be activated: POST /api/v1/buses/seats/bulk
+ * Currently, UI components use individual createSeat() calls instead.
  */
 export const bulkCreateSeats = async (
   request: BulkCreateSeatsRequest,
@@ -649,31 +624,6 @@ export const updateSeat = async (
 export const deleteSeat = async (seatId: string): Promise<void> => {
   try {
     await apiClient.delete(`/trip/api/v1/buses/seats/${seatId}`);
-  } catch (error) {
-    const errorMessage = handleApiError(error);
-    throw new Error(errorMessage);
-  }
-};
-
-/**
- * Get city autocomplete suggestions
- */
-export const getCityAutocomplete = async (query: string): Promise<string[]> => {
-  try {
-    if (query.length < 2) {
-      return [];
-    }
-    const response = await apiClient.get<ApiResponse<string[]>>(
-      `/trip/api/v1/cities/autocomplete?q=${encodeURIComponent(query)}`,
-    );
-    if (!response.data.data) {
-      throw new Error(
-        response.data.message ||
-          response.data.error ||
-          "Failed to get city autocomplete suggestions",
-      );
-    }
-    return response.data.data;
   } catch (error) {
     const errorMessage = handleApiError(error);
     throw new Error(errorMessage);

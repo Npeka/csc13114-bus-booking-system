@@ -10,7 +10,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   getBusById,
   getBusSeats,
-  bulkCreateSeats,
   deleteSeat,
   updateSeat,
   createSeat,
@@ -23,6 +22,7 @@ import type {
   CreateSeatRequest,
 } from "@/lib/types/trip";
 import { toast } from "sonner";
+import { getValue } from "@/lib/utils";
 
 export default function BusSeatLayoutPage() {
   const params = useParams();
@@ -50,7 +50,7 @@ export default function BusSeatLayoutPage() {
       floor?: number;
       row?: number;
       column?: number;
-      seat_type?: string;
+      seat_type?: import("@/lib/types/trip").ConstantDisplay;
       seat_code?: string;
       seat_number?: string;
       price_multiplier?: number;
@@ -96,7 +96,7 @@ export default function BusSeatLayoutPage() {
             cells[rowIdx][colIdx] = {
               id: seat.id,
               type: "seat",
-              seatType: (seat.seat_type || "standard") as
+              seatType: (getValue(seat.seat_type) || "standard") as
                 | "standard"
                 | "vip"
                 | "sleeper",
@@ -184,13 +184,12 @@ export default function BusSeatLayoutPage() {
         seatsToUpdate.map(({ id, updates }) => updateSeat(id, updates)),
       );
 
-      // Create new seats in bulk
-      if (seatsToCreate.length > 0) {
-        await bulkCreateSeats({
-          bus_id: busId,
-          seats: seatsToCreate,
-        });
-      }
+      // Create new seats individually
+      // Note: Backend has bulkCreateSeats handler but route is commented out in router.go (line 52)
+      // Using individual createSeat calls instead
+      await Promise.all(
+        seatsToCreate.map((seatRequest) => createSeat(seatRequest)),
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bus-seats", busId] });
