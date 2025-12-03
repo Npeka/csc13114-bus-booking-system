@@ -18,17 +18,17 @@ definitions:
       payment_method:
         type: string
     required:
-    - amount
-    - booking_id
-    - currency
-    - payment_method
+      - amount
+      - booking_id
+      - currency
+      - payment_method
     type: object
   bus-booking_payment-service_internal_model.PaymentWebhookData:
     properties:
       code:
         type: string
       data:
-        $ref: '#/definitions/bus-booking_payment-service_internal_model.PaymentWebhookDetails'
+        $ref: "#/definitions/bus-booking_payment-service_internal_model.PaymentWebhookDetails"
       desc:
         type: string
       signature:
@@ -107,9 +107,9 @@ definitions:
         type: integer
       data: {}
       error:
-        $ref: '#/definitions/ginext.ErrorBody'
+        $ref: "#/definitions/ginext.ErrorBody"
       header:
-        $ref: '#/definitions/http.Header'
+        $ref: "#/definitions/http.Header"
       message:
         type: string
     type: object
@@ -136,179 +136,179 @@ paths:
     get:
       description: Retrieve transaction details by PayOS order code
       parameters:
-      - description: Order code
-        in: path
-        name: order_code
-        required: true
-        type: integer
+        - description: Order code
+          in: path
+          name: order_code
+          required: true
+          type: integer
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/bus-booking_payment-service_internal_model.TransactionResponse'
-              type: object
+              - $ref: "#/definitions/ginext.Response"
+              - properties:
+                  data:
+                    $ref: "#/definitions/bus-booking_payment-service_internal_model.TransactionResponse"
+                type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Get transaction by order code
       tags:
-      - transactions
+        - transactions
   /api/v1/transactions/cancel:
     get:
       consumes:
-      - application/json
+        - application/json
       description: Handle cancel from PayOS payment page
       parameters:
-      - description: Order code
-        in: query
-        name: orderCode
-        required: true
-        type: integer
+        - description: Order code
+          in: query
+          name: orderCode
+          required: true
+          type: integer
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Handle payment cancellation
       tags:
-      - transactions
+        - transactions
   /api/v1/transactions/payment-link:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Create a payment link via PayOS for a booking
       parameters:
-      - description: Payment creation request
-        in: body
-        name: transaction
-        required: true
-        schema:
-          $ref: '#/definitions/bus-booking_payment-service_internal_model.CreateTransactionRequest'
+        - description: Payment creation request
+          in: body
+          name: transaction
+          required: true
+          schema:
+            $ref: "#/definitions/bus-booking_payment-service_internal_model.CreateTransactionRequest"
       produces:
-      - application/json
+        - application/json
       responses:
         "201":
           description: Created
           schema:
             allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/bus-booking_payment-service_internal_model.TransactionResponse'
-              type: object
+              - $ref: "#/definitions/ginext.Response"
+              - properties:
+                  data:
+                    $ref: "#/definitions/bus-booking_payment-service_internal_model.TransactionResponse"
+                type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Create a payment link
       tags:
-      - transactions
+        - transactions
   /api/v1/transactions/return:
     get:
       consumes:
-      - application/json
+        - application/json
       description: Handle return from PayOS payment page (success)
       parameters:
-      - description: Order code
-        in: query
-        name: orderCode
-        required: true
-        type: integer
-      - description: Payment status
-        in: query
-        name: status
-        type: string
+        - description: Order code
+          in: query
+          name: orderCode
+          required: true
+          type: integer
+        - description: Payment status
+          in: query
+          name: status
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Handle payment return
       tags:
-      - transactions
+        - transactions
   /api/v1/transactions/webhook:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Handle payment webhook notification from PayOS
       parameters:
-      - description: Webhook payload
-        in: body
-        name: webhook
-        required: true
-        schema:
-          $ref: '#/definitions/bus-booking_payment-service_internal_model.PaymentWebhookData'
+        - description: Webhook payload
+          in: body
+          name: webhook
+          required: true
+          schema:
+            $ref: "#/definitions/bus-booking_payment-service_internal_model.PaymentWebhookData"
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Handle PayOS webhook
       tags:
-      - transactions
+        - transactions
   /transactions:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Create a new transaction for a booking
       parameters:
-      - description: Transaction creation request
-        in: body
-        name: transaction
-        required: true
-        schema:
-          $ref: '#/definitions/bus-booking_payment-service_internal_model.CreateTransactionRequest'
+        - description: Transaction creation request
+          in: body
+          name: transaction
+          required: true
+          schema:
+            $ref: "#/definitions/bus-booking_payment-service_internal_model.CreateTransactionRequest"
       produces:
-      - application/json
+        - application/json
       responses:
         "201":
           description: Created
@@ -330,7 +330,7 @@ paths:
             type: object
       summary: Create a new transaction
       tags:
-      - transactions
+        - transactions
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer" followed by a space and JWT token.

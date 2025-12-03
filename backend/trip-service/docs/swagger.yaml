@@ -1,36 +1,36 @@
 definitions:
   bus-booking_trip-service_internal_constants.SeatType:
     enum:
-    - standard
-    - vip
-    - sleeper
+      - standard
+      - vip
+      - sleeper
     type: string
     x-enum-varnames:
-    - SeatTypeStandard
-    - SeatTypeVIP
-    - SeatTypeSleeper
+      - SeatTypeStandard
+      - SeatTypeVIP
+      - SeatTypeSleeper
   bus-booking_trip-service_internal_constants.StopType:
     enum:
-    - pickup
-    - dropoff
-    - both
+      - pickup
+      - dropoff
+      - both
     type: string
     x-enum-varnames:
-    - StopTypePickup
-    - StopTypeDropoff
-    - StopTypeBoth
+      - StopTypePickup
+      - StopTypeDropoff
+      - StopTypeBoth
   bus-booking_trip-service_internal_model.BulkCreateSeatsRequest:
     properties:
       bus_id:
         type: string
       seats:
         items:
-          $ref: '#/definitions/bus-booking_trip-service_internal_model.CreateSeatRequest'
+          $ref: "#/definitions/bus-booking_trip-service_internal_model.CreateSeatRequest"
         minItems: 1
         type: array
     required:
-    - bus_id
-    - seats
+      - bus_id
+      - seats
     type: object
   bus-booking_trip-service_internal_model.Bus:
     properties:
@@ -54,14 +54,14 @@ definitions:
         type: integer
       seats:
         items:
-          $ref: '#/definitions/bus-booking_trip-service_internal_model.Seat'
+          $ref: "#/definitions/bus-booking_trip-service_internal_model.Seat"
         type: array
       updated_at:
         type: string
     required:
-    - model
-    - plate_number
-    - seat_capacity
+      - model
+      - plate_number
+      - seat_capacity
     type: object
   bus-booking_trip-service_internal_model.CreateBusRequest:
     properties:
@@ -84,9 +84,9 @@ definitions:
         minimum: 1
         type: integer
     required:
-    - model
-    - plate_number
-    - seat_capacity
+      - model
+      - plate_number
+      - seat_capacity
     type: object
   bus-booking_trip-service_internal_model.CreateRouteRequest:
     properties:
@@ -106,14 +106,14 @@ definitions:
         type: string
       route_stops:
         items:
-          $ref: '#/definitions/bus-booking_trip-service_internal_model.CreateRouteStopRequest'
+          $ref: "#/definitions/bus-booking_trip-service_internal_model.CreateRouteStopRequest"
         type: array
     required:
-    - destination
-    - distance_km
-    - estimated_minutes
-    - origin
-    - route_stops
+      - destination
+      - distance_km
+      - estimated_minutes
+      - origin
+      - route_stops
     type: object
   bus-booking_trip-service_internal_model.CreateRouteStopRequest:
     properties:
@@ -132,11 +132,11 @@ definitions:
         minimum: 1
         type: integer
       stop_type:
-        $ref: '#/definitions/bus-booking_trip-service_internal_constants.StopType'
+        $ref: "#/definitions/bus-booking_trip-service_internal_constants.StopType"
     required:
-    - location
-    - stop_order
-    - stop_type
+      - location
+      - stop_order
+      - stop_type
     type: object
   bus-booking_trip-service_internal_model.CreateSeatRequest:
     properties:
@@ -159,13 +159,13 @@ definitions:
       seat_number:
         type: string
       seat_type:
-        $ref: '#/definitions/bus-booking_trip-service_internal_constants.SeatType'
+        $ref: "#/definitions/bus-booking_trip-service_internal_constants.SeatType"
     required:
-    - bus_id
-    - column
-    - row
-    - seat_number
-    - seat_type
+      - bus_id
+      - column
+      - row
+      - seat_number
+      - seat_type
     type: object
   bus-booking_trip-service_internal_model.CreateTripRequest:
     properties:
@@ -181,11 +181,11 @@ definitions:
       route_id:
         type: string
     required:
-    - arrival_time
-    - base_price
-    - bus_id
-    - departure_time
-    - route_id
+      - arrival_time
+      - base_price
+      - bus_id
+      - departure_time
+      - route_id
     type: object
   bus-booking_trip-service_internal_model.Route:
     properties:
@@ -207,19 +207,19 @@ definitions:
         type: string
       route_stops:
         items:
-          $ref: '#/definitions/bus-booking_trip-service_internal_model.RouteStop'
+          $ref: "#/definitions/bus-booking_trip-service_internal_model.RouteStop"
         type: array
       trips:
         items:
-          $ref: '#/definitions/bus-booking_trip-service_internal_model.Trip'
+          $ref: "#/definitions/bus-booking_trip-service_internal_model.Trip"
         type: array
       updated_at:
         type: string
     required:
-    - destination
-    - distance_km
-    - estimated_minutes
-    - origin
+      - destination
+      - distance_km
+      - estimated_minutes
+      - origin
     type: object
   bus-booking_trip-service_internal_model.RouteStop:
     properties:
@@ -241,26 +241,26 @@ definitions:
         minimum: 0
         type: integer
       route:
-        $ref: '#/definitions/bus-booking_trip-service_internal_model.Route'
+        $ref: "#/definitions/bus-booking_trip-service_internal_model.Route"
       route_id:
         type: string
       stop_order:
         minimum: 1
         type: integer
       stop_type:
-        $ref: '#/definitions/bus-booking_trip-service_internal_constants.StopType'
+        $ref: "#/definitions/bus-booking_trip-service_internal_constants.StopType"
       updated_at:
         type: string
     required:
-    - location
-    - route_id
-    - stop_order
-    - stop_type
+      - location
+      - route_id
+      - stop_order
+      - stop_type
     type: object
   bus-booking_trip-service_internal_model.Seat:
     properties:
       bus:
-        $ref: '#/definitions/bus-booking_trip-service_internal_model.Bus'
+        $ref: "#/definitions/bus-booking_trip-service_internal_model.Bus"
       bus_id:
         type: string
       column:
@@ -286,15 +286,15 @@ definitions:
       seat_number:
         type: string
       seat_type:
-        $ref: '#/definitions/bus-booking_trip-service_internal_constants.SeatType'
+        $ref: "#/definitions/bus-booking_trip-service_internal_constants.SeatType"
       updated_at:
         type: string
     required:
-    - bus_id
-    - column
-    - row
-    - seat_number
-    - seat_type
+      - bus_id
+      - column
+      - row
+      - seat_number
+      - seat_type
     type: object
   bus-booking_trip-service_internal_model.SeatDetail:
     properties:
@@ -313,7 +313,7 @@ definitions:
       seat_number:
         type: string
       seat_type:
-        $ref: '#/definitions/bus-booking_trip-service_internal_constants.SeatType'
+        $ref: "#/definitions/bus-booking_trip-service_internal_constants.SeatType"
     type: object
   bus-booking_trip-service_internal_model.SeatLayoutInfo:
     properties:
@@ -329,10 +329,10 @@ definitions:
       bus_id:
         type: string
       layout:
-        $ref: '#/definitions/bus-booking_trip-service_internal_model.SeatLayoutInfo'
+        $ref: "#/definitions/bus-booking_trip-service_internal_model.SeatLayoutInfo"
       seats:
         items:
-          $ref: '#/definitions/bus-booking_trip-service_internal_model.SeatDetail'
+          $ref: "#/definitions/bus-booking_trip-service_internal_model.SeatDetail"
         type: array
       total_seats:
         type: integer
@@ -345,7 +345,7 @@ definitions:
         minimum: 0
         type: number
       bus:
-        $ref: '#/definitions/bus-booking_trip-service_internal_model.Bus'
+        $ref: "#/definitions/bus-booking_trip-service_internal_model.Bus"
       bus_id:
         type: string
       created_at:
@@ -357,24 +357,24 @@ definitions:
       is_active:
         type: boolean
       route:
-        $ref: '#/definitions/bus-booking_trip-service_internal_model.Route'
+        $ref: "#/definitions/bus-booking_trip-service_internal_model.Route"
       route_id:
         type: string
       status:
         enum:
-        - scheduled
-        - in_progress
-        - completed
-        - cancelled
+          - scheduled
+          - in_progress
+          - completed
+          - cancelled
         type: string
       updated_at:
         type: string
     required:
-    - arrival_time
-    - base_price
-    - bus_id
-    - departure_time
-    - route_id
+      - arrival_time
+      - base_price
+      - bus_id
+      - departure_time
+      - route_id
     type: object
   bus-booking_trip-service_internal_model.UpdateBusRequest:
     properties:
@@ -435,7 +435,7 @@ definitions:
         minimum: 1
         type: integer
       stop_type:
-        $ref: '#/definitions/bus-booking_trip-service_internal_constants.StopType'
+        $ref: "#/definitions/bus-booking_trip-service_internal_constants.StopType"
     type: object
   bus-booking_trip-service_internal_model.UpdateSeatRequest:
     properties:
@@ -458,7 +458,7 @@ definitions:
       seat_number:
         type: string
       seat_type:
-        $ref: '#/definitions/bus-booking_trip-service_internal_constants.SeatType'
+        $ref: "#/definitions/bus-booking_trip-service_internal_constants.SeatType"
     type: object
   bus-booking_trip-service_internal_model.UpdateTripRequest:
     properties:
@@ -473,10 +473,10 @@ definitions:
         type: boolean
       status:
         enum:
-        - scheduled
-        - in_progress
-        - completed
-        - cancelled
+          - scheduled
+          - in_progress
+          - completed
+          - cancelled
         type: string
     type: object
   bus-booking_trip-service_internal_service.StopOrder:
@@ -487,8 +487,8 @@ definitions:
       stop_id:
         type: string
     required:
-    - order
-    - stop_id
+      - order
+      - stop_id
     type: object
   ginext.ErrorBody:
     properties:
@@ -512,13 +512,13 @@ definitions:
         type: integer
       data: {}
       error:
-        $ref: '#/definitions/ginext.ErrorBody'
+        $ref: "#/definitions/ginext.ErrorBody"
       header:
-        $ref: '#/definitions/http.Header'
+        $ref: "#/definitions/http.Header"
       message:
         type: string
       meta:
-        $ref: '#/definitions/ginext.MetaData'
+        $ref: "#/definitions/ginext.MetaData"
     type: object
   http.Header:
     additionalProperties:
@@ -530,7 +530,8 @@ info:
   contact:
     email: support@busbooking.com
     name: API Support
-  description: API for managing trips, routes, buses, and operators in the bus booking
+  description:
+    API for managing trips, routes, buses, and operators in the bus booking
     system
   license:
     name: MIT
@@ -541,1148 +542,1150 @@ paths:
   /api/v1/buses:
     get:
       consumes:
-      - application/json
+        - application/json
       description: Get a paginated list of buses, optionally filtered by operator
       parameters:
-      - default: 1
-        description: Page number
-        in: query
-        name: page
-        type: integer
-      - default: 20
-        description: Items per page
-        in: query
-        name: limit
-        type: integer
-      - description: Filter by operator ID
-        format: uuid
-        in: query
-        name: operator_id
-        type: string
+        - default: 1
+          description: Page number
+          in: query
+          name: page
+          type: integer
+        - default: 20
+          description: Items per page
+          in: query
+          name: limit
+          type: integer
+        - description: Filter by operator ID
+          format: uuid
+          in: query
+          name: operator_id
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Paginated bus list
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: List buses
       tags:
-      - buses
+        - buses
     post:
       consumes:
-      - application/json
+        - application/json
       description: Create a new bus with operator, model, and seat capacity information
       parameters:
-      - description: Bus creation data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/bus-booking_trip-service_internal_model.CreateBusRequest'
+        - description: Bus creation data
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: "#/definitions/bus-booking_trip-service_internal_model.CreateBusRequest"
       produces:
-      - application/json
+        - application/json
       responses:
         "201":
           description: Created bus
           schema:
             allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/bus-booking_trip-service_internal_model.Bus'
-              type: object
+              - $ref: "#/definitions/ginext.Response"
+              - properties:
+                  data:
+                    $ref: "#/definitions/bus-booking_trip-service_internal_model.Bus"
+                type: object
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Create a new bus
       tags:
-      - buses
+        - buses
   /api/v1/buses/{id}:
     delete:
       consumes:
-      - application/json
+        - application/json
       description: Delete a bus by ID
       parameters:
-      - description: Bus ID
-        format: uuid
-        in: path
-        name: id
-        required: true
-        type: string
+        - description: Bus ID
+          format: uuid
+          in: path
+          name: id
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Success message
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "400":
           description: Invalid bus ID
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Delete bus
       tags:
-      - buses
+        - buses
     get:
       consumes:
-      - application/json
+        - application/json
       description: Get detailed information about a specific bus
       parameters:
-      - description: Bus ID
-        format: uuid
-        in: path
-        name: id
-        required: true
-        type: string
+        - description: Bus ID
+          format: uuid
+          in: path
+          name: id
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Bus details
           schema:
             allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/bus-booking_trip-service_internal_model.Bus'
-              type: object
+              - $ref: "#/definitions/ginext.Response"
+              - properties:
+                  data:
+                    $ref: "#/definitions/bus-booking_trip-service_internal_model.Bus"
+                type: object
         "400":
           description: Invalid bus ID
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "404":
           description: Bus not found
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Get bus by ID
       tags:
-      - buses
+        - buses
     put:
       consumes:
-      - application/json
+        - application/json
       description: Update bus information such as model, plate number, or amenities
       parameters:
-      - description: Bus ID
-        format: uuid
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Bus update data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/bus-booking_trip-service_internal_model.UpdateBusRequest'
+        - description: Bus ID
+          format: uuid
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: Bus update data
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: "#/definitions/bus-booking_trip-service_internal_model.UpdateBusRequest"
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Updated bus
           schema:
             allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/bus-booking_trip-service_internal_model.Bus'
-              type: object
+              - $ref: "#/definitions/ginext.Response"
+              - properties:
+                  data:
+                    $ref: "#/definitions/bus-booking_trip-service_internal_model.Bus"
+                type: object
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Update bus
       tags:
-      - buses
+        - buses
   /api/v1/buses/{id}/seat-map:
     get:
       consumes:
-      - application/json
+        - application/json
       description: Get the complete seat map for a bus
       parameters:
-      - description: Bus ID
-        format: uuid
-        in: path
-        name: id
-        required: true
-        type: string
+        - description: Bus ID
+          format: uuid
+          in: path
+          name: id
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Seat map
           schema:
             allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/bus-booking_trip-service_internal_model.SeatMapResponse'
-              type: object
+              - $ref: "#/definitions/ginext.Response"
+              - properties:
+                  data:
+                    $ref: "#/definitions/bus-booking_trip-service_internal_model.SeatMapResponse"
+                type: object
         "400":
           description: Invalid bus ID
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Get seat map
       tags:
-      - seats
+        - seats
   /api/v1/buses/{id}/seats:
     get:
       consumes:
-      - application/json
+        - application/json
       description: Get all seats for a specific bus
       parameters:
-      - description: Bus ID
-        format: uuid
-        in: path
-        name: id
-        required: true
-        type: string
+        - description: Bus ID
+          format: uuid
+          in: path
+          name: id
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: List of bus seats
           schema:
             allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/bus-booking_trip-service_internal_model.Seat'
-                  type: array
-              type: object
+              - $ref: "#/definitions/ginext.Response"
+              - properties:
+                  data:
+                    items:
+                      $ref: "#/definitions/bus-booking_trip-service_internal_model.Seat"
+                    type: array
+                type: object
         "400":
           description: Invalid bus ID
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Get bus seats
       tags:
-      - buses
+        - buses
   /api/v1/buses/seats:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Add a new seat to a bus
       parameters:
-      - description: Seat data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/bus-booking_trip-service_internal_model.CreateSeatRequest'
+        - description: Seat data
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: "#/definitions/bus-booking_trip-service_internal_model.CreateSeatRequest"
       produces:
-      - application/json
+        - application/json
       responses:
         "201":
           description: Created seat
           schema:
             allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/bus-booking_trip-service_internal_model.Seat'
-              type: object
+              - $ref: "#/definitions/ginext.Response"
+              - properties:
+                  data:
+                    $ref: "#/definitions/bus-booking_trip-service_internal_model.Seat"
+                type: object
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Create seat
       tags:
-      - seats
+        - seats
   /api/v1/buses/seats/{id}:
     delete:
       consumes:
-      - application/json
+        - application/json
       description: Remove a seat from a bus
       parameters:
-      - description: Seat ID
-        format: uuid
-        in: path
-        name: id
-        required: true
-        type: string
+        - description: Seat ID
+          format: uuid
+          in: path
+          name: id
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Success message
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "400":
           description: Invalid seat ID
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Delete seat
       tags:
-      - seats
+        - seats
     put:
       consumes:
-      - application/json
+        - application/json
       description: Update an existing seat
       parameters:
-      - description: Seat ID
-        format: uuid
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Update data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/bus-booking_trip-service_internal_model.UpdateSeatRequest'
+        - description: Seat ID
+          format: uuid
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: Update data
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: "#/definitions/bus-booking_trip-service_internal_model.UpdateSeatRequest"
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Updated seat
           schema:
             allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/bus-booking_trip-service_internal_model.Seat'
-              type: object
+              - $ref: "#/definitions/ginext.Response"
+              - properties:
+                  data:
+                    $ref: "#/definitions/bus-booking_trip-service_internal_model.Seat"
+                type: object
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "404":
           description: Seat not found
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Update seat
       tags:
-      - seats
+        - seats
   /api/v1/buses/seats/bulk:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Create multiple seats for a bus from a template
       parameters:
-      - description: Bulk seat data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/bus-booking_trip-service_internal_model.BulkCreateSeatsRequest'
+        - description: Bulk seat data
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: "#/definitions/bus-booking_trip-service_internal_model.BulkCreateSeatsRequest"
       produces:
-      - application/json
+        - application/json
       responses:
         "201":
           description: Created seats
           schema:
             allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/bus-booking_trip-service_internal_model.Seat'
-                  type: array
-              type: object
+              - $ref: "#/definitions/ginext.Response"
+              - properties:
+                  data:
+                    items:
+                      $ref: "#/definitions/bus-booking_trip-service_internal_model.Seat"
+                    type: array
+                type: object
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Bulk create seats
       tags:
-      - seats
+        - seats
   /api/v1/constants:
     get:
       consumes:
-      - application/json
-      description: Get constants by type (bus, route, trip, search_filters, cities).
+        - application/json
+      description:
+        Get constants by type (bus, route, trip, search_filters, cities).
         Returns all types if type parameter is not specified.
       parameters:
-      - description: Constant type
-        enum:
-        - bus
-        - route
-        - trip
-        - search_filters
-        - cities
-        in: query
-        name: type
-        type: string
+        - description: Constant type
+          enum:
+            - bus
+            - route
+            - trip
+            - search_filters
+            - cities
+          in: query
+          name: type
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Constants
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "400":
           description: Invalid type parameter
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Get constants
       tags:
-      - constants
+        - constants
   /api/v1/routes:
     get:
       consumes:
-      - application/json
+        - application/json
       description: Get a paginated list of routes, optionally filtered by operator
       parameters:
-      - default: 1
-        description: Page number
-        in: query
-        name: page
-        type: integer
-      - default: 20
-        description: Items per page
-        in: query
-        name: limit
-        type: integer
-      - description: Filter by operator ID
-        format: uuid
-        in: query
-        name: operator_id
-        type: string
+        - default: 1
+          description: Page number
+          in: query
+          name: page
+          type: integer
+        - default: 20
+          description: Items per page
+          in: query
+          name: limit
+          type: integer
+        - description: Filter by operator ID
+          format: uuid
+          in: query
+          name: operator_id
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Paginated route list
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: List routes
       tags:
-      - routes
+        - routes
     post:
       consumes:
-      - application/json
+        - application/json
       description: Create a new route with origin, destination, and distance information
       parameters:
-      - description: Route creation data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/bus-booking_trip-service_internal_model.CreateRouteRequest'
+        - description: Route creation data
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: "#/definitions/bus-booking_trip-service_internal_model.CreateRouteRequest"
       produces:
-      - application/json
+        - application/json
       responses:
         "201":
           description: Created route
           schema:
             allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/bus-booking_trip-service_internal_model.Route'
-              type: object
+              - $ref: "#/definitions/ginext.Response"
+              - properties:
+                  data:
+                    $ref: "#/definitions/bus-booking_trip-service_internal_model.Route"
+                type: object
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Create a new route
       tags:
-      - routes
+        - routes
   /api/v1/routes/{id}:
     delete:
       consumes:
-      - application/json
+        - application/json
       description: Delete a route by ID
       parameters:
-      - description: Route ID
-        format: uuid
-        in: path
-        name: id
-        required: true
-        type: string
+        - description: Route ID
+          format: uuid
+          in: path
+          name: id
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Success message
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "400":
           description: Invalid route ID
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Delete route
       tags:
-      - routes
+        - routes
     get:
       consumes:
-      - application/json
+        - application/json
       description: Get detailed information about a specific route
       parameters:
-      - description: Route ID
-        format: uuid
-        in: path
-        name: id
-        required: true
-        type: string
+        - description: Route ID
+          format: uuid
+          in: path
+          name: id
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Route details
           schema:
             allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/bus-booking_trip-service_internal_model.Route'
-              type: object
+              - $ref: "#/definitions/ginext.Response"
+              - properties:
+                  data:
+                    $ref: "#/definitions/bus-booking_trip-service_internal_model.Route"
+                type: object
         "400":
           description: Invalid route ID
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "404":
           description: Route not found
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Get route by ID
       tags:
-      - routes
+        - routes
     put:
       consumes:
-      - application/json
+        - application/json
       description: Update route information such as origin, destination, or distance
       parameters:
-      - description: Route ID
-        format: uuid
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Route update data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/bus-booking_trip-service_internal_model.UpdateRouteRequest'
+        - description: Route ID
+          format: uuid
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: Route update data
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: "#/definitions/bus-booking_trip-service_internal_model.UpdateRouteRequest"
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Updated route
           schema:
             allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/bus-booking_trip-service_internal_model.Route'
-              type: object
+              - $ref: "#/definitions/ginext.Response"
+              - properties:
+                  data:
+                    $ref: "#/definitions/bus-booking_trip-service_internal_model.Route"
+                type: object
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Update route
       tags:
-      - routes
+        - routes
   /api/v1/routes/{id}/stops:
     get:
       consumes:
-      - application/json
+        - application/json
       description: Get all stops for a specific route
       parameters:
-      - description: Route ID
-        format: uuid
-        in: path
-        name: id
-        required: true
-        type: string
+        - description: Route ID
+          format: uuid
+          in: path
+          name: id
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: List of route stops
           schema:
             allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/bus-booking_trip-service_internal_model.RouteStop'
-                  type: array
-              type: object
+              - $ref: "#/definitions/ginext.Response"
+              - properties:
+                  data:
+                    items:
+                      $ref: "#/definitions/bus-booking_trip-service_internal_model.RouteStop"
+                    type: array
+                type: object
         "400":
           description: Invalid route ID
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: List route stops
       tags:
-      - route-stops
+        - route-stops
   /api/v1/routes/{id}/stops/reorder:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Update the order of stops for a route
       parameters:
-      - description: Route ID
-        format: uuid
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Stop order data
-        in: body
-        name: request
-        required: true
-        schema:
-          items:
-            $ref: '#/definitions/bus-booking_trip-service_internal_service.StopOrder'
-          type: array
+        - description: Route ID
+          format: uuid
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: Stop order data
+          in: body
+          name: request
+          required: true
+          schema:
+            items:
+              $ref: "#/definitions/bus-booking_trip-service_internal_service.StopOrder"
+            type: array
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Success message
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Reorder route stops
       tags:
-      - route-stops
+        - route-stops
   /api/v1/routes/{route_id}/trips:
     get:
       consumes:
-      - application/json
+        - application/json
       description: Get all trips for a specific route on a given date
       parameters:
-      - description: Route ID
-        format: uuid
-        in: path
-        name: route_id
-        required: true
-        type: string
-      - description: Date in DD/MM/YYYY format
-        example: 15/01/2024
-        in: query
-        name: date
-        required: true
-        type: string
+        - description: Route ID
+          format: uuid
+          in: path
+          name: route_id
+          required: true
+          type: string
+        - description: Date in DD/MM/YYYY format
+          example: 15/01/2024
+          in: query
+          name: date
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: List of trips
           schema:
             allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/bus-booking_trip-service_internal_model.Trip'
-                  type: array
-              type: object
+              - $ref: "#/definitions/ginext.Response"
+              - properties:
+                  data:
+                    items:
+                      $ref: "#/definitions/bus-booking_trip-service_internal_model.Trip"
+                    type: array
+                type: object
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: List trips by route and date
       tags:
-      - trips
+        - trips
   /api/v1/routes/search:
     get:
       consumes:
-      - application/json
+        - application/json
       description: Search routes by origin and destination
       parameters:
-      - description: Origin city
-        in: query
-        name: origin
-        required: true
-        type: string
-      - description: Destination city
-        in: query
-        name: destination
-        required: true
-        type: string
+        - description: Origin city
+          in: query
+          name: origin
+          required: true
+          type: string
+        - description: Destination city
+          in: query
+          name: destination
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: List of matching routes
           schema:
             allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/bus-booking_trip-service_internal_model.Route'
-                  type: array
-              type: object
+              - $ref: "#/definitions/ginext.Response"
+              - properties:
+                  data:
+                    items:
+                      $ref: "#/definitions/bus-booking_trip-service_internal_model.Route"
+                    type: array
+                type: object
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Search routes
       tags:
-      - routes
+        - routes
   /api/v1/routes/stops:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Add a new pickup/dropoff point to a route
       parameters:
-      - description: Route stop data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/bus-booking_trip-service_internal_model.CreateRouteStopRequest'
+        - description: Route stop data
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: "#/definitions/bus-booking_trip-service_internal_model.CreateRouteStopRequest"
       produces:
-      - application/json
+        - application/json
       responses:
         "201":
           description: Created route stop
           schema:
             allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/bus-booking_trip-service_internal_model.RouteStop'
-              type: object
+              - $ref: "#/definitions/ginext.Response"
+              - properties:
+                  data:
+                    $ref: "#/definitions/bus-booking_trip-service_internal_model.RouteStop"
+                type: object
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Create route stop
       tags:
-      - route-stops
+        - route-stops
   /api/v1/routes/stops/{id}:
     delete:
       consumes:
-      - application/json
+        - application/json
       description: Remove a route stop
       parameters:
-      - description: Stop ID
-        format: uuid
-        in: path
-        name: id
-        required: true
-        type: string
+        - description: Stop ID
+          format: uuid
+          in: path
+          name: id
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Success message
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "400":
           description: Invalid stop ID
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Delete route stop
       tags:
-      - route-stops
+        - route-stops
     put:
       consumes:
-      - application/json
+        - application/json
       description: Update an existing route stop
       parameters:
-      - description: Stop ID
-        format: uuid
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Update data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/bus-booking_trip-service_internal_model.UpdateRouteStopRequest'
+        - description: Stop ID
+          format: uuid
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: Update data
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: "#/definitions/bus-booking_trip-service_internal_model.UpdateRouteStopRequest"
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Updated route stop
           schema:
             allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/bus-booking_trip-service_internal_model.RouteStop'
-              type: object
+              - $ref: "#/definitions/ginext.Response"
+              - properties:
+                  data:
+                    $ref: "#/definitions/bus-booking_trip-service_internal_model.RouteStop"
+                type: object
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "404":
           description: Stop not found
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Update route stop
       tags:
-      - route-stops
+        - route-stops
   /api/v1/trips:
     get:
       consumes:
-      - application/json
+        - application/json
       description: Get a paginated list of trips
       parameters:
-      - default: 1
-        description: Page number
-        in: query
-        name: page
-        type: integer
-      - default: 20
-        description: Items per page
-        in: query
-        name: page_size
-        type: integer
+        - default: 1
+          description: Page number
+          in: query
+          name: page
+          type: integer
+        - default: 20
+          description: Items per page
+          in: query
+          name: page_size
+          type: integer
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Paginated trip list
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: List trips
       tags:
-      - trips
+        - trips
     post:
       consumes:
-      - application/json
+        - application/json
       description: Create a new trip with route, bus, and schedule information
       parameters:
-      - description: Trip creation data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/bus-booking_trip-service_internal_model.CreateTripRequest'
+        - description: Trip creation data
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: "#/definitions/bus-booking_trip-service_internal_model.CreateTripRequest"
       produces:
-      - application/json
+        - application/json
       responses:
         "201":
           description: Created trip
           schema:
             allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/bus-booking_trip-service_internal_model.Trip'
-              type: object
+              - $ref: "#/definitions/ginext.Response"
+              - properties:
+                  data:
+                    $ref: "#/definitions/bus-booking_trip-service_internal_model.Trip"
+                type: object
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Create a new trip
       tags:
-      - trips
+        - trips
   /api/v1/trips/{id}:
     delete:
       consumes:
-      - application/json
+        - application/json
       description: Delete a trip by ID
       parameters:
-      - description: Trip ID
-        format: uuid
-        in: path
-        name: id
-        required: true
-        type: string
+        - description: Trip ID
+          format: uuid
+          in: path
+          name: id
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Success message
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "400":
           description: Invalid trip ID
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Delete trip
       tags:
-      - trips
+        - trips
     get:
       consumes:
-      - application/json
+        - application/json
       description: Get detailed information about a specific trip
       parameters:
-      - description: Trip ID
-        format: uuid
-        in: path
-        name: id
-        required: true
-        type: string
+        - description: Trip ID
+          format: uuid
+          in: path
+          name: id
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Trip details
           schema:
             allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/bus-booking_trip-service_internal_model.Trip'
-              type: object
+              - $ref: "#/definitions/ginext.Response"
+              - properties:
+                  data:
+                    $ref: "#/definitions/bus-booking_trip-service_internal_model.Trip"
+                type: object
         "400":
           description: Invalid trip ID
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "404":
           description: Trip not found
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Get trip by ID
       tags:
-      - trips
+        - trips
     put:
       consumes:
-      - application/json
+        - application/json
       description: Update trip information such as schedule, price, or status
       parameters:
-      - description: Trip ID
-        format: uuid
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Trip update data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/bus-booking_trip-service_internal_model.UpdateTripRequest'
+        - description: Trip ID
+          format: uuid
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: Trip update data
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: "#/definitions/bus-booking_trip-service_internal_model.UpdateTripRequest"
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: Updated trip
           schema:
             allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/bus-booking_trip-service_internal_model.Trip'
-              type: object
+              - $ref: "#/definitions/ginext.Response"
+              - properties:
+                  data:
+                    $ref: "#/definitions/bus-booking_trip-service_internal_model.Trip"
+                type: object
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Update trip
       tags:
-      - trips
+        - trips
   /api/v1/trips/search:
     get:
       consumes:
-      - application/json
-      description: Search for available trips based on origin, destination, and other
+        - application/json
+      description:
+        Search for available trips based on origin, destination, and other
         criteria
       parameters:
-      - description: Origin city
-        in: query
-        name: origin
-        required: true
-        type: string
-      - description: Destination city
-        in: query
-        name: destination
-        required: true
-        type: string
-      - description: Date in DD/MM/YYYY format
-        example: 01/12/2025
-        in: query
-        name: date
-        required: true
-        type: string
-      - description: Departure time start in HH:MM format
-        example: "06:00"
-        in: query
-        name: departure_time_start
-        type: string
-      - description: Departure time end in HH:MM format
-        example: "22:00"
-        in: query
-        name: departure_time_end
-        type: string
-      - description: Minimum price
-        in: query
-        name: min_price
-        type: number
-      - description: Maximum price
-        in: query
-        name: max_price
-        type: number
-      - collectionFormat: multi
-        description: Seat types
-        in: query
-        items:
+        - description: Origin city
+          in: query
+          name: origin
+          required: true
           type: string
-        name: seat_types
-        type: array
-      - collectionFormat: multi
-        description: Amenities
-        in: query
-        items:
+        - description: Destination city
+          in: query
+          name: destination
+          required: true
           type: string
-        name: amenities
-        type: array
-      - description: Sort by field
-        enum:
-        - price
-        - departure_time
-        - duration
-        in: query
-        name: sort_by
-        type: string
-      - description: Sort order
-        enum:
-        - asc
-        - desc
-        in: query
-        name: sort_order
-        type: string
-      - default: 1
-        description: Page number
-        in: query
-        name: page
-        type: integer
-      - default: 20
-        description: Items per page
-        in: query
-        name: page_size
-        type: integer
+        - description: Date in DD/MM/YYYY format
+          example: 01/12/2025
+          in: query
+          name: date
+          required: true
+          type: string
+        - description: Departure time start in HH:MM format
+          example: "06:00"
+          in: query
+          name: departure_time_start
+          type: string
+        - description: Departure time end in HH:MM format
+          example: "22:00"
+          in: query
+          name: departure_time_end
+          type: string
+        - description: Minimum price
+          in: query
+          name: min_price
+          type: number
+        - description: Maximum price
+          in: query
+          name: max_price
+          type: number
+        - collectionFormat: multi
+          description: Seat types
+          in: query
+          items:
+            type: string
+          name: seat_types
+          type: array
+        - collectionFormat: multi
+          description: Amenities
+          in: query
+          items:
+            type: string
+          name: amenities
+          type: array
+        - description: Sort by field
+          enum:
+            - price
+            - departure_time
+            - duration
+          in: query
+          name: sort_by
+          type: string
+        - description: Sort order
+          enum:
+            - asc
+            - desc
+          in: query
+          name: sort_order
+          type: string
+        - default: 1
+          description: Page number
+          in: query
+          name: page
+          type: integer
+        - default: 20
+          description: Items per page
+          in: query
+          name: page_size
+          type: integer
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: List of matching trips with pagination
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Search trips
       tags:
-      - trips
+        - trips
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer" followed by a space and JWT token.

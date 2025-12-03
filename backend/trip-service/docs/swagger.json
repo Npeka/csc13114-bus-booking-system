@@ -1,1 +1,1796 @@
-{"swagger":"2.0","info":{"description":"API for managing trips, routes, buses, and operators in the bus booking system","title":"Trip Service API","contact":{"name":"API Support","email":"support@busbooking.com"},"license":{"name":"MIT","url":"https://opensource.org/licenses/MIT"},"version":"1.0"},"paths":{"/api/v1/buses":{"get":{"description":"Get a paginated list of buses, optionally filtered by operator","consumes":["application/json"],"produces":["application/json"],"tags":["buses"],"summary":"List buses","parameters":[{"type":"integer","default":1,"description":"Page number","name":"page","in":"query"},{"type":"integer","default":20,"description":"Items per page","name":"limit","in":"query"},{"type":"string","format":"uuid","description":"Filter by operator ID","name":"operator_id","in":"query"}],"responses":{"200":{"description":"Paginated bus list","schema":{"$ref":"#/definitions/ginext.Response"}},"400":{"description":"Invalid request","schema":{"$ref":"#/definitions/ginext.Response"}},"500":{"description":"Internal server error","schema":{"$ref":"#/definitions/ginext.Response"}}}},"post":{"description":"Create a new bus with operator, model, and seat capacity information","consumes":["application/json"],"produces":["application/json"],"tags":["buses"],"summary":"Create a new bus","parameters":[{"description":"Bus creation data","name":"request","in":"body","required":true,"schema":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.CreateBusRequest"}}],"responses":{"201":{"description":"Created bus","schema":{"allOf":[{"$ref":"#/definitions/ginext.Response"},{"type":"object","properties":{"data":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.Bus"}}}]}},"400":{"description":"Invalid request","schema":{"$ref":"#/definitions/ginext.Response"}},"500":{"description":"Internal server error","schema":{"$ref":"#/definitions/ginext.Response"}}}}},"/api/v1/buses/seats":{"post":{"description":"Add a new seat to a bus","consumes":["application/json"],"produces":["application/json"],"tags":["seats"],"summary":"Create seat","parameters":[{"description":"Seat data","name":"request","in":"body","required":true,"schema":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.CreateSeatRequest"}}],"responses":{"201":{"description":"Created seat","schema":{"allOf":[{"$ref":"#/definitions/ginext.Response"},{"type":"object","properties":{"data":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.Seat"}}}]}},"400":{"description":"Invalid request","schema":{"$ref":"#/definitions/ginext.Response"}},"500":{"description":"Internal server error","schema":{"$ref":"#/definitions/ginext.Response"}}}}},"/api/v1/buses/seats/bulk":{"post":{"description":"Create multiple seats for a bus from a template","consumes":["application/json"],"produces":["application/json"],"tags":["seats"],"summary":"Bulk create seats","parameters":[{"description":"Bulk seat data","name":"request","in":"body","required":true,"schema":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.BulkCreateSeatsRequest"}}],"responses":{"201":{"description":"Created seats","schema":{"allOf":[{"$ref":"#/definitions/ginext.Response"},{"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.Seat"}}}}]}},"400":{"description":"Invalid request","schema":{"$ref":"#/definitions/ginext.Response"}},"500":{"description":"Internal server error","schema":{"$ref":"#/definitions/ginext.Response"}}}}},"/api/v1/buses/seats/{id}":{"put":{"description":"Update an existing seat","consumes":["application/json"],"produces":["application/json"],"tags":["seats"],"summary":"Update seat","parameters":[{"type":"string","format":"uuid","description":"Seat ID","name":"id","in":"path","required":true},{"description":"Update data","name":"request","in":"body","required":true,"schema":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.UpdateSeatRequest"}}],"responses":{"200":{"description":"Updated seat","schema":{"allOf":[{"$ref":"#/definitions/ginext.Response"},{"type":"object","properties":{"data":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.Seat"}}}]}},"400":{"description":"Invalid request","schema":{"$ref":"#/definitions/ginext.Response"}},"404":{"description":"Seat not found","schema":{"$ref":"#/definitions/ginext.Response"}},"500":{"description":"Internal server error","schema":{"$ref":"#/definitions/ginext.Response"}}}},"delete":{"description":"Remove a seat from a bus","consumes":["application/json"],"produces":["application/json"],"tags":["seats"],"summary":"Delete seat","parameters":[{"type":"string","format":"uuid","description":"Seat ID","name":"id","in":"path","required":true}],"responses":{"200":{"description":"Success message","schema":{"$ref":"#/definitions/ginext.Response"}},"400":{"description":"Invalid seat ID","schema":{"$ref":"#/definitions/ginext.Response"}},"500":{"description":"Internal server error","schema":{"$ref":"#/definitions/ginext.Response"}}}}},"/api/v1/buses/{id}":{"get":{"description":"Get detailed information about a specific bus","consumes":["application/json"],"produces":["application/json"],"tags":["buses"],"summary":"Get bus by ID","parameters":[{"type":"string","format":"uuid","description":"Bus ID","name":"id","in":"path","required":true}],"responses":{"200":{"description":"Bus details","schema":{"allOf":[{"$ref":"#/definitions/ginext.Response"},{"type":"object","properties":{"data":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.Bus"}}}]}},"400":{"description":"Invalid bus ID","schema":{"$ref":"#/definitions/ginext.Response"}},"404":{"description":"Bus not found","schema":{"$ref":"#/definitions/ginext.Response"}}}},"put":{"description":"Update bus information such as model, plate number, or amenities","consumes":["application/json"],"produces":["application/json"],"tags":["buses"],"summary":"Update bus","parameters":[{"type":"string","format":"uuid","description":"Bus ID","name":"id","in":"path","required":true},{"description":"Bus update data","name":"request","in":"body","required":true,"schema":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.UpdateBusRequest"}}],"responses":{"200":{"description":"Updated bus","schema":{"allOf":[{"$ref":"#/definitions/ginext.Response"},{"type":"object","properties":{"data":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.Bus"}}}]}},"400":{"description":"Invalid request","schema":{"$ref":"#/definitions/ginext.Response"}},"500":{"description":"Internal server error","schema":{"$ref":"#/definitions/ginext.Response"}}}},"delete":{"description":"Delete a bus by ID","consumes":["application/json"],"produces":["application/json"],"tags":["buses"],"summary":"Delete bus","parameters":[{"type":"string","format":"uuid","description":"Bus ID","name":"id","in":"path","required":true}],"responses":{"200":{"description":"Success message","schema":{"$ref":"#/definitions/ginext.Response"}},"400":{"description":"Invalid bus ID","schema":{"$ref":"#/definitions/ginext.Response"}},"500":{"description":"Internal server error","schema":{"$ref":"#/definitions/ginext.Response"}}}}},"/api/v1/buses/{id}/seat-map":{"get":{"description":"Get the complete seat map for a bus","consumes":["application/json"],"produces":["application/json"],"tags":["seats"],"summary":"Get seat map","parameters":[{"type":"string","format":"uuid","description":"Bus ID","name":"id","in":"path","required":true}],"responses":{"200":{"description":"Seat map","schema":{"allOf":[{"$ref":"#/definitions/ginext.Response"},{"type":"object","properties":{"data":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.SeatMapResponse"}}}]}},"400":{"description":"Invalid bus ID","schema":{"$ref":"#/definitions/ginext.Response"}},"500":{"description":"Internal server error","schema":{"$ref":"#/definitions/ginext.Response"}}}}},"/api/v1/buses/{id}/seats":{"get":{"description":"Get all seats for a specific bus","consumes":["application/json"],"produces":["application/json"],"tags":["buses"],"summary":"Get bus seats","parameters":[{"type":"string","format":"uuid","description":"Bus ID","name":"id","in":"path","required":true}],"responses":{"200":{"description":"List of bus seats","schema":{"allOf":[{"$ref":"#/definitions/ginext.Response"},{"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.Seat"}}}}]}},"400":{"description":"Invalid bus ID","schema":{"$ref":"#/definitions/ginext.Response"}},"500":{"description":"Internal server error","schema":{"$ref":"#/definitions/ginext.Response"}}}}},"/api/v1/constants":{"get":{"description":"Get constants by type (bus, route, trip, search_filters, cities). Returns all types if type parameter is not specified.","consumes":["application/json"],"produces":["application/json"],"tags":["constants"],"summary":"Get constants","parameters":[{"enum":["bus","route","trip","search_filters","cities"],"type":"string","description":"Constant type","name":"type","in":"query"}],"responses":{"200":{"description":"Constants","schema":{"$ref":"#/definitions/ginext.Response"}},"400":{"description":"Invalid type parameter","schema":{"$ref":"#/definitions/ginext.Response"}},"500":{"description":"Internal server error","schema":{"$ref":"#/definitions/ginext.Response"}}}}},"/api/v1/routes":{"get":{"description":"Get a paginated list of routes, optionally filtered by operator","consumes":["application/json"],"produces":["application/json"],"tags":["routes"],"summary":"List routes","parameters":[{"type":"integer","default":1,"description":"Page number","name":"page","in":"query"},{"type":"integer","default":20,"description":"Items per page","name":"limit","in":"query"},{"type":"string","format":"uuid","description":"Filter by operator ID","name":"operator_id","in":"query"}],"responses":{"200":{"description":"Paginated route list","schema":{"$ref":"#/definitions/ginext.Response"}},"400":{"description":"Invalid request","schema":{"$ref":"#/definitions/ginext.Response"}},"500":{"description":"Internal server error","schema":{"$ref":"#/definitions/ginext.Response"}}}},"post":{"description":"Create a new route with origin, destination, and distance information","consumes":["application/json"],"produces":["application/json"],"tags":["routes"],"summary":"Create a new route","parameters":[{"description":"Route creation data","name":"request","in":"body","required":true,"schema":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.CreateRouteRequest"}}],"responses":{"201":{"description":"Created route","schema":{"allOf":[{"$ref":"#/definitions/ginext.Response"},{"type":"object","properties":{"data":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.Route"}}}]}},"400":{"description":"Invalid request","schema":{"$ref":"#/definitions/ginext.Response"}},"500":{"description":"Internal server error","schema":{"$ref":"#/definitions/ginext.Response"}}}}},"/api/v1/routes/search":{"get":{"description":"Search routes by origin and destination","consumes":["application/json"],"produces":["application/json"],"tags":["routes"],"summary":"Search routes","parameters":[{"type":"string","description":"Origin city","name":"origin","in":"query","required":true},{"type":"string","description":"Destination city","name":"destination","in":"query","required":true}],"responses":{"200":{"description":"List of matching routes","schema":{"allOf":[{"$ref":"#/definitions/ginext.Response"},{"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.Route"}}}}]}},"400":{"description":"Invalid request","schema":{"$ref":"#/definitions/ginext.Response"}},"500":{"description":"Internal server error","schema":{"$ref":"#/definitions/ginext.Response"}}}}},"/api/v1/routes/stops":{"post":{"description":"Add a new pickup/dropoff point to a route","consumes":["application/json"],"produces":["application/json"],"tags":["route-stops"],"summary":"Create route stop","parameters":[{"description":"Route stop data","name":"request","in":"body","required":true,"schema":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.CreateRouteStopRequest"}}],"responses":{"201":{"description":"Created route stop","schema":{"allOf":[{"$ref":"#/definitions/ginext.Response"},{"type":"object","properties":{"data":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.RouteStop"}}}]}},"400":{"description":"Invalid request","schema":{"$ref":"#/definitions/ginext.Response"}},"500":{"description":"Internal server error","schema":{"$ref":"#/definitions/ginext.Response"}}}}},"/api/v1/routes/stops/{id}":{"put":{"description":"Update an existing route stop","consumes":["application/json"],"produces":["application/json"],"tags":["route-stops"],"summary":"Update route stop","parameters":[{"type":"string","format":"uuid","description":"Stop ID","name":"id","in":"path","required":true},{"description":"Update data","name":"request","in":"body","required":true,"schema":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.UpdateRouteStopRequest"}}],"responses":{"200":{"description":"Updated route stop","schema":{"allOf":[{"$ref":"#/definitions/ginext.Response"},{"type":"object","properties":{"data":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.RouteStop"}}}]}},"400":{"description":"Invalid request","schema":{"$ref":"#/definitions/ginext.Response"}},"404":{"description":"Stop not found","schema":{"$ref":"#/definitions/ginext.Response"}},"500":{"description":"Internal server error","schema":{"$ref":"#/definitions/ginext.Response"}}}},"delete":{"description":"Remove a route stop","consumes":["application/json"],"produces":["application/json"],"tags":["route-stops"],"summary":"Delete route stop","parameters":[{"type":"string","format":"uuid","description":"Stop ID","name":"id","in":"path","required":true}],"responses":{"200":{"description":"Success message","schema":{"$ref":"#/definitions/ginext.Response"}},"400":{"description":"Invalid stop ID","schema":{"$ref":"#/definitions/ginext.Response"}},"500":{"description":"Internal server error","schema":{"$ref":"#/definitions/ginext.Response"}}}}},"/api/v1/routes/{id}":{"get":{"description":"Get detailed information about a specific route","consumes":["application/json"],"produces":["application/json"],"tags":["routes"],"summary":"Get route by ID","parameters":[{"type":"string","format":"uuid","description":"Route ID","name":"id","in":"path","required":true}],"responses":{"200":{"description":"Route details","schema":{"allOf":[{"$ref":"#/definitions/ginext.Response"},{"type":"object","properties":{"data":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.Route"}}}]}},"400":{"description":"Invalid route ID","schema":{"$ref":"#/definitions/ginext.Response"}},"404":{"description":"Route not found","schema":{"$ref":"#/definitions/ginext.Response"}}}},"put":{"description":"Update route information such as origin, destination, or distance","consumes":["application/json"],"produces":["application/json"],"tags":["routes"],"summary":"Update route","parameters":[{"type":"string","format":"uuid","description":"Route ID","name":"id","in":"path","required":true},{"description":"Route update data","name":"request","in":"body","required":true,"schema":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.UpdateRouteRequest"}}],"responses":{"200":{"description":"Updated route","schema":{"allOf":[{"$ref":"#/definitions/ginext.Response"},{"type":"object","properties":{"data":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.Route"}}}]}},"400":{"description":"Invalid request","schema":{"$ref":"#/definitions/ginext.Response"}},"500":{"description":"Internal server error","schema":{"$ref":"#/definitions/ginext.Response"}}}},"delete":{"description":"Delete a route by ID","consumes":["application/json"],"produces":["application/json"],"tags":["routes"],"summary":"Delete route","parameters":[{"type":"string","format":"uuid","description":"Route ID","name":"id","in":"path","required":true}],"responses":{"200":{"description":"Success message","schema":{"$ref":"#/definitions/ginext.Response"}},"400":{"description":"Invalid route ID","schema":{"$ref":"#/definitions/ginext.Response"}},"500":{"description":"Internal server error","schema":{"$ref":"#/definitions/ginext.Response"}}}}},"/api/v1/routes/{id}/stops":{"get":{"description":"Get all stops for a specific route","consumes":["application/json"],"produces":["application/json"],"tags":["route-stops"],"summary":"List route stops","parameters":[{"type":"string","format":"uuid","description":"Route ID","name":"id","in":"path","required":true}],"responses":{"200":{"description":"List of route stops","schema":{"allOf":[{"$ref":"#/definitions/ginext.Response"},{"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.RouteStop"}}}}]}},"400":{"description":"Invalid route ID","schema":{"$ref":"#/definitions/ginext.Response"}},"500":{"description":"Internal server error","schema":{"$ref":"#/definitions/ginext.Response"}}}}},"/api/v1/routes/{id}/stops/reorder":{"post":{"description":"Update the order of stops for a route","consumes":["application/json"],"produces":["application/json"],"tags":["route-stops"],"summary":"Reorder route stops","parameters":[{"type":"string","format":"uuid","description":"Route ID","name":"id","in":"path","required":true},{"description":"Stop order data","name":"request","in":"body","required":true,"schema":{"type":"array","items":{"$ref":"#/definitions/bus-booking_trip-service_internal_service.StopOrder"}}}],"responses":{"200":{"description":"Success message","schema":{"$ref":"#/definitions/ginext.Response"}},"400":{"description":"Invalid request","schema":{"$ref":"#/definitions/ginext.Response"}},"500":{"description":"Internal server error","schema":{"$ref":"#/definitions/ginext.Response"}}}}},"/api/v1/routes/{route_id}/trips":{"get":{"description":"Get all trips for a specific route on a given date","consumes":["application/json"],"produces":["application/json"],"tags":["trips"],"summary":"List trips by route and date","parameters":[{"type":"string","format":"uuid","description":"Route ID","name":"route_id","in":"path","required":true},{"type":"string","example":"15/01/2024","description":"Date in DD/MM/YYYY format","name":"date","in":"query","required":true}],"responses":{"200":{"description":"List of trips","schema":{"allOf":[{"$ref":"#/definitions/ginext.Response"},{"type":"object","properties":{"data":{"type":"array","items":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.Trip"}}}}]}},"400":{"description":"Invalid request","schema":{"$ref":"#/definitions/ginext.Response"}},"500":{"description":"Internal server error","schema":{"$ref":"#/definitions/ginext.Response"}}}}},"/api/v1/trips":{"get":{"description":"Get a paginated list of trips","consumes":["application/json"],"produces":["application/json"],"tags":["trips"],"summary":"List trips","parameters":[{"type":"integer","default":1,"description":"Page number","name":"page","in":"query"},{"type":"integer","default":20,"description":"Items per page","name":"page_size","in":"query"}],"responses":{"200":{"description":"Paginated trip list","schema":{"$ref":"#/definitions/ginext.Response"}},"400":{"description":"Invalid request","schema":{"$ref":"#/definitions/ginext.Response"}},"500":{"description":"Internal server error","schema":{"$ref":"#/definitions/ginext.Response"}}}},"post":{"description":"Create a new trip with route, bus, and schedule information","consumes":["application/json"],"produces":["application/json"],"tags":["trips"],"summary":"Create a new trip","parameters":[{"description":"Trip creation data","name":"request","in":"body","required":true,"schema":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.CreateTripRequest"}}],"responses":{"201":{"description":"Created trip","schema":{"allOf":[{"$ref":"#/definitions/ginext.Response"},{"type":"object","properties":{"data":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.Trip"}}}]}},"400":{"description":"Invalid request","schema":{"$ref":"#/definitions/ginext.Response"}},"500":{"description":"Internal server error","schema":{"$ref":"#/definitions/ginext.Response"}}}}},"/api/v1/trips/search":{"get":{"description":"Search for available trips based on origin, destination, and other criteria","consumes":["application/json"],"produces":["application/json"],"tags":["trips"],"summary":"Search trips","parameters":[{"type":"string","description":"Origin city","name":"origin","in":"query","required":true},{"type":"string","description":"Destination city","name":"destination","in":"query","required":true},{"type":"string","example":"01/12/2025","description":"Date in DD/MM/YYYY format","name":"date","in":"query","required":true},{"type":"string","example":"06:00","description":"Departure time start in HH:MM format","name":"departure_time_start","in":"query"},{"type":"string","example":"22:00","description":"Departure time end in HH:MM format","name":"departure_time_end","in":"query"},{"type":"number","description":"Minimum price","name":"min_price","in":"query"},{"type":"number","description":"Maximum price","name":"max_price","in":"query"},{"type":"array","items":{"type":"string"},"collectionFormat":"multi","description":"Seat types","name":"seat_types","in":"query"},{"type":"array","items":{"type":"string"},"collectionFormat":"multi","description":"Amenities","name":"amenities","in":"query"},{"enum":["price","departure_time","duration"],"type":"string","description":"Sort by field","name":"sort_by","in":"query"},{"enum":["asc","desc"],"type":"string","description":"Sort order","name":"sort_order","in":"query"},{"type":"integer","default":1,"description":"Page number","name":"page","in":"query"},{"type":"integer","default":20,"description":"Items per page","name":"page_size","in":"query"}],"responses":{"200":{"description":"List of matching trips with pagination","schema":{"$ref":"#/definitions/ginext.Response"}},"400":{"description":"Invalid request","schema":{"$ref":"#/definitions/ginext.Response"}},"500":{"description":"Internal server error","schema":{"$ref":"#/definitions/ginext.Response"}}}}},"/api/v1/trips/{id}":{"get":{"description":"Get detailed information about a specific trip","consumes":["application/json"],"produces":["application/json"],"tags":["trips"],"summary":"Get trip by ID","parameters":[{"type":"string","format":"uuid","description":"Trip ID","name":"id","in":"path","required":true}],"responses":{"200":{"description":"Trip details","schema":{"allOf":[{"$ref":"#/definitions/ginext.Response"},{"type":"object","properties":{"data":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.Trip"}}}]}},"400":{"description":"Invalid trip ID","schema":{"$ref":"#/definitions/ginext.Response"}},"404":{"description":"Trip not found","schema":{"$ref":"#/definitions/ginext.Response"}}}},"put":{"description":"Update trip information such as schedule, price, or status","consumes":["application/json"],"produces":["application/json"],"tags":["trips"],"summary":"Update trip","parameters":[{"type":"string","format":"uuid","description":"Trip ID","name":"id","in":"path","required":true},{"description":"Trip update data","name":"request","in":"body","required":true,"schema":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.UpdateTripRequest"}}],"responses":{"200":{"description":"Updated trip","schema":{"allOf":[{"$ref":"#/definitions/ginext.Response"},{"type":"object","properties":{"data":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.Trip"}}}]}},"400":{"description":"Invalid request","schema":{"$ref":"#/definitions/ginext.Response"}},"500":{"description":"Internal server error","schema":{"$ref":"#/definitions/ginext.Response"}}}},"delete":{"description":"Delete a trip by ID","consumes":["application/json"],"produces":["application/json"],"tags":["trips"],"summary":"Delete trip","parameters":[{"type":"string","format":"uuid","description":"Trip ID","name":"id","in":"path","required":true}],"responses":{"200":{"description":"Success message","schema":{"$ref":"#/definitions/ginext.Response"}},"400":{"description":"Invalid trip ID","schema":{"$ref":"#/definitions/ginext.Response"}},"500":{"description":"Internal server error","schema":{"$ref":"#/definitions/ginext.Response"}}}}}},"definitions":{"bus-booking_trip-service_internal_constants.SeatType":{"type":"string","enum":["standard","vip","sleeper"],"x-enum-varnames":["SeatTypeStandard","SeatTypeVIP","SeatTypeSleeper"]},"bus-booking_trip-service_internal_constants.StopType":{"type":"string","enum":["pickup","dropoff","both"],"x-enum-varnames":["StopTypePickup","StopTypeDropoff","StopTypeBoth"]},"bus-booking_trip-service_internal_model.BulkCreateSeatsRequest":{"type":"object","required":["bus_id","seats"],"properties":{"bus_id":{"type":"string"},"seats":{"type":"array","minItems":1,"items":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.CreateSeatRequest"}}}},"bus-booking_trip-service_internal_model.Bus":{"type":"object","required":["model","plate_number","seat_capacity"],"properties":{"amenities":{"type":"array","items":{"type":"string"}},"created_at":{"type":"string"},"id":{"type":"string"},"is_active":{"type":"boolean"},"model":{"type":"string"},"plate_number":{"type":"string"},"seat_capacity":{"type":"integer","maximum":100,"minimum":1},"seats":{"type":"array","items":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.Seat"}},"updated_at":{"type":"string"}}},"bus-booking_trip-service_internal_model.CreateBusRequest":{"type":"object","required":["model","plate_number","seat_capacity"],"properties":{"amenities":{"type":"array","items":{"type":"string"}},"is_active":{"type":"boolean"},"model":{"type":"string","maxLength":255,"minLength":2},"plate_number":{"type":"string","maxLength":20,"minLength":3},"seat_capacity":{"type":"integer","maximum":100,"minimum":1}}},"bus-booking_trip-service_internal_model.CreateRouteRequest":{"type":"object","required":["destination","distance_km","estimated_minutes","origin","route_stops"],"properties":{"destination":{"type":"string","maxLength":255,"minLength":2},"distance_km":{"type":"integer","minimum":1},"estimated_minutes":{"type":"integer","minimum":1},"origin":{"type":"string","maxLength":255,"minLength":2},"route_stops":{"type":"array","items":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.CreateRouteStopRequest"}}}},"bus-booking_trip-service_internal_model.CreateRouteStopRequest":{"type":"object","required":["location","stop_order","stop_type"],"properties":{"address":{"type":"string"},"latitude":{"type":"number"},"location":{"type":"string"},"longitude":{"type":"number"},"offset_minutes":{"type":"integer","minimum":0},"stop_order":{"type":"integer","minimum":1},"stop_type":{"$ref":"#/definitions/bus-booking_trip-service_internal_constants.StopType"}}},"bus-booking_trip-service_internal_model.CreateSeatRequest":{"type":"object","required":["bus_id","column","row","seat_number","seat_type"],"properties":{"bus_id":{"type":"string"},"column":{"type":"integer","minimum":1},"floor":{"type":"integer","maximum":2,"minimum":1},"price_multiplier":{"type":"number","maximum":5,"minimum":0.5},"row":{"type":"integer","minimum":1},"seat_number":{"type":"string"},"seat_type":{"$ref":"#/definitions/bus-booking_trip-service_internal_constants.SeatType"}}},"bus-booking_trip-service_internal_model.CreateTripRequest":{"type":"object","required":["arrival_time","base_price","bus_id","departure_time","route_id"],"properties":{"arrival_time":{"type":"string"},"base_price":{"type":"number","minimum":0},"bus_id":{"type":"string"},"departure_time":{"type":"string"},"route_id":{"type":"string"}}},"bus-booking_trip-service_internal_model.Route":{"type":"object","required":["destination","distance_km","estimated_minutes","origin"],"properties":{"created_at":{"type":"string"},"destination":{"type":"string"},"distance_km":{"type":"integer","minimum":1},"estimated_minutes":{"type":"integer","minimum":1},"id":{"type":"string"},"is_active":{"type":"boolean"},"origin":{"type":"string"},"route_stops":{"type":"array","items":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.RouteStop"}},"trips":{"type":"array","items":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.Trip"}},"updated_at":{"type":"string"}}},"bus-booking_trip-service_internal_model.RouteStop":{"type":"object","required":["location","route_id","stop_order","stop_type"],"properties":{"address":{"type":"string"},"created_at":{"type":"string"},"id":{"type":"string"},"is_active":{"type":"boolean"},"latitude":{"type":"number"},"location":{"type":"string"},"longitude":{"type":"number"},"offset_minutes":{"type":"integer","minimum":0},"route":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.Route"},"route_id":{"type":"string"},"stop_order":{"type":"integer","minimum":1},"stop_type":{"$ref":"#/definitions/bus-booking_trip-service_internal_constants.StopType"},"updated_at":{"type":"string"}}},"bus-booking_trip-service_internal_model.Seat":{"type":"object","required":["bus_id","column","row","seat_number","seat_type"],"properties":{"bus":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.Bus"},"bus_id":{"type":"string"},"column":{"type":"integer","minimum":1},"created_at":{"type":"string"},"floor":{"type":"integer","maximum":2,"minimum":1},"id":{"type":"string"},"is_available":{"type":"boolean"},"price_multiplier":{"type":"number","maximum":5,"minimum":0.5},"row":{"type":"integer","minimum":1},"seat_number":{"type":"string"},"seat_type":{"$ref":"#/definitions/bus-booking_trip-service_internal_constants.SeatType"},"updated_at":{"type":"string"}}},"bus-booking_trip-service_internal_model.SeatDetail":{"type":"object","properties":{"column":{"type":"integer"},"floor":{"type":"integer"},"id":{"type":"string"},"is_available":{"type":"boolean"},"price_multiplier":{"type":"number"},"row":{"type":"integer"},"seat_number":{"type":"string"},"seat_type":{"$ref":"#/definitions/bus-booking_trip-service_internal_constants.SeatType"}}},"bus-booking_trip-service_internal_model.SeatLayoutInfo":{"type":"object","properties":{"floors":{"type":"integer"},"max_columns":{"type":"integer"},"max_rows":{"type":"integer"}}},"bus-booking_trip-service_internal_model.SeatMapResponse":{"type":"object","properties":{"bus_id":{"type":"string"},"layout":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.SeatLayoutInfo"},"seats":{"type":"array","items":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.SeatDetail"}},"total_seats":{"type":"integer"}}},"bus-booking_trip-service_internal_model.Trip":{"type":"object","required":["arrival_time","base_price","bus_id","departure_time","route_id"],"properties":{"arrival_time":{"type":"string"},"base_price":{"type":"number","minimum":0},"bus":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.Bus"},"bus_id":{"type":"string"},"created_at":{"type":"string"},"departure_time":{"type":"string"},"id":{"type":"string"},"is_active":{"type":"boolean"},"route":{"$ref":"#/definitions/bus-booking_trip-service_internal_model.Route"},"route_id":{"type":"string"},"status":{"type":"string","enum":["scheduled","in_progress","completed","cancelled"]},"updated_at":{"type":"string"}}},"bus-booking_trip-service_internal_model.UpdateBusRequest":{"type":"object","properties":{"amenities":{"type":"array","items":{"type":"string"}},"is_active":{"type":"boolean"},"model":{"type":"string","maxLength":255,"minLength":2},"plate_number":{"type":"string","maxLength":20,"minLength":3},"seat_capacity":{"type":"integer","maximum":100,"minimum":1}}},"bus-booking_trip-service_internal_model.UpdateRouteRequest":{"type":"object","properties":{"destination":{"type":"string","maxLength":255,"minLength":2},"distance_km":{"type":"integer","minimum":1},"estimated_minutes":{"type":"integer","minimum":1},"is_active":{"type":"boolean"},"origin":{"type":"string","maxLength":255,"minLength":2}}},"bus-booking_trip-service_internal_model.UpdateRouteStopRequest":{"type":"object","properties":{"address":{"type":"string"},"is_active":{"type":"boolean"},"latitude":{"type":"number"},"location":{"type":"string"},"longitude":{"type":"number"},"offset_minutes":{"type":"integer","minimum":0},"stop_order":{"type":"integer","minimum":1},"stop_type":{"$ref":"#/definitions/bus-booking_trip-service_internal_constants.StopType"}}},"bus-booking_trip-service_internal_model.UpdateSeatRequest":{"type":"object","properties":{"column":{"type":"integer","minimum":1},"floor":{"type":"integer","maximum":2,"minimum":1},"is_available":{"type":"boolean"},"price_multiplier":{"type":"number","maximum":5,"minimum":0.5},"row":{"type":"integer","minimum":1},"seat_number":{"type":"string"},"seat_type":{"$ref":"#/definitions/bus-booking_trip-service_internal_constants.SeatType"}}},"bus-booking_trip-service_internal_model.UpdateTripRequest":{"type":"object","properties":{"arrival_time":{"type":"string"},"base_price":{"type":"number","minimum":0},"departure_time":{"type":"string"},"is_active":{"type":"boolean"},"status":{"type":"string","enum":["scheduled","in_progress","completed","cancelled"]}}},"bus-booking_trip-service_internal_service.StopOrder":{"type":"object","required":["order","stop_id"],"properties":{"order":{"type":"integer","minimum":1},"stop_id":{"type":"string"}}},"ginext.ErrorBody":{"type":"object","properties":{"message":{"type":"string"}}},"ginext.MetaData":{"type":"object","properties":{"page":{"type":"integer"},"page_size":{"type":"integer"},"total":{"type":"integer"},"total_pages":{"type":"integer"}}},"ginext.Response":{"type":"object","properties":{"code":{"type":"integer"},"data":{},"error":{"$ref":"#/definitions/ginext.ErrorBody"},"header":{"$ref":"#/definitions/http.Header"},"message":{"type":"string"},"meta":{"$ref":"#/definitions/ginext.MetaData"}}},"http.Header":{"type":"object","additionalProperties":{"type":"array","items":{"type":"string"}}}},"securityDefinitions":{"BearerAuth":{"description":"Type \"Bearer\" followed by a space and JWT token.","type":"apiKey","name":"Authorization","in":"header"}}}
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "API for managing trips, routes, buses, and operators in the bus booking system",
+    "title": "Trip Service API",
+    "contact": { "name": "API Support", "email": "support@busbooking.com" },
+    "license": { "name": "MIT", "url": "https://opensource.org/licenses/MIT" },
+    "version": "1.0"
+  },
+  "paths": {
+    "/api/v1/buses": {
+      "get": {
+        "description": "Get a paginated list of buses, optionally filtered by operator",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["buses"],
+        "summary": "List buses",
+        "parameters": [
+          {
+            "type": "integer",
+            "default": 1,
+            "description": "Page number",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "default": 20,
+            "description": "Items per page",
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "Filter by operator ID",
+            "name": "operator_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated bus list",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "400": {
+            "description": "Invalid request",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      },
+      "post": {
+        "description": "Create a new bus with operator, model, and seat capacity information",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["buses"],
+        "summary": "Create a new bus",
+        "parameters": [
+          {
+            "description": "Bus creation data",
+            "name": "request",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/bus-booking_trip-service_internal_model.CreateBusRequest"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created bus",
+            "schema": {
+              "allOf": [
+                { "$ref": "#/definitions/ginext.Response" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/bus-booking_trip-service_internal_model.Bus"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      }
+    },
+    "/api/v1/buses/seats": {
+      "post": {
+        "description": "Add a new seat to a bus",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["seats"],
+        "summary": "Create seat",
+        "parameters": [
+          {
+            "description": "Seat data",
+            "name": "request",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/bus-booking_trip-service_internal_model.CreateSeatRequest"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created seat",
+            "schema": {
+              "allOf": [
+                { "$ref": "#/definitions/ginext.Response" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/bus-booking_trip-service_internal_model.Seat"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      }
+    },
+    "/api/v1/buses/seats/bulk": {
+      "post": {
+        "description": "Create multiple seats for a bus from a template",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["seats"],
+        "summary": "Bulk create seats",
+        "parameters": [
+          {
+            "description": "Bulk seat data",
+            "name": "request",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/bus-booking_trip-service_internal_model.BulkCreateSeatsRequest"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created seats",
+            "schema": {
+              "allOf": [
+                { "$ref": "#/definitions/ginext.Response" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/bus-booking_trip-service_internal_model.Seat"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      }
+    },
+    "/api/v1/buses/seats/{id}": {
+      "put": {
+        "description": "Update an existing seat",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["seats"],
+        "summary": "Update seat",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "Seat ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Update data",
+            "name": "request",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/bus-booking_trip-service_internal_model.UpdateSeatRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated seat",
+            "schema": {
+              "allOf": [
+                { "$ref": "#/definitions/ginext.Response" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/bus-booking_trip-service_internal_model.Seat"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "404": {
+            "description": "Seat not found",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      },
+      "delete": {
+        "description": "Remove a seat from a bus",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["seats"],
+        "summary": "Delete seat",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "Seat ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success message",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "400": {
+            "description": "Invalid seat ID",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      }
+    },
+    "/api/v1/buses/{id}": {
+      "get": {
+        "description": "Get detailed information about a specific bus",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["buses"],
+        "summary": "Get bus by ID",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "Bus ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bus details",
+            "schema": {
+              "allOf": [
+                { "$ref": "#/definitions/ginext.Response" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/bus-booking_trip-service_internal_model.Bus"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Invalid bus ID",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "404": {
+            "description": "Bus not found",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      },
+      "put": {
+        "description": "Update bus information such as model, plate number, or amenities",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["buses"],
+        "summary": "Update bus",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "Bus ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Bus update data",
+            "name": "request",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/bus-booking_trip-service_internal_model.UpdateBusRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated bus",
+            "schema": {
+              "allOf": [
+                { "$ref": "#/definitions/ginext.Response" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/bus-booking_trip-service_internal_model.Bus"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      },
+      "delete": {
+        "description": "Delete a bus by ID",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["buses"],
+        "summary": "Delete bus",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "Bus ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success message",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "400": {
+            "description": "Invalid bus ID",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      }
+    },
+    "/api/v1/buses/{id}/seat-map": {
+      "get": {
+        "description": "Get the complete seat map for a bus",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["seats"],
+        "summary": "Get seat map",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "Bus ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Seat map",
+            "schema": {
+              "allOf": [
+                { "$ref": "#/definitions/ginext.Response" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/bus-booking_trip-service_internal_model.SeatMapResponse"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Invalid bus ID",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      }
+    },
+    "/api/v1/buses/{id}/seats": {
+      "get": {
+        "description": "Get all seats for a specific bus",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["buses"],
+        "summary": "Get bus seats",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "Bus ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of bus seats",
+            "schema": {
+              "allOf": [
+                { "$ref": "#/definitions/ginext.Response" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/bus-booking_trip-service_internal_model.Seat"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Invalid bus ID",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      }
+    },
+    "/api/v1/constants": {
+      "get": {
+        "description": "Get constants by type (bus, route, trip, search_filters, cities). Returns all types if type parameter is not specified.",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["constants"],
+        "summary": "Get constants",
+        "parameters": [
+          {
+            "enum": ["bus", "route", "trip", "search_filters", "cities"],
+            "type": "string",
+            "description": "Constant type",
+            "name": "type",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Constants",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "400": {
+            "description": "Invalid type parameter",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      }
+    },
+    "/api/v1/routes": {
+      "get": {
+        "description": "Get a paginated list of routes, optionally filtered by operator",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["routes"],
+        "summary": "List routes",
+        "parameters": [
+          {
+            "type": "integer",
+            "default": 1,
+            "description": "Page number",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "default": 20,
+            "description": "Items per page",
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "Filter by operator ID",
+            "name": "operator_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated route list",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "400": {
+            "description": "Invalid request",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      },
+      "post": {
+        "description": "Create a new route with origin, destination, and distance information",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["routes"],
+        "summary": "Create a new route",
+        "parameters": [
+          {
+            "description": "Route creation data",
+            "name": "request",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/bus-booking_trip-service_internal_model.CreateRouteRequest"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created route",
+            "schema": {
+              "allOf": [
+                { "$ref": "#/definitions/ginext.Response" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/bus-booking_trip-service_internal_model.Route"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      }
+    },
+    "/api/v1/routes/search": {
+      "get": {
+        "description": "Search routes by origin and destination",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["routes"],
+        "summary": "Search routes",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Origin city",
+            "name": "origin",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Destination city",
+            "name": "destination",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of matching routes",
+            "schema": {
+              "allOf": [
+                { "$ref": "#/definitions/ginext.Response" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/bus-booking_trip-service_internal_model.Route"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      }
+    },
+    "/api/v1/routes/stops": {
+      "post": {
+        "description": "Add a new pickup/dropoff point to a route",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["route-stops"],
+        "summary": "Create route stop",
+        "parameters": [
+          {
+            "description": "Route stop data",
+            "name": "request",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/bus-booking_trip-service_internal_model.CreateRouteStopRequest"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created route stop",
+            "schema": {
+              "allOf": [
+                { "$ref": "#/definitions/ginext.Response" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/bus-booking_trip-service_internal_model.RouteStop"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      }
+    },
+    "/api/v1/routes/stops/{id}": {
+      "put": {
+        "description": "Update an existing route stop",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["route-stops"],
+        "summary": "Update route stop",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "Stop ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Update data",
+            "name": "request",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/bus-booking_trip-service_internal_model.UpdateRouteStopRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated route stop",
+            "schema": {
+              "allOf": [
+                { "$ref": "#/definitions/ginext.Response" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/bus-booking_trip-service_internal_model.RouteStop"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "404": {
+            "description": "Stop not found",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      },
+      "delete": {
+        "description": "Remove a route stop",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["route-stops"],
+        "summary": "Delete route stop",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "Stop ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success message",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "400": {
+            "description": "Invalid stop ID",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      }
+    },
+    "/api/v1/routes/{id}": {
+      "get": {
+        "description": "Get detailed information about a specific route",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["routes"],
+        "summary": "Get route by ID",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "Route ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Route details",
+            "schema": {
+              "allOf": [
+                { "$ref": "#/definitions/ginext.Response" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/bus-booking_trip-service_internal_model.Route"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Invalid route ID",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "404": {
+            "description": "Route not found",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      },
+      "put": {
+        "description": "Update route information such as origin, destination, or distance",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["routes"],
+        "summary": "Update route",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "Route ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Route update data",
+            "name": "request",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/bus-booking_trip-service_internal_model.UpdateRouteRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated route",
+            "schema": {
+              "allOf": [
+                { "$ref": "#/definitions/ginext.Response" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/bus-booking_trip-service_internal_model.Route"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      },
+      "delete": {
+        "description": "Delete a route by ID",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["routes"],
+        "summary": "Delete route",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "Route ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success message",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "400": {
+            "description": "Invalid route ID",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      }
+    },
+    "/api/v1/routes/{id}/stops": {
+      "get": {
+        "description": "Get all stops for a specific route",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["route-stops"],
+        "summary": "List route stops",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "Route ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of route stops",
+            "schema": {
+              "allOf": [
+                { "$ref": "#/definitions/ginext.Response" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/bus-booking_trip-service_internal_model.RouteStop"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Invalid route ID",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      }
+    },
+    "/api/v1/routes/{id}/stops/reorder": {
+      "post": {
+        "description": "Update the order of stops for a route",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["route-stops"],
+        "summary": "Reorder route stops",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "Route ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Stop order data",
+            "name": "request",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/bus-booking_trip-service_internal_service.StopOrder"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success message",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "400": {
+            "description": "Invalid request",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      }
+    },
+    "/api/v1/routes/{route_id}/trips": {
+      "get": {
+        "description": "Get all trips for a specific route on a given date",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["trips"],
+        "summary": "List trips by route and date",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "Route ID",
+            "name": "route_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "example": "15/01/2024",
+            "description": "Date in DD/MM/YYYY format",
+            "name": "date",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of trips",
+            "schema": {
+              "allOf": [
+                { "$ref": "#/definitions/ginext.Response" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/bus-booking_trip-service_internal_model.Trip"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      }
+    },
+    "/api/v1/trips": {
+      "get": {
+        "description": "Get a paginated list of trips",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["trips"],
+        "summary": "List trips",
+        "parameters": [
+          {
+            "type": "integer",
+            "default": 1,
+            "description": "Page number",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "default": 20,
+            "description": "Items per page",
+            "name": "page_size",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated trip list",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "400": {
+            "description": "Invalid request",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      },
+      "post": {
+        "description": "Create a new trip with route, bus, and schedule information",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["trips"],
+        "summary": "Create a new trip",
+        "parameters": [
+          {
+            "description": "Trip creation data",
+            "name": "request",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/bus-booking_trip-service_internal_model.CreateTripRequest"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created trip",
+            "schema": {
+              "allOf": [
+                { "$ref": "#/definitions/ginext.Response" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/bus-booking_trip-service_internal_model.Trip"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      }
+    },
+    "/api/v1/trips/search": {
+      "get": {
+        "description": "Search for available trips based on origin, destination, and other criteria",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["trips"],
+        "summary": "Search trips",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Origin city",
+            "name": "origin",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Destination city",
+            "name": "destination",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "example": "01/12/2025",
+            "description": "Date in DD/MM/YYYY format",
+            "name": "date",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "example": "06:00",
+            "description": "Departure time start in HH:MM format",
+            "name": "departure_time_start",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "example": "22:00",
+            "description": "Departure time end in HH:MM format",
+            "name": "departure_time_end",
+            "in": "query"
+          },
+          {
+            "type": "number",
+            "description": "Minimum price",
+            "name": "min_price",
+            "in": "query"
+          },
+          {
+            "type": "number",
+            "description": "Maximum price",
+            "name": "max_price",
+            "in": "query"
+          },
+          {
+            "type": "array",
+            "items": { "type": "string" },
+            "collectionFormat": "multi",
+            "description": "Seat types",
+            "name": "seat_types",
+            "in": "query"
+          },
+          {
+            "type": "array",
+            "items": { "type": "string" },
+            "collectionFormat": "multi",
+            "description": "Amenities",
+            "name": "amenities",
+            "in": "query"
+          },
+          {
+            "enum": ["price", "departure_time", "duration"],
+            "type": "string",
+            "description": "Sort by field",
+            "name": "sort_by",
+            "in": "query"
+          },
+          {
+            "enum": ["asc", "desc"],
+            "type": "string",
+            "description": "Sort order",
+            "name": "sort_order",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "default": 1,
+            "description": "Page number",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "default": 20,
+            "description": "Items per page",
+            "name": "page_size",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of matching trips with pagination",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "400": {
+            "description": "Invalid request",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      }
+    },
+    "/api/v1/trips/{id}": {
+      "get": {
+        "description": "Get detailed information about a specific trip",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["trips"],
+        "summary": "Get trip by ID",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "Trip ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trip details",
+            "schema": {
+              "allOf": [
+                { "$ref": "#/definitions/ginext.Response" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/bus-booking_trip-service_internal_model.Trip"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Invalid trip ID",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "404": {
+            "description": "Trip not found",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      },
+      "put": {
+        "description": "Update trip information such as schedule, price, or status",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["trips"],
+        "summary": "Update trip",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "Trip ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Trip update data",
+            "name": "request",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/bus-booking_trip-service_internal_model.UpdateTripRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated trip",
+            "schema": {
+              "allOf": [
+                { "$ref": "#/definitions/ginext.Response" },
+                {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/bus-booking_trip-service_internal_model.Trip"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      },
+      "delete": {
+        "description": "Delete a trip by ID",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["trips"],
+        "summary": "Delete trip",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "Trip ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success message",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "400": {
+            "description": "Invalid trip ID",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": { "$ref": "#/definitions/ginext.Response" }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "bus-booking_trip-service_internal_constants.SeatType": {
+      "type": "string",
+      "enum": ["standard", "vip", "sleeper"],
+      "x-enum-varnames": ["SeatTypeStandard", "SeatTypeVIP", "SeatTypeSleeper"]
+    },
+    "bus-booking_trip-service_internal_constants.StopType": {
+      "type": "string",
+      "enum": ["pickup", "dropoff", "both"],
+      "x-enum-varnames": ["StopTypePickup", "StopTypeDropoff", "StopTypeBoth"]
+    },
+    "bus-booking_trip-service_internal_model.BulkCreateSeatsRequest": {
+      "type": "object",
+      "required": ["bus_id", "seats"],
+      "properties": {
+        "bus_id": { "type": "string" },
+        "seats": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/bus-booking_trip-service_internal_model.CreateSeatRequest"
+          }
+        }
+      }
+    },
+    "bus-booking_trip-service_internal_model.Bus": {
+      "type": "object",
+      "required": ["model", "plate_number", "seat_capacity"],
+      "properties": {
+        "amenities": { "type": "array", "items": { "type": "string" } },
+        "created_at": { "type": "string" },
+        "id": { "type": "string" },
+        "is_active": { "type": "boolean" },
+        "model": { "type": "string" },
+        "plate_number": { "type": "string" },
+        "seat_capacity": { "type": "integer", "maximum": 100, "minimum": 1 },
+        "seats": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/bus-booking_trip-service_internal_model.Seat"
+          }
+        },
+        "updated_at": { "type": "string" }
+      }
+    },
+    "bus-booking_trip-service_internal_model.CreateBusRequest": {
+      "type": "object",
+      "required": ["model", "plate_number", "seat_capacity"],
+      "properties": {
+        "amenities": { "type": "array", "items": { "type": "string" } },
+        "is_active": { "type": "boolean" },
+        "model": { "type": "string", "maxLength": 255, "minLength": 2 },
+        "plate_number": { "type": "string", "maxLength": 20, "minLength": 3 },
+        "seat_capacity": { "type": "integer", "maximum": 100, "minimum": 1 }
+      }
+    },
+    "bus-booking_trip-service_internal_model.CreateRouteRequest": {
+      "type": "object",
+      "required": [
+        "destination",
+        "distance_km",
+        "estimated_minutes",
+        "origin",
+        "route_stops"
+      ],
+      "properties": {
+        "destination": { "type": "string", "maxLength": 255, "minLength": 2 },
+        "distance_km": { "type": "integer", "minimum": 1 },
+        "estimated_minutes": { "type": "integer", "minimum": 1 },
+        "origin": { "type": "string", "maxLength": 255, "minLength": 2 },
+        "route_stops": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/bus-booking_trip-service_internal_model.CreateRouteStopRequest"
+          }
+        }
+      }
+    },
+    "bus-booking_trip-service_internal_model.CreateRouteStopRequest": {
+      "type": "object",
+      "required": ["location", "stop_order", "stop_type"],
+      "properties": {
+        "address": { "type": "string" },
+        "latitude": { "type": "number" },
+        "location": { "type": "string" },
+        "longitude": { "type": "number" },
+        "offset_minutes": { "type": "integer", "minimum": 0 },
+        "stop_order": { "type": "integer", "minimum": 1 },
+        "stop_type": {
+          "$ref": "#/definitions/bus-booking_trip-service_internal_constants.StopType"
+        }
+      }
+    },
+    "bus-booking_trip-service_internal_model.CreateSeatRequest": {
+      "type": "object",
+      "required": ["bus_id", "column", "row", "seat_number", "seat_type"],
+      "properties": {
+        "bus_id": { "type": "string" },
+        "column": { "type": "integer", "minimum": 1 },
+        "floor": { "type": "integer", "maximum": 2, "minimum": 1 },
+        "price_multiplier": { "type": "number", "maximum": 5, "minimum": 0.5 },
+        "row": { "type": "integer", "minimum": 1 },
+        "seat_number": { "type": "string" },
+        "seat_type": {
+          "$ref": "#/definitions/bus-booking_trip-service_internal_constants.SeatType"
+        }
+      }
+    },
+    "bus-booking_trip-service_internal_model.CreateTripRequest": {
+      "type": "object",
+      "required": [
+        "arrival_time",
+        "base_price",
+        "bus_id",
+        "departure_time",
+        "route_id"
+      ],
+      "properties": {
+        "arrival_time": { "type": "string" },
+        "base_price": { "type": "number", "minimum": 0 },
+        "bus_id": { "type": "string" },
+        "departure_time": { "type": "string" },
+        "route_id": { "type": "string" }
+      }
+    },
+    "bus-booking_trip-service_internal_model.Route": {
+      "type": "object",
+      "required": ["destination", "distance_km", "estimated_minutes", "origin"],
+      "properties": {
+        "created_at": { "type": "string" },
+        "destination": { "type": "string" },
+        "distance_km": { "type": "integer", "minimum": 1 },
+        "estimated_minutes": { "type": "integer", "minimum": 1 },
+        "id": { "type": "string" },
+        "is_active": { "type": "boolean" },
+        "origin": { "type": "string" },
+        "route_stops": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/bus-booking_trip-service_internal_model.RouteStop"
+          }
+        },
+        "trips": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/bus-booking_trip-service_internal_model.Trip"
+          }
+        },
+        "updated_at": { "type": "string" }
+      }
+    },
+    "bus-booking_trip-service_internal_model.RouteStop": {
+      "type": "object",
+      "required": ["location", "route_id", "stop_order", "stop_type"],
+      "properties": {
+        "address": { "type": "string" },
+        "created_at": { "type": "string" },
+        "id": { "type": "string" },
+        "is_active": { "type": "boolean" },
+        "latitude": { "type": "number" },
+        "location": { "type": "string" },
+        "longitude": { "type": "number" },
+        "offset_minutes": { "type": "integer", "minimum": 0 },
+        "route": {
+          "$ref": "#/definitions/bus-booking_trip-service_internal_model.Route"
+        },
+        "route_id": { "type": "string" },
+        "stop_order": { "type": "integer", "minimum": 1 },
+        "stop_type": {
+          "$ref": "#/definitions/bus-booking_trip-service_internal_constants.StopType"
+        },
+        "updated_at": { "type": "string" }
+      }
+    },
+    "bus-booking_trip-service_internal_model.Seat": {
+      "type": "object",
+      "required": ["bus_id", "column", "row", "seat_number", "seat_type"],
+      "properties": {
+        "bus": {
+          "$ref": "#/definitions/bus-booking_trip-service_internal_model.Bus"
+        },
+        "bus_id": { "type": "string" },
+        "column": { "type": "integer", "minimum": 1 },
+        "created_at": { "type": "string" },
+        "floor": { "type": "integer", "maximum": 2, "minimum": 1 },
+        "id": { "type": "string" },
+        "is_available": { "type": "boolean" },
+        "price_multiplier": { "type": "number", "maximum": 5, "minimum": 0.5 },
+        "row": { "type": "integer", "minimum": 1 },
+        "seat_number": { "type": "string" },
+        "seat_type": {
+          "$ref": "#/definitions/bus-booking_trip-service_internal_constants.SeatType"
+        },
+        "updated_at": { "type": "string" }
+      }
+    },
+    "bus-booking_trip-service_internal_model.SeatDetail": {
+      "type": "object",
+      "properties": {
+        "column": { "type": "integer" },
+        "floor": { "type": "integer" },
+        "id": { "type": "string" },
+        "is_available": { "type": "boolean" },
+        "price_multiplier": { "type": "number" },
+        "row": { "type": "integer" },
+        "seat_number": { "type": "string" },
+        "seat_type": {
+          "$ref": "#/definitions/bus-booking_trip-service_internal_constants.SeatType"
+        }
+      }
+    },
+    "bus-booking_trip-service_internal_model.SeatLayoutInfo": {
+      "type": "object",
+      "properties": {
+        "floors": { "type": "integer" },
+        "max_columns": { "type": "integer" },
+        "max_rows": { "type": "integer" }
+      }
+    },
+    "bus-booking_trip-service_internal_model.SeatMapResponse": {
+      "type": "object",
+      "properties": {
+        "bus_id": { "type": "string" },
+        "layout": {
+          "$ref": "#/definitions/bus-booking_trip-service_internal_model.SeatLayoutInfo"
+        },
+        "seats": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/bus-booking_trip-service_internal_model.SeatDetail"
+          }
+        },
+        "total_seats": { "type": "integer" }
+      }
+    },
+    "bus-booking_trip-service_internal_model.Trip": {
+      "type": "object",
+      "required": [
+        "arrival_time",
+        "base_price",
+        "bus_id",
+        "departure_time",
+        "route_id"
+      ],
+      "properties": {
+        "arrival_time": { "type": "string" },
+        "base_price": { "type": "number", "minimum": 0 },
+        "bus": {
+          "$ref": "#/definitions/bus-booking_trip-service_internal_model.Bus"
+        },
+        "bus_id": { "type": "string" },
+        "created_at": { "type": "string" },
+        "departure_time": { "type": "string" },
+        "id": { "type": "string" },
+        "is_active": { "type": "boolean" },
+        "route": {
+          "$ref": "#/definitions/bus-booking_trip-service_internal_model.Route"
+        },
+        "route_id": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["scheduled", "in_progress", "completed", "cancelled"]
+        },
+        "updated_at": { "type": "string" }
+      }
+    },
+    "bus-booking_trip-service_internal_model.UpdateBusRequest": {
+      "type": "object",
+      "properties": {
+        "amenities": { "type": "array", "items": { "type": "string" } },
+        "is_active": { "type": "boolean" },
+        "model": { "type": "string", "maxLength": 255, "minLength": 2 },
+        "plate_number": { "type": "string", "maxLength": 20, "minLength": 3 },
+        "seat_capacity": { "type": "integer", "maximum": 100, "minimum": 1 }
+      }
+    },
+    "bus-booking_trip-service_internal_model.UpdateRouteRequest": {
+      "type": "object",
+      "properties": {
+        "destination": { "type": "string", "maxLength": 255, "minLength": 2 },
+        "distance_km": { "type": "integer", "minimum": 1 },
+        "estimated_minutes": { "type": "integer", "minimum": 1 },
+        "is_active": { "type": "boolean" },
+        "origin": { "type": "string", "maxLength": 255, "minLength": 2 }
+      }
+    },
+    "bus-booking_trip-service_internal_model.UpdateRouteStopRequest": {
+      "type": "object",
+      "properties": {
+        "address": { "type": "string" },
+        "is_active": { "type": "boolean" },
+        "latitude": { "type": "number" },
+        "location": { "type": "string" },
+        "longitude": { "type": "number" },
+        "offset_minutes": { "type": "integer", "minimum": 0 },
+        "stop_order": { "type": "integer", "minimum": 1 },
+        "stop_type": {
+          "$ref": "#/definitions/bus-booking_trip-service_internal_constants.StopType"
+        }
+      }
+    },
+    "bus-booking_trip-service_internal_model.UpdateSeatRequest": {
+      "type": "object",
+      "properties": {
+        "column": { "type": "integer", "minimum": 1 },
+        "floor": { "type": "integer", "maximum": 2, "minimum": 1 },
+        "is_available": { "type": "boolean" },
+        "price_multiplier": { "type": "number", "maximum": 5, "minimum": 0.5 },
+        "row": { "type": "integer", "minimum": 1 },
+        "seat_number": { "type": "string" },
+        "seat_type": {
+          "$ref": "#/definitions/bus-booking_trip-service_internal_constants.SeatType"
+        }
+      }
+    },
+    "bus-booking_trip-service_internal_model.UpdateTripRequest": {
+      "type": "object",
+      "properties": {
+        "arrival_time": { "type": "string" },
+        "base_price": { "type": "number", "minimum": 0 },
+        "departure_time": { "type": "string" },
+        "is_active": { "type": "boolean" },
+        "status": {
+          "type": "string",
+          "enum": ["scheduled", "in_progress", "completed", "cancelled"]
+        }
+      }
+    },
+    "bus-booking_trip-service_internal_service.StopOrder": {
+      "type": "object",
+      "required": ["order", "stop_id"],
+      "properties": {
+        "order": { "type": "integer", "minimum": 1 },
+        "stop_id": { "type": "string" }
+      }
+    },
+    "ginext.ErrorBody": {
+      "type": "object",
+      "properties": { "message": { "type": "string" } }
+    },
+    "ginext.MetaData": {
+      "type": "object",
+      "properties": {
+        "page": { "type": "integer" },
+        "page_size": { "type": "integer" },
+        "total": { "type": "integer" },
+        "total_pages": { "type": "integer" }
+      }
+    },
+    "ginext.Response": {
+      "type": "object",
+      "properties": {
+        "code": { "type": "integer" },
+        "data": {},
+        "error": { "$ref": "#/definitions/ginext.ErrorBody" },
+        "header": { "$ref": "#/definitions/http.Header" },
+        "message": { "type": "string" },
+        "meta": { "$ref": "#/definitions/ginext.MetaData" }
+      }
+    },
+    "http.Header": {
+      "type": "object",
+      "additionalProperties": { "type": "array", "items": { "type": "string" } }
+    }
+  },
+  "securityDefinitions": {
+    "BearerAuth": {
+      "description": "Type \"Bearer\" followed by a space and JWT token.",
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
+    }
+  }
+}

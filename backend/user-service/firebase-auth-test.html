@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -517,7 +517,7 @@
                 console.log("Recaptcha solved");
               },
             },
-            auth
+            auth,
           );
         }
       }
@@ -548,7 +548,7 @@
           confirmationResult = await signInWithPhoneNumber(
             auth,
             phoneNumber,
-            recaptchaVerifier
+            recaptchaVerifier,
           );
           elements.verificationContainer.style.display = "block";
           showResult("Verification code sent!", "success");
@@ -660,7 +660,7 @@
             button.dataset.originalText ||
             button.innerHTML.replace(
               '<span class="loading"></span> Loading...',
-              button.textContent
+              button.textContent,
             );
         }
       }
@@ -702,7 +702,7 @@
           showApiResult(
             resultId,
             "Please sign in with Firebase first!",
-            "error"
+            "error",
           );
           return;
         }

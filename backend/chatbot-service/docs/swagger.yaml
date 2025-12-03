@@ -5,7 +5,7 @@ definitions:
         description: '"search", "select_trip", "booking", etc.'
         type: string
       selected_trip:
-        $ref: '#/definitions/bus-booking_chatbot-service_internal_model.TripInfo'
+        $ref: "#/definitions/bus-booking_chatbot-service_internal_model.TripInfo"
       trip_search_id:
         type: string
       user_id:
@@ -24,12 +24,12 @@ definitions:
     properties:
       context:
         allOf:
-        - $ref: '#/definitions/bus-booking_chatbot-service_internal_model.ChatContext'
+          - $ref: "#/definitions/bus-booking_chatbot-service_internal_model.ChatContext"
         description: Optional context
       history:
         description: Conversation history
         items:
-          $ref: '#/definitions/bus-booking_chatbot-service_internal_model.ChatMessage'
+          $ref: "#/definitions/bus-booking_chatbot-service_internal_model.ChatMessage"
         type: array
       message:
         type: string
@@ -37,7 +37,7 @@ definitions:
         description: Optional session tracking
         type: string
     required:
-    - message
+      - message
     type: object
   bus-booking_chatbot-service_internal_model.ChatResponse:
     properties:
@@ -46,7 +46,7 @@ definitions:
         type: string
       context:
         allOf:
-        - $ref: '#/definitions/bus-booking_chatbot-service_internal_model.ChatContext'
+          - $ref: "#/definitions/bus-booking_chatbot-service_internal_model.ChatContext"
         description: Updated context
       data:
         description: Additional data (trip results, booking info, etc.)
@@ -96,9 +96,9 @@ definitions:
         type: integer
       data: {}
       error:
-        $ref: '#/definitions/ginext.ErrorBody'
+        $ref: "#/definitions/ginext.ErrorBody"
       header:
-        $ref: '#/definitions/http.Header'
+        $ref: "#/definitions/http.Header"
       message:
         type: string
     type: object
@@ -124,106 +124,106 @@ paths:
   /api/v1/chat:
     post:
       consumes:
-      - application/json
+        - application/json
       description: Send a message to the chatbot and get an AI-powered response
       parameters:
-      - description: Chat request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/bus-booking_chatbot-service_internal_model.ChatRequest'
+        - description: Chat request
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: "#/definitions/bus-booking_chatbot-service_internal_model.ChatRequest"
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/bus-booking_chatbot-service_internal_model.ChatResponse'
-              type: object
+              - $ref: "#/definitions/ginext.Response"
+              - properties:
+                  data:
+                    $ref: "#/definitions/bus-booking_chatbot-service_internal_model.ChatResponse"
+                type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Chat with AI assistant
       tags:
-      - chatbot
+        - chatbot
   /api/v1/chat/extract-search:
     get:
       consumes:
-      - application/json
+        - application/json
       description: Extract trip search parameters from natural language
       parameters:
-      - description: Natural language message
-        in: query
-        name: message
-        required: true
-        type: string
+        - description: Natural language message
+          in: query
+          name: message
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/bus-booking_chatbot-service_internal_model.TripSearchParams'
-              type: object
+              - $ref: "#/definitions/ginext.Response"
+              - properties:
+                  data:
+                    $ref: "#/definitions/bus-booking_chatbot-service_internal_model.TripSearchParams"
+                type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Extract trip search parameters
       tags:
-      - chatbot
+        - chatbot
   /api/v1/chat/faq:
     get:
       consumes:
-      - application/json
+        - application/json
       description: Get answer to frequently asked questions
       parameters:
-      - description: Question
-        in: query
-        name: question
-        required: true
-        type: string
+        - description: Question
+          in: query
+          name: question
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  type: string
-              type: object
+              - $ref: "#/definitions/ginext.Response"
+              - properties:
+                  data:
+                    type: string
+                type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ginext.Response'
+            $ref: "#/definitions/ginext.Response"
       summary: Get FAQ answer
       tags:
-      - chatbot
+        - chatbot
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer" followed by a space and JWT token.

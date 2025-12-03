@@ -66,6 +66,11 @@ Object.defineProperty(window, "matchMedia", {
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
+  readonly root: Element | null = null;
+  readonly rootMargin: string = "";
+  readonly thresholds: ReadonlyArray<number> = [];
+  readonly scrollMargin: string = "";
+
   constructor() {}
   disconnect() {}
   observe() {}
@@ -73,7 +78,7 @@ global.IntersectionObserver = class IntersectionObserver {
     return [];
   }
   unobserve() {}
-} as IntersectionObserver;
+};
 
 // Mock localStorage
 const localStorageMock = (() => {

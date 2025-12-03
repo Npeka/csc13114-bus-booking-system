@@ -11,10 +11,10 @@ echo "[PRE] Pre-commit started"
 ########################################
 
 if git diff --cached --name-only | grep -q "^frontend/"; then
-  echo "[FE ] frontend changed → running prettier..."
-  cd frontend && npx prettier --write . && cd ..
   echo "[FE ] frontend changed → running lint-staged..."
   npm run lint:staged
+  echo "[FE ] frontend changed → running prettier..."
+  cd frontend && npx prettier --write . && cd ..
 else
   echo "[FE ] no staged changes → skip frontend checks"
 fi
