@@ -4,7 +4,9 @@ import { useTheme } from "next-themes";
 
 // Mock next-themes
 jest.mock("next-themes", () => ({
-  ThemeProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  ThemeProvider: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
   useTheme: jest.fn(),
 }));
 
@@ -17,7 +19,7 @@ describe("ThemeProvider", () => {
     render(
       <ThemeProvider>
         <div>Test Content</div>
-      </ThemeProvider>
+      </ThemeProvider>,
     );
 
     expect(screen.getByText("Test Content")).toBeInTheDocument();
@@ -31,7 +33,7 @@ describe("ThemeProvider", () => {
     render(
       <ThemeProvider>
         <TestComponent />
-      </ThemeProvider>
+      </ThemeProvider>,
     );
 
     expect(screen.getByText("Themed Component")).toBeInTheDocument();
@@ -41,7 +43,7 @@ describe("ThemeProvider", () => {
     render(
       <ThemeProvider>
         <div>Content</div>
-      </ThemeProvider>
+      </ThemeProvider>,
     );
 
     expect(screen.getByText("Content")).toBeInTheDocument();
@@ -53,7 +55,7 @@ describe("ThemeProvider", () => {
         <div>Child 1</div>
         <div>Child 2</div>
         <div>Child 3</div>
-      </ThemeProvider>
+      </ThemeProvider>,
     );
 
     expect(screen.getByText("Child 1")).toBeInTheDocument();
@@ -65,7 +67,7 @@ describe("ThemeProvider", () => {
     render(
       <ThemeProvider attribute="class" defaultTheme="dark">
         <div>Dark Theme Content</div>
-      </ThemeProvider>
+      </ThemeProvider>,
     );
 
     expect(screen.getByText("Dark Theme Content")).toBeInTheDocument();

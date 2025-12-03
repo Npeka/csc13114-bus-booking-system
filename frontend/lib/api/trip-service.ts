@@ -546,7 +546,7 @@ export const getBusSeats = async (busId: string): Promise<BusSeat[]> => {
 
 /**
  * Bulk create seats for a bus (admin only)
- * 
+ *
  * ⚠️ NOTE: Backend handler exists but route is commented out in backend/trip-service/internal/router/router.go (line 52)
  * Backend route needs to be activated: POST /api/v1/buses/seats/bulk
  * Currently, UI components use individual createSeat() calls instead.

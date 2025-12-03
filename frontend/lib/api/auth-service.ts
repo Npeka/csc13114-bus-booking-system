@@ -95,7 +95,9 @@ export const registerWithEmail = async (
     // Handle different error types with user-friendly messages
     if (error instanceof Error) {
       if (error.message.includes("Email already registered")) {
-        throw new Error("Email này đã được đăng ký. Vui lòng sử dụng email khác.");
+        throw new Error(
+          "Email này đã được đăng ký. Vui lòng sử dụng email khác.",
+        );
       }
       if (error.message.includes("HTTP") || error.message.includes("500")) {
         throw new Error("Lỗi máy chủ. Vui lòng thử lại sau vài giây.");

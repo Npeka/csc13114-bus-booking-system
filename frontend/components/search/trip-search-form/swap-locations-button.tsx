@@ -14,7 +14,7 @@ export function SwapLocationsButton({ onClick }: SwapLocationsButtonProps) {
       variant="secondary"
       size="icon-sm"
       onClick={onClick}
-      className="group shadow-elevated absolute top-1/2 left-1/2 z-10 hidden size-9 -translate-x-1/2 -translate-y-1/2 rounded-full transition-transform duration-300 hover:scale-105 lg:flex"
+      className="group absolute top-1/2 left-1/2 z-10 hidden size-9 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-elevated transition-transform duration-300 hover:scale-105 lg:flex"
       aria-label="Đổi điểm đi đến"
     >
       <ArrowRightLeft className="h-3.5 w-3.5 transition-transform duration-300 group-hover:rotate-180" />

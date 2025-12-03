@@ -10,9 +10,9 @@ describe("LocationField component", () => {
         value={null}
         onChange={jest.fn()}
         placeholder="Chọn điểm đi"
-      />
+      />,
     );
-    
+
     expect(screen.getByText("Điểm đi")).toBeInTheDocument();
   });
 
@@ -24,15 +24,15 @@ describe("LocationField component", () => {
         value={null}
         onChange={jest.fn()}
         placeholder="Chọn điểm đi"
-      />
+      />,
     );
-    
+
     expect(screen.getByText("Chọn điểm đi")).toBeInTheDocument();
   });
 
   it("should display selected location", () => {
     const selectedCity = { id: "hcm", name: "TP. Hồ Chí Minh" };
-    
+
     render(
       <LocationField
         id="from"
@@ -40,16 +40,16 @@ describe("LocationField component", () => {
         value={selectedCity}
         onChange={jest.fn()}
         placeholder="Chọn điểm đi"
-      />
+      />,
     );
-    
+
     expect(screen.getByText("TP. Hồ Chí Minh")).toBeInTheDocument();
   });
 
   it("should call onChange when location selected", async () => {
     const handleChange = jest.fn();
     const user = userEvent.setup();
-    
+
     render(
       <LocationField
         id="from"
@@ -57,13 +57,13 @@ describe("LocationField component", () => {
         value={null}
         onChange={handleChange}
         placeholder="Chọn điểm đi"
-      />
+      />,
     );
-    
+
     // Click to open dropdown
     const button = screen.getByRole("button");
     await user.click(button);
-    
+
     // onChange may be called when selecting from dropdown
   });
 
@@ -75,9 +75,9 @@ describe("LocationField component", () => {
         value={null}
         onChange={jest.fn()}
         placeholder="Chọn điểm đến"
-      />
+      />,
     );
-    
+
     expect(screen.getByText("Điểm đến")).toBeInTheDocument();
   });
 
@@ -89,9 +89,9 @@ describe("LocationField component", () => {
         value={null}
         onChange={jest.fn()}
         placeholder="Chọn điểm đi"
-      />
+      />,
     );
-    
+
     const button = screen.getByRole("button");
     button.focus();
     expect(button).toHaveFocus();

@@ -5,12 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import {
-  ArrowLeft,
-  MapPin,
-  Navigation,
-  Clock,
-} from "lucide-react";
+import { ArrowLeft, MapPin, Navigation, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -124,10 +119,7 @@ export default function NewRoutePage() {
                         Điểm đi
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="VD: TP. Hồ Chí Minh"
-                          {...field}
-                        />
+                        <Input placeholder="VD: TP. Hồ Chí Minh" {...field} />
                       </FormControl>
                       <FormDescription>
                         Nhập tên thành phố hoặc địa điểm xuất phát
@@ -148,10 +140,7 @@ export default function NewRoutePage() {
                         Điểm đến
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="VD: Đà Lạt"
-                          {...field}
-                        />
+                        <Input placeholder="VD: Đà Lạt" {...field} />
                       </FormControl>
                       <FormDescription>
                         Nhập tên thành phố hoặc địa điểm đích
@@ -184,7 +173,8 @@ export default function NewRoutePage() {
                         />
                       </FormControl>
                       <FormDescription>
-                        Khoảng cách thực tế giữa điểm đi và điểm đến (đơn vị: km)
+                        Khoảng cách thực tế giữa điểm đi và điểm đến (đơn vị:
+                        km)
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -213,7 +203,8 @@ export default function NewRoutePage() {
                         />
                       </FormControl>
                       <FormDescription>
-                        Thời gian di chuyển ước tính (đơn vị: phút). VD: 420 phút = 7 giờ
+                        Thời gian di chuyển ước tính (đơn vị: phút). VD: 420
+                        phút = 7 giờ
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -235,7 +226,9 @@ export default function NewRoutePage() {
                     className="flex-1 bg-primary text-white hover:bg-primary/90"
                     disabled={createMutation.isPending}
                   >
-                    {createMutation.isPending ? "Đang tạo..." : "Tạo tuyến đường"}
+                    {createMutation.isPending
+                      ? "Đang tạo..."
+                      : "Tạo tuyến đường"}
                   </Button>
                 </div>
 
@@ -254,4 +247,3 @@ export default function NewRoutePage() {
     </div>
   );
 }
-

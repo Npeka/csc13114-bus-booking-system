@@ -27,10 +27,12 @@ describe("AuthGuard component", () => {
     render(
       <AuthGuard>
         <div>Protected Content</div>
-      </AuthGuard>
+      </AuthGuard>,
     );
 
-    expect(screen.getByText(/Đang kiểm tra quyền truy cập/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Đang kiểm tra quyền truy cập/),
+    ).toBeInTheDocument();
   });
 
   it("should render children when authenticated", async () => {
@@ -44,7 +46,7 @@ describe("AuthGuard component", () => {
     render(
       <AuthGuard>
         <div>Protected Content</div>
-      </AuthGuard>
+      </AuthGuard>,
     );
 
     await waitFor(() => {
@@ -58,7 +60,7 @@ describe("AuthGuard component", () => {
     render(
       <AuthGuard>
         <div>Protected Content</div>
-      </AuthGuard>
+      </AuthGuard>,
     );
 
     await waitFor(() => {
@@ -79,7 +81,7 @@ describe("AuthGuard component", () => {
     render(
       <AuthGuard requiredRole={Role.ADMIN}>
         <div>Admin Content</div>
-      </AuthGuard>
+      </AuthGuard>,
     );
 
     await waitFor(() => {
@@ -98,7 +100,7 @@ describe("AuthGuard component", () => {
     render(
       <AuthGuard requiredRole={Role.ADMIN}>
         <div>Admin Content</div>
-      </AuthGuard>
+      </AuthGuard>,
     );
 
     await waitFor(() => {
@@ -119,7 +121,7 @@ describe("AuthGuard component", () => {
     render(
       <AuthGuard requiredRole={Role.OPERATOR}>
         <div>Operator Content</div>
-      </AuthGuard>
+      </AuthGuard>,
     );
 
     await waitFor(() => {
@@ -138,7 +140,7 @@ describe("AuthGuard component", () => {
     render(
       <AuthGuard>
         <div>Content</div>
-      </AuthGuard>
+      </AuthGuard>,
     );
 
     await waitFor(() => {
@@ -156,7 +158,7 @@ describe("AuthGuard component", () => {
     render(
       <AuthGuard>
         <div>Content</div>
-      </AuthGuard>
+      </AuthGuard>,
     );
 
     expect(hasValidSession).not.toHaveBeenCalled();
@@ -174,7 +176,7 @@ describe("AuthGuard component", () => {
     render(
       <AuthGuard requiredRole={Role.ADMIN}>
         <div>Admin Content</div>
-      </AuthGuard>
+      </AuthGuard>,
     );
 
     await waitFor(() => {

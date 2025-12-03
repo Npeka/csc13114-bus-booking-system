@@ -23,7 +23,7 @@ describe("DropdownMenu components", () => {
           <DropdownMenuContent>
             <DropdownMenuItem>Item 1</DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu>,
       );
 
       expect(screen.queryByText("Item 1")).not.toBeInTheDocument();
@@ -40,7 +40,7 @@ describe("DropdownMenu components", () => {
           <DropdownMenuContent>
             <DropdownMenuItem>Menu Item</DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu>,
       );
 
       await user.click(screen.getByText("Open Menu"));
@@ -59,7 +59,7 @@ describe("DropdownMenu components", () => {
           <DropdownMenuContent>
             <DropdownMenuItem onSelect={handleClick}>Action</DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu>,
       );
 
       await user.click(screen.getByText("Menu"));
@@ -82,7 +82,7 @@ describe("DropdownMenu components", () => {
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuItem>Profile</DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu>,
       );
 
       await user.click(screen.getByText("Menu"));
@@ -104,7 +104,7 @@ describe("DropdownMenu components", () => {
             <DropdownMenuSeparator data-testid="separator" />
             <DropdownMenuItem>Item 2</DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu>,
       );
 
       await user.click(screen.getByText("Menu"));
@@ -130,7 +130,7 @@ describe("DropdownMenu components", () => {
               Option
             </DropdownMenuCheckboxItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu>,
       );
 
       await user.click(screen.getByText("Menu"));
@@ -163,7 +163,7 @@ describe("DropdownMenu components", () => {
               </DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu>,
       );
 
       await user.click(screen.getByText("Menu"));
@@ -190,7 +190,7 @@ describe("DropdownMenu components", () => {
             <DropdownMenuSeparator />
             <DropdownMenuItem>Logout</DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu>,
       );
 
       await user.click(screen.getByText("Options"));

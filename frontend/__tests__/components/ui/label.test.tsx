@@ -23,7 +23,7 @@ describe("Label component", () => {
     render(
       <Label className="custom-label" data-testid="label">
         Text
-      </Label>
+      </Label>,
     );
     const label = screen.getByTestId("label");
     expect(label).toHaveClass("custom-label");
@@ -33,7 +33,7 @@ describe("Label component", () => {
     render(
       <Label>
         <span>Required</span> Field
-      </Label>
+      </Label>,
     );
     expect(screen.getByText("Required")).toBeInTheDocument();
     expect(screen.getByText(/Field/)).toBeInTheDocument();
@@ -44,12 +44,12 @@ describe("Label component", () => {
       <>
         <Label htmlFor="test-input">Username</Label>
         <input id="test-input" />
-      </>
+      </>,
     );
-    
+
     const label = screen.getByText("Username");
     const input = screen.getByRole("textbox");
-    
+
     expect(label).toHaveAttribute("for", "test-input");
     expect(input).toHaveAttribute("id", "test-input");
   });

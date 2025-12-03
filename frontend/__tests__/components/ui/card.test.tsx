@@ -20,7 +20,7 @@ describe("Card components", () => {
       render(
         <Card className="custom-card" data-testid="card">
           Content
-        </Card>
+        </Card>,
       );
       const card = screen.getByTestId("card");
       expect(card).toHaveClass("custom-card");
@@ -30,7 +30,7 @@ describe("Card components", () => {
       render(
         <Card>
           <div>Child content</div>
-        </Card>
+        </Card>,
       );
       expect(screen.getByText("Child content")).toBeInTheDocument();
     });
@@ -47,7 +47,7 @@ describe("Card components", () => {
       render(
         <CardHeader className="custom-header" data-testid="header">
           Header
-        </CardHeader>
+        </CardHeader>,
       );
       const header = screen.getByTestId("header");
       expect(header).toHaveClass("custom-header");
@@ -92,7 +92,7 @@ describe("Card components", () => {
         <CardContent>
           <p>Paragraph 1</p>
           <p>Paragraph 2</p>
-        </CardContent>
+        </CardContent>,
       );
       expect(screen.getByText("Paragraph 1")).toBeInTheDocument();
       expect(screen.getByText("Paragraph 2")).toBeInTheDocument();
@@ -110,7 +110,7 @@ describe("Card components", () => {
       render(
         <CardFooter className="custom-footer" data-testid="footer">
           Footer
-        </CardFooter>
+        </CardFooter>,
       );
       const footer = screen.getByTestId("footer");
       expect(footer).toHaveClass("custom-footer");
@@ -129,7 +129,7 @@ describe("Card components", () => {
             <p>Card Content</p>
           </CardContent>
           <CardFooter>Card Footer</CardFooter>
-        </Card>
+        </Card>,
       );
 
       expect(screen.getByText("Card Title")).toBeInTheDocument();

@@ -9,7 +9,7 @@ describe("Utility functions", () => {
     });
 
     it("should handle conditional classes", () => {
-      const result = cn("base", true && "conditional", false &&" skipped");
+      const result = cn("base", true && "conditional", false && " skipped");
       expect(result).toContain("base");
       expect(result).toContain("conditional");
       expect(result).not.toContain("skipped");

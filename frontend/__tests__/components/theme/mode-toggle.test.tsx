@@ -25,7 +25,7 @@ describe("ModeToggle component", () => {
     expect(button).toBeInTheDocument();
   });
 
-it("should toggle theme when clicked", async () => {
+  it("should toggle theme when clicked", async () => {
     const user = userEvent.setup();
     (useTheme as jest.Mock).mockReturnValue({
       setTheme: mockSetTheme,
@@ -34,7 +34,7 @@ it("should toggle theme when clicked", async () => {
 
     render(<ModeToggle />);
     const button = screen.getByRole("button");
-    
+
     await user.click(button);
     expect(mockSetTheme).toHaveBeenCalledWith("dark");
   });
@@ -48,7 +48,7 @@ it("should toggle theme when clicked", async () => {
 
     render(<ModeToggle />);
     const button = screen.getByRole("button");
-    
+
     await user.click(button);
     expect(mockSetTheme).toHaveBeenCalledWith("light");
   });

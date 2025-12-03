@@ -16,9 +16,7 @@ export function startTokenRefreshTimer(expiresIn?: number): void {
   // Clear existing timer
   stopTokenRefreshTimer();
 
-  const expiryMs = expiresIn
-    ? expiresIn * 1000
-    : DEFAULT_TOKEN_EXPIRY_MS;
+  const expiryMs = expiresIn ? expiresIn * 1000 : DEFAULT_TOKEN_EXPIRY_MS;
 
   const refreshMs = Math.max(expiryMs - REFRESH_BUFFER_MS, 30 * 1000); // Min 30 seconds
 
@@ -59,10 +57,10 @@ export async function performTokenRefresh(): Promise<boolean> {
 
     if (newAccessToken) {
       console.log("[TokenManager] Token refreshed successfully");
-      
+
       // Restart timer for next refresh
       startTokenRefreshTimer();
-      
+
       return true;
     } else {
       console.error("[TokenManager] Token refresh failed - no token returned");
@@ -72,10 +70,10 @@ export async function performTokenRefresh(): Promise<boolean> {
   } catch (error) {
     console.error("[TokenManager] Token refresh error:", error);
     stopTokenRefreshTimer();
-    
+
     // Clear auth state on refresh failure
     useAuthStore.getState().logout();
-    
+
     return false;
   } finally {
     isRefreshing = false;
@@ -100,4 +98,3 @@ export function cleanupTokenManager(): void {
   stopTokenRefreshTimer();
   isRefreshing = false;
 }
-

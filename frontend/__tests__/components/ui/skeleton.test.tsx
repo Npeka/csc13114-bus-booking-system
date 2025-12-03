@@ -32,7 +32,7 @@ describe("Skeleton component", () => {
         <Skeleton data-testid="skeleton-1" />
         <Skeleton data-testid="skeleton-2" />
         <Skeleton data-testid="skeleton-3" />
-      </>
+      </>,
     );
 
     expect(screen.getAllByTestId(/skeleton-/)).toHaveLength(3);

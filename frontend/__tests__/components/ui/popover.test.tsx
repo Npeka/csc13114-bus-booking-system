@@ -15,7 +15,7 @@ describe("Popover components", () => {
             <Button>Open</Button>
           </PopoverTrigger>
           <PopoverContent>Popover Content</PopoverContent>
-        </Popover>
+        </Popover>,
       );
 
       expect(screen.queryByText("Popover Content")).not.toBeInTheDocument();
@@ -30,7 +30,7 @@ describe("Popover components", () => {
             <Button>Open Popover</Button>
           </PopoverTrigger>
           <PopoverContent>Popover Content</PopoverContent>
-        </Popover>
+        </Popover>,
       );
 
       await user.click(screen.getByText("Open Popover"));
@@ -46,7 +46,7 @@ describe("Popover components", () => {
             <Button>Trigger</Button>
           </PopoverTrigger>
           <PopoverContent>Controlled Content</PopoverContent>
-        </Popover>
+        </Popover>,
       );
 
       expect(screen.getByText("Controlled Content")).toBeInTheDocument();
@@ -59,7 +59,7 @@ describe("Popover components", () => {
             <Button>Trigger</Button>
           </PopoverTrigger>
           <PopoverContent>Hidden Content</PopoverContent>
-        </Popover>
+        </Popover>,
       );
 
       expect(screen.queryByText("Hidden Content")).not.toBeInTheDocument();
@@ -75,7 +75,7 @@ describe("Popover components", () => {
             <Button>Toggle</Button>
           </PopoverTrigger>
           <PopoverContent>Content</PopoverContent>
-        </Popover>
+        </Popover>,
       );
 
       await user.click(screen.getByText("Toggle"));
@@ -92,10 +92,13 @@ describe("Popover components", () => {
           <PopoverTrigger asChild>
             <Button>Open</Button>
           </PopoverTrigger>
-          <PopoverContent className="custom-popover" data-testid="popover-content">
+          <PopoverContent
+            className="custom-popover"
+            data-testid="popover-content"
+          >
             Content
           </PopoverContent>
-        </Popover>
+        </Popover>,
       );
 
       await user.click(screen.getByText("Open"));
@@ -112,7 +115,7 @@ describe("Popover components", () => {
             <Button>Open</Button>
           </PopoverTrigger>
           <PopoverContent align="start">Aligned Content</PopoverContent>
-        </Popover>
+        </Popover>,
       );
 
       await user.click(screen.getByText("Open"));

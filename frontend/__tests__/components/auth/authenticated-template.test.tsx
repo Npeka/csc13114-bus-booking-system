@@ -29,7 +29,7 @@ describe("AuthenticatedTemplate component", () => {
     render(
       <AuthenticatedTemplate>
         <div>Authenticated Content</div>
-      </AuthenticatedTemplate>
+      </AuthenticatedTemplate>,
     );
 
     expect(screen.getByText("Authenticated Content")).toBeInTheDocument();
@@ -39,7 +39,7 @@ describe("AuthenticatedTemplate component", () => {
     render(
       <AuthenticatedTemplate>
         <div>Authenticated Content</div>
-      </AuthenticatedTemplate>
+      </AuthenticatedTemplate>,
     );
 
     expect(screen.queryByText("Authenticated Content")).not.toBeInTheDocument();
@@ -49,7 +49,7 @@ describe("AuthenticatedTemplate component", () => {
     const { rerender } = render(
       <AuthenticatedTemplate>
         <div>Authenticated Content</div>
-      </AuthenticatedTemplate>
+      </AuthenticatedTemplate>,
     );
 
     expect(screen.queryByText("Authenticated Content")).not.toBeInTheDocument();
@@ -62,7 +62,7 @@ describe("AuthenticatedTemplate component", () => {
     rerender(
       <AuthenticatedTemplate>
         <div>Authenticated Content</div>
-      </AuthenticatedTemplate>
+      </AuthenticatedTemplate>,
     );
 
     expect(screen.getByText("Authenticated Content")).toBeInTheDocument();
@@ -78,7 +78,7 @@ describe("AuthenticatedTemplate component", () => {
     const { rerender } = render(
       <AuthenticatedTemplate>
         <div>Authenticated Content</div>
-      </AuthenticatedTemplate>
+      </AuthenticatedTemplate>,
     );
 
     expect(screen.getByText("Authenticated Content")).toBeInTheDocument();
@@ -90,7 +90,7 @@ describe("AuthenticatedTemplate component", () => {
     rerender(
       <AuthenticatedTemplate>
         <div>Authenticated Content</div>
-      </AuthenticatedTemplate>
+      </AuthenticatedTemplate>,
     );
 
     expect(screen.queryByText("Authenticated Content")).not.toBeInTheDocument();
@@ -100,7 +100,7 @@ describe("AuthenticatedTemplate component", () => {
     const { container } = render(
       <AuthenticatedTemplate>
         <div>Content</div>
-      </AuthenticatedTemplate>
+      </AuthenticatedTemplate>,
     );
 
     expect(container.firstChild).toBeNull();

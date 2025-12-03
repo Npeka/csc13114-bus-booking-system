@@ -23,9 +23,11 @@ describe("Slider component", () => {
   });
 
   it("should handle min and max values", () => {
-    render(<Slider min={0} max={100} defaultValue={[50]} data-testid="slider" />);
+    render(
+      <Slider min={0} max={100} defaultValue={[50]} data-testid="slider" />,
+    );
     const slider = screen.getByTestId("slider");
-    
+
     expect(slider).toHaveAttribute("aria-valuemin", "0");
     expect(slider).toHaveAttribute("aria-valuemax", "100");
   });
@@ -51,7 +53,7 @@ describe("Slider component", () => {
   it("should call onValueChange when value changes", () => {
     const handleValueChange = jest.fn();
     render(<Slider onValueChange={handleValueChange} data-testid="slider" />);
-    
+
     // The actual value change requires user interaction simulation
     // which is complex for slider, so we just verify the handler is accepted
     expect(screen.getByTestId("slider")).toBeInTheDocument();

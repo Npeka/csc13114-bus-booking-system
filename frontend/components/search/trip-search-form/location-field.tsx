@@ -31,7 +31,7 @@ export function LocationField({
       </Label>
       <div className="relative" data-location-trigger>
         <MapPin
-          className={`absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 ${
+          className={`absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 ${
             iconClassName ?? "text-muted-foreground"
           }`}
         />

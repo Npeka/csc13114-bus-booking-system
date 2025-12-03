@@ -29,39 +29,39 @@ const mockTrip = {
 describe("TripCard component", () => {
   it("should render trip card", () => {
     render(<TripCard trip={mockTrip} />);
-    
+
     expect(screen.getByText(mockTrip.operator.name)).toBeInTheDocument();
   });
 
   it("should display operator name", () => {
     render(<TripCard trip={mockTrip} />);
-    
+
     expect(screen.getByText("Phương Trang")).toBeInTheDocument();
   });
 
   it("should display route information", () => {
     render(<TripCard trip={mockTrip} />);
-    
+
     expect(screen.getByText(/TP\. Hồ Chí Minh/i)).toBeInTheDocument();
     expect(screen.getByText(/Đà Lạt/i)).toBeInTheDocument();
   });
 
   it("should display price", () => {
     render(<TripCard trip={mockTrip} />);
-    
+
     // Price formatted: 250.000₫
     expect(screen.getByText(/250[.,]000/)).toBeInTheDocument();
   });
 
   it("should display available seats", () => {
     render(<TripCard trip={mockTrip} />);
-    
+
     expect(screen.getByText(/15/)).toBeInTheDocument();
   });
 
   it("should display departure and arrival times", () => {
     render(<TripCard trip={mockTrip} />);
-    
+
     // Times should be formatted and displayed
     expect(screen.getByText(/08:00|8:00/)).toBeInTheDocument();
     expect(screen.getByText(/12:00/)).toBeInTheDocument();
@@ -72,9 +72,9 @@ describe("TripCard component", () => {
       ...mockTrip,
       available_seats: 0,
     };
-    
+
     render(<TripCard trip={soldOutTrip} />);
-    
+
     expect(screen.getByText(/hết chỗ|sold out/i)).toBeInTheDocument();
   });
 
@@ -86,9 +86,9 @@ describe("TripCard component", () => {
         logo_url: undefined,
       },
     };
-    
+
     render(<TripCard trip={tripWithoutLogo} />);
-    
+
     expect(screen.getByText("Phương Trang")).toBeInTheDocument();
   });
 });

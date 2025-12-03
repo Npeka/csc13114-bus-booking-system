@@ -29,7 +29,7 @@ describe("HydrationGuard component", () => {
     render(
       <HydrationGuard>
         <div>Hydrated Content</div>
-      </HydrationGuard>
+      </HydrationGuard>,
     );
 
     expect(screen.getByText("Hydrated Content")).toBeInTheDocument();
@@ -41,7 +41,7 @@ describe("HydrationGuard component", () => {
     render(
       <HydrationGuard>
         <div>Content</div>
-      </HydrationGuard>
+      </HydrationGuard>,
     );
 
     expect(screen.queryByText("Content")).not.toBeInTheDocument();
@@ -53,7 +53,7 @@ describe("HydrationGuard component", () => {
         <div>First Child</div>
         <div>Second Child</div>
         <div>Third Child</div>
-      </HydrationGuard>
+      </HydrationGuard>,
     );
 
     expect(screen.getByText("First Child")).toBeInTheDocument();

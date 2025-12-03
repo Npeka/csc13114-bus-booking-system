@@ -109,13 +109,15 @@ export default function BusSeatConfigPage() {
   const saveMutation = useMutation({
     mutationFn: async (seatsToSave: EditableSeat[]) => {
       // Get current existing seats from query cache
-      const currentExistingSeats = queryClient.getQueryData<BusSeat[]>(["bus-seats", busId]) || [];
-      
+      const currentExistingSeats =
+        queryClient.getQueryData<BusSeat[]>(["bus-seats", busId]) || [];
+
       // Process each seat individually
       for (const seat of seatsToSave) {
-        const seatTypeValue = typeof seat.seat_type === "string"
-          ? seat.seat_type
-          : getValue(seat.seat_type);
+        const seatTypeValue =
+          typeof seat.seat_type === "string"
+            ? seat.seat_type
+            : getValue(seat.seat_type);
 
         const seatData = {
           bus_id: busId,
@@ -135,12 +137,14 @@ export default function BusSeatConfigPage() {
           await createSeat(seatData);
         }
       }
-      
+
       // Handle deleted seats (seats in currentExistingSeats but not in seatsToSave)
       const seatIdsToKeep = new Set(
-        seatsToSave.filter(s => s.id && !s.id.startsWith("temp")).map(s => s.id)
+        seatsToSave
+          .filter((s) => s.id && !s.id.startsWith("temp"))
+          .map((s) => s.id),
       );
-      
+
       for (const existingSeat of currentExistingSeats) {
         if (!seatIdsToKeep.has(existingSeat.id)) {
           await deleteSeat(existingSeat.id);

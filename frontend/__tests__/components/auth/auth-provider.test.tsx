@@ -14,17 +14,19 @@ describe("AuthProvider component", () => {
     const { container } = render(
       <AuthProvider>
         <div data-testid="child">Child Content</div>
-      </AuthProvider>
+      </AuthProvider>,
     );
 
-    expect(container.querySelector('[data-testid="child"]')).toBeInTheDocument();
+    expect(
+      container.querySelector('[data-testid="child"]'),
+    ).toBeInTheDocument();
   });
 
   it("should call restoreSession on mount", () => {
     render(
       <AuthProvider>
         <div>Content</div>
-      </AuthProvider>
+      </AuthProvider>,
     );
 
     expect(restoreSession).toHaveBeenCalledTimes(1);
@@ -34,7 +36,7 @@ describe("AuthProvider component", () => {
     const { rerender } = render(
       <AuthProvider>
         <div>Content</div>
-      </AuthProvider>
+      </AuthProvider>,
     );
 
     expect(restoreSession).toHaveBeenCalledTimes(1);
@@ -43,7 +45,7 @@ describe("AuthProvider component", () => {
     rerender(
       <AuthProvider>
         <div>Updated Content</div>
-      </AuthProvider>
+      </AuthProvider>,
     );
 
     expect(restoreSession).toHaveBeenCalledTimes(1);
@@ -57,10 +59,12 @@ describe("AuthProvider component", () => {
     const { container } = render(
       <AuthProvider>
         <div data-testid="child">Child Content</div>
-      </AuthProvider>
+      </AuthProvider>,
     );
 
     // Children should still render
-    expect(container.querySelector('[data-testid="child"]')).toBeInTheDocument();
+    expect(
+      container.querySelector('[data-testid="child"]'),
+    ).toBeInTheDocument();
   });
 });

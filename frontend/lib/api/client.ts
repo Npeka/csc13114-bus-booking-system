@@ -101,12 +101,12 @@ apiClient.interceptors.response.use(
         processQueue(refreshError as Error);
         // Refresh failed - logout user
         useAuthStore.getState().logout();
-        
+
         // Redirect to home page
         if (typeof window !== "undefined") {
           window.location.href = "/";
         }
-        
+
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
@@ -131,24 +131,23 @@ export interface ApiResponse<T = unknown> {
 export const handleApiError = (error: unknown): string => {
   if (axios.isAxiosError(error)) {
     const axiosError = error as AxiosError<ApiResponse>;
-    
+
     if (axiosError.response?.data?.error) {
       return axiosError.response.data.error;
     }
-    
+
     if (axiosError.response?.data?.message) {
       return axiosError.response.data.message;
     }
-    
+
     if (axiosError.message) {
       return axiosError.message;
     }
   }
-  
+
   if (error instanceof Error) {
     return error.message;
   }
-  
+
   return "Đã xảy ra lỗi không xác định";
 };
-

@@ -152,13 +152,13 @@ export function SharedDatePicker({
         left: `${position.left}px`,
       }}
     >
-      <div className="rounded-lg border border-border bg-card shadow-lg p-4">
+      <div className="rounded-lg border border-border bg-card p-4 shadow-lg">
         {/* Active field indicator */}
         <div className="mb-3 flex items-center justify-center gap-2 text-sm">
           <span
-            className={`px-3 py-1 rounded-full transition-colors ${
+            className={`rounded-full px-3 py-1 transition-colors ${
               activeField === "departure"
-                ? "bg-primary text-white font-medium"
+                ? "bg-primary font-medium text-white"
                 : "bg-muted text-muted-foreground"
             }`}
           >
@@ -166,9 +166,9 @@ export function SharedDatePicker({
           </span>
           <span className="text-muted-foreground">→</span>
           <span
-            className={`px-3 py-1 rounded-full transition-colors ${
+            className={`rounded-full px-3 py-1 transition-colors ${
               activeField === "return"
-                ? "bg-primary text-white font-medium"
+                ? "bg-primary font-medium text-white"
                 : "bg-muted text-muted-foreground"
             }`}
           >

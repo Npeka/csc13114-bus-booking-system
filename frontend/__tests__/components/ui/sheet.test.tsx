@@ -21,7 +21,7 @@ describe("Sheet components", () => {
           <SheetContent>
             <SheetTitle>Sheet Title</SheetTitle>
           </SheetContent>
-        </Sheet>
+        </Sheet>,
       );
 
       expect(screen.queryByText("Sheet Title")).not.toBeInTheDocument();
@@ -39,7 +39,7 @@ describe("Sheet components", () => {
             <SheetTitle>Sheet Title</SheetTitle>
             <div>Sheet Body</div>
           </SheetContent>
-        </Sheet>
+        </Sheet>,
       );
 
       await user.click(screen.getByText("Open Sheet"));
@@ -55,7 +55,7 @@ describe("Sheet components", () => {
           <SheetContent>
             <SheetTitle>Controlled Sheet</SheetTitle>
           </SheetContent>
-        </Sheet>
+        </Sheet>,
       );
 
       expect(screen.getByText("Controlled Sheet")).toBeInTheDocument();
@@ -67,7 +67,7 @@ describe("Sheet components", () => {
           <SheetContent>
             <SheetTitle>Hidden Sheet</SheetTitle>
           </SheetContent>
-        </Sheet>
+        </Sheet>,
       );
 
       expect(screen.queryByText("Hidden Sheet")).not.toBeInTheDocument();
@@ -85,7 +85,7 @@ describe("Sheet components", () => {
           <SheetContent>
             <SheetTitle>Content</SheetTitle>
           </SheetContent>
-        </Sheet>
+        </Sheet>,
       );
 
       await user.click(screen.getByText("Toggle"));
@@ -105,7 +105,7 @@ describe("Sheet components", () => {
           <SheetContent side="right">
             <SheetTitle>Right Sheet</SheetTitle>
           </SheetContent>
-        </Sheet>
+        </Sheet>,
       );
 
       await user.click(screen.getByText("Open"));
@@ -123,7 +123,7 @@ describe("Sheet components", () => {
           <SheetContent side="left">
             <SheetTitle>Left Sheet</SheetTitle>
           </SheetContent>
-        </Sheet>
+        </Sheet>,
       );
 
       await user.click(screen.getByText("Open"));
@@ -141,7 +141,7 @@ describe("Sheet components", () => {
           <SheetContent side="top">
             <SheetTitle>Top Sheet</SheetTitle>
           </SheetContent>
-        </Sheet>
+        </Sheet>,
       );
 
       await user.click(screen.getByText("Open"));
@@ -159,7 +159,7 @@ describe("Sheet components", () => {
           <SheetContent side="bottom">
             <SheetTitle>Bottom Sheet</SheetTitle>
           </SheetContent>
-        </Sheet>
+        </Sheet>,
       );
 
       await user.click(screen.getByText("Open"));
@@ -182,7 +182,7 @@ describe("Sheet components", () => {
               <SheetDescription>Description</SheetDescription>
             </SheetHeader>
           </SheetContent>
-        </Sheet>
+        </Sheet>,
       );
 
       await user.click(screen.getByText("Open"));
@@ -206,7 +206,7 @@ describe("Sheet components", () => {
               <Button>Save</Button>
             </SheetFooter>
           </SheetContent>
-        </Sheet>
+        </Sheet>,
       );
 
       await user.click(screen.getByText("Open"));
@@ -235,7 +235,7 @@ describe("Sheet components", () => {
               <Button>Confirm</Button>
             </SheetFooter>
           </SheetContent>
-        </Sheet>
+        </Sheet>,
       );
 
       await user.click(screen.getByText("Open Complete Sheet"));

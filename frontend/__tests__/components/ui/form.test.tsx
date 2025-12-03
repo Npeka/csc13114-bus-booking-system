@@ -62,64 +62,66 @@ describe("Form components", () => {
   describe("Form with FormField", () => {
     it("should render form fields", () => {
       render(<TestForm />);
-      
+
       expect(screen.getByLabelText("Email")).toBeInTheDocument();
       expect(screen.getByLabelText("Username")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /submit/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /submit/i }),
+      ).toBeInTheDocument();
     });
 
     it("should render FormLabel", () => {
       render(<TestForm />);
-      
+
       expect(screen.getByText("Email")).toBeInTheDocument();
       expect(screen.getByText("Username")).toBeInTheDocument();
     });
 
     it("should render FormDescription", () => {
       render(<TestForm />);
-      
+
       expect(screen.getByText("Enter your email address")).toBeInTheDocument();
     });
 
     it("should accept input values", async () => {
       const user = userEvent.setup();
       render(<TestForm />);
-      
+
       const emailInput = screen.getByLabelText("Email");
       await user.type(emailInput, "test@example.com");
-      
+
       expect(emailInput).toHaveValue("test@example.com");
     });
 
     it("should handle form submission", async () => {
       const handleSubmit = jest.fn();
       const user = userEvent.setup();
-      
+
       render(<TestForm onSubmit={handleSubmit} />);
-      
+
       const emailInput = screen.getByLabelText("Email");
       const usernameInput = screen.getByLabelText("Username");
-      
+
       await user.type(emailInput, "test@example.com");
       await user.type(usernameInput, "testuser");
       await user.click(screen.getByRole("button", { name: /submit/i }));
-      
+
       expect(handleSubmit).toHaveBeenCalledWith(
         expect.objectContaining({
           email: "test@example.com",
           username: "testuser",
         }),
-        expect.anything()
+        expect.anything(),
       );
     });
 
     it("should display validation errors", async () => {
       const user = userEvent.setup();
       render(<TestForm />);
-      
+
       // Submit without filling required field
       await user.click(screen.getByRole("button", { name: /submit/i }));
-      
+
       // Wait for validation error to appear
       const errorMessage = await screen.findByText("Email is required");
       expect(errorMessage).toBeInTheDocument();
@@ -129,7 +131,7 @@ describe("Form components", () => {
   describe("FormItem", () => {
     it("should render form item wrapper", () => {
       render(<TestForm />);
-      
+
       // FormItem wraps each field, verify structure exists
       expect(screen.getByLabelText("Email").closest("div")).toBeInTheDocument();
     });
@@ -138,7 +140,7 @@ describe("Form components", () => {
   describe("FormControl", () => {
     it("should render form control correctly", () => {
       render(<TestForm />);
-      
+
       const emailInput = screen.getByLabelText("Email");
       expect(emailInput).toBeInTheDocument();
       expect(emailInput).toHaveAttribute("type", "text");
@@ -148,7 +150,7 @@ describe("Form components", () => {
   describe("Integration with react-hook-form", () => {
     it("should integrate with react-hook-form validation", async () => {
       const user = userEvent.setup();
-      
+
       function ValidationForm() {
         const form = useForm({
           defaultValues: { email: "" },
@@ -184,11 +186,11 @@ describe("Form components", () => {
       }
 
       render(<ValidationForm />);
-      
+
       const emailInput = screen.getByLabelText("Email");
       await user.type(emailInput, "invalid-email");
       await user.click(screen.getByRole("button", { name: /submit/i }));
-      
+
       const errorMessage = await screen.findByText("Invalid email");
       expect(errorMessage).toBeInTheDocument();
     });

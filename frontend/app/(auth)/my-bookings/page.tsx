@@ -88,120 +88,118 @@ export default function MyBookingsPage() {
 
   return (
     <div className="min-h-screen">
-        <div className="container py-8">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold">Vé đã đặt</h1>
-            <p className="text-muted-foreground">
-              Quản lý và theo dõi các chuyến đi của bạn
-            </p>
-          </div>
+      <div className="container py-8">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold">Vé đã đặt</h1>
+          <p className="text-muted-foreground">
+            Quản lý và theo dõi các chuyến đi của bạn
+          </p>
+        </div>
 
-          <Tabs defaultValue="upcoming" className="space-y-6">
-            <TabsList>
-              <TabsTrigger value="upcoming">
-                Sắp diễn ra ({upcomingBookings.length})
-              </TabsTrigger>
-              <TabsTrigger value="past">
-                Đã hoàn thành ({pastBookings.length})
-              </TabsTrigger>
-              <TabsTrigger value="cancelled">
-                Đã hủy ({cancelledBookings.length})
-              </TabsTrigger>
-            </TabsList>
+        <Tabs defaultValue="upcoming" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="upcoming">
+              Sắp diễn ra ({upcomingBookings.length})
+            </TabsTrigger>
+            <TabsTrigger value="past">
+              Đã hoàn thành ({pastBookings.length})
+            </TabsTrigger>
+            <TabsTrigger value="cancelled">
+              Đã hủy ({cancelledBookings.length})
+            </TabsTrigger>
+          </TabsList>
 
-            {/* Upcoming Bookings */}
-            <TabsContent value="upcoming" className="space-y-4">
-              {upcomingBookings.length === 0 ? (
-                <Card>
-                  <CardContent className="py-12 text-center">
-                    <p className="text-muted-foreground">
-                      Bạn chưa có chuyến đi nào sắp tới
-                    </p>
-                    <Button asChild className="mt-4">
-                      <Link href="/">Đặt vé ngay</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              ) : (
-                upcomingBookings.map((booking) => (
-                  <BookingCard
-                    key={booking.id}
-                    booking={booking}
-                    actions={
-                      <>
-                        <Button variant="outline" size="sm">
-                          <Download className="h-4 w-4" />
-                          Tải vé
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <X className="h-4 w-4" />
-                          Hủy vé
-                        </Button>
-                      </>
-                    }
-                  />
-                ))
-              )}
-            </TabsContent>
+          {/* Upcoming Bookings */}
+          <TabsContent value="upcoming" className="space-y-4">
+            {upcomingBookings.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <p className="text-muted-foreground">
+                    Bạn chưa có chuyến đi nào sắp tới
+                  </p>
+                  <Button asChild className="mt-4">
+                    <Link href="/">Đặt vé ngay</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              upcomingBookings.map((booking) => (
+                <BookingCard
+                  key={booking.id}
+                  booking={booking}
+                  actions={
+                    <>
+                      <Button variant="outline" size="sm">
+                        <Download className="h-4 w-4" />
+                        Tải vé
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <X className="h-4 w-4" />
+                        Hủy vé
+                      </Button>
+                    </>
+                  }
+                />
+              ))
+            )}
+          </TabsContent>
 
-            {/* Past Bookings */}
-            <TabsContent value="past" className="space-y-4">
-              {pastBookings.length === 0 ? (
-                <Card>
-                  <CardContent className="py-12 text-center">
-                    <p className="text-muted-foreground">
-                      Chưa có chuyến đi nào đã hoàn thành
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                pastBookings.map((booking) => (
-                  <BookingCard
-                    key={booking.id}
-                    booking={booking}
-                    actions={
-                      <>
-                        <Button variant="outline" size="sm">
-                          <Download className="mr-2 h-4 w-4" />
-                          Tải vé
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          Đặt lại
-                        </Button>
-                      </>
-                    }
-                  />
-                ))
-              )}
-            </TabsContent>
-
-            {/* Cancelled Bookings */}
-            <TabsContent value="cancelled" className="space-y-4">
-              {cancelledBookings.length === 0 ? (
-                <Card>
-                  <CardContent className="py-12 text-center">
-                    <p className="text-muted-foreground">
-                      Chưa có vé nào bị hủy
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                cancelledBookings.map((booking) => (
-                  <BookingCard
-                    key={booking.id}
-                    booking={booking}
-                    actions={
+          {/* Past Bookings */}
+          <TabsContent value="past" className="space-y-4">
+            {pastBookings.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <p className="text-muted-foreground">
+                    Chưa có chuyến đi nào đã hoàn thành
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              pastBookings.map((booking) => (
+                <BookingCard
+                  key={booking.id}
+                  booking={booking}
+                  actions={
+                    <>
+                      <Button variant="outline" size="sm">
+                        <Download className="mr-2 h-4 w-4" />
+                        Tải vé
+                      </Button>
                       <Button variant="outline" size="sm">
                         Đặt lại
                       </Button>
-                    }
-                  />
-                ))
-              )}
-            </TabsContent>
-          </Tabs>
-        </div>
+                    </>
+                  }
+                />
+              ))
+            )}
+          </TabsContent>
+
+          {/* Cancelled Bookings */}
+          <TabsContent value="cancelled" className="space-y-4">
+            {cancelledBookings.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <p className="text-muted-foreground">Chưa có vé nào bị hủy</p>
+                </CardContent>
+              </Card>
+            ) : (
+              cancelledBookings.map((booking) => (
+                <BookingCard
+                  key={booking.id}
+                  booking={booking}
+                  actions={
+                    <Button variant="outline" size="sm">
+                      Đặt lại
+                    </Button>
+                  }
+                />
+              ))
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
+    </div>
   );
 }
 

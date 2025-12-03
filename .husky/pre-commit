@@ -11,6 +11,8 @@ echo "[PRE] Pre-commit started"
 ########################################
 
 if git diff --cached --name-only | grep -q "^frontend/"; then
+  echo "[FE ] frontend changed → running prettier..."
+  npx prettier --write .
   echo "[FE ] frontend changed → running lint-staged..."
   npm run lint:staged
 else

@@ -10,7 +10,7 @@ describe("Tabs components", () => {
             <TabsTrigger value="tab1">Tab 1</TabsTrigger>
           </TabsList>
           <TabsContent value="tab1">Content 1</TabsContent>
-        </Tabs>
+        </Tabs>,
       );
 
       expect(screen.getByText("Tab 1")).toBeInTheDocument();
@@ -25,7 +25,7 @@ describe("Tabs components", () => {
           </TabsList>
           <TabsContent value="tab1">Content 1</TabsContent>
           <TabsContent value="tab2">Content 2</TabsContent>
-        </Tabs>
+        </Tabs>,
       );
 
       expect(screen.getByText("Content 1")).toBeVisible();
@@ -34,7 +34,7 @@ describe("Tabs components", () => {
 
     it("should switch content when tab is clicked", async () => {
       const user = userEvent.setup();
-      
+
       render(
         <Tabs defaultValue="tab1">
           <TabsList>
@@ -43,7 +43,7 @@ describe("Tabs components", () => {
           </TabsList>
           <TabsContent value="tab1">Content 1</TabsContent>
           <TabsContent value="tab2">Content 2</TabsContent>
-        </Tabs>
+        </Tabs>,
       );
 
       const tab2 = screen.getByText("Tab 2");
@@ -61,7 +61,7 @@ describe("Tabs components", () => {
           <TabsList data-testid="tabs-list">
             <TabsTrigger value="tab1">Tab 1</TabsTrigger>
           </TabsList>
-        </Tabs>
+        </Tabs>,
       );
 
       const tabsList = screen.getByTestId("tabs-list");
@@ -74,7 +74,7 @@ describe("Tabs components", () => {
           <TabsList className="custom-list" data-testid="tabs-list">
             <TabsTrigger value="tab1">Tab 1</TabsTrigger>
           </TabsList>
-        </Tabs>
+        </Tabs>,
       );
 
       const tabsList = screen.getByTestId("tabs-list");
@@ -89,7 +89,7 @@ describe("Tabs components", () => {
           <TabsList>
             <TabsTrigger value="tab1">Tab 1</TabsTrigger>
           </TabsList>
-        </Tabs>
+        </Tabs>,
       );
 
       expect(screen.getByText("Tab 1")).toBeInTheDocument();
@@ -106,7 +106,7 @@ describe("Tabs components", () => {
               Tab 2
             </TabsTrigger>
           </TabsList>
-        </Tabs>
+        </Tabs>,
       );
 
       const tab1 = screen.getByTestId("tab1");
@@ -127,7 +127,7 @@ describe("Tabs components", () => {
           <TabsContent value="tab1">
             <p>Tab 1 Content</p>
           </TabsContent>
-        </Tabs>
+        </Tabs>,
       );
 
       expect(screen.getByText("Tab 1 Content")).toBeInTheDocument();
@@ -139,10 +139,14 @@ describe("Tabs components", () => {
           <TabsList>
             <TabsTrigger value="tab1">Tab 1</TabsTrigger>
           </TabsList>
-          <TabsContent value="tab1" className="custom-content" data-testid="content">
+          <TabsContent
+            value="tab1"
+            className="custom-content"
+            data-testid="content"
+          >
             Content
           </TabsContent>
-        </Tabs>
+        </Tabs>,
       );
 
       const content = screen.getByTestId("content");
@@ -153,7 +157,7 @@ describe("Tabs components", () => {
   describe("Multiple tabs interaction", () => {
     it("should handle keyboard navigation", async () => {
       const user = userEvent.setup();
-      
+
       render(
         <Tabs defaultValue="tab1">
           <TabsList>
@@ -164,12 +168,12 @@ describe("Tabs components", () => {
           <TabsContent value="tab1">Content 1</TabsContent>
           <TabsContent value="tab2">Content 2</TabsContent>
           <TabsContent value="tab3">Content 3</TabsContent>
-        </Tabs>
+        </Tabs>,
       );
 
       const tab1 = screen.getByText("Tab 1");
       await user.click(tab1);
-      
+
       // Keyboard navigation would work here
       expect(screen.getByText("Content 1")).toBeVisible();
     });

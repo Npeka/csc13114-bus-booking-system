@@ -19,4 +19,3 @@ export function normalizeText(text: string): string {
     .replace(/\p{Diacritic}/gu, "")
     .toLowerCase();
 }
-

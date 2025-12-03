@@ -23,7 +23,7 @@ describe("Dialog components", () => {
               <DialogTitle>Dialog Title</DialogTitle>
             </DialogHeader>
           </DialogContent>
-        </Dialog>
+        </Dialog>,
       );
 
       expect(screen.queryByText("Dialog Title")).not.toBeInTheDocument();
@@ -31,7 +31,7 @@ describe("Dialog components", () => {
 
     it("should open dialog when trigger is clicked", async () => {
       const user = userEvent.setup();
-      
+
       render(
         <Dialog>
           <DialogTrigger asChild>
@@ -43,7 +43,7 @@ describe("Dialog components", () => {
               <DialogDescription>Dialog Description</DialogDescription>
             </DialogHeader>
           </DialogContent>
-        </Dialog>
+        </Dialog>,
       );
 
       const trigger = screen.getByText("Open Dialog");
@@ -63,7 +63,7 @@ describe("Dialog components", () => {
               <DialogTitle>Controlled Dialog</DialogTitle>
             </DialogHeader>
           </DialogContent>
-        </Dialog>
+        </Dialog>,
       );
 
       expect(screen.getByText("Controlled Dialog")).toBeInTheDocument();
@@ -77,7 +77,7 @@ describe("Dialog components", () => {
               <DialogTitle>Hidden Dialog</DialogTitle>
             </DialogHeader>
           </DialogContent>
-        </Dialog>
+        </Dialog>,
       );
 
       expect(screen.queryByText("Hidden Dialog")).not.toBeInTheDocument();
@@ -95,7 +95,7 @@ describe("Dialog components", () => {
           <DialogContent>
             <DialogTitle>Test</DialogTitle>
           </DialogContent>
-        </Dialog>
+        </Dialog>,
       );
 
       await user.click(screen.getByText("Open"));
@@ -112,7 +112,7 @@ describe("Dialog components", () => {
               <DialogTitle>Title</DialogTitle>
             </DialogHeader>
           </DialogContent>
-        </Dialog>
+        </Dialog>,
       );
 
       expect(screen.getByTestId("dialog-header")).toBeInTheDocument();
@@ -129,7 +129,7 @@ describe("Dialog components", () => {
               <Button>Confirm</Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>
+        </Dialog>,
       );
 
       expect(screen.getByTestId("dialog-footer")).toBeInTheDocument();
@@ -158,7 +158,7 @@ describe("Dialog components", () => {
               <Button>Confirm</Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>
+        </Dialog>,
       );
 
       await user.click(screen.getByText("Open Complete Dialog"));

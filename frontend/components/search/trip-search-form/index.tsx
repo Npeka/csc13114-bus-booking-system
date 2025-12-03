@@ -149,7 +149,7 @@ export function TripSearchForm() {
 
   const filteredLocations = useMemo(() => {
     const searchQuery = locationPicker.search.trim();
-    
+
     // Determine the source: Use API cities if available, otherwise fallback to local VIETNAM_CITIES
     const citySource = apiCities.length > 0 ? apiCities : VIETNAM_CITIES;
 

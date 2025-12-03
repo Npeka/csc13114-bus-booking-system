@@ -20,7 +20,7 @@ describe("Select components", () => {
           <SelectContent>
             <SelectItem value="option1">Option 1</SelectItem>
           </SelectContent>
-        </Select>
+        </Select>,
       );
 
       expect(screen.getByText("Select option")).toBeInTheDocument();
@@ -35,7 +35,7 @@ describe("Select components", () => {
           <SelectContent>
             <SelectItem value="1">Item 1</SelectItem>
           </SelectContent>
-        </Select>
+        </Select>,
       );
 
       expect(screen.getByText("Choose an option")).toBeInTheDocument();
@@ -53,7 +53,7 @@ describe("Select components", () => {
             <SelectItem value="option1">Option 1</SelectItem>
             <SelectItem value="option2">Option 2</SelectItem>
           </SelectContent>
-        </Select>
+        </Select>,
       );
 
       const trigger = screen.getByRole("combobox");
@@ -76,7 +76,7 @@ describe("Select components", () => {
             <SelectItem value="opt1">Option 1</SelectItem>
             <SelectItem value="opt2">Option 2</SelectItem>
           </SelectContent>
-        </Select>
+        </Select>,
       );
 
       const trigger = screen.getByRole("combobox");
@@ -98,7 +98,7 @@ describe("Select components", () => {
             <SelectItem value="option1">First Option</SelectItem>
             <SelectItem value="option2">Second Option</SelectItem>
           </SelectContent>
-        </Select>
+        </Select>,
       );
 
       expect(screen.getByText("First Option")).toBeInTheDocument();
@@ -114,7 +114,7 @@ describe("Select components", () => {
             <SelectItem value="default">Default Option</SelectItem>
             <SelectItem value="other">Other Option</SelectItem>
           </SelectContent>
-        </Select>
+        </Select>,
       );
 
       expect(screen.getByText("Default Option")).toBeInTheDocument();
@@ -141,7 +141,7 @@ describe("Select components", () => {
               <SelectItem value="carrot">Carrot</SelectItem>
             </SelectGroup>
           </SelectContent>
-        </Select>
+        </Select>,
       );
 
       const trigger = screen.getByRole("combobox");
@@ -164,7 +164,7 @@ describe("Select components", () => {
           <SelectContent>
             <SelectItem value="1">Item 1</SelectItem>
           </SelectContent>
-        </Select>
+        </Select>,
       );
 
       const trigger = screen.getByRole("combobox");
@@ -185,7 +185,7 @@ describe("Select components", () => {
               Disabled Item
             </SelectItem>
           </SelectContent>
-        </Select>
+        </Select>,
       );
 
       const trigger = screen.getByRole("combobox");
@@ -193,7 +193,7 @@ describe("Select components", () => {
 
       const disabledItem = screen.getByText("Disabled Item");
       expect(disabledItem.closest('[role="option"]')).toHaveAttribute(
-        "data-disabled"
+        "data-disabled",
       );
     });
   });
@@ -208,7 +208,7 @@ describe("Select components", () => {
           <SelectContent>
             <SelectItem value="1">Item</SelectItem>
           </SelectContent>
-        </Select>
+        </Select>,
       );
 
       const trigger = screen.getByRole("combobox");
@@ -238,7 +238,7 @@ describe("Select components", () => {
               <SelectItem value="2a">Second A</SelectItem>
             </SelectContent>
           </Select>
-        </>
+        </>,
       );
 
       const triggers = screen.getAllByRole("combobox");

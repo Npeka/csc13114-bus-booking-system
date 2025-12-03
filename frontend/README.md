@@ -106,6 +106,7 @@ curl http://localhost:8080/api/v1/health
 We implement a secure, industry-standard token model:
 
 #### 1. **Email + Password** (Firebase)
+
 ```
 User → Signup/Login Form
   ↓
@@ -117,6 +118,7 @@ Frontend stores tokens securely
 ```
 
 #### 2. **Social Login** (Google OAuth)
+
 ```
 User → "Login with Google"
   ↓
@@ -132,23 +134,25 @@ Frontend stores tokens
 ### Token Management
 
 **Security Model**:
+
 - **Access Token** (short-lived, ~15 min):
   - Stored: In-memory via Zustand (fast, XSS-safe with httpOnly refresh)
   - Sent: In `Authorization: Bearer <token>` header
   - Expires: After 15 minutes
-  
 - **Refresh Token** (long-lived, ~30 days):
   - Stored: httpOnly, secure, sameSite cookies (XSS-proof)
   - Used: Automatically to refresh access token when expired
   - Expires: After 30 days
 
 **Why This Model**:
+
 - **httpOnly Cookies**: Immune to XSS attacks (JavaScript can't access)
 - **In-Memory Access**: No cookie overhead per request, faster
 - **Auto-Refresh**: Seamless experience without user re-login
 - **Server Validation**: Refresh tokens never sent to client, only via HTTP
 
 **Automatic Refresh Flow**:
+
 ```
 1. API returns 401 Unauthorized
   ↓
@@ -167,12 +171,12 @@ Frontend stores tokens
 
 **Role Model** (bit-flag encoding):
 
-| Role | Value | Permissions |
-|------|-------|-------------|
-| Passenger | 1 | Book tickets, view own bookings |
-| Admin | 2 | User management, analytics, system config |
-| Operator | 4 | Manage trips, seat availability, passenger lists |
-| Support | 8 | Customer support, refund processing |
+| Role      | Value | Permissions                                      |
+| --------- | ----- | ------------------------------------------------ |
+| Passenger | 1     | Book tickets, view own bookings                  |
+| Admin     | 2     | User management, analytics, system config        |
+| Operator  | 4     | Manage trips, seat availability, passenger lists |
+| Support   | 8     | Customer support, refund processing              |
 
 **Note**: Users can have multiple roles (bit-flag: e.g., role=3 means Admin + Passenger)
 
@@ -196,12 +200,14 @@ Frontend stores tokens
 ```
 
 **UI Enforcement**:
+
 - Admin users see "Quản trị" link in header
 - Operators see "Điều hành" link in header
 - Role badge displayed in dropdown menu
 - Non-admin users redirected from `/admin/*` routes
 
 **Server-Side Enforcement**:
+
 - Backend validates user role for all API endpoints
 - 403 Forbidden if insufficient permissions
 - Refresh token invalidated if role changed
@@ -224,14 +230,14 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed folder organization and da
 
 ### Key Files
 
-| Path | Purpose |
-|------|---------|
-| `lib/auth/roles.ts` | Role utilities & bit-flag helpers |
-| `lib/auth/useRole.ts` | Hook to check current user role |
-| `components/auth/protected-route.tsx` | Role-based route guard |
-| `components/auth/role-badge.tsx` | Display user role UI |
-| `app/admin/dashboard/page.tsx` | Admin dashboard (role-protected) |
-| `app/operator/dashboard/page.tsx` | Operator panel (role-protected) |
+| Path                                  | Purpose                           |
+| ------------------------------------- | --------------------------------- |
+| `lib/auth/roles.ts`                   | Role utilities & bit-flag helpers |
+| `lib/auth/useRole.ts`                 | Hook to check current user role   |
+| `components/auth/protected-route.tsx` | Role-based route guard            |
+| `components/auth/role-badge.tsx`      | Display user role UI              |
+| `app/admin/dashboard/page.tsx`        | Admin dashboard (role-protected)  |
+| `app/operator/dashboard/page.tsx`     | Operator panel (role-protected)   |
 
 ---
 
@@ -337,6 +343,7 @@ test('ProtectedRoute should require admin role', () => {
 All colors use oklch color space for superior accessibility and consistency.
 
 **Semantic Colors**:
+
 - **Primary**: #E63946 (red) - Main actions, links
 - **Success**: Green - Confirmed bookings
 - **Error**: Red - Cancelled bookings, errors
@@ -356,6 +363,7 @@ See [design/typography-scale.md](./design/typography-scale.md) for specification
 ### Components
 
 17+ reusable UI components:
+
 - Button (6 variants: default, outline, destructive, secondary, ghost, link)
 - Card (with Header, Content, Footer, Title, Description)
 - Badge (4 variants)
@@ -373,15 +381,18 @@ See [design/component-specs.md](./design/component-specs.md) for usage and props
 **Decision**: Access tokens in Zustand (in-memory), refresh tokens in httpOnly cookies
 
 **Why**:
+
 - Prevents XSS attacks (httpOnly cookies can't be stolen via JS)
 - Fast access token reads (no cookie lookup)
 - Auto-refresh handles expired tokens transparently
 
 **Tradeoff**:
+
 - Hard refresh (F5) loses access token but refresh token recovers it
 - Page reload takes ~500ms to validate refresh token
 
 **Alternatives Considered**:
+
 - All in localStorage: Simpler but vulnerable to XSS
 - All in httpOnly: Secure but slow (cookie sent with every request)
 
@@ -390,11 +401,13 @@ See [design/component-specs.md](./design/component-specs.md) for usage and props
 **Decision**: Use bit-flag encoding (2^n) for roles, matching backend
 
 **Why**:
+
 - Efficient: Roles fit in single integer
 - Flexible: User can have multiple roles (e.g., role=3 → Admin + Passenger)
 - Consistent: Aligns with backend authorization model
 
 **Implementation**:
+
 ```typescript
 const isAdmin = (userRole & Role.ADMIN) === Role.ADMIN;
 ```
@@ -404,6 +417,7 @@ const isAdmin = (userRole & Role.ADMIN) === Role.ADMIN;
 **Decision**: Extend ProtectedRoute to accept `requiredRoles` prop
 
 **Why**:
+
 - Single component for auth + authz
 - Easy to protect pages: `<ProtectedRoute requiredRoles={[Role.ADMIN]}>`
 - Future-proof for multiple role requirements
@@ -413,6 +427,7 @@ const isAdmin = (userRole & Role.ADMIN) === Role.ADMIN;
 **Decision**: Use mock data until backend API is available
 
 **Why**:
+
 - Faster frontend development
 - Can test UI independently
 - Easy feature flag to switch between mock and real data
@@ -484,9 +499,11 @@ docker run -p 3000:3000 \
 ### Common Issues
 
 #### "Firebase is not initialized"
+
 **Cause**: Missing or invalid Firebase environment variables
 
 **Fix**:
+
 ```bash
 # Check .env.local
 cat .env.local | grep FIREBASE
@@ -497,21 +514,26 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID should be non-empty
 ```
 
 #### "401 Unauthorized" on API calls
+
 **Cause**: Access token expired or missing
 
 **Check**:
+
 1. Open DevTools → Application → Cookies
 2. Verify `refresh_token` cookie exists (httpOnly, secure)
 3. Check network tab: Authorization header present?
 
 **Fix**:
+
 - Refresh page (triggers auto-refresh via refresh token)
 - If persists: Clear cookies & login again
 
 #### "Cannot POST /api/auth/refresh-token"
+
 **Cause**: Backend not running or API URL wrong
 
 **Fix**:
+
 ```bash
 # Verify API is running
 curl http://localhost:8080/api/v1/health
@@ -524,9 +546,11 @@ npm run dev
 ```
 
 #### "Role badge not showing"
+
 **Cause**: User role not loaded or is 0
 
 **Fix**:
+
 ```bash
 # Check in DevTools → Console
 localStorage.getItem('auth-store')
@@ -536,9 +560,11 @@ localStorage.getItem('auth-store')
 ```
 
 #### Tests failing with "Cannot find module '@/lib/firebase'"
+
 **Cause**: Jest module resolution not configured correctly
 
 **Fix**:
+
 ```bash
 # Clear Jest cache
 npm test -- --clearCache
@@ -552,6 +578,7 @@ npm test
 ## Project Status
 
 ### Completed (Assignment 1)
+
 ✅ Authentication (Email + Google OAuth)
 ✅ Authorization (Role-based access control)
 ✅ Layout & Design System (colors, typography, components)
@@ -560,6 +587,7 @@ npm test
 ✅ Live Deployment (Vercel)
 
 ### In Progress / Planned
+
 🚧 Real API Integration (backend endpoints)
 🚧 Payment Processing (MoMo, ZaloPay)
 🚧 E2E Testing (Cypress)
@@ -590,6 +618,7 @@ See [NEXT_STEPS.md](./NEXT_STEPS.md) for detailed roadmap.
 ## Support
 
 For issues or questions:
+
 1. Check [Troubleshooting](#troubleshooting) section
 2. Review [ARCHITECTURE.md](./ARCHITECTURE.md) for system details
 3. Check [design/](./design/) folder for design system

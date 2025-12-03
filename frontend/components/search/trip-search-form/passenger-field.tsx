@@ -16,7 +16,7 @@ export function PassengerField({ value, onChange }: PassengerFieldProps) {
         Số vé
       </Label>
       <div className="relative">
-        <Users className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+        <Users className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
         <Input
           id="passengers"
           type="number"
@@ -31,4 +31,3 @@ export function PassengerField({ value, onChange }: PassengerFieldProps) {
     </div>
   );
 }
-
