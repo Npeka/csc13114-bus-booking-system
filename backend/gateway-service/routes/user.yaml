@@ -26,7 +26,7 @@ routes:
   - path: "/api/v1/auth/refresh-token"
     methods: ["POST"]
     auth:
-      required: false
+      required: true
 
   - path: "/api/v1/users/profile"
     methods: ["GET", "PUT"]
