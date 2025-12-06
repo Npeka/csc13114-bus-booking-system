@@ -6,21 +6,77 @@ A comprehensive microservices-based bus booking platform built with modern techn
 
 This project implements a distributed microservices architecture with the following components:
 
-### Backend Services (Go)
-- **User Service** - Authentication, user management, and Firebase integration ✅ **Fully Implemented**
-- **Trip Service** - Bus trip management and scheduling ⚠️ *Base project only*
-- **Booking Service** - Reservation and booking management ⚠️ *Base project only*
-- **Payment Service** - Payment processing and transaction handling ⚠️ *Base project only*
-- **Gateway Service** - API Gateway for routing and request aggregation ⚠️ *Base project only*
+## ✅ Week 3 Completion Status
 
-> **Note:** Currently, only the **User Service** is fully implemented according to the project requirements. Other backend services have been scaffolded with base project structure for future development.
+**Booking System and Seat Selection - Completed**
+
+The following features have been successfully implemented as part of Week 3:
+
+### User Portal Features
+
+- ✅ **Interactive Seat Selection**
+
+  - Visual seat map component with clickable seats
+  - Different seat types and status indicators
+  - Real-time availability updates
+  - Seat locking mechanism to prevent double bookings
+
+- ✅ **Booking Flow**
+
+  - Passenger information collection forms
+  - Booking creation and management APIs
+  - Booking summary and review interface
+  - Booking history and management dashboard
+  - Booking modification and cancellation
+
+- ✅ **Guest Services**
+
+  - Guest checkout without registration
+  - Guest booking lookup by reference/email/phone
+  - Unique booking reference generation
+
+- ✅ **Ticketing**
+  - E-ticket download functionality
+  - Automatic email delivery of e-tickets
+  - Professional e-ticket template with branding
+
+### Frontend Implementation
+
+- Profile management page with view/edit modes
+- Real-time trip search with filters
+- Booking management dashboard
+- Responsive UI components
+
+### Backend APIs
+
+- Complete booking service with PostgreSQL
+- Seat reservation and locking system
+- Trip and route management
+- User profile management
+- Gateway authentication and routing
+
+**Next Up:** Week 4 focuses on payment integration (PayOS), notifications (email/SMS), and admin analytics.
+
+See [NEXT_STEPS.md](./NEXT_STEPS.md) for detailed Week 4 planning.
+
+### Backend Services (Go)
+
+- **User Service** - Authentication, user management, and Firebase integration ✅ **Fully Implemented (Week 1-2)**
+- **Trip Service** - Bus trip management and scheduling ✅ **Fully Implemented (Week 2)**
+- **Booking Service** - Reservation and booking management ✅ **Fully Implemented (Week 3)**
+- **Payment Service** - Payment processing and transaction handling 🚧 **Week 4 - In Progress**
+- **Gateway Service** - API Gateway for routing and request aggregation ✅ **Operational**
+
+> **Note:** The project is currently at **Week 3 completion**. User Service, Trip Service, and Booking Service are fully implemented. Payment integration is planned for Week 4.
 
 ### Frontend (Next.js)
+
 - Modern React-based web application with TypeScript
 - Server-side rendering and static generation
 - Responsive UI with Tailwind CSS and Radix UI components
 
 ### Infrastructure
+
 - **PostgreSQL** - Single PostgreSQL server with one database per service
 - **Redis** - Caching and session management
 - **Docker** - Containerization for all services
@@ -39,6 +95,7 @@ All external traffic flows through the **Gateway Service** which acts as a singl
 5. User context (ID, email, role) is added to request headers for downstream services
 
 This architecture ensures:
+
 - Centralized authentication and authorization
 - Service-to-service communication remains internal
 - Role-based access control (RBAC) enforcement
@@ -47,6 +104,7 @@ This architecture ensures:
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - **Go** 1.24.0 or higher
 - **Node.js** 20.x or higher
 - **pnpm** 10.x
@@ -56,12 +114,14 @@ This architecture ensures:
 ### Local Development
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd csc13114-bus-booking-system
    ```
 
 2. **Start all services with Docker Compose**
+
    ```bash
    make local-up
    # or manually:
@@ -69,6 +129,7 @@ This architecture ensures:
    ```
 
 3. **Access the services**
+
    - Gateway Service: http://localhost:8000 (Main Entry Point)
    - User Service: http://localhost:8080
    - Trip Service: http://localhost:8081
@@ -85,6 +146,7 @@ This architecture ensures:
    ```
 
 ### Stop Services
+
 ```bash
 make local-down
 # or manually:
@@ -122,6 +184,7 @@ csc13114-bus-booking-system/
 ### Backend Development
 
 Each Go microservice follows a clean architecture pattern with:
+
 - **cmd/** - Application entry points
 - **internal/** - Private application code
   - **handlers/** - HTTP request handlers
@@ -153,6 +216,7 @@ make local-restart SERVICE=user-service
 ### Frontend Development
 
 The frontend is built with:
+
 - **Next.js 16** with App Router
 - **TypeScript** for type safety
 - **Tailwind CSS** for styling
@@ -189,13 +253,16 @@ pnpm format
 The project uses GitHub Actions for automated quality checks on every push and pull request:
 
 #### Frontend Quality Checks
+
 - **Type checking** - TypeScript compilation
 - **Linting** - ESLint with Next.js configuration
 - **Formatting** - Prettier code formatting
 - **Tests** - Jest unit tests
 
 #### Backend Quality Checks
+
 Per-service checks with change detection:
+
 - **Format checking** - `gofmt` compliance
 - **Go vet** - Static analysis
 - **Linting** - `golangci-lint` with custom rules
@@ -208,6 +275,7 @@ The project uses **Husky** for Git hooks and **lint-staged** for running checks 
 #### Setup
 
 Pre-commit hooks are automatically installed when you run:
+
 ```bash
 npm install
 ```
@@ -217,11 +285,13 @@ This runs the `prepare` script which executes `husky install`.
 #### What Gets Checked
 
 **Frontend** (when `frontend/` files are staged):
+
 - ESLint checks via `pnpm lint:check`
 - Prettier formatting via `pnpm format:check`
 - Runs through lint-staged for efficiency
 
 **Backend** (per-service, only for changed services):
+
 - `gofmt` formatting check
 - `golangci-lint` static analysis
 - Automatically detects which services changed
@@ -253,6 +323,7 @@ golangci-lint run --config=../.golangci.yml ./...
 The deployment pipeline consists of two workflows:
 
 1. **Quality Checks** (`.github/workflows/quality-checks.yml`)
+
    - Runs on every push to `main` or `develop`
    - Detects changed services
    - Runs quality checks only for affected services
@@ -268,16 +339,19 @@ The deployment pipeline consists of two workflows:
 ## 🐳 Docker
 
 ### Build All Images
+
 ```bash
 make build-all
 ```
 
 ### Build Specific Service
+
 ```bash
 make build-service SERVICE=user-service
 ```
 
 ### Docker Compose Features
+
 - Health checks for all services
 - Automatic database initialization
 - Service dependency management
@@ -313,11 +387,13 @@ See [`.github/workflows/quality-checks.yml`](.github/workflows/quality-checks.ym
 ## 🗄️ Database
 
 ### Database Architecture
+
 - **Single PostgreSQL server** with one database per microservice
 - Separate database per service for data isolation and independent scaling
 - Automatic initialization via [`init-databases.sql`](backend/init-databases.sql)
 
 ### Databases
+
 - `bus_booking_user` - User service database
 - `bus_booking_trip` - Trip service database
 - `bus_booking_booking` - Booking service database
@@ -332,6 +408,7 @@ Databases are automatically created when the PostgreSQL container starts for the
 Each service requires environment configuration. Example `.env.dev` files are provided in each service directory.
 
 ### Required Variables
+
 - Database connection strings
 - Redis connection
 - JWT secrets
@@ -341,12 +418,14 @@ Each service requires environment configuration. Example `.env.dev` files are pr
 ## 📊 Monitoring & Health Checks
 
 All services expose health check endpoints:
+
 ```bash
 # Check all service health
 make health-check
 ```
 
 Health endpoints:
+
 - Gateway: `http://localhost:8000/health`
 - User Service: `http://localhost:8080/health`
 - Trip Service: `http://localhost:8081/health`
@@ -356,6 +435,7 @@ Health endpoints:
 ## 📚 API Documentation
 
 Each backend service includes Swagger documentation:
+
 - User Service: `http://localhost:8080/swagger/index.html`
 - Trip Service: `http://localhost:8081/swagger/index.html`
 - Booking Service: `http://localhost:8082/swagger/index.html`
@@ -364,6 +444,7 @@ Each backend service includes Swagger documentation:
 ## 🧪 Testing
 
 ### Backend Tests
+
 ```bash
 # Run all service tests
 make go-test
@@ -373,6 +454,7 @@ cd backend/user-service && go test ./...
 ```
 
 ### Frontend Tests
+
 ```bash
 cd frontend
 
@@ -389,6 +471,7 @@ pnpm test:coverage
 ## 🛠️ Troubleshooting
 
 ### Services won't start
+
 ```bash
 # Clean up Docker resources
 make clean
@@ -398,11 +481,13 @@ make local-build
 ```
 
 ### Database connection issues
+
 - Ensure PostgreSQL is healthy: `docker ps`
 - Check database initialization logs: `docker logs postgres`
 - Verify environment variables in `.env.dev` files
 
 ### Port conflicts
+
 - Check if ports are already in use
 - Modify port mappings in `docker-compose.yaml`
 
@@ -426,5 +511,6 @@ Developed as part of the CSC13114 - Advanced Web Development course.
 ---
 
 For detailed documentation on individual services, see:
+
 - [Frontend README](./frontend/README.md)
 - [Backend Service Documentation](./backend/)

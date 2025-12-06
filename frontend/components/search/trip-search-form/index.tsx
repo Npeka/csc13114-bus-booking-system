@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
-import { format } from "date-fns";
+import { toast } from "sonner";
 import { LocationField } from "./location-field";
 import { LocationPanel } from "./location-panel";
 import { SwapLocationsButton } from "./swap-locations-button";
@@ -22,19 +22,38 @@ import { formatDateForApi } from "@/lib/utils";
 
 export function TripSearchForm() {
   const router = useRouter();
-  const [origin, setOrigin] = useState("");
-  const [destination, setDestination] = useState("");
+  const searchParams = useSearchParams();
+
+  // Read initial values from URL params (for trips page)
+  const initialOrigin = searchParams.get("from") || "";
+  const initialDestination = searchParams.get("to") || "";
+  const initialDateStr = searchParams.get("date") || "";
+  const initialPassengers = parseInt(searchParams.get("passengers") || "1", 10);
+
+  const [origin, setOrigin] = useState(initialOrigin);
+  const [destination, setDestination] = useState(initialDestination);
   // Initialize as undefined to avoid hydration mismatch with PPR
   // Use function initializer to set date only on client side
   const [date, setDate] = useState<Date | undefined>(() => {
     if (typeof window !== "undefined") {
+      // Try to parse date from URL params first
+      if (initialDateStr) {
+        try {
+          const [day, month, year] = initialDateStr.split("/");
+          if (day && month && year) {
+            return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+          }
+        } catch {
+          // Fall through to default
+        }
+      }
       return new Date();
     }
     return undefined;
   });
   const [isRoundTrip, setIsRoundTrip] = useState(false);
   const [returnDate, setReturnDate] = useState<Date | undefined>(undefined);
-  const [passengers, setPassengers] = useState(1);
+  const [passengers, setPassengers] = useState(initialPassengers);
   const [recentLocations, setRecentLocations] = useState<string[]>([
     "Đà Lạt",
     "TP. Hồ Chí Minh",
@@ -60,6 +79,23 @@ export function TripSearchForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validation: Check if origin and destination are filled
+    if (!origin.trim()) {
+      toast.error("Vui lòng chọn điểm đi");
+      return;
+    }
+
+    if (!destination.trim()) {
+      toast.error("Vui lòng chọn điểm đến");
+      return;
+    }
+
+    // Validation: Check if origin and destination are the same
+    if (origin.trim().toLowerCase() === destination.trim().toLowerCase()) {
+      toast.error("Điểm đi và điểm đến không thể giống nhau");
+      return;
+    }
 
     if (!date) return;
 
@@ -153,14 +189,31 @@ export function TripSearchForm() {
     // Determine the source: Use API cities if available, otherwise fallback to local VIETNAM_CITIES
     const citySource = apiCities.length > 0 ? apiCities : VIETNAM_CITIES;
 
-    // If search query is empty, show all cities
+    // Filter out the already-selected location from the opposite field
+    const excludeCity =
+      locationPicker.field === "origin" ? destination : origin;
+    const citiesWithoutSelected = excludeCity
+      ? citySource.filter(
+          (city) => city.toLowerCase() !== excludeCity.toLowerCase(),
+        )
+      : citySource;
+
+    // If search query is empty, show all cities (minus the excluded one)
     if (!searchQuery) {
-      return citySource;
+      return citiesWithoutSelected;
     }
 
-    // Apply local fuzzy matching on the city source
-    return citySource.filter((city) => fuzzyMatchCity(city, searchQuery));
-  }, [locationPicker.search, apiCities]);
+    // Apply local fuzzy matching on the filtered city source
+    return citiesWithoutSelected.filter((city) =>
+      fuzzyMatchCity(city, searchQuery),
+    );
+  }, [
+    locationPicker.search,
+    locationPicker.field,
+    apiCities,
+    origin,
+    destination,
+  ]);
 
   useEffect(() => {
     if (locationPicker.open) {
