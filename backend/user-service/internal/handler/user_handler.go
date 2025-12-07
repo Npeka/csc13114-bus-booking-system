@@ -145,7 +145,7 @@ func (h *UserHandlerImpl) ListUsers(r *ginext.Request) (*ginext.Response, error)
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
-	req.PaginationRequest.Normalize()
+	req.Normalize()
 
 	users, total, err := h.us.ListUsers(r.Context(), req)
 	if err != nil {
