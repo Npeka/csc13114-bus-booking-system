@@ -7,8 +7,6 @@ const (
 	RoleGuest     UserRole = 1 << iota // bit 0: 1
 	RolePassenger                      // bit 1: 2
 	RoleAdmin                          // bit 2: 4
-	RoleOperator                       // bit 3: 8
-	RoleSupport                        // bit 4: 16
 )
 
 // Role constants as int for easier usage
@@ -16,8 +14,6 @@ const (
 	RoleGuestInt     = int(RoleGuest)     // 1
 	RolePassengerInt = int(RolePassenger) // 2
 	RoleAdminInt     = int(RoleAdmin)     // 4
-	RoleOperatorInt  = int(RoleOperator)  // 8
-	RoleSupportInt   = int(RoleSupport)   // 16
 )
 
 // HasRole checks if a role has a specific permission
@@ -34,10 +30,6 @@ func (r UserRole) String() string {
 		return "passenger"
 	case RoleAdmin:
 		return "admin"
-	case RoleOperator:
-		return "operator"
-	case RoleSupport:
-		return "support"
 	default:
 		return "unknown"
 	}
@@ -85,8 +77,7 @@ func (s UserStatus) CanLogin() bool {
 
 // ValidateRole checks if the role value is valid
 func ValidateRole(role int) bool {
-	return role == RoleGuestInt || role == RolePassengerInt || role == RoleAdminInt ||
-		role == RoleOperatorInt || role == RoleSupportInt
+	return role == RoleGuestInt || role == RolePassengerInt || role == RoleAdminInt
 }
 
 // FromString converts role string to UserRole
@@ -98,12 +89,8 @@ func FromString(role string) UserRole {
 		return RolePassenger
 	case "admin":
 		return RoleAdmin
-	case "operator":
-		return RoleOperator
-	case "support":
-		return RoleSupport
 	default:
-		return 0 // invalid role
+		return 0
 	}
 }
 
@@ -134,7 +121,7 @@ func IsValidRoleString(role string) bool {
 
 // ValidRoleStrings returns all valid role strings
 func ValidRoleStrings() []string {
-	return []string{"guest", "passenger", "admin", "operator", "support"}
+	return []string{"guest", "passenger", "admin"}
 }
 
 // HasAnyRole checks if a role has any of the specified roles

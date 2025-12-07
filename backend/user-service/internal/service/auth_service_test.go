@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"strconv"
 	"testing"
 	"time"
 
@@ -38,7 +39,7 @@ func TestAuthService_VerifyToken_Success(t *testing.T) {
 	claims := &utils.JWTClaims{
 		UserID:    userID,
 		Email:     "test@example.com",
-		Role:      "1",
+		Role:      strconv.Itoa(int(constants.RolePassenger)),
 		TokenType: utils.AccessToken,
 	}
 
@@ -272,8 +273,8 @@ func TestAuthService_FirebaseAuth_NewUser(t *testing.T) {
 	mockFirebase.On("VerifyIDToken", ctx, req.IDToken).Return(firebaseToken, nil)
 	mockRepo.On("GetByFirebaseUID", ctx, firebaseToken.UID).Return(nil, errors.New("not found"))
 	mockRepo.On("Create", ctx, mock.AnythingOfType("*model.User")).Return(nil)
-	mockJWT.On("GenerateAccessToken", mock.AnythingOfType("uuid.UUID"), "newuser@example.com", "2").Return("access.token", nil)
-	mockJWT.On("GenerateRefreshToken", mock.AnythingOfType("uuid.UUID"), "newuser@example.com", "2").Return("refresh.token", nil)
+	mockJWT.On("GenerateAccessToken", mock.AnythingOfType("uuid.UUID"), "newuser@example.com", strconv.Itoa(int(constants.RolePassenger))).Return("access.token", nil)
+	mockJWT.On("GenerateRefreshToken", mock.AnythingOfType("uuid.UUID"), "newuser@example.com", strconv.Itoa(int(constants.RolePassenger))).Return("refresh.token", nil)
 
 	// Act
 	result, err := service.FirebaseAuth(ctx, req)
@@ -327,8 +328,8 @@ func TestAuthService_FirebaseAuth_ExistingUser(t *testing.T) {
 
 	mockFirebase.On("VerifyIDToken", ctx, req.IDToken).Return(firebaseToken, nil)
 	mockRepo.On("GetByFirebaseUID", ctx, firebaseToken.UID).Return(existingUser, nil)
-	mockJWT.On("GenerateAccessToken", existingUser.ID, existingUser.Email, "1").Return("access.token", nil)
-	mockJWT.On("GenerateRefreshToken", existingUser.ID, existingUser.Email, "1").Return("refresh.token", nil)
+	mockJWT.On("GenerateAccessToken", existingUser.ID, existingUser.Email, strconv.Itoa(int(constants.RolePassenger))).Return("access.token", nil)
+	mockJWT.On("GenerateRefreshToken", existingUser.ID, existingUser.Email, strconv.Itoa(int(constants.RolePassenger))).Return("refresh.token", nil)
 
 	// Act
 	result, err := service.FirebaseAuth(ctx, req)
@@ -397,7 +398,7 @@ func TestAuthService_RefreshToken_Success(t *testing.T) {
 	claims := &utils.JWTClaims{
 		UserID: userID,
 		Email:  "test@example.com",
-		Role:   "1",
+		Role:   strconv.Itoa(int(constants.RolePassenger)),
 	}
 	now := time.Now()
 	claims.IssuedAt = jwt.NewNumericDate(now)
@@ -414,8 +415,8 @@ func TestAuthService_RefreshToken_Success(t *testing.T) {
 	mockBlacklist.On("IsUserTokensBlacklisted", ctx, userID, claims.IssuedAt.Unix()).Return(false)
 	mockRepo.On("GetByID", ctx, userID).Return(user, nil)
 	mockBlacklist.On("BlacklistToken", ctx, req.RefreshToken).Return(true)
-	mockJWT.On("GenerateAccessToken", userID, user.Email, "1").Return("new.access.token", nil)
-	mockJWT.On("GenerateRefreshToken", userID, user.Email, "1").Return("new.refresh.token", nil)
+	mockJWT.On("GenerateAccessToken", userID, user.Email, strconv.Itoa(int(constants.RolePassenger))).Return("new.access.token", nil)
+	mockJWT.On("GenerateRefreshToken", userID, user.Email, strconv.Itoa(int(constants.RolePassenger))).Return("new.refresh.token", nil)
 
 	// Act
 	result, err := service.RefreshToken(ctx, req)
@@ -551,8 +552,8 @@ func TestAuthService_Register_Success(t *testing.T) {
 	// Mock email doesn't exist
 	mockRepo.On("GetByEmail", ctx, req.Email).Return(nil, errors.New("not found"))
 	mockRepo.On("Create", ctx, mock.AnythingOfType("*model.User")).Return(nil)
-	mockJWT.On("GenerateAccessToken", mock.AnythingOfType("uuid.UUID"), req.Email, "1").Return("access.token", nil)
-	mockJWT.On("GenerateRefreshToken", mock.AnythingOfType("uuid.UUID"), req.Email, "1").Return("refresh.token", nil)
+	mockJWT.On("GenerateAccessToken", mock.AnythingOfType("uuid.UUID"), req.Email, strconv.Itoa(int(constants.RolePassenger))).Return("access.token", nil)
+	mockJWT.On("GenerateRefreshToken", mock.AnythingOfType("uuid.UUID"), req.Email, strconv.Itoa(int(constants.RolePassenger))).Return("refresh.token", nil)
 
 	// Act
 	result, err := service.Register(ctx, req)
@@ -634,8 +635,8 @@ func TestAuthService_Login_Success(t *testing.T) {
 	}
 
 	mockRepo.On("GetByEmail", ctx, req.Email).Return(user, nil)
-	mockJWT.On("GenerateAccessToken", user.ID, user.Email, "1").Return("access.token", nil)
-	mockJWT.On("GenerateRefreshToken", user.ID, user.Email, "1").Return("refresh.token", nil)
+	mockJWT.On("GenerateAccessToken", user.ID, user.Email, strconv.Itoa(int(constants.RolePassenger))).Return("access.token", nil)
+	mockJWT.On("GenerateRefreshToken", user.ID, user.Email, strconv.Itoa(int(constants.RolePassenger))).Return("refresh.token", nil)
 
 	// Act
 	result, err := service.Login(ctx, req)

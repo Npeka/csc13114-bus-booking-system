@@ -113,11 +113,9 @@ export default function ProfilePage() {
       case 1:
         return "Hành khách";
       case 2:
-        return "Tài xế";
-      case 4:
         return "Quản trị viên";
       default:
-        return "Người dùng";
+        return "Khách vãng lai";
     }
   };
 
