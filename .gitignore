@@ -1,3 +1,5 @@
 /.document
 /.report
 /frontend
+/node_modules
+/.vscode

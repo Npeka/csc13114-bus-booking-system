@@ -83,6 +83,10 @@ services:
       DATABASE_NAME: "bus_booking_payment"
       SERVER_PORT: "8080"
       REDIS_DB: "3"
+
+      PAYOS_CLIENT_ID: ce924919-6874-43ce-88fb-068b5e73988a
+      PAYOS_API_KEY: 8d37f38e-f028-47c4-aa41-12674bf16328
+      PAYOS_CHECKSUM_KEY: e01cb1038e2744ea9e479dc460dc80c91aff7e0b18d9a1431808f78e45dcde91
     ingress:
       enabled: false # Traffic goes through gateway now
 
@@ -114,7 +118,7 @@ env:
   RATE_LIMIT_CLEANUP_AFTER: 10m
 
   # CORS
-  CORS_ALLOWED_ORIGINS: "https://csc13114-bus-booking-system.vercel.app,http://localhost:3000"
+  CORS_ALLOWED_ORIGINS: "https://csc13114-bus-booking-system.vercel.app,http://localhost:3000,https://api-merchant.payos.vn"
   CORS_ALLOWED_METHODS: "GET,POST,PUT,PATCH,DELETE,OPTIONS"
   CORS_ALLOWED_HEADERS: "Origin,Content-Type,Accept,Authorization,X-Requested-With,X-User-ID,X-User-Role,X-Access-Token"
   CORS_ALLOW_CREDENTIALS: "true"
@@ -155,8 +159,10 @@ env:
   JWT_AUDIENCE: bus-booking-users
 
   # Logging Configuration
-  EXTERNAL_PAYMENT_SERVICE_URL: https://payment-service
-  EXTERNAL_NOTIFICATION_URL: https://notification-service
+  EXTERNAL_BOOKING_SERVICE_URL: http://booking-service
+  EXTERNAL_PAYMENT_SERVICE_URL: http://payment-service
+  EXTERNAL_TRIP_SERVICE_URL: http://trip-service
+  EXTERNAL_USER_SERVICE_URL: http://user-service
   EXTERNAL_TIMEOUT: 60s
   EXTERNAL_RETRY_ATTEMPTS: 3
 
