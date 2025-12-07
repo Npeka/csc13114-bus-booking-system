@@ -1,36 +1,36 @@
 service: "payment"
 routes:
-  - path: "/api/v1/payments"
+  - path: "/api/v1/transactions"
     methods: ["POST"]
     auth:
       required: true
 
-  - path: "/api/v1/payments/:id"
+  - path: "/api/v1/transactions/:id"
     methods: ["GET"]
     auth:
       required: true
 
-  - path: "/api/v1/payments/:id/status"
+  - path: "/api/v1/transactions/:id/status"
     methods: ["GET"]
     auth:
       required: true
 
-  - path: "/api/v1/payments/webhook"
+  - path: "/api/v1/transactions/webhook"
     methods: ["POST"]
 
-  - path: "/api/v1/admin/payments"
+  - path: "/api/v1/admin/transactions"
     methods: ["GET"]
     auth:
       required: true
       roles: ["admin"]
 
-  - path: "/api/v1/admin/payments/:id"
+  - path: "/api/v1/admin/transactions/:id"
     methods: ["GET"]
     auth:
       required: true
       roles: ["admin"]
 
-  - path: "/api/v1/admin/payments/:id/refund"
+  - path: "/api/v1/admin/transactions/:id/refund"
     methods: ["POST"]
     auth:
       required: true
