@@ -5,21 +5,21 @@
  */
 
 export enum Role {
-  PASSENGER = 1,
-  ADMIN = 2,
-  SUPPORT = 8,
+  GUEST = 0,
+  PASSENGER = 2,
+  ADMIN = 4,
 }
 
 export const ROLE_NAMES: Record<Role, string> = {
+  [Role.GUEST]: "Guest",
   [Role.PASSENGER]: "Passenger",
   [Role.ADMIN]: "Admin",
-  [Role.SUPPORT]: "Support",
 };
 
 export const ROLE_LABELS: Record<Role, string> = {
+  [Role.GUEST]: "Khách vãng lai",
   [Role.PASSENGER]: "Hành khách",
   [Role.ADMIN]: "Quản trị viên",
-  [Role.SUPPORT]: "Hỗ trợ",
 };
 
 /**
@@ -38,13 +38,6 @@ export function isAdmin(userRole: number): boolean {
 }
 
 /**
- * Check if user is support
- */
-export function isSupport(userRole: number): boolean {
-  return hasRole(userRole, Role.SUPPORT);
-}
-
-/**
  * Check if user is passenger (basic customer)
  */
 export function isPassenger(userRole: number): boolean {
@@ -56,9 +49,12 @@ export function isPassenger(userRole: number): boolean {
  */
 export function getUserRoles(userRole: number): Role[] {
   const roles: Role[] = [];
-  if (isPassenger(userRole)) roles.push(Role.PASSENGER);
-  if (isAdmin(userRole)) roles.push(Role.ADMIN);
-  if (isSupport(userRole)) roles.push(Role.SUPPORT);
+  if (userRole === Role.GUEST) {
+    roles.push(Role.GUEST);
+  } else {
+    if (isPassenger(userRole)) roles.push(Role.PASSENGER);
+    if (isAdmin(userRole)) roles.push(Role.ADMIN);
+  }
   return roles;
 }
 
@@ -75,7 +71,6 @@ export function getUserRoleLabels(userRole: number): string[] {
 export function getRoleName(userRole: number): string {
   // Return the highest priority role name
   if (isAdmin(userRole)) return ROLE_NAMES[Role.ADMIN];
-  if (isSupport(userRole)) return ROLE_NAMES[Role.SUPPORT];
   return ROLE_NAMES[Role.PASSENGER];
 }
 
@@ -85,6 +80,5 @@ export function getRoleName(userRole: number): string {
 export function getRoleLabel(userRole: number): string {
   // Return the highest priority role label (Vietnamese)
   if (isAdmin(userRole)) return ROLE_LABELS[Role.ADMIN];
-  if (isSupport(userRole)) return ROLE_LABELS[Role.SUPPORT];
   return ROLE_LABELS[Role.PASSENGER];
 }
