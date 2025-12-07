@@ -351,7 +351,6 @@ func isAlphaNumeric(c byte) bool {
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
 }
 
-// getServiceConfig performs case-insensitive lookup for service configuration
 func (g *Gateway) getServiceConfig(serviceName string) (config.ServiceConfig, bool) {
 	if serviceConfig, exists := g.config.ServicesMap[serviceName]; exists {
 		return serviceConfig, true

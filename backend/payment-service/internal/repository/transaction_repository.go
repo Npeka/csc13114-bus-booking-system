@@ -69,7 +69,6 @@ func (r *transactionRepositoryImpl) GetTransactionByBookingID(ctx context.Contex
 	return &transaction, nil
 }
 
-// GetTransactionsByBookingID retrieves all transactions for a booking
 func (r *transactionRepositoryImpl) GetTransactionsByBookingID(ctx context.Context, bookingID uuid.UUID) ([]*model.Transaction, error) {
 	var transactions []*model.Transaction
 	if err := r.db.WithContext(ctx).

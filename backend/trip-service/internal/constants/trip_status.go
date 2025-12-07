@@ -23,7 +23,6 @@ func (t TripStatus) IsValid() bool {
 	return false
 }
 
-// AllTripStatuses returns all valid trip statuses
 func AllTripStatuses() []TripStatus {
 	return []TripStatus{
 		TripStatusScheduled,

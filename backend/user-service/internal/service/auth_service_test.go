@@ -473,10 +473,15 @@ func TestAuthService_RefreshToken_UserMismatch(t *testing.T) {
 
 	claims := &utils.JWTClaims{
 		UserID: differentUserID,
+		RegisteredClaims: jwt.RegisteredClaims{
+			IssuedAt: jwt.NewNumericDate(time.Now()),
+		},
 	}
 
 	mockJWT.On("ValidateRefreshToken", req.RefreshToken).Return(claims, nil)
-	mockBlacklist.On("IsTokenBlacklisted", ctx, req.RefreshToken).Return(false, nil)
+	mockBlacklist.On("IsTokenBlacklisted", ctx, req.RefreshToken).Return(false)
+	mockBlacklist.On("IsUserTokensBlacklisted", ctx, differentUserID, mock.AnythingOfType("int64")).Return(false)
+	mockRepo.On("GetByID", ctx, differentUserID).Return(nil, errors.New("user not found"))
 
 	// Act
 	result, err := service.RefreshToken(ctx, req)
@@ -484,8 +489,10 @@ func TestAuthService_RefreshToken_UserMismatch(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "refresh token does not match user")
+	assert.Contains(t, err.Error(), "user not found")
 	mockJWT.AssertExpectations(t)
+	mockBlacklist.AssertExpectations(t)
+	mockRepo.AssertExpectations(t)
 }
 
 func TestAuthService_Logout_Success(t *testing.T) {

@@ -51,7 +51,6 @@ func (r *feedbackRepositoryImpl) GetFeedbacksByTripID(ctx context.Context, tripI
 	var feedbacks []*model.Feedback
 	var total int64
 
-	// Count total
 	if err := r.db.WithContext(ctx).
 		Model(&model.Feedback{}).
 		Where("trip_id = ?", tripID).
@@ -59,7 +58,6 @@ func (r *feedbackRepositoryImpl) GetFeedbacksByTripID(ctx context.Context, tripI
 		return nil, 0, fmt.Errorf("failed to count feedbacks: %w", err)
 	}
 
-	// Get feedbacks
 	err := r.db.WithContext(ctx).
 		Where("trip_id = ?", tripID).
 		Order("created_at DESC").
