@@ -34,8 +34,6 @@ func NewBookingRepository(db *gorm.DB) BookingRepository {
 }
 
 func (r *bookingRepositoryImpl) CreateBooking(ctx context.Context, booking *model.Booking) error {
-	// Simply create booking with booking_seats in one transaction
-	// No need to update seat_status table (Trip Service manages seats)
 	return r.db.WithContext(ctx).Create(booking).Error
 }
 

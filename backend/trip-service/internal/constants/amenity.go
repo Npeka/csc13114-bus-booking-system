@@ -13,7 +13,6 @@ const (
 	AmenitySnacks   Amenity = "snacks"
 )
 
-// AllAmenities returns all available amenities
 var AllAmenities = []Amenity{
 	AmenityWiFi,
 	AmenityAC,
@@ -38,7 +37,6 @@ func (a Amenity) IsValid() bool {
 	return false
 }
 
-// GetDisplayName returns a user-friendly display name for the amenity
 func (a Amenity) GetDisplayName() string {
 	switch a {
 	case AmenityWiFi:

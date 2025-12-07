@@ -476,6 +476,7 @@ func TestAuthService_RefreshToken_UserMismatch(t *testing.T) {
 	}
 
 	mockJWT.On("ValidateRefreshToken", req.RefreshToken).Return(claims, nil)
+	mockBlacklist.On("IsTokenBlacklisted", ctx, req.RefreshToken).Return(false, nil)
 
 	// Act
 	result, err := service.RefreshToken(ctx, req)

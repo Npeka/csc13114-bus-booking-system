@@ -26,7 +26,6 @@ func NewTransactionRepository(db *gorm.DB) TransactionRepository {
 	return &transactionRepositoryImpl{db: db}
 }
 
-// CreateTransaction creates a new transaction
 func (r *transactionRepositoryImpl) CreateTransaction(ctx context.Context, transaction *model.Transaction) error {
 	if err := r.db.WithContext(ctx).Create(transaction).Error; err != nil {
 		return fmt.Errorf("failed to create transaction: %w", err)
@@ -34,7 +33,6 @@ func (r *transactionRepositoryImpl) CreateTransaction(ctx context.Context, trans
 	return nil
 }
 
-// UpdateTransaction updates an existing transaction
 func (r *transactionRepositoryImpl) UpdateTransaction(ctx context.Context, transaction *model.Transaction) error {
 	if err := r.db.WithContext(ctx).Save(transaction).Error; err != nil {
 		return fmt.Errorf("failed to update transaction: %w", err)
@@ -42,7 +40,6 @@ func (r *transactionRepositoryImpl) UpdateTransaction(ctx context.Context, trans
 	return nil
 }
 
-// GetTransactionByID retrieves a transaction by ID
 func (r *transactionRepositoryImpl) GetTransactionByID(ctx context.Context, id uuid.UUID) (*model.Transaction, error) {
 	var transaction model.Transaction
 	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&transaction).Error; err != nil {
