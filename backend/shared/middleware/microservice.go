@@ -10,28 +10,28 @@ import (
 	"github.com/google/uuid"
 )
 
-func RequestContextMiddleware(serviceName string) gin.HandlerFunc {
+func RequestContext(serviceName string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Extract or generate request ID
-		requestID := c.GetHeader(constants.HeaderRequestID)
+		requestID := c.GetHeader(constants.XRequestID)
 		if requestID == "" {
 			requestID = sharedcontext.GenerateRequestID()
 		}
 		sharedcontext.SetRequestID(c, requestID)
 
 		// Extract user information from headers (set by gateway/auth service)
-		if userID := c.GetHeader(constants.HeaderUserID); userID != "" {
+		if userID := c.GetHeader(constants.XUserID); userID != "" {
 			sharedcontext.SetUserID(c, userID)
 		}
-		if userRole := c.GetHeader(constants.HeaderUserRole); userRole != "" {
+		if userRole := c.GetHeader(constants.XUserRole); userRole != "" {
 			if roleInt, err := strconv.Atoi(userRole); err == nil {
 				sharedcontext.SetUserRole(c, roleInt)
 			}
 		}
-		if userEmail := c.GetHeader(constants.HeaderUserEmail); userEmail != "" {
+		if userEmail := c.GetHeader(constants.XUserEmail); userEmail != "" {
 			sharedcontext.SetUserEmail(c, userEmail)
 		}
-		if accessToken := c.GetHeader(constants.HeaderAccessToken); accessToken != "" {
+		if accessToken := c.GetHeader(constants.XAccessToken); accessToken != "" {
 			sharedcontext.SetAccessToken(c, accessToken)
 		}
 
@@ -44,14 +44,14 @@ func RequestContextMiddleware(serviceName string) gin.HandlerFunc {
 		c.Request = c.Request.WithContext(ctx)
 
 		// Set response headers
-		c.Header(constants.HeaderRequestID, requestID)
-		c.Header(constants.HeaderServiceName, serviceName)
+		c.Header(constants.XRequestID, requestID)
+		c.Header(constants.XServiceName, serviceName)
 
 		c.Next()
 	}
 }
 
-func RequireAuthMiddleware() gin.HandlerFunc {
+func RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID := sharedcontext.GetUserID(c)
 		if userID == uuid.Nil {
@@ -68,7 +68,7 @@ func RequireAuthMiddleware() gin.HandlerFunc {
 	}
 }
 
-func RequireRoleMiddleware(allowedRoles ...constants.UserRole) gin.HandlerFunc {
+func RequireRole(allowedRoles ...constants.UserRole) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userRole := sharedcontext.GetUserRole(c)
 		if userRole == 0 {

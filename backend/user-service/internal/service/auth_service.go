@@ -24,7 +24,7 @@ type AuthService interface {
 	Logout(ctx context.Context, req model.LogoutRequest, userID uuid.UUID) error
 	ForgotPassword(ctx context.Context, req *model.ForgotPasswordRequest) error
 	ResetPassword(ctx context.Context, req *model.ResetPasswordRequest) error
-	RefreshToken(ctx context.Context, req *model.RefreshTokenRequest, userID uuid.UUID) (*model.AuthResponse, error)
+	RefreshToken(ctx context.Context, req *model.RefreshTokenRequest) (*model.AuthResponse, error)
 }
 
 type AuthServiceImpl struct {
@@ -74,7 +74,7 @@ func (s *AuthServiceImpl) VerifyToken(ctx context.Context, accessToken string) (
 		return nil, ginext.NewUnauthorizedError("user not found")
 	}
 
-	if user.Status != "active" && user.Status != "verified" {
+	if user.Status != constants.UserStatusActive && user.Status != constants.UserStatusVerified {
 		return nil, ginext.NewUnauthorizedError("user is not active")
 	}
 
@@ -102,7 +102,7 @@ func (s *AuthServiceImpl) FirebaseAuth(ctx context.Context, req *model.FirebaseA
 	user, err := s.userRepo.GetByFirebaseUID(ctx, token.UID)
 	if err == nil && user != nil {
 		// User exists, return auth response
-		if user.Status != "active" && user.Status != "verified" {
+		if user.Status != constants.UserStatusActive && user.Status != constants.UserStatusVerified {
 			return nil, ginext.NewForbiddenError("Account is not active")
 		}
 		return s.generateAuthResponse(user)
@@ -156,7 +156,7 @@ func (s *AuthServiceImpl) FirebaseAuth(ctx context.Context, req *model.FirebaseA
 		FullName:      fullName,
 		Avatar:        avatar,
 		Role:          constants.RolePassenger,
-		Status:        "verified",
+		Status:        constants.UserStatusVerified,
 		FirebaseUID:   &token.UID,
 		EmailVerified: emailVerified,
 		PhoneVerified: phoneVerified,
@@ -191,7 +191,7 @@ func (s *AuthServiceImpl) Register(ctx context.Context, req *model.RegisterReque
 		FullName:      req.FullName,
 		PasswordHash:  &passwordHash,
 		Role:          constants.RolePassenger,
-		Status:        "active",
+		Status:        constants.UserStatusActive,
 		FirebaseUID:   nil, // Empty for email/password users
 		EmailVerified: false,
 		PhoneVerified: false,
@@ -226,7 +226,7 @@ func (s *AuthServiceImpl) Login(ctx context.Context, req *model.LoginRequest) (*
 	}
 
 	// Check user status
-	if user.Status != "active" && user.Status != "verified" {
+	if user.Status != constants.UserStatusActive && user.Status != constants.UserStatusVerified {
 		return nil, ginext.NewForbiddenError("Account is not active")
 	}
 
@@ -308,14 +308,10 @@ func (s *AuthServiceImpl) ResetPassword(ctx context.Context, req *model.ResetPas
 	return nil
 }
 
-func (s *AuthServiceImpl) RefreshToken(ctx context.Context, req *model.RefreshTokenRequest, userID uuid.UUID) (*model.AuthResponse, error) {
+func (s *AuthServiceImpl) RefreshToken(ctx context.Context, req *model.RefreshTokenRequest) (*model.AuthResponse, error) {
 	claims, err := s.jwtManager.ValidateRefreshToken(req.RefreshToken)
 	if err != nil {
 		return nil, ginext.NewUnauthorizedError("invalid refresh token")
-	}
-
-	if claims.UserID != userID {
-		return nil, ginext.NewUnauthorizedError("refresh token does not match user")
 	}
 
 	// Check blacklist - đơn giản
@@ -327,12 +323,12 @@ func (s *AuthServiceImpl) RefreshToken(ctx context.Context, req *model.RefreshTo
 		return nil, ginext.NewUnauthorizedError("all user tokens have been revoked")
 	}
 
-	user, err := s.userRepo.GetByID(ctx, userID)
+	user, err := s.userRepo.GetByID(ctx, claims.UserID)
 	if err != nil || user == nil {
 		return nil, ginext.NewInternalServerError("user not found")
 	}
 
-	if user.Status != "active" && user.Status != "verified" {
+	if user.Status != constants.UserStatusActive && user.Status != constants.UserStatusVerified {
 		return nil, ginext.NewForbiddenError("account is not active")
 	}
 

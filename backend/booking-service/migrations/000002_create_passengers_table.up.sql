@@ -1,0 +1,2 @@
+-- Passengers table is deprecated - using booking_seats instead
+-- This migration is kept for backward compatibility but does nothing

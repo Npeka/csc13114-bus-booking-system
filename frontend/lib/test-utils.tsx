@@ -2,7 +2,7 @@ import React, { ReactElement } from "react";
 import { render, RenderOptions } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/components/theme-provider";
-import { User } from "@/lib/stores/auth-store";
+import { User, UserStatus } from "@/lib/stores/auth-store";
 import { Role } from "@/lib/auth/roles";
 
 /**
@@ -86,7 +86,7 @@ export function createMockUser(overrides?: Partial<User>): User {
     full_name: "Test User",
     avatar: "https://example.com/avatar.jpg",
     role: Role.PASSENGER,
-    status: "active",
+    status: UserStatus.Active,
     email_verified: true,
     phone_verified: true,
     created_at: "2024-01-01T00:00:00Z",

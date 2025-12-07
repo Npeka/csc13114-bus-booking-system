@@ -39,12 +39,13 @@ func (h *SeatHandlerImpl) GetSeatAvailability(r *ginext.Request) (*ginext.Respon
 	tripIDStr := r.GinCtx.Param("trip_id")
 	tripID, err := uuid.Parse(tripIDStr)
 	if err != nil {
-		return nil, ginext.NewBadRequestError("invalid trip ID")
+		log.Error().Err(err).Str("trip_id", tripIDStr).Msg("invalid trip id")
+		return nil, ginext.NewBadRequestError("invalid trip id")
 	}
 
 	availability, err := h.seatService.GetSeatAvailability(r.Context(), tripID)
 	if err != nil {
-		log.Error().Err(err).Str("trip_id", tripIDStr).Msg("Failed to get seat availability")
+		log.Error().Err(err).Str("trip_id", tripIDStr).Msg("failed to get seat availability")
 		return nil, err
 	}
 
@@ -65,16 +66,16 @@ func (h *SeatHandlerImpl) GetSeatAvailability(r *ginext.Request) (*ginext.Respon
 func (h *SeatHandlerImpl) ReserveSeat(r *ginext.Request) (*ginext.Response, error) {
 	var req model.ReserveSeatRequest
 	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
-		log.Debug().Err(err).Msg("Invalid request body")
+		log.Error().Err(err).Msg("failed to bind request body")
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
 	if err := h.seatService.ReserveSeat(r.Context(), &req); err != nil {
-		log.Error().Err(err).Msg("Failed to reserve seat")
+		log.Error().Err(err).Msg("failed to reserve seat")
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse("Seat reserved successfully"), nil
+	return ginext.NewSuccessResponse("seat reserved successfully"), nil
 }
 
 // ReleaseSeat godoc
@@ -91,14 +92,14 @@ func (h *SeatHandlerImpl) ReserveSeat(r *ginext.Request) (*ginext.Response, erro
 func (h *SeatHandlerImpl) ReleaseSeat(r *ginext.Request) (*ginext.Response, error) {
 	var req model.ReleaseSeatRequest
 	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
-		log.Debug().Err(err).Msg("Invalid request body")
+		log.Error().Err(err).Msg("failed to bind request body")
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
 	if err := h.seatService.ReleaseSeat(r.Context(), req.TripID, req.SeatID); err != nil {
-		log.Error().Err(err).Msg("Failed to release seat")
+		log.Error().Err(err).Msg("failed to release seat")
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse("Seat released successfully"), nil
+	return ginext.NewSuccessResponse("seat released successfully"), nil
 }

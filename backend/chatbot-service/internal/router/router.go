@@ -20,7 +20,7 @@ type Handlers struct {
 func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 	router.Use(middleware.Logger())
 	router.Use(middleware.SetupCORS(&cfg.CORS))
-	router.Use(middleware.RequestContextMiddleware(cfg.ServiceName))
+	router.Use(middleware.RequestContext(cfg.ServiceName))
 	router.GET(health.Path, health.Handler(cfg.ServiceName))
 	router.GET(swagger.Path, ginSwagger.WrapHandler(swaggerFiles.Handler))
 

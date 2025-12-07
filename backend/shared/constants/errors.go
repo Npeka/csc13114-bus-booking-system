@@ -37,13 +37,3 @@ const (
 	CodeRequestTimeout     = "REQUEST_TIMEOUT"
 	CodeServiceUnavailable = "SERVICE_UNAVAILABLE"
 )
-
-// Headers
-const (
-	HeaderRequestID   = "X-Request-ID"
-	HeaderUserID      = "X-User-ID"
-	HeaderUserRole    = "X-User-Role"
-	HeaderUserEmail   = "X-User-Email"
-	HeaderServiceName = "X-Service-Name"
-	HeaderAccessToken = "X-Access-Token"
-)

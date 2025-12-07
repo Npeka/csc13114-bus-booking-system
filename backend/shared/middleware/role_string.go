@@ -8,5 +8,5 @@ import (
 
 func RequireRoleStringMiddleware(allowedRoleStrings ...string) gin.HandlerFunc {
 	allowedRoles := constants.FromStringSlice(allowedRoleStrings)
-	return RequireRoleMiddleware(allowedRoles...)
+	return RequireRole(allowedRoles...)
 }

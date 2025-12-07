@@ -8,16 +8,13 @@ import (
 )
 
 type Feedback struct {
-	ID          uuid.UUID      `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
-	BookingID   uuid.UUID      `gorm:"type:uuid;not null" json:"booking_id" validate:"required"`
-	UserID      uuid.UUID      `gorm:"type:uuid;not null" json:"user_id" validate:"required"`
-	TripID      uuid.UUID      `gorm:"type:uuid;not null" json:"trip_id" validate:"required"`
-	Rating      int            `gorm:"type:integer;not null" json:"rating" validate:"required,min=1,max=5"`
-	Comment     string         `gorm:"type:text" json:"comment"`
-	SubmittedAt time.Time      `gorm:"type:timestamptz;not null;default:now()" json:"submitted_at"`
-	CreatedAt   time.Time      `gorm:"type:timestamptz;not null;default:now()" json:"created_at"`
-	UpdatedAt   time.Time      `gorm:"type:timestamptz;not null;default:now()" json:"updated_at"`
-	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
+	BaseModel
+	BookingID   uuid.UUID `gorm:"type:uuid;not null" json:"booking_id" validate:"required"`
+	UserID      uuid.UUID `gorm:"type:uuid;not null" json:"user_id" validate:"required"`
+	TripID      uuid.UUID `gorm:"type:uuid;not null" json:"trip_id" validate:"required"`
+	Rating      int       `gorm:"type:integer;not null" json:"rating" validate:"required,min=1,max=5"`
+	Comment     string    `gorm:"type:text" json:"comment"`
+	SubmittedAt time.Time `gorm:"type:timestamptz;not null;default:now()" json:"submitted_at"`
 
 	Booking *Booking `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"booking,omitempty"`
 }
@@ -29,4 +26,16 @@ func (f *Feedback) BeforeCreate(tx *gorm.DB) error {
 		f.ID = uuid.New()
 	}
 	return nil
+}
+
+type CreateFeedbackRequest struct {
+	BookingID uuid.UUID `json:"booking_id" validate:"required"`
+	UserID    uuid.UUID `json:"user_id" validate:"required"`
+	Rating    int       `json:"rating" validate:"required,min=1,max=5"`
+	Comment   string    `json:"comment,omitempty"`
+}
+
+type GetTripFeedbacksRequest struct {
+	PaginationRequest
+	TripID uuid.UUID `json:"trip_id" validate:"required"`
 }

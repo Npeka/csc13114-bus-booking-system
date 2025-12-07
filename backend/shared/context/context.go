@@ -9,18 +9,6 @@ import (
 )
 
 // ContextKey defines the type for context keys to avoid collisions
-type ContextKey string
-
-const (
-	// Request context keys
-	RequestIDKey   ContextKey = "X-Request-ID"
-	UserIDKey      ContextKey = "X-User-ID"
-	UserRoleKey    ContextKey = "X-User-Role"
-	UserEmailKey   ContextKey = "X-User-Email"
-	UserNameKey    ContextKey = "X-User-Name"
-	ServiceNameKey ContextKey = "X-Service-Name"
-	AccessTokenKey ContextKey = "X-Access-Token"
-)
 
 // RequestContext contains request-scoped information
 type RequestContext struct {
@@ -46,7 +34,7 @@ func GetRequestContext(c *gin.Context) *RequestContext {
 
 // GetRequestID gets request ID from context
 func GetRequestID(c *gin.Context) string {
-	if requestID, exists := c.Get(string(RequestIDKey)); exists {
+	if requestID, exists := c.Get(constants.XRequestID); exists {
 		if id, ok := requestID.(string); ok {
 			return id
 		}
@@ -56,23 +44,23 @@ func GetRequestID(c *gin.Context) string {
 
 // SetRequestID sets request ID in context
 func SetRequestID(c *gin.Context, requestID string) {
-	c.Set(string(RequestIDKey), requestID)
+	c.Set(constants.XRequestID, requestID)
 }
 
 // GetUserID gets user ID from context
 func GetUserID(c *gin.Context) uuid.UUID {
-	userID, _ := uuid.Parse(c.GetString(string(UserIDKey)))
+	userID, _ := uuid.Parse(c.GetString(constants.XUserID))
 	return userID
 }
 
 // SetUserID sets user ID in context
 func SetUserID(c *gin.Context, userID string) {
-	c.Set(string(UserIDKey), userID)
+	c.Set(constants.XUserID, userID)
 }
 
 // GetUserRole gets user role from context
 func GetUserRole(c *gin.Context) constants.UserRole {
-	if userRole, exists := c.Get(string(UserRoleKey)); exists {
+	if userRole, exists := c.Get(constants.XUserRole); exists {
 		if role, ok := userRole.(constants.UserRole); ok {
 			return role
 		}
@@ -82,12 +70,12 @@ func GetUserRole(c *gin.Context) constants.UserRole {
 
 // SetUserRole sets user role in context
 func SetUserRole(c *gin.Context, userRole int) {
-	c.Set(string(UserRoleKey), constants.UserRole(userRole))
+	c.Set(constants.XUserRole, constants.UserRole(userRole))
 }
 
 // GetUserEmail gets user email from context
 func GetUserEmail(c *gin.Context) string {
-	if userEmail, exists := c.Get(string(UserEmailKey)); exists {
+	if userEmail, exists := c.Get(constants.XUserEmail); exists {
 		if email, ok := userEmail.(string); ok {
 			return email
 		}
@@ -97,12 +85,12 @@ func GetUserEmail(c *gin.Context) string {
 
 // SetUserEmail sets user email in context
 func SetUserEmail(c *gin.Context, userEmail string) {
-	c.Set(string(UserEmailKey), userEmail)
+	c.Set(constants.XUserEmail, userEmail)
 }
 
 // GetServiceName gets service name from context
 func GetServiceName(c *gin.Context) string {
-	if serviceName, exists := c.Get(string(ServiceNameKey)); exists {
+	if serviceName, exists := c.Get(constants.XServiceName); exists {
 		if name, ok := serviceName.(string); ok {
 			return name
 		}
@@ -112,7 +100,7 @@ func GetServiceName(c *gin.Context) string {
 
 // SetServiceName sets service name in context
 func SetServiceName(c *gin.Context, serviceName string) {
-	c.Set(string(ServiceNameKey), serviceName)
+	c.Set(constants.XServiceName, serviceName)
 }
 
 // GenerateRequestID generates a new request ID
@@ -122,11 +110,11 @@ func GenerateRequestID() string {
 
 // WithRequestContext adds request context to standard context
 func WithRequestContext(ctx context.Context, reqCtx *RequestContext) context.Context {
-	ctx = context.WithValue(ctx, RequestIDKey, reqCtx.RequestID)
-	ctx = context.WithValue(ctx, UserIDKey, reqCtx.UserID)
-	ctx = context.WithValue(ctx, UserRoleKey, reqCtx.UserRole)
-	ctx = context.WithValue(ctx, UserEmailKey, reqCtx.UserEmail)
-	ctx = context.WithValue(ctx, ServiceNameKey, reqCtx.ServiceName)
+	ctx = context.WithValue(ctx, constants.XRequestID, reqCtx.RequestID)
+	ctx = context.WithValue(ctx, constants.XUserID, reqCtx.UserID.String())
+	ctx = context.WithValue(ctx, constants.XUserRole, reqCtx.UserRole)
+	ctx = context.WithValue(ctx, constants.XUserEmail, reqCtx.UserEmail)
+	ctx = context.WithValue(ctx, constants.XServiceName, reqCtx.ServiceName)
 	return ctx
 }
 
@@ -134,19 +122,23 @@ func WithRequestContext(ctx context.Context, reqCtx *RequestContext) context.Con
 func FromRequestContext(ctx context.Context) *RequestContext {
 	reqCtx := &RequestContext{}
 
-	if requestID, ok := ctx.Value(RequestIDKey).(string); ok {
+	if requestID, ok := ctx.Value(constants.XRequestID).(string); ok {
 		reqCtx.RequestID = requestID
 	}
-	if userID, err := uuid.Parse(ctx.Value(UserIDKey).(string)); err == nil {
-		reqCtx.UserID = userID
+
+	if userIDStr, ok := ctx.Value(constants.XUserID).(string); ok && userIDStr != "" {
+		if userID, err := uuid.Parse(userIDStr); err == nil {
+			reqCtx.UserID = userID
+		}
 	}
-	if userRole, ok := ctx.Value(UserRoleKey).(constants.UserRole); ok {
+
+	if userRole, ok := ctx.Value(constants.XUserRole).(constants.UserRole); ok {
 		reqCtx.UserRole = userRole
 	}
-	if userEmail, ok := ctx.Value(UserEmailKey).(string); ok {
+	if userEmail, ok := ctx.Value(constants.XUserEmail).(string); ok {
 		reqCtx.UserEmail = userEmail
 	}
-	if serviceName, ok := ctx.Value(ServiceNameKey).(string); ok {
+	if serviceName, ok := ctx.Value(constants.XServiceName).(string); ok {
 		reqCtx.ServiceName = serviceName
 	}
 
@@ -165,5 +157,5 @@ func GetAccessToken(c *gin.Context) string {
 
 // SetAccessToken sets access token in context
 func SetAccessToken(c *gin.Context, accessToken string) {
-	c.Set(string(AccessTokenKey), accessToken)
+	c.Set(constants.XAccessToken, accessToken)
 }

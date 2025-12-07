@@ -262,217 +262,207 @@ export default function BusSeatConfigPage() {
   }
 
   return (
-    <div className="min-h-screen">
-      <div className="container py-8">
-        <div className="mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => router.back()}
-            className="mb-4"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Quay lại
-          </Button>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">Cấu hình ghế</h1>
-              <p className="text-muted-foreground">
-                Xe: {bus.plate_number} - {bus.model}
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="default"
-                onClick={() =>
-                  router.push(`/admin/buses/${busId}/seats/layout`)
-                }
-              >
-                <Grid3x3 className="mr-2 h-4 w-4" />
-                Trình chỉnh sửa sơ đồ
-              </Button>
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" onClick={handleAddSeat}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Thêm ghế
-                  </Button>
-                </DialogTrigger>
-                {editingSeat && (
-                  <SeatEditDialog
-                    seat={editingSeat}
-                    existingSeats={seats}
-                    onSave={handleSaveSeat}
-                    onClose={() => {
-                      setDialogOpen(false);
-                      setEditingSeat(null);
-                    }}
-                  />
-                )}
-              </Dialog>
-              <Button onClick={handleSave} disabled={saveMutation.isPending}>
-                <Save className="mr-2 h-4 w-4" />
-                {saveMutation.isPending ? "Đang lưu..." : "Lưu cấu hình"}
-              </Button>
-            </div>
+    <>
+      <div className="mb-6">
+        <Button variant="ghost" onClick={() => router.back()} className="mb-4">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Quay lại
+        </Button>
+
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Cấu hình ghế</h1>
+            <p className="text-muted-foreground">
+              Xe: {bus.plate_number} - {bus.model}
+            </p>
           </div>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-4">
-          <div className="lg:col-span-3">
-            <Card>
-              <CardHeader>
-                <CardTitle>Sơ đồ ghế</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {/* Legend */}
-                  <div className="flex flex-wrap gap-4 text-sm">
-                    <div className="flex items-center space-x-2">
-                      <div className="h-8 w-8 rounded border-2 border-success bg-success/20" />
-                      <span>Ghế thường</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="h-8 w-8 rounded border-2 border-info bg-info/20" />
-                      <span>Giường nằm</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="h-8 w-8 rounded border-2 border-warning bg-warning/20" />
-                      <span>Ghế VIP</span>
-                    </div>
-                  </div>
-
-                  {/* Seat Map */}
-                  <div className="rounded-lg border bg-white p-8">
-                    {/* Driver Section */}
-                    <div className="mb-8 flex justify-end">
-                      <div className="flex items-center space-x-2 rounded-lg bg-neutral-100 px-4 py-2">
-                        <span className="text-sm font-medium">🚗 Tài xế</span>
-                      </div>
-                    </div>
-
-                    {/* Seats Grid */}
-                    <div className="space-y-4">
-                      {Object.entries(rows)
-                        .sort(([a], [b]) => Number(a) - Number(b))
-                        .map(([rowNum, rowSeats]) => (
-                          <div
-                            key={rowNum}
-                            className="flex justify-center gap-2"
-                          >
-                            {rowSeats
-                              .sort((a, b) => (a.column || 0) - (b.column || 0))
-                              .map((seat) => (
-                                <div key={seat.id} className="group relative">
-                                  <Button
-                                    variant="outline"
-                                    size="lg"
-                                    className={cn(
-                                      "h-12 w-12 rounded border-2 transition-all",
-                                      getSeatColor(seat),
-                                      "cursor-pointer",
-                                    )}
-                                    onClick={() => handleEditSeat(seat)}
-                                  >
-                                    <span className="text-xs font-semibold">
-                                      {seat.seat_number || "?"}
-                                    </span>
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="absolute -top-2 -right-2 hidden h-6 w-6 rounded-full bg-destructive p-0 group-hover:flex"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDeleteSeat(seat.id);
-                                    }}
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              ))}
-                          </div>
-                        ))}
-                      {seats.length === 0 && (
-                        <div className="py-12 text-center text-muted-foreground">
-                          Chưa có ghế nào. Nhấn &quot;Thêm ghế&quot; để bắt đầu
-                          cấu hình.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle>Thông tin</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label className="text-muted-foreground">Tổng số ghế</Label>
-                  <p className="text-2xl font-bold">{seats.length}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">Sức chứa</Label>
-                  <p className="text-lg font-semibold">{bus.seat_capacity}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">Loại ghế</Label>
-                  <div className="mt-2 space-y-1">
-                    <div className="flex justify-between">
-                      <span>Thường:</span>
-                      <Badge>
-                        {
-                          seats.filter((s) => {
-                            const type =
-                              typeof s.seat_type === "string"
-                                ? s.seat_type
-                                : getValue(s.seat_type);
-                            return type === "standard";
-                          }).length
-                        }
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Giường nằm:</span>
-                      <Badge>
-                        {
-                          seats.filter((s) => {
-                            const type =
-                              typeof s.seat_type === "string"
-                                ? s.seat_type
-                                : getValue(s.seat_type);
-                            return type === "sleeper";
-                          }).length
-                        }
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>VIP:</span>
-                      <Badge>
-                        {
-                          seats.filter((s) => {
-                            const type =
-                              typeof s.seat_type === "string"
-                                ? s.seat_type
-                                : getValue(s.seat_type);
-                            return type === "vip";
-                          }).length
-                        }
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="flex gap-2">
+            <Button
+              variant="default"
+              onClick={() => router.push(`/admin/buses/${busId}/seats/layout`)}
+            >
+              <Grid3x3 className="mr-2 h-4 w-4" />
+              Trình chỉnh sửa sơ đồ
+            </Button>
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" onClick={handleAddSeat}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Thêm ghế
+                </Button>
+              </DialogTrigger>
+              {editingSeat && (
+                <SeatEditDialog
+                  seat={editingSeat}
+                  existingSeats={seats}
+                  onSave={handleSaveSeat}
+                  onClose={() => {
+                    setDialogOpen(false);
+                    setEditingSeat(null);
+                  }}
+                />
+              )}
+            </Dialog>
+            <Button onClick={handleSave} disabled={saveMutation.isPending}>
+              <Save className="mr-2 h-4 w-4" />
+              {saveMutation.isPending ? "Đang lưu..." : "Lưu cấu hình"}
+            </Button>
           </div>
         </div>
       </div>
-    </div>
+
+      <div className="grid gap-6 lg:grid-cols-4">
+        <div className="lg:col-span-3">
+          <Card>
+            <CardHeader>
+              <CardTitle>Sơ đồ ghế</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {/* Legend */}
+                <div className="flex flex-wrap gap-4 text-sm">
+                  <div className="flex items-center space-x-2">
+                    <div className="h-8 w-8 rounded border-2 border-success bg-success/20" />
+                    <span>Ghế thường</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="h-8 w-8 rounded border-2 border-info bg-info/20" />
+                    <span>Giường nằm</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="h-8 w-8 rounded border-2 border-warning bg-warning/20" />
+                    <span>Ghế VIP</span>
+                  </div>
+                </div>
+
+                {/* Seat Map */}
+                <div className="rounded-lg border bg-white p-8">
+                  {/* Driver Section */}
+                  <div className="mb-8 flex justify-end">
+                    <div className="flex items-center space-x-2 rounded-lg bg-neutral-100 px-4 py-2">
+                      <span className="text-sm font-medium">🚗 Tài xế</span>
+                    </div>
+                  </div>
+
+                  {/* Seats Grid */}
+                  <div className="space-y-4">
+                    {Object.entries(rows)
+                      .sort(([a], [b]) => Number(a) - Number(b))
+                      .map(([rowNum, rowSeats]) => (
+                        <div key={rowNum} className="flex justify-center gap-2">
+                          {rowSeats
+                            .sort((a, b) => (a.column || 0) - (b.column || 0))
+                            .map((seat) => (
+                              <div key={seat.id} className="group relative">
+                                <Button
+                                  variant="outline"
+                                  size="lg"
+                                  className={cn(
+                                    "h-12 w-12 rounded border-2 transition-all",
+                                    getSeatColor(seat),
+                                    "cursor-pointer",
+                                  )}
+                                  onClick={() => handleEditSeat(seat)}
+                                >
+                                  <span className="text-xs font-semibold">
+                                    {seat.seat_number || "?"}
+                                  </span>
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="absolute -top-2 -right-2 hidden h-6 w-6 rounded-full bg-destructive p-0 group-hover:flex"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteSeat(seat.id);
+                                  }}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ))}
+                        </div>
+                      ))}
+                    {seats.length === 0 && (
+                      <div className="py-12 text-center text-muted-foreground">
+                        Chưa có ghế nào. Nhấn &quot;Thêm ghế&quot; để bắt đầu
+                        cấu hình.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Sidebar */}
+        <div className="lg:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle>Thông tin</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label className="text-muted-foreground">Tổng số ghế</Label>
+                <p className="text-2xl font-bold">{seats.length}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Sức chứa</Label>
+                <p className="text-lg font-semibold">{bus.seat_capacity}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Loại ghế</Label>
+                <div className="mt-2 space-y-1">
+                  <div className="flex justify-between">
+                    <span>Thường:</span>
+                    <Badge>
+                      {
+                        seats.filter((s) => {
+                          const type =
+                            typeof s.seat_type === "string"
+                              ? s.seat_type
+                              : getValue(s.seat_type);
+                          return type === "standard";
+                        }).length
+                      }
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Giường nằm:</span>
+                    <Badge>
+                      {
+                        seats.filter((s) => {
+                          const type =
+                            typeof s.seat_type === "string"
+                              ? s.seat_type
+                              : getValue(s.seat_type);
+                          return type === "sleeper";
+                        }).length
+                      }
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>VIP:</span>
+                    <Badge>
+                      {
+                        seats.filter((s) => {
+                          const type =
+                            typeof s.seat_type === "string"
+                              ? s.seat_type
+                              : getValue(s.seat_type);
+                          return type === "vip";
+                        }).length
+                      }
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </>
   );
 }
 

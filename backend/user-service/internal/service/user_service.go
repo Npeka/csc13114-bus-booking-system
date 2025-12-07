@@ -15,11 +15,10 @@ import (
 type UserService interface {
 	CreateUser(ctx context.Context, req *model.UserCreateRequest) (*model.UserResponse, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (*model.UserResponse, error)
+	ListUsers(ctx context.Context, req model.UserListQuery) ([]*model.UserResponse, int64, error)
 	UpdateUser(ctx context.Context, id uuid.UUID, req *model.UserUpdateRequest) (*model.UserResponse, error)
 	DeleteUser(ctx context.Context, id uuid.UUID) error
-	ListUsers(ctx context.Context, limit, offset int) ([]*model.UserResponse, int64, error)
 	ListUsersByRole(ctx context.Context, role constants.UserRole, limit, offset int) ([]*model.UserResponse, int64, error)
-	UpdateUserStatus(ctx context.Context, id uuid.UUID, status string) error
 }
 
 type UserServiceImpl struct {
@@ -56,7 +55,7 @@ func (s *UserServiceImpl) CreateUser(ctx context.Context, req *model.UserCreateR
 		FullName:      req.FullName,
 		Avatar:        req.Avatar,
 		Role:          req.Role,
-		Status:        "active",
+		Status:        constants.UserStatusActive,
 		FirebaseUID:   &req.FirebaseUID,
 		EmailVerified: false,
 		PhoneVerified: false,
@@ -76,6 +75,21 @@ func (s *UserServiceImpl) GetUserByID(ctx context.Context, id uuid.UUID) (*model
 		return nil, ginext.NewInternalServerError("Failed to get user by ID")
 	}
 	return user.ToResponse(), nil
+}
+
+// ListUsers gets a paginated list of users with filtering
+func (s *UserServiceImpl) ListUsers(ctx context.Context, req model.UserListQuery) ([]*model.UserResponse, int64, error) {
+	users, total, err := s.userRepo.List(ctx, req)
+	if err != nil {
+		return nil, 0, ginext.NewInternalServerError("Failed to list users")
+	}
+
+	responses := make([]*model.UserResponse, len(users))
+	for i, user := range users {
+		responses[i] = user.ToResponse()
+	}
+
+	return responses, total, nil
 }
 
 func (s *UserServiceImpl) UpdateUser(ctx context.Context, id uuid.UUID, req *model.UserUpdateRequest) (*model.UserResponse, error) {
@@ -138,21 +152,6 @@ func (s *UserServiceImpl) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-// ListUsers gets a paginated list of users
-func (s *UserServiceImpl) ListUsers(ctx context.Context, limit, offset int) ([]*model.UserResponse, int64, error) {
-	users, total, err := s.userRepo.List(ctx, limit, offset)
-	if err != nil {
-		return nil, 0, ginext.NewInternalServerError("Failed to list users")
-	}
-
-	responses := make([]*model.UserResponse, len(users))
-	for i, user := range users {
-		responses[i] = user.ToResponse()
-	}
-
-	return responses, total, nil
-}
-
 // ListUsersByRole gets a paginated list of users by role
 func (s *UserServiceImpl) ListUsersByRole(ctx context.Context, role constants.UserRole, limit, offset int) ([]*model.UserResponse, int64, error) {
 	users, total, err := s.userRepo.ListByRole(ctx, role, limit, offset)
@@ -166,18 +165,4 @@ func (s *UserServiceImpl) ListUsersByRole(ctx context.Context, role constants.Us
 	}
 
 	return responses, total, nil
-}
-
-// UpdateUserStatus updates user status
-func (s *UserServiceImpl) UpdateUserStatus(ctx context.Context, id uuid.UUID, status string) error {
-	if _, err := s.userRepo.GetByID(ctx, id); err != nil {
-		return err
-	}
-
-	if err := s.userRepo.UpdateStatus(ctx, id, status); err != nil {
-		log.Err(err).Msg("Failed to update user status in database")
-		return err
-	}
-
-	return nil
 }

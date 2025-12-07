@@ -50,15 +50,6 @@ func NewTripService(
 }
 
 func (s *TripServiceImpl) SearchTrips(ctx context.Context, req *model.TripSearchRequest) ([]model.TripDetail, int64, error) {
-	date, err := time.Parse("02/01/2006", req.Date)
-	if err != nil {
-		return nil, 0, ginext.NewBadRequestError("invalid date format, use DD/MM/YYYY")
-	}
-
-	if date.Before(time.Now().Truncate(24 * time.Hour)) {
-		return nil, 0, ginext.NewBadRequestError("search date cannot be in the past")
-	}
-
 	trips, total, err := s.tripRepo.SearchTrips(ctx, req)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to search trips")

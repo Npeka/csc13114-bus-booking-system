@@ -3,9 +3,6 @@
 run:
 	go run ./cmd/server/main.go
 
-migrate:
-	go run ./cmd/migrate/main.go
-
 fmt:
 	go fmt ./...
 
@@ -41,6 +38,10 @@ swagger-gen:
 
 # Migration commands
 DB_URL=postgres://doadmin:AVNS_k8dv8ULBQ3Sjwie2_Xe@bus-booking-database-do-user-29228381-0.d.db.ondigitalocean.com:25060/bus_booking_booking?sslmode=require
+
+migrate-create:
+	@read -p "Enter migration name: " name; \
+	migrate create -ext sql -dir migrations -seq $$name
 
 migrate-up:
 	migrate -path migrations -database "$(DB_URL)" up

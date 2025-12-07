@@ -2,8 +2,9 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"time"
+
+	"bus-booking/shared/ginext"
 
 	"github.com/google/uuid"
 
@@ -59,7 +60,7 @@ func (s *PaymentServiceImpl) ProcessPayment(ctx context.Context, req *model.Proc
 	}
 
 	if booking.Status != "pending" {
-		return nil, fmt.Errorf("booking is not in pending status")
+		return nil, ginext.NewBadRequestError("booking is not in pending status")
 	}
 
 	// In a real implementation, you would integrate with payment gateway here

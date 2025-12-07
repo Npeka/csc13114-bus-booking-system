@@ -1,24 +1,14 @@
 package model
 
-import (
-	"bus-booking/trip-service/internal/constants"
-)
-
-// ToBusResponse converts Bus entity to BusResponse with mapped constants
+// ToBusResponse converts Bus entity to BusResponse with raw string values
 func ToBusResponse(bus *Bus) *BusResponse {
 	if bus == nil {
 		return nil
 	}
 
-	// Map amenities to ConstantDisplay
-	amenities := make([]ConstantDisplay, len(bus.Amenities))
-	for i, a := range bus.Amenities {
-		amenity := constants.Amenity(a)
-		amenities[i] = ConstantDisplay{
-			Value:       amenity.String(),
-			DisplayName: amenity.GetDisplayName(),
-		}
-	}
+	// Convert amenities to string slice (already strings)
+	amenities := make([]string, len(bus.Amenities))
+	copy(amenities, bus.Amenities)
 
 	// Map seats if present
 	var seats []SeatResponse
@@ -33,6 +23,7 @@ func ToBusResponse(bus *Bus) *BusResponse {
 		ID:           bus.ID,
 		PlateNumber:  bus.PlateNumber,
 		Model:        bus.Model,
+		BusType:      bus.BusType, // Raw string value
 		SeatCapacity: bus.SeatCapacity,
 		Amenities:    amenities,
 		IsActive:     bus.IsActive,
@@ -40,42 +31,36 @@ func ToBusResponse(bus *Bus) *BusResponse {
 	}
 }
 
-// ToSeatResponse converts Seat entity to SeatResponse with mapped constants
+// ToSeatResponse converts Seat entity to SeatResponse with raw string values
 func ToSeatResponse(seat *Seat) *SeatResponse {
 	if seat == nil {
 		return nil
 	}
 
 	return &SeatResponse{
-		ID:         seat.ID,
-		BusID:      seat.BusID,
-		SeatNumber: seat.SeatNumber,
-		Row:        seat.Row,
-		Column:     seat.Column,
-		SeatType: ConstantDisplay{
-			Value:       seat.SeatType.String(),
-			DisplayName: seat.SeatType.GetDisplayName(),
-		},
+		ID:              seat.ID,
+		BusID:           seat.BusID,
+		SeatNumber:      seat.SeatNumber,
+		Row:             seat.Row,
+		Column:          seat.Column,
+		SeatType:        seat.SeatType.String(), // Raw string value
 		PriceMultiplier: seat.PriceMultiplier,
 		IsAvailable:     seat.IsAvailable,
 		Floor:           seat.Floor,
 	}
 }
 
-// ToRouteStopResponse converts RouteStop entity to RouteStopResponse with mapped constants
+// ToRouteStopResponse converts RouteStop entity to RouteStopResponse with raw string values
 func ToRouteStopResponse(stop *RouteStop) *RouteStopResponse {
 	if stop == nil {
 		return nil
 	}
 
 	return &RouteStopResponse{
-		ID:        stop.ID,
-		RouteID:   stop.RouteID,
-		StopOrder: stop.StopOrder,
-		StopType: ConstantDisplay{
-			Value:       stop.StopType.String(),
-			DisplayName: stop.StopType.GetDisplayName(),
-		},
+		ID:            stop.ID,
+		RouteID:       stop.RouteID,
+		StopOrder:     stop.StopOrder,
+		StopType:      stop.StopType.String(), // Raw string value
 		Location:      stop.Location,
 		Address:       stop.Address,
 		Latitude:      stop.Latitude,
@@ -113,13 +98,11 @@ func ToRouteResponse(route *Route) *RouteResponse {
 	}
 }
 
-// ToTripResponse converts Trip entity to TripResponse with mapped constants
+// ToTripResponse converts Trip entity to TripResponse with raw string values
 func ToTripResponse(trip *Trip) *TripResponse {
 	if trip == nil {
 		return nil
 	}
-
-	status := constants.TripStatus(trip.Status)
 
 	return &TripResponse{
 		ID:            trip.ID,
@@ -128,15 +111,12 @@ func ToTripResponse(trip *Trip) *TripResponse {
 		DepartureTime: trip.DepartureTime,
 		ArrivalTime:   trip.ArrivalTime,
 		BasePrice:     trip.BasePrice,
-		Status: ConstantDisplay{
-			Value:       status.String(),
-			DisplayName: status.GetDisplayName(),
-		},
-		IsActive:  trip.IsActive,
-		Route:     ToRouteResponse(trip.Route),
-		Bus:       ToBusResponse(trip.Bus),
-		CreatedAt: trip.CreatedAt,
-		UpdatedAt: trip.UpdatedAt,
+		Status:        string(trip.Status), // Raw string value
+		IsActive:      trip.IsActive,
+		Route:         ToRouteResponse(trip.Route),
+		Bus:           ToBusResponse(trip.Bus),
+		CreatedAt:     trip.CreatedAt,
+		UpdatedAt:     trip.UpdatedAt,
 	}
 }
 

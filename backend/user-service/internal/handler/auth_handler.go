@@ -243,9 +243,7 @@ func (h *AuthHandlerImpl) RefreshToken(r *ginext.Request) (*ginext.Response, err
 		return nil, ginext.NewBadRequestError("Invalid request data")
 	}
 
-	userID := sharedcontext.GetUserID(r.GinCtx)
-
-	res, err := h.as.RefreshToken(r.Context(), &req, userID)
+	res, err := h.as.RefreshToken(r.Context(), &req)
 	if err != nil {
 		log.Error().Err(err).Msg("Token refresh failed")
 		return nil, err

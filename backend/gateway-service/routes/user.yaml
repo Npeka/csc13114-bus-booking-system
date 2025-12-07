@@ -25,33 +25,21 @@ routes:
 
   - path: "/api/v1/auth/refresh-token"
     methods: ["POST"]
-    auth:
-      required: true
 
   - path: "/api/v1/users/profile"
     methods: ["GET", "PUT"]
     auth:
       required: true
 
-  - path: "/api/v1/users/:id"
-    methods: ["GET"]
-    auth:
-      required: true
-
-  - path: "/api/v1/admin/users"
+  # Admin-only user management routes
+  - path: "/api/v1/users"
     methods: ["GET", "POST"]
     auth:
       required: true
       roles: ["admin"]
 
-  - path: "/api/v1/admin/users/:id"
+  - path: "/api/v1/users/:id"
     methods: ["GET", "PUT", "DELETE"]
-    auth:
-      required: true
-      roles: ["admin"]
-
-  - path: "/api/v1/admin/users/:id/status"
-    methods: ["PATCH"]
     auth:
       required: true
       roles: ["admin"]

@@ -1,13 +1,13 @@
 service: "booking"
 routes:
-  # Booking routes - all require authentication
+  # User booking routes - require authentication
   - path: "/api/v1/bookings"
-    methods: ["GET", "POST"]
+    methods: ["POST"]
     auth:
       required: true
 
   - path: "/api/v1/bookings/:id"
-    methods: ["GET", "PUT", "DELETE"]
+    methods: ["GET"]
     auth:
       required: true
 
@@ -16,11 +16,12 @@ routes:
     auth:
       required: true
 
-  - path: "/api/v1/bookings/:id/confirm"
-    methods: ["POST"]
+  - path: "/api/v1/bookings/user/:user_id"
+    methods: ["GET"]
     auth:
       required: true
 
+  # Admin booking routes - require admin role
   - path: "/api/v1/admin/bookings"
     methods: ["GET"]
     auth:
@@ -28,13 +29,48 @@ routes:
       roles: ["admin"]
 
   - path: "/api/v1/admin/bookings/:id"
-    methods: ["GET", "PUT", "DELETE"]
+    methods: ["GET"]
     auth:
       required: true
       roles: ["admin"]
 
   - path: "/api/v1/admin/bookings/:id/status"
-    methods: ["PATCH"]
+    methods: ["PUT"]
+    auth:
+      required: true
+      roles: ["admin"]
+
+  - path: "/api/v1/admin/bookings/trip/:trip_id"
+    methods: ["GET"]
+    auth:
+      required: true
+      roles: ["admin"]
+
+  # Feedback routes - require authentication
+  - path: "/api/v1/feedback"
+    methods: ["POST"]
+    auth:
+      required: true
+
+  - path: "/api/v1/feedback/booking/:booking_id"
+    methods: ["GET"]
+    auth:
+      required: true
+
+  - path: "/api/v1/feedback/trip/:trip_id"
+    methods: ["GET"]
+    auth:
+      required: true
+
+  # Statistics routes - require admin role
+  - path: "/api/v1/statistics/bookings"
+    methods: ["GET"]
+    auth:
+      required: true
+      roles: ["admin"]
+
+  - path: "/api/v1/statistics/popular-trips"
+    methods: ["GET"]
     auth:
       required: true
       roles: ["admin"]

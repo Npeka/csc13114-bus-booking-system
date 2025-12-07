@@ -51,13 +51,48 @@ export interface Passenger {
 }
 
 /**
+ * Buyer information for payment
+ */
+export interface BuyerInfo {
+  name: string;
+  email: string;
+  phone: string;
+}
+
+/**
+ * Create payment request
+ */
+export interface CreatePaymentRequest {
+  buyer_info: BuyerInfo;
+}
+
+/**
+ * Payment link response from payment service
+ */
+export interface PaymentLinkResponse {
+  id: string;
+  booking_id: string;
+  order_code: number;
+  status: string;
+  checkout_url: string;
+  qr_code: string;
+}
+
+/**
  * Booking seat response (from booking details)
  * Matches backend: booking-service/internal/model/request.go - BookingSeatResponse
  */
 export interface BookingSeat {
   id: string;
   seat_id: string;
+  seat_number: string;
+  seat_type: string;
+  floor: number;
   price: number;
+  price_multiplier: number;
+  passenger_name?: string;
+  passenger_id?: string;
+  passenger_phone?: string;
 }
 
 /**
@@ -78,32 +113,31 @@ export interface PaymentMethod {
  */
 export interface BookingResponse {
   id: string;
-  user_id: string;
+  booking_reference: string;
   trip_id: string;
-  status: string;
+  user_id: string;
   total_amount: number;
-  passenger_name: string;
-  passenger_phone: string;
-  passenger_email?: string;
-  special_requests?: string;
+  status: string;
+  payment_status: string;
+  payment_order_id?: string;
+  notes?: string;
+  expires_at?: string;
+  confirmed_at?: string;
+  cancelled_at?: string;
   created_at: string;
   updated_at: string;
-  completed_at?: string;
-  cancelled_at?: string;
-  cancellation_reason?: string;
   seats: BookingSeat[];
-  payment_method?: PaymentMethod;
 }
 
 /**
  * Paginated booking response
- * Matches backend: booking-service/internal/model/request.go - PaginatedBookingResponse
+ * Matches ginext.NewPaginatedResponse format
  */
 export interface PaginatedBookingResponse {
   data: BookingResponse[];
   total: number;
   page: number;
-  limit: number;
+  page_size: number;
   total_pages: number;
 }
 
@@ -122,15 +156,8 @@ export interface CancelBookingRequest {
  */
 export interface CreateBookingRequest {
   trip_id: string;
-  user_id: string;
   seat_ids: string[];
-  payment_method_id: string;
-  total_amount: number;
-  seat_price: number;
-  passenger_name: string;
-  passenger_phone: string;
-  passenger_email?: string;
-  special_requests?: string;
+  notes?: string;
 }
 
 /**
@@ -139,4 +166,25 @@ export interface CreateBookingRequest {
  */
 export interface UpdateBookingStatusRequest {
   status: string;
+}
+
+/**
+ * Seat availability response
+ * Matches backend: booking-service/internal/model/request.go - SeatAvailabilityResponse
+ */
+export interface SeatAvailabilityResponse {
+  trip_id: string;
+  available_seats: string[];
+  reserved_seats: string[];
+  booked_seats: string[];
+}
+
+/**
+ * Seat lock request
+ * Matches backend: booking-service/internal/model/request.go - LockSeatsRequest
+ */
+export interface LockSeatsRequest {
+  trip_id: string;
+  seat_ids: string[];
+  session_id: string;
 }

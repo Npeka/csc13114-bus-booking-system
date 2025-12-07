@@ -38,16 +38,16 @@ func NewSeatLockHandler(lockService service.SeatLockService) SeatLockHandler {
 func (h *SeatLockHandlerImpl) LockSeats(r *ginext.Request) (*ginext.Response, error) {
 	var req model.LockSeatsRequest
 	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
-		log.Debug().Err(err).Msg("Invalid request body")
+		log.Error().Err(err).Msg("failed to bind request body")
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
 	if err := h.lockService.LockSeats(r.Context(), req.TripID, req.SeatIDs, req.SessionID); err != nil {
-		log.Error().Err(err).Msg("Failed to lock seats")
+		log.Error().Err(err).Msg("failed to lock seats")
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse("Seats locked successfully"), nil
+	return ginext.NewSuccessResponse("seats locked successfully"), nil
 }
 
 // UnlockSeats godoc
@@ -64,16 +64,16 @@ func (h *SeatLockHandlerImpl) LockSeats(r *ginext.Request) (*ginext.Response, er
 func (h *SeatLockHandlerImpl) UnlockSeats(r *ginext.Request) (*ginext.Response, error) {
 	var req model.UnlockSeatsRequest
 	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
-		log.Debug().Err(err).Msg("Invalid request body")
+		log.Error().Err(err).Msg("failed to bind request body")
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
 	if err := h.lockService.UnlockSeats(r.Context(), req.SessionID); err != nil {
-		log.Error().Err(err).Msg("Failed to unlock seats")
+		log.Error().Err(err).Msg("failed to unlock seats")
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse("Seats unlocked successfully"), nil
+	return ginext.NewSuccessResponse("seats unlocked successfully"), nil
 }
 
 // GetLockedSeats godoc
@@ -91,12 +91,13 @@ func (h *SeatLockHandlerImpl) GetLockedSeats(r *ginext.Request) (*ginext.Respons
 	tripIDStr := r.GinCtx.Param("trip_id")
 	tripID, err := uuid.Parse(tripIDStr)
 	if err != nil {
-		return nil, ginext.NewBadRequestError("invalid trip ID")
+		log.Error().Err(err).Str("trip_id", tripIDStr).Msg("invalid trip id")
+		return nil, ginext.NewBadRequestError("invalid trip id")
 	}
 
 	seatIDs, err := h.lockService.GetLockedSeats(r.Context(), tripID)
 	if err != nil {
-		log.Error().Err(err).Str("trip_id", tripIDStr).Msg("Failed to get locked seats")
+		log.Error().Err(err).Str("trip_id", tripIDStr).Msg("failed to get locked seats")
 		return nil, err
 	}
 

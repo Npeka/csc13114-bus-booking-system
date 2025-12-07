@@ -11,7 +11,6 @@ type Config struct {
 }
 
 type ExternalConfig struct {
-	UserServiceURL    string `env:"USER_SERVICE_URL" envDefault:"http://localhost:8081"`
 	BookingServiceURL string `env:"BOOKING_SERVICE_URL" envDefault:"http://localhost:8082"`
 }
 

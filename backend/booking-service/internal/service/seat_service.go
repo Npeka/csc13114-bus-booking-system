@@ -2,8 +2,9 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"time"
+
+	"bus-booking/shared/ginext"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
@@ -20,18 +21,18 @@ type SeatService interface {
 }
 
 type SeatServiceImpl struct {
-	repositories *repository.Repositories
+	seatStatusRepo repository.SeatStatusRepository
 }
 
-func NewSeatService(repositories *repository.Repositories) SeatService {
+func NewSeatService(seatStatusRepo repository.SeatStatusRepository) SeatService {
 	return &SeatServiceImpl{
-		repositories: repositories,
+		seatStatusRepo: seatStatusRepo,
 	}
 }
 
 // GetSeatAvailability retrieves seat availability for a trip
 func (s *SeatServiceImpl) GetSeatAvailability(ctx context.Context, tripID uuid.UUID) (*model.SeatAvailabilityResponse, error) {
-	seatStatuses, err := s.repositories.SeatStatus.GetSeatStatusByTripID(ctx, tripID)
+	seatStatuses, err := s.seatStatusRepo.GetSeatStatusByTripID(ctx, tripID)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +50,7 @@ func (s *SeatServiceImpl) GetSeatAvailability(ctx context.Context, tripID uuid.U
 			// Check if reservation has expired
 			if seatStatus.ReservedUntil != nil && time.Now().UTC().After(*seatStatus.ReservedUntil) {
 				// Release expired reservation
-				if err := s.repositories.SeatStatus.ReleaseSeat(ctx, tripID, seatStatus.SeatID); err != nil {
+				if err := s.seatStatusRepo.ReleaseSeat(ctx, tripID, seatStatus.SeatID); err != nil {
 					log.Error().Err(err).Msg("Failed to release expired seat reservation")
 				} else {
 					availableSeats = append(availableSeats, seatStatus.SeatID)
@@ -74,7 +75,7 @@ func (s *SeatServiceImpl) GetSeatAvailability(ctx context.Context, tripID uuid.U
 // ReserveSeat reserves a seat for a user
 func (s *SeatServiceImpl) ReserveSeat(ctx context.Context, req *model.ReserveSeatRequest) error {
 	// Check if seat is available
-	seatStatuses, err := s.repositories.SeatStatus.GetSeatStatusByTripID(ctx, req.TripID)
+	seatStatuses, err := s.seatStatusRepo.GetSeatStatusByTripID(ctx, req.TripID)
 	if err != nil {
 		return err
 	}
@@ -82,7 +83,7 @@ func (s *SeatServiceImpl) ReserveSeat(ctx context.Context, req *model.ReserveSea
 	for _, seatStatus := range seatStatuses {
 		if seatStatus.SeatID == req.SeatID {
 			if seatStatus.Status != "available" {
-				return fmt.Errorf("seat is not available")
+				return ginext.NewConflictError("seat is not available")
 			}
 			break
 		}
@@ -94,12 +95,12 @@ func (s *SeatServiceImpl) ReserveSeat(ctx context.Context, req *model.ReserveSea
 		reservationTime = time.Duration(req.ReservationMinutes) * time.Minute
 	}
 
-	return s.repositories.SeatStatus.ReserveSeat(ctx, req.TripID, req.SeatID, req.UserID, reservationTime)
+	return s.seatStatusRepo.ReserveSeat(ctx, req.TripID, req.SeatID, req.UserID, reservationTime)
 }
 
 // ReleaseSeat releases a reserved seat
 func (s *SeatServiceImpl) ReleaseSeat(ctx context.Context, tripID, seatID uuid.UUID) error {
-	return s.repositories.SeatStatus.ReleaseSeat(ctx, tripID, seatID)
+	return s.seatStatusRepo.ReleaseSeat(ctx, tripID, seatID)
 }
 
 // CheckReservationExpiry checks and releases expired seat reservations

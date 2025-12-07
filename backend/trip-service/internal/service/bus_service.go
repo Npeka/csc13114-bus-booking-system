@@ -82,6 +82,7 @@ func (s *BusServiceImpl) CreateBus(ctx context.Context, req *model.CreateBusRequ
 	bus := &model.Bus{
 		PlateNumber:  req.PlateNumber,
 		Model:        req.Model,
+		BusType:      req.BusType, // Raw string: standard, vip, sleeper, double_decker
 		SeatCapacity: totalCapacity,
 		Amenities:    req.Amenities,
 		IsActive:     true,
@@ -154,6 +155,10 @@ func (s *BusServiceImpl) UpdateBus(ctx context.Context, id uuid.UUID, req *model
 
 	if req.Model != nil {
 		bus.Model = *req.Model
+	}
+
+	if req.BusType != nil {
+		bus.BusType = *req.BusType
 	}
 
 	if req.SeatCapacity != nil {

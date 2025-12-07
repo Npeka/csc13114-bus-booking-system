@@ -64,11 +64,10 @@ func (g *Gateway) SetupRoutes(router *gin.Engine) {
 	}
 
 	router.NoRoute(func(c *gin.Context) {
-		c.JSON(404, gin.H{
-			"error":   "route not found",
-			"path":    c.Request.URL.Path,
-			"method":  c.Request.Method,
-			"message": "The requested route is not configured in the gateway",
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": gin.H{
+				"message": http.StatusText(http.StatusNotFound),
+			},
 		})
 	})
 }
@@ -107,9 +106,10 @@ func (g *Gateway) createProxyHandler(route config.Route) gin.HandlerFunc {
 			var err error
 			userContext, err = g.authenticateRequest(c)
 			if err != nil {
-				c.JSON(401, gin.H{
+				log.Error().Err(err).Msg("authentication failed")
+				c.JSON(http.StatusUnauthorized, gin.H{
 					"error": gin.H{
-						"message": err.Error(),
+						"message": http.StatusText(http.StatusUnauthorized),
 					},
 				})
 				return
@@ -117,9 +117,10 @@ func (g *Gateway) createProxyHandler(route config.Route) gin.HandlerFunc {
 
 			// Check roles if specified
 			if len(route.Auth.Roles) > 0 && !userContext.HasAnyRoleString(route.Auth.Roles) {
-				c.JSON(403, gin.H{
+				log.Error().Msg("user does not have required role")
+				c.JSON(http.StatusForbidden, gin.H{
 					"error": gin.H{
-						"message": fmt.Sprintf("required roles: %v", route.Auth.Roles),
+						"message": http.StatusText(http.StatusForbidden),
 					},
 				})
 				return
@@ -130,9 +131,10 @@ func (g *Gateway) createProxyHandler(route config.Route) gin.HandlerFunc {
 		serviceConfig, exists := g.getServiceConfig(route.Service)
 		log.Info().Msgf("Service config for %s: %+v", route.Service, serviceConfig)
 		if !exists {
-			c.JSON(500, gin.H{
+			log.Error().Str("service", route.Service).Msg("service configuration not found")
+			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": gin.H{
-					"message": "service not configured: " + route.Service,
+					"message": http.StatusText(http.StatusInternalServerError),
 				},
 			})
 			return
@@ -141,9 +143,10 @@ func (g *Gateway) createProxyHandler(route config.Route) gin.HandlerFunc {
 		// Build target URL
 		targetURL, err := g.buildTargetURL(serviceConfig, route, c)
 		if err != nil {
-			c.JSON(500, gin.H{
+			log.Error().Err(err).Msg("failed to build target URL")
+			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": gin.H{
-					"message": "failed to build target URL: " + err.Error(),
+					"message": http.StatusText(http.StatusInternalServerError),
 				},
 			})
 			return
@@ -151,9 +154,10 @@ func (g *Gateway) createProxyHandler(route config.Route) gin.HandlerFunc {
 
 		// Proxy the request
 		if err := g.proxyRequest(c, targetURL, userContext, route); err != nil {
-			c.JSON(502, gin.H{
+			log.Error().Err(err).Msg("failed to proxy request")
+			c.JSON(http.StatusBadGateway, gin.H{
 				"error": gin.H{
-					"message": "proxy request failed: " + err.Error(),
+					"message": http.StatusText(http.StatusBadGateway),
 				},
 			})
 			return

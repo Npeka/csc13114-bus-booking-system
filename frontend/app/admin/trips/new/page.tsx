@@ -33,6 +33,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { createTrip, listRoutes, listBuses } from "@/lib/api/trip-service";
 import type { Route } from "@/lib/types/trip";
+import PageHeader from "@/components/shared/admin/page-header";
 
 const tripFormSchema = z
   .object({
@@ -84,16 +85,13 @@ export default function NewTripPage() {
   // Fetch routes
   const { data: routesData, isLoading: routesLoading } = useQuery({
     queryKey: ["routes"],
-    queryFn: () => listRoutes({ limit: 100 }),
+    queryFn: () => listRoutes({ page_size: 100 }),
   });
 
   // Fetch buses (filtered by route's operator when route is selected)
   const { data: busesData, isLoading: busesLoading } = useQuery({
     queryKey: ["buses"],
-    queryFn: () =>
-      listBuses({
-        limit: 100,
-      }),
+    queryFn: () => listBuses({ page_size: 5 }),
     enabled: !!selectedRoute,
   });
 
@@ -129,126 +127,138 @@ export default function NewTripPage() {
   };
 
   return (
-    <div className="min-h-screen">
-      <div className="container py-8">
-        <Button variant="ghost" onClick={() => router.back()} className="mb-6">
+    <>
+      <div className="mb-8 flex items-center justify-between">
+        <PageHeader
+          title="Tạo chuyến xe mới"
+          description="Nhập thông tin để tạo chuyến xe mới trong hệ thống"
+        />
+
+        <Button
+          variant="ghost"
+          onClick={() => router.back()}
+          className="mb-6 hover:bg-background"
+        >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Quay lại
         </Button>
+      </div>
 
-        <Card className="max-w-2xl">
-          <CardHeader>
-            <CardTitle>Tạo chuyến xe mới</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-6"
-              >
-                {/* Route Selection */}
-                <FormField
-                  control={form.control}
-                  name="route_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        <RouteIcon className="mr-2 inline h-4 w-4" />
-                        Tuyến đường
-                      </FormLabel>
-                      <Select
-                        onValueChange={handleRouteChange}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Chọn tuyến đường" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {routesLoading ? (
-                            <SelectItem value="loading" disabled>
-                              Đang tải...
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {/* Route & Bus Selection */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <RouteIcon className="h-5 w-5" />
+                Thông tin chuyến xe
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="route_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tuyến đường *</FormLabel>
+                    <Select
+                      onValueChange={handleRouteChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Chọn tuyến đường" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {routesLoading ? (
+                          <SelectItem value="loading" disabled>
+                            Đang tải...
+                          </SelectItem>
+                        ) : routesData?.routes.length === 0 ? (
+                          <SelectItem value="none" disabled>
+                            Không có tuyến đường
+                          </SelectItem>
+                        ) : (
+                          routesData?.routes.map((route) => (
+                            <SelectItem key={route.id} value={route.id}>
+                              {route.origin} → {route.destination}
                             </SelectItem>
-                          ) : routesData?.routes.length === 0 ? (
-                            <SelectItem value="none" disabled>
-                              Không có tuyến đường
-                            </SelectItem>
-                          ) : (
-                            routesData?.routes.map((route) => (
-                              <SelectItem key={route.id} value={route.id}>
-                                {route.origin} → {route.destination}
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                {/* Bus Selection */}
-                <FormField
-                  control={form.control}
-                  name="bus_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        <BusIcon className="mr-2 inline h-4 w-4" />
-                        Xe
-                      </FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        disabled={!selectedRoute}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue
-                              placeholder={
-                                !selectedRoute
-                                  ? "Chọn tuyến đường trước"
-                                  : "Chọn xe"
-                              }
-                            />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {busesLoading ? (
-                            <SelectItem value="loading" disabled>
-                              Đang tải...
+              <FormField
+                control={form.control}
+                name="bus_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Xe *</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={!selectedRoute}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={
+                              !selectedRoute
+                                ? "Chọn tuyến đường trước"
+                                : "Chọn xe"
+                            }
+                          />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {busesLoading ? (
+                          <SelectItem value="loading" disabled>
+                            Đang tải...
+                          </SelectItem>
+                        ) : busesData?.buses.length === 0 ? (
+                          <SelectItem value="none" disabled>
+                            Không có xe khả dụng
+                          </SelectItem>
+                        ) : (
+                          busesData?.buses.map((bus) => (
+                            <SelectItem key={bus.id} value={bus.id}>
+                              {bus.model} - {bus.plate_number} (
+                              {bus.seat_capacity} chỗ)
                             </SelectItem>
-                          ) : busesData?.buses.length === 0 ? (
-                            <SelectItem value="none" disabled>
-                              Không có xe khả dụng
-                            </SelectItem>
-                          ) : (
-                            busesData?.buses.map((bus) => (
-                              <SelectItem key={bus.id} value={bus.id}>
-                                {bus.model} - {bus.plate_number} (
-                                {bus.seat_capacity} chỗ)
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
 
-                {/* Departure Date & Time */}
+          {/* Time Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Thời gian
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h3 className="mb-3 text-sm font-medium">Thời gian đi</h3>
                 <div className="grid gap-4 md:grid-cols-2">
                   <FormField
                     control={form.control}
                     name="departure_date"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>
-                          <Calendar className="mr-2 inline h-4 w-4" />
-                          Ngày đi
-                        </FormLabel>
+                        <FormLabel>Ngày đi *</FormLabel>
                         <FormControl>
                           <Input type="date" {...field} />
                         </FormControl>
@@ -261,7 +271,7 @@ export default function NewTripPage() {
                     name="departure_time"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Giờ đi</FormLabel>
+                        <FormLabel>Giờ đi *</FormLabel>
                         <FormControl>
                           <Input type="time" {...field} />
                         </FormControl>
@@ -270,18 +280,17 @@ export default function NewTripPage() {
                     )}
                   />
                 </div>
+              </div>
 
-                {/* Arrival Date & Time */}
+              <div>
+                <h3 className="mb-3 text-sm font-medium">Thời gian đến</h3>
                 <div className="grid gap-4 md:grid-cols-2">
                   <FormField
                     control={form.control}
                     name="arrival_date"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>
-                          <Calendar className="mr-2 inline h-4 w-4" />
-                          Ngày đến
-                        </FormLabel>
+                        <FormLabel>Ngày đến *</FormLabel>
                         <FormControl>
                           <Input type="date" {...field} />
                         </FormControl>
@@ -294,7 +303,7 @@ export default function NewTripPage() {
                     name="arrival_time"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Giờ đến</FormLabel>
+                        <FormLabel>Giờ đến *</FormLabel>
                         <FormControl>
                           <Input type="time" {...field} />
                         </FormControl>
@@ -303,64 +312,83 @@ export default function NewTripPage() {
                     )}
                   />
                 </div>
+              </div>
+            </CardContent>
+          </Card>
 
-                {/* Base Price */}
-                <FormField
-                  control={form.control}
-                  name="base_price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        <DollarSign className="mr-2 inline h-4 w-4" />
-                        Giá vé cơ bản (VND)
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value) || 0)
-                          }
-                          min="0"
-                          step="1000"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Submit Buttons */}
-                <div className="flex gap-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => router.back()}
-                    className="flex-1"
-                  >
-                    Hủy
-                  </Button>
-                  <Button
-                    type="submit"
-                    className="flex-1 bg-primary text-white hover:bg-primary/90"
-                    disabled={createMutation.isPending}
-                  >
-                    {createMutation.isPending ? "Đang tạo..." : "Tạo chuyến"}
-                  </Button>
-                </div>
-
-                {createMutation.error && (
-                  <div className="rounded-lg border border-error bg-error/10 p-4 text-sm text-error">
-                    {createMutation.error instanceof Error
-                      ? createMutation.error.message
-                      : "Đã xảy ra lỗi khi tạo chuyến"}
-                  </div>
+          {/* Pricing */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                Giá vé
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <FormField
+                control={form.control}
+                name="base_price"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Giá vé cơ bản (VND) *</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="Nhập giá vé"
+                        {...field}
+                        onChange={(e) =>
+                          field.onChange(parseFloat(e.target.value) || 0)
+                        }
+                        min="0"
+                        step="1000"
+                      />
+                    </FormControl>
+                    <p className="text-sm text-muted-foreground">
+                      {(field.value ?? 0) > 0
+                        ? `${field.value?.toLocaleString()} VND`
+                        : "Nhập giá vé"}
+                    </p>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+              />
+            </CardContent>
+          </Card>
+
+          {/* Error Message */}
+          {createMutation.error && (
+            <Card className="border-error">
+              <CardContent className="p-4">
+                <p className="text-sm text-error">
+                  {createMutation.error instanceof Error
+                    ? createMutation.error.message
+                    : "Đã xảy ra lỗi khi tạo chuyến"}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex gap-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.back()}
+              className="flex-1"
+              disabled={createMutation.isPending}
+            >
+              Hủy
+            </Button>
+            <Button
+              type="submit"
+              className="flex-1 bg-primary text-white hover:bg-primary/90"
+              disabled={createMutation.isPending}
+            >
+              {createMutation.isPending ? "Đang tạo..." : "Tạo chuyến"}
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </>
   );
 }

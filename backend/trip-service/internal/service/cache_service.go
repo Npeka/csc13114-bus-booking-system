@@ -148,10 +148,33 @@ func (s *CacheServiceImpl) SetConstants(ctx context.Context, key string, data in
 
 // GenerateSearchCacheKey creates a cache key from search parameters
 func GenerateSearchCacheKey(req *model.TripSearchRequest) string {
-	return fmt.Sprintf("%s:%s:%s:%d:%d",
-		req.Origin,
-		req.Destination,
-		req.Date,
+	origin := ""
+	if req.Origin != nil {
+		origin = *req.Origin
+	}
+	destination := ""
+	if req.Destination != nil {
+		destination = *req.Destination
+	}
+	departureStart := ""
+	if req.DepartureTimeStart != nil {
+		departureStart = *req.DepartureTimeStart
+	}
+	departureEnd := ""
+	if req.DepartureTimeEnd != nil {
+		departureEnd = *req.DepartureTimeEnd
+	}
+	status := ""
+	if req.Status != nil {
+		status = *req.Status
+	}
+
+	return fmt.Sprintf("%s:%s:%s:%s:%s:%d:%d",
+		origin,
+		destination,
+		departureStart,
+		departureEnd,
+		status,
 		req.Page,
 		req.PageSize,
 	)

@@ -23,6 +23,7 @@ import type {
 } from "@/lib/types/trip";
 import { toast } from "sonner";
 import { getValue } from "@/lib/utils";
+import { PageHeader, PageHeaderLayout } from "@/components/shared/admin";
 
 export default function BusSeatLayoutPage() {
   const params = useParams();
@@ -50,7 +51,7 @@ export default function BusSeatLayoutPage() {
       floor?: number;
       row?: number;
       column?: number;
-      seat_type?: import("@/lib/types/trip").ConstantDisplay;
+      seat_type?: string; // Raw string: standard, vip, sleeper
       seat_code?: string;
       seat_number?: string;
       price_multiplier?: number;
@@ -228,36 +229,29 @@ export default function BusSeatLayoutPage() {
   }
 
   return (
-    <div className="min-h-screen">
-      <div className="container py-8">
-        <div className="mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => router.back()}
-            className="mb-4"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Quay lại
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Trình chỉnh sửa sơ đồ ghế</h1>
-            <p className="text-muted-foreground">
-              Xe: {bus.plate_number} - {bus.model} ({bus.seat_capacity} chỗ)
-            </p>
-          </div>
-        </div>
-
-        <SeatLayoutBuilder
-          busId={busId}
-          initialLayout={initialLayout}
-          onSave={async (layout) => {
-            await saveMutation.mutateAsync(layout);
-          }}
-          defaultRows={10}
-          defaultCols={4}
-          maxFloors={2}
+    <>
+      <PageHeaderLayout>
+        <PageHeader
+          title="Trình chỉnh sửa sơ đồ ghế"
+          description={`Xe: ${bus.plate_number} - ${bus.model} (${bus.seat_capacity} chỗ)`}
         />
-      </div>
-    </div>
+
+        <Button variant="ghost" onClick={() => router.back()} className="mb-4">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Quay lại
+        </Button>
+      </PageHeaderLayout>
+
+      <SeatLayoutBuilder
+        busId={busId}
+        initialLayout={initialLayout}
+        onSave={async (layout) => {
+          await saveMutation.mutateAsync(layout);
+        }}
+        defaultRows={10}
+        defaultCols={4}
+        maxFloors={2}
+      />
+    </>
   );
 }

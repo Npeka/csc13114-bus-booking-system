@@ -48,6 +48,9 @@ migrate-up:
 migrate-down:
 	migrate -path migrations -database "$(DB_URL)" down 1
 
+migrate-force:
+	migrate -path migrations -database "$(DB_URL)" force $(version)
+
 migrate-reset:
 	migrate -path migrations -database "$(DB_URL)" drop -f
 	migrate -path migrations -database "$(DB_URL)" up

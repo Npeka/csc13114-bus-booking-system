@@ -3,7 +3,6 @@ package auth
 import (
 	"bus-booking/gateway-service/config"
 	"bus-booking/shared/constants"
-	sharedCtx "bus-booking/shared/context"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -130,12 +129,12 @@ func (uc *UserContext) HasAnyRoleString(roleStrings []string) bool {
 	return false
 }
 
-func (uc *UserContext) ToHeaders() map[sharedCtx.ContextKey]string {
-	return map[sharedCtx.ContextKey]string{
-		sharedCtx.UserIDKey:      uc.UserID,
-		sharedCtx.UserEmailKey:   uc.Email,
-		sharedCtx.UserRoleKey:    strconv.Itoa(uc.Role.ToInt()),
-		sharedCtx.UserNameKey:    uc.Name,
-		sharedCtx.AccessTokenKey: uc.AccessToken,
+func (uc *UserContext) ToHeaders() map[string]string {
+	return map[string]string{
+		constants.XUserID:      uc.UserID,
+		constants.XUserEmail:   uc.Email,
+		constants.XUserRole:    strconv.Itoa(uc.Role.ToInt()),
+		constants.XUserName:    uc.Name,
+		constants.XAccessToken: uc.AccessToken,
 	}
 }

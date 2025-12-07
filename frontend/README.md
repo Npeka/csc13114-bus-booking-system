@@ -236,7 +236,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed folder organization and da
 | `lib/auth/useRole.ts`                 | Hook to check current user role   |
 | `components/auth/protected-route.tsx` | Role-based route guard            |
 | `components/auth/role-badge.tsx`      | Display user role UI              |
-| `app/admin/dashboard/page.tsx`        | Admin dashboard (role-protected)  |
+| `app/admin/page.tsx`                  | Admin dashboard (role-protected)  |
 | `app/operator/dashboard/page.tsx`     | Operator panel (role-protected)   |
 
 ---

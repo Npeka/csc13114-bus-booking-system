@@ -35,19 +35,21 @@ func NewTripHandler(tripService service.TripService) TripHandler {
 
 // SearchTrips godoc
 // @Summary Search trips
-// @Description Search for available trips based on origin, destination, and other criteria
+// @Description Search for available trips based on origin, destination, and other criteria. All filters are optional.
 // @Tags trips
 // @Accept json
 // @Produce json
-// @Param origin query string true "Origin city"
-// @Param destination query string true "Destination city"
-// @Param date query string true "Date in DD/MM/YYYY format" example(01/12/2025)
-// @Param departure_time_start query string false "Departure time start in HH:MM format" example(06:00)
-// @Param departure_time_end query string false "Departure time end in HH:MM format" example(22:00)
+// @Param origin query string false "Origin city (partial match)"
+// @Param destination query string false "Destination city (partial match)"
+// @Param departure_time_start query string false "Departure time start (ISO8601 or HH:MM)" example(2025-12-01T06:00:00Z)
+// @Param departure_time_end query string false "Departure time end (ISO8601 or HH:MM)" example(2025-12-01T22:00:00Z)
+// @Param arrival_time_start query string false "Arrival time start (ISO8601 or HH:MM)"
+// @Param arrival_time_end query string false "Arrival time end (ISO8601 or HH:MM)"
 // @Param min_price query number false "Minimum price"
 // @Param max_price query number false "Maximum price"
 // @Param seat_types query []string false "Seat types" collectionFormat(multi)
 // @Param amenities query []string false "Amenities" collectionFormat(multi)
+// @Param status query string false "Trip status (for admin)" Enums(scheduled, in_progress, completed, cancelled)
 // @Param sort_by query string false "Sort by field" Enums(price, departure_time, duration)
 // @Param sort_order query string false "Sort order" Enums(asc, desc)
 // @Param page query int false "Page number" default(1)

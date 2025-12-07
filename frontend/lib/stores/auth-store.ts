@@ -1,6 +1,26 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+/**
+ * User status enum (matches backend constants.UserStatus)
+ */
+export enum UserStatus {
+  Active = "active", // User account is active and can login
+  Inactive = "inactive", // User account is inactive (not yet activated)
+  Suspended = "suspended", // User account is suspended (temporarily blocked)
+  Verified = "verified", // User account is verified (via Firebase/Email)
+}
+
+/**
+ * User role enum (matches backend constants.UserRole)
+ */
+export enum UserRole {
+  Passenger = 1, // bit 0: 1
+  Admin = 2, // bit 1: 2
+  Operator = 4, // bit 2: 4
+  Support = 8, // bit 3: 8
+}
+
 // User type matching backend response
 export interface User {
   id: string;
@@ -9,7 +29,7 @@ export interface User {
   full_name: string;
   avatar?: string;
   role: number;
-  status: string;
+  status: UserStatus;
   email_verified: boolean;
   phone_verified: boolean;
   created_at: string;

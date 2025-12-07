@@ -34,15 +34,13 @@ export const searchTrips = async (
       throw new Error("Failed to search trips: No data received");
     }
 
-    // Transform API response to internal format
-    const trips = apiResponse.data.map(transformApiTripToTripDetail);
-
-    // Adapt pagination metadata
+    // Return API response items directly without transformation
+    // This preserves the route, bus structure for admin tables
     return {
-      trips,
+      trips: apiResponse.data,
       total: apiResponse.meta.total,
       page: apiResponse.meta.page,
-      limit: apiResponse.meta.page_size,
+      page_size: apiResponse.meta.page_size,
       total_pages: apiResponse.meta.total_pages,
     };
   } catch (error) {
@@ -189,11 +187,14 @@ export const deleteTrip = async (id: string): Promise<void> => {
 export const listTrips = async (params?: {
   page?: number;
   page_size?: number;
+  search?: string;
+  status?: string;
 }): Promise<{
   trips: Trip[];
   total: number;
   page: number;
   page_size: number;
+  total_pages: number;
 }> => {
   try {
     // The backend returns { data: Trip[], meta: { page, page_size, total, total_pages } }
@@ -211,6 +212,8 @@ export const listTrips = async (params?: {
       params: {
         page: params?.page || 1,
         page_size: params?.page_size || 20,
+        search: params?.search,
+        status: params?.status,
       },
     });
 
@@ -221,6 +224,7 @@ export const listTrips = async (params?: {
         total: 0,
         page: params?.page || 1,
         page_size: params?.page_size || 20,
+        total_pages: 0,
       };
     }
 
@@ -229,6 +233,7 @@ export const listTrips = async (params?: {
       total: response.data.meta?.total || 0,
       page: response.data.meta?.page || 1,
       page_size: response.data.meta?.page_size || 20,
+      total_pages: response.data.meta?.total_pages || 1,
     };
   } catch (error) {
     const errorMessage = handleApiError(error);
@@ -241,12 +246,12 @@ export const listTrips = async (params?: {
  */
 export const listRoutes = async (params?: {
   page?: number;
-  limit?: number;
+  page_size?: number;
 }): Promise<{
   routes: Route[];
   total: number;
   page: number;
-  limit: number;
+  page_size: number;
   total_pages: number;
 }> => {
   try {
@@ -266,7 +271,7 @@ export const listRoutes = async (params?: {
         routes: [],
         total: 0,
         page: params?.page || 1,
-        limit: params?.limit || 10,
+        page_size: params?.page_size || 10,
         total_pages: 0,
       };
     }
@@ -275,7 +280,7 @@ export const listRoutes = async (params?: {
       routes: response.data.data,
       total: response.data.meta?.total || 0,
       page: response.data.meta?.page || 1,
-      limit: response.data.meta?.page_size || 20,
+      page_size: response.data.meta?.page_size || 20,
       total_pages: response.data.meta?.total_pages || 0,
     };
   } catch (error) {
@@ -289,12 +294,12 @@ export const listRoutes = async (params?: {
  */
 export const listBuses = async (params?: {
   page?: number;
-  limit?: number;
+  page_size?: number;
 }): Promise<{
   buses: Bus[];
   total: number;
   page: number;
-  limit: number;
+  page_size: number;
   total_pages: number;
 }> => {
   try {
@@ -314,7 +319,7 @@ export const listBuses = async (params?: {
         buses: [],
         total: 0,
         page: params?.page || 1,
-        limit: params?.limit || 10,
+        page_size: params?.page_size || 10,
         total_pages: 0,
       };
     }
@@ -323,7 +328,7 @@ export const listBuses = async (params?: {
       buses: response.data.data,
       total: response.data.meta?.total || 0,
       page: response.data.meta?.page || 1,
-      limit: response.data.meta?.page_size || 20,
+      page_size: response.data.meta?.page_size || 20,
       total_pages: response.data.meta?.total_pages || 0,
     };
   } catch (error) {

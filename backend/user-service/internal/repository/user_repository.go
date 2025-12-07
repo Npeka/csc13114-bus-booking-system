@@ -13,16 +13,15 @@ import (
 )
 
 type UserRepository interface {
-	Create(ctx context.Context, user *model.User) error
 	GetByID(ctx context.Context, id uuid.UUID) (*model.User, error)
 	GetByEmail(ctx context.Context, email string) (*model.User, error)
 	GetByFirebaseUID(ctx context.Context, firebaseUID string) (*model.User, error)
+	List(ctx context.Context, query model.UserListQuery) ([]*model.User, int64, error)
+	ListByRole(ctx context.Context, role constants.UserRole, limit, offset int) ([]*model.User, int64, error)
+	EmailExists(ctx context.Context, email string) (bool, error)
+	Create(ctx context.Context, user *model.User) error
 	Update(ctx context.Context, user *model.User) error
 	Delete(ctx context.Context, id uuid.UUID) error
-	List(ctx context.Context, limit, offset int) ([]*model.User, int64, error)
-	ListByRole(ctx context.Context, role constants.UserRole, limit, offset int) ([]*model.User, int64, error)
-	UpdateStatus(ctx context.Context, id uuid.UUID, status string) error
-	EmailExists(ctx context.Context, email string) (bool, error)
 }
 
 type UserRepositoryImpl struct {
@@ -31,17 +30,6 @@ type UserRepositoryImpl struct {
 
 func NewUserRepository(db *gorm.DB) UserRepository {
 	return &UserRepositoryImpl{db: db}
-}
-
-// Create a new user
-func (r *UserRepositoryImpl) Create(ctx context.Context, user *model.User) error {
-	if err := r.db.WithContext(ctx).Create(user).Error; err != nil {
-		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			return fmt.Errorf("user already exists: %w", err)
-		}
-		return fmt.Errorf("failed to create user: %w", err)
-	}
-	return nil
 }
 
 func (r *UserRepositoryImpl) GetByID(ctx context.Context, id uuid.UUID) (*model.User, error) {
@@ -68,30 +56,48 @@ func (r *UserRepositoryImpl) GetByFirebaseUID(ctx context.Context, firebaseUID s
 	return &user, nil
 }
 
-func (r *UserRepositoryImpl) Update(ctx context.Context, user *model.User) error {
-	if err := r.db.WithContext(ctx).Save(user).Error; err != nil {
-		return fmt.Errorf("failed to update user: %w", err)
-	}
-	return nil
-}
-
-func (r *UserRepositoryImpl) Delete(ctx context.Context, id uuid.UUID) error {
-	if err := r.db.WithContext(ctx).Where("id = ?", id).Delete(&model.User{}).Error; err != nil {
-		return fmt.Errorf("failed to delete user: %w", err)
-	}
-	return nil
-}
-
-func (r *UserRepositoryImpl) List(ctx context.Context, limit, offset int) ([]*model.User, int64, error) {
+func (r *UserRepositoryImpl) List(ctx context.Context, query model.UserListQuery) ([]*model.User, int64, error) {
 	var users []*model.User
 	var total int64
 
-	if err := r.db.WithContext(ctx).Model(&model.User{}).Count(&total).Error; err != nil {
+	// Build query with filters
+	db := r.db.WithContext(ctx).Model(&model.User{})
+
+	// Apply search filter
+	if query.Search != "" {
+		searchPattern := "%" + query.Search + "%"
+		db = db.Where("full_name ILIKE ? OR email ILIKE ? OR phone ILIKE ?", searchPattern, searchPattern, searchPattern)
+	}
+
+	// Apply role filter
+	if query.Role != "" {
+		db = db.Where("role = ?", query.Role)
+	}
+
+	// Apply status filter
+	if query.Status != "" {
+		db = db.Where("status = ?", query.Status)
+	}
+
+	// Count total with filters
+	if err := db.Count(&total).Error; err != nil {
 		return nil, 0, fmt.Errorf("failed to count users: %w", err)
 	}
 
-	if err := r.db.WithContext(ctx).Model(&model.User{}).
-		Limit(limit).Offset(offset).Order("created_at DESC").Find(&users).Error; err != nil {
+	// Apply sorting
+	sortBy := "created_at"
+	if query.SortBy != "" {
+		sortBy = query.SortBy
+	}
+	sortOrder := "DESC"
+	if !query.SortDesc {
+		sortOrder = "ASC"
+	}
+	orderClause := fmt.Sprintf("%s %s", sortBy, sortOrder)
+
+	// Apply pagination and get results
+	offset := (query.Page - 1) * query.PageSize
+	if err := db.Limit(query.PageSize).Offset(offset).Order(orderClause).Find(&users).Error; err != nil {
 		return nil, 0, fmt.Errorf("failed to list users: %w", err)
 	}
 
@@ -115,14 +121,6 @@ func (r *UserRepositoryImpl) ListByRole(ctx context.Context, role constants.User
 	return users, total, nil
 }
 
-func (r *UserRepositoryImpl) UpdateStatus(ctx context.Context, id uuid.UUID, status string) error {
-	if err := r.db.WithContext(ctx).
-		Model(&model.User{}).Where("id = ?", id).Update("status", status).Error; err != nil {
-		return fmt.Errorf("failed to update user status: %w", err)
-	}
-	return nil
-}
-
 func (r *UserRepositoryImpl) EmailExists(ctx context.Context, email string) (bool, error) {
 	var count int64
 	if err := r.db.WithContext(ctx).Model(&model.User{}).
@@ -132,11 +130,26 @@ func (r *UserRepositoryImpl) EmailExists(ctx context.Context, email string) (boo
 	return count > 0, nil
 }
 
-func (r *UserRepositoryImpl) UsernameExists(ctx context.Context, username string) (bool, error) {
-	var count int64
-	if err := r.db.WithContext(ctx).Model(&model.User{}).
-		Where("username = ?", username).Count(&count).Error; err != nil {
-		return false, fmt.Errorf("failed to check username existence: %w", err)
+func (r *UserRepositoryImpl) Create(ctx context.Context, user *model.User) error {
+	if err := r.db.WithContext(ctx).Create(user).Error; err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			return fmt.Errorf("user already exists: %w", err)
+		}
+		return fmt.Errorf("failed to create user: %w", err)
 	}
-	return count > 0, nil
+	return nil
+}
+
+func (r *UserRepositoryImpl) Update(ctx context.Context, user *model.User) error {
+	if err := r.db.WithContext(ctx).Save(user).Error; err != nil {
+		return fmt.Errorf("failed to update user: %w", err)
+	}
+	return nil
+}
+
+func (r *UserRepositoryImpl) Delete(ctx context.Context, id uuid.UUID) error {
+	if err := r.db.WithContext(ctx).Where("id = ?", id).Delete(&model.User{}).Error; err != nil {
+		return fmt.Errorf("failed to delete user: %w", err)
+	}
+	return nil
 }

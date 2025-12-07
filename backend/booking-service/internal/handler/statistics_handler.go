@@ -41,19 +41,19 @@ func NewStatisticsHandler(
 func (h *StatisticsHandlerImpl) GetBookingStats(r *ginext.Request) (*ginext.Response, error) {
 	var req model.BookingStatsRequest
 	if err := r.GinCtx.ShouldBindQuery(&req); err != nil {
-		log.Error().Err(err).Msg("Invalid query parameters")
+		log.Error().Err(err).Msg("failed to bind query parameters")
 		return nil, ginext.NewBadRequestError("start_date and end_date are required")
 	}
 
 	startDate, err := time.Parse("2006-01-02", req.StartDate)
 	if err != nil {
-		log.Error().Err(err).Msg("Invalid start_date format")
+		log.Error().Err(err).Msg("invalid start_date format")
 		return nil, ginext.NewBadRequestError("invalid start_date format, use YYYY-MM-DD")
 	}
 
 	endDate, err := time.Parse("2006-01-02", req.EndDate)
 	if err != nil {
-		log.Error().Err(err).Msg("Invalid end_date format")
+		log.Error().Err(err).Msg("invalid end_date format")
 		return nil, ginext.NewBadRequestError("invalid end_date format, use YYYY-MM-DD")
 	}
 
@@ -62,7 +62,7 @@ func (h *StatisticsHandlerImpl) GetBookingStats(r *ginext.Request) (*ginext.Resp
 
 	stats, err := h.service.GetBookingStats(r.Context(), startDate, endDate)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get booking statistics")
+		log.Error().Err(err).Msg("failed to get booking statistics")
 		return nil, err
 	}
 
@@ -83,7 +83,7 @@ func (h *StatisticsHandlerImpl) GetBookingStats(r *ginext.Request) (*ginext.Resp
 func (h *StatisticsHandlerImpl) GetPopularTrips(r *ginext.Request) (*ginext.Response, error) {
 	var req model.PopularTripsRequest
 	if err := r.GinCtx.ShouldBindQuery(&req); err != nil {
-		log.Error().Err(err).Msg("Invalid query parameters")
+		log.Error().Err(err).Msg("failed to bind query parameters")
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
@@ -96,7 +96,7 @@ func (h *StatisticsHandlerImpl) GetPopularTrips(r *ginext.Request) (*ginext.Resp
 
 	trips, err := h.service.GetPopularTrips(r.Context(), req.Limit, req.Days)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to get popular trips")
+		log.Error().Err(err).Msg("failed to get popular trips")
 		return nil, err
 	}
 

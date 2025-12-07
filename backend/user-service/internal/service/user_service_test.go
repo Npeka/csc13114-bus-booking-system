@@ -318,10 +318,17 @@ func TestUserService_ListUsers_Success(t *testing.T) {
 		{ID: uuid.New(), Email: "user2@example.com", FullName: "User 2"},
 	}
 
-	mockRepo.On("List", ctx, 10, 0).Return(users, int64(2), nil)
+	req := model.UserListQuery{
+		PaginationRequest: model.PaginationRequest{
+			Page:     1,
+			PageSize: 10,
+		},
+	}
+
+	mockRepo.On("List", ctx, req).Return(users, int64(2), nil)
 
 	// Act
-	result, total, err := service.ListUsers(ctx, 10, 0)
+	result, total, err := service.ListUsers(ctx, req)
 
 	// Assert
 	assert.NoError(t, err)
@@ -352,45 +359,5 @@ func TestUserService_ListUsersByRole_Success(t *testing.T) {
 	assert.NotNil(t, result)
 	assert.Equal(t, 2, len(result))
 	assert.Equal(t, int64(2), total)
-	mockRepo.AssertExpectations(t)
-}
-
-func TestUserService_UpdateUserStatus_Success(t *testing.T) {
-	// Arrange
-	mockRepo := new(mocks.MockUserRepository)
-	service := NewUserService(mockRepo)
-	ctx := context.Background()
-
-	userID := uuid.New()
-	existingUser := &model.User{
-		ID:     userID,
-		Status: "active",
-	}
-
-	mockRepo.On("GetByID", ctx, userID).Return(existingUser, nil)
-	mockRepo.On("UpdateStatus", ctx, userID, "suspended").Return(nil)
-
-	// Act
-	err := service.UpdateUserStatus(ctx, userID, "suspended")
-
-	// Assert
-	assert.NoError(t, err)
-	mockRepo.AssertExpectations(t)
-}
-
-func TestUserService_UpdateUserStatus_NotFound(t *testing.T) {
-	// Arrange
-	mockRepo := new(mocks.MockUserRepository)
-	service := NewUserService(mockRepo)
-	ctx := context.Background()
-
-	userID := uuid.New()
-	mockRepo.On("GetByID", ctx, userID).Return(nil, ginext.NewNotFoundError("user not found"))
-
-	// Act
-	err := service.UpdateUserStatus(ctx, userID, "suspended")
-
-	// Assert
-	assert.Error(t, err)
 	mockRepo.AssertExpectations(t)
 }

@@ -13,13 +13,21 @@ import (
 	"strings"
 	"time"
 
+	"bus-booking/payment-service/config"
 	"bus-booking/payment-service/internal/model"
 
 	"github.com/rs/zerolog/log"
 )
 
-// PayOSClient handles PayOS API integration
-type PayOSClient struct {
+type PayOSClient interface {
+	CreatePaymentLink(req *model.CreatePaymentLinkRequest) (*model.CreatePaymentLinkResponse, error)
+	GetPaymentInfo(orderCode int64) (*model.GetPaymentInfoResponse, error)
+	CancelPayment(orderCode int64, reason string) (*model.GetPaymentInfoResponse, error)
+	VerifyWebhookSignature(webhookData *model.PaymentWebhookData) bool
+}
+
+// PayOSClientImpl handles PayOS API integration
+type PayOSClientImpl struct {
 	clientID    string
 	apiKey      string
 	checksumKey string
@@ -28,11 +36,11 @@ type PayOSClient struct {
 }
 
 // NewPayOSClient creates a new PayOS client
-func NewPayOSClient(clientID, apiKey, checksumKey string) *PayOSClient {
-	return &PayOSClient{
-		clientID:    clientID,
-		apiKey:      apiKey,
-		checksumKey: checksumKey,
+func NewPayOSClient(cfg config.PayOSConfig) PayOSClient {
+	return &PayOSClientImpl{
+		clientID:    cfg.ClientID,
+		apiKey:      cfg.APIKey,
+		checksumKey: cfg.ChecksumKey,
 		baseURL:     "https://api-merchant.payos.vn",
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
@@ -41,7 +49,7 @@ func NewPayOSClient(clientID, apiKey, checksumKey string) *PayOSClient {
 }
 
 // CreatePaymentLink creates a payment link via PayOS API
-func (c *PayOSClient) CreatePaymentLink(req *model.CreatePaymentLinkRequest) (*model.CreatePaymentLinkResponse, error) {
+func (c *PayOSClientImpl) CreatePaymentLink(req *model.CreatePaymentLinkRequest) (*model.CreatePaymentLinkResponse, error) {
 	// Generate signature
 	req.Signature = c.generateSignature(req)
 
@@ -103,7 +111,7 @@ func (c *PayOSClient) CreatePaymentLink(req *model.CreatePaymentLinkRequest) (*m
 }
 
 // GetPaymentInfo retrieves payment information
-func (c *PayOSClient) GetPaymentInfo(orderCode int64) (*model.GetPaymentInfoResponse, error) {
+func (c *PayOSClientImpl) GetPaymentInfo(orderCode int64) (*model.GetPaymentInfoResponse, error) {
 	url := fmt.Sprintf("%s/v2/payment-requests/%d", c.baseURL, orderCode)
 
 	httpReq, err := http.NewRequest("GET", url, nil)
@@ -142,7 +150,7 @@ func (c *PayOSClient) GetPaymentInfo(orderCode int64) (*model.GetPaymentInfoResp
 }
 
 // CancelPayment cancels a payment
-func (c *PayOSClient) CancelPayment(orderCode int64, reason string) (*model.GetPaymentInfoResponse, error) {
+func (c *PayOSClientImpl) CancelPayment(orderCode int64, reason string) (*model.GetPaymentInfoResponse, error) {
 	url := fmt.Sprintf("%s/v2/payment-requests/%d/cancel", c.baseURL, orderCode)
 
 	cancelReq := model.CancelPaymentRequest{
@@ -191,7 +199,7 @@ func (c *PayOSClient) CancelPayment(orderCode int64, reason string) (*model.GetP
 }
 
 // VerifyWebhookSignature verifies webhook signature from PayOS
-func (c *PayOSClient) VerifyWebhookSignature(webhookData *model.PaymentWebhookData) bool {
+func (c *PayOSClientImpl) VerifyWebhookSignature(webhookData *model.PaymentWebhookData) bool {
 	// Extract data for signature verification
 	data := webhookData.Data
 
@@ -216,7 +224,7 @@ func (c *PayOSClient) VerifyWebhookSignature(webhookData *model.PaymentWebhookDa
 }
 
 // generateSignature generates signature for payment link creation
-func (c *PayOSClient) generateSignature(req *model.CreatePaymentLinkRequest) string {
+func (c *PayOSClientImpl) generateSignature(req *model.CreatePaymentLinkRequest) string {
 	// Sort parameters alphabetically and create signature string
 	signatureStr := fmt.Sprintf(
 		"amount=%d&cancelUrl=%s&description=%s&orderCode=%d&returnUrl=%s",
@@ -234,7 +242,7 @@ func (c *PayOSClient) generateSignature(req *model.CreatePaymentLinkRequest) str
 }
 
 // verifyResponseSignature verifies signature in PayOS response
-func (c *PayOSClient) verifyResponseSignature(resp *model.CreatePaymentLinkResponse) bool {
+func (c *PayOSClientImpl) verifyResponseSignature(resp *model.CreatePaymentLinkResponse) bool {
 	if resp.Signature == "" {
 		return false
 	}

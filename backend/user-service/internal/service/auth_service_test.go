@@ -418,7 +418,7 @@ func TestAuthService_RefreshToken_Success(t *testing.T) {
 	mockJWT.On("GenerateRefreshToken", userID, user.Email, "1").Return("new.refresh.token", nil)
 
 	// Act
-	result, err := service.RefreshToken(ctx, req, userID)
+	result, err := service.RefreshToken(ctx, req)
 
 	// Assert
 	assert.NoError(t, err)
@@ -440,7 +440,6 @@ func TestAuthService_RefreshToken_InvalidToken(t *testing.T) {
 	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
 	ctx := context.Background()
 
-	userID := uuid.New()
 	req := &model.RefreshTokenRequest{
 		RefreshToken: "invalid.token",
 	}
@@ -448,7 +447,7 @@ func TestAuthService_RefreshToken_InvalidToken(t *testing.T) {
 	mockJWT.On("ValidateRefreshToken", req.RefreshToken).Return(nil, errors.New("invalid token"))
 
 	// Act
-	result, err := service.RefreshToken(ctx, req, userID)
+	result, err := service.RefreshToken(ctx, req)
 
 	// Assert
 	assert.Error(t, err)
@@ -467,7 +466,6 @@ func TestAuthService_RefreshToken_UserMismatch(t *testing.T) {
 	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
 	ctx := context.Background()
 
-	userID := uuid.New()
 	differentUserID := uuid.New()
 	req := &model.RefreshTokenRequest{
 		RefreshToken: "valid.token",
@@ -480,7 +478,7 @@ func TestAuthService_RefreshToken_UserMismatch(t *testing.T) {
 	mockJWT.On("ValidateRefreshToken", req.RefreshToken).Return(claims, nil)
 
 	// Act
-	result, err := service.RefreshToken(ctx, req, userID)
+	result, err := service.RefreshToken(ctx, req)
 
 	// Assert
 	assert.Error(t, err)

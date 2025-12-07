@@ -65,7 +65,7 @@ export function Header() {
           <nav className="hidden items-center space-x-6 md:flex">
             {isAdmin && (
               <Link
-                href="/admin/dashboard"
+                href="/admin"
                 className="text-sm font-semibold text-foreground/80 transition-colors hover:text-foreground"
               >
                 Quản trị

@@ -3,7 +3,12 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
-export type SeatStatus = "available" | "selected" | "booked" | "driver";
+export type SeatStatus =
+  | "available"
+  | "selected"
+  | "booked"
+  | "reserved"
+  | "driver";
 export type SeatType = "standard" | "vip" | "sleeper";
 
 export interface Seat {
@@ -30,7 +35,12 @@ export function SeatMap({
   maxSeats = 5,
 }: SeatMapProps) {
   const handleSeatClick = (seat: Seat) => {
-    if (seat.status === "booked" || seat.status === "driver") return;
+    if (
+      seat.status === "booked" ||
+      seat.status === "driver" ||
+      seat.status === "reserved"
+    )
+      return;
 
     if (selectedSeats.includes(seat.id)) {
       onSeatSelect(seat.id);
@@ -58,6 +68,9 @@ export function SeatMap({
     if (seat.status === "booked") {
       return "bg-neutral-300 cursor-not-allowed";
     }
+    if (seat.status === "reserved") {
+      return "bg-orange-300 cursor-not-allowed";
+    }
     if (selectedSeats.includes(seat.id)) {
       return "bg-primary text-white";
     }
@@ -75,34 +88,38 @@ export function SeatMap({
   return (
     <div className="space-y-6">
       {/* Legend */}
-      <div className="flex flex-wrap gap-4 text-sm">
-        <div className="flex items-center space-x-2">
-          <div className="h-8 w-8 rounded border-2 border-success bg-success/20" />
+      <div className="flex flex-wrap gap-3 text-xs">
+        <div className="flex items-center space-x-1.5">
+          <div className="h-5 w-5 rounded border-2 border-success bg-success/20" />
           <span>Ghế thường</span>
         </div>
-        <div className="flex items-center space-x-2">
-          <div className="h-8 w-8 rounded border-2 border-info bg-info/20" />
+        <div className="flex items-center space-x-1.5">
+          <div className="h-5 w-5 rounded border-2 border-info bg-info/20" />
           <span>Giường nằm</span>
         </div>
-        <div className="flex items-center space-x-2">
-          <div className="h-8 w-8 rounded border-2 border-warning bg-warning/20" />
+        <div className="flex items-center space-x-1.5">
+          <div className="h-5 w-5 rounded border-2 border-warning bg-warning/20" />
           <span>Ghế VIP</span>
         </div>
-        <div className="flex items-center space-x-2">
-          <div className="h-8 w-8 rounded border-2 border-success bg-primary" />
+        <div className="flex items-center space-x-1.5">
+          <div className="h-5 w-5 rounded border-2 border-success bg-primary" />
           <span>Đã chọn</span>
         </div>
-        <div className="flex items-center space-x-2">
-          <div className="h-8 w-8 rounded border-2 bg-neutral-300" />
+        <div className="flex items-center space-x-1.5">
+          <div className="h-5 w-5 rounded bg-orange-300" />
+          <span>Đang giữ chỗ</span>
+        </div>
+        <div className="flex items-center space-x-1.5">
+          <div className="h-5 w-5 rounded border-2 bg-neutral-300" />
           <span>Đã đặt</span>
         </div>
       </div>
 
       {/* Seat Map */}
-      <div className="rounded-lg border bg-white p-8">
+      <div className="rounded-lg border bg-background p-8" data-seat-map>
         {/* Driver Section */}
         <div className="mb-8 flex justify-end">
-          <div className="flex items-center space-x-2 rounded-lg bg-neutral-100 px-4 py-2">
+          <div className="flex items-center space-x-2 rounded-lg bg-muted px-4 py-2">
             <span className="text-sm font-medium">🚗 Tài xế</span>
           </div>
         </div>
@@ -160,7 +177,7 @@ export function SeatSelectionSummary({
 
   return (
     <div className="sticky top-20 space-y-4">
-      <div className="rounded-lg border bg-white p-6">
+      <div className="rounded-lg border bg-card p-6">
         <h3 className="mb-4 text-lg font-semibold">
           Chỗ đã chọn ({selectedSeats.length})
         </h3>

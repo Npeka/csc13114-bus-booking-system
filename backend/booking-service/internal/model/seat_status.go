@@ -8,7 +8,7 @@ import (
 )
 
 type SeatStatus struct {
-	ID            uuid.UUID  `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
+	BaseModel
 	TripID        uuid.UUID  `gorm:"type:uuid;not null" json:"trip_id" validate:"required"`
 	SeatID        uuid.UUID  `gorm:"type:uuid;not null" json:"seat_id" validate:"required"`
 	SeatNumber    string     `gorm:"type:varchar(10);not null" json:"seat_number" validate:"required"`
@@ -16,8 +16,6 @@ type SeatStatus struct {
 	UserID        *uuid.UUID `gorm:"type:uuid" json:"user_id,omitempty"`
 	BookingID     *uuid.UUID `gorm:"type:uuid" json:"booking_id,omitempty"`
 	ReservedUntil *time.Time `gorm:"type:timestamptz" json:"reserved_until,omitempty"`
-	CreatedAt     time.Time  `gorm:"type:timestamptz;not null;default:now()" json:"created_at"`
-	UpdatedAt     time.Time  `gorm:"type:timestamptz;not null;default:now()" json:"updated_at"`
 
 	Booking *Booking `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL" json:"booking,omitempty"`
 }

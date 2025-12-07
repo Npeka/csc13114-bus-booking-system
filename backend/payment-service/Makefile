@@ -3,9 +3,6 @@
 run:
 	go run ./cmd/server/main.go
 
-migrate:
-	go run ./cmd/migrate/main.go
-
 fmt:
 	go fmt ./...
 
@@ -30,9 +27,6 @@ quality-check:
 	fmt-check vet lint test
 
 # Swagger
-SWAG_PKG=github.com/swaggo/swag/v2/cmd/swag
-SWAG_VERSION=v2.6.2
-
 install-swag:
 	go install github.com/swaggo/swag/cmd/swag@v1.16.3
 
@@ -41,3 +35,23 @@ swagger:
 
 swagger-gen:
 	fmt swagger
+
+# Migration commands
+DB_URL=postgres://doadmin:AVNS_k8dv8ULBQ3Sjwie2_Xe@bus-booking-database-do-user-29228381-0.d.db.ondigitalocean.com:25060/bus_booking_booking?sslmode=require
+
+migrate-create:
+	@read -p "Enter migration name: " name; \
+	migrate create -ext sql -dir migrations -seq $$name
+
+migrate-up:
+	migrate -path migrations -database "$(DB_URL)" up
+
+migrate-down:
+	migrate -path migrations -database "$(DB_URL)" down 1
+
+migrate-reset:
+	migrate -path migrations -database "$(DB_URL)" drop -f
+	migrate -path migrations -database "$(DB_URL)" up
+
+migrate-version:
+	migrate -path migrations -database "$(DB_URL)" version

@@ -5,6 +5,8 @@ import (
 	"bus-booking/booking-service/internal/service"
 	"bus-booking/shared/ginext"
 
+	sharedcontext "bus-booking/shared/context"
+
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
@@ -16,6 +18,8 @@ type BookingHandler interface {
 	GetTripBookings(r *ginext.Request) (*ginext.Response, error)
 	CancelBooking(r *ginext.Request) (*ginext.Response, error)
 	UpdateBookingStatus(r *ginext.Request) (*ginext.Response, error)
+	CreatePayment(r *ginext.Request) (*ginext.Response, error)
+	UpdatePaymentStatus(r *ginext.Request) (*ginext.Response, error)
 }
 
 type BookingHandlerImpl struct {
@@ -40,21 +44,17 @@ func NewBookingHandler(bookingService service.BookingService) BookingHandler {
 // @Failure 500 {object} ginext.Response
 // @Router /api/v1/bookings [post]
 func (h *BookingHandlerImpl) CreateBooking(r *ginext.Request) (*ginext.Response, error) {
+	userID := sharedcontext.GetUserID(r.GinCtx)
+
 	var req model.CreateBookingRequest
 	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
-		log.Debug().Err(err).Msg("Invalid request body")
+		log.Error().Err(err).Msg("failed to bind and validate request")
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
-	// Validate request
-	if err := req.Validate(); err != nil {
-		return nil, ginext.NewBadRequestError(err.Error())
-	}
-
-	// Create booking
-	booking, err := h.bookingService.CreateBooking(r.Context(), &req)
+	booking, err := h.bookingService.CreateBooking(r.Context(), &req, userID)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to create booking")
+		log.Error().Err(err).Msg("failed to create booking")
 		return nil, err
 	}
 
@@ -75,12 +75,13 @@ func (h *BookingHandlerImpl) GetBooking(r *ginext.Request) (*ginext.Response, er
 	idStr := r.GinCtx.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		return nil, ginext.NewBadRequestError("invalid booking ID")
+		log.Error().Err(err).Str("id", idStr).Msg("invalid booking id")
+		return nil, ginext.NewBadRequestError("invalid booking id")
 	}
 
 	booking, err := h.bookingService.GetBookingByID(r.Context(), id)
 	if err != nil {
-		log.Error().Err(err).Str("booking_id", idStr).Msg("Failed to get booking")
+		log.Error().Err(err).Str("booking_id", idStr).Msg("failed to get booking")
 		return nil, err
 	}
 
@@ -94,42 +95,35 @@ func (h *BookingHandlerImpl) GetBooking(r *ginext.Request) (*ginext.Response, er
 // @Produce json
 // @Param user_id path string true "User ID" format(uuid)
 // @Param page query int false "Page number" default(1)
-// @Param limit query int false "Items per page" default(10)
+// @Param page_size query int false "Items per page" default(10)
 // @Success 200 {object} ginext.Response{data=model.PaginatedBookingResponse}
 // @Failure 400 {object} ginext.Response
 // @Failure 500 {object} ginext.Response
 // @Router /api/v1/bookings/user/{user_id} [get]
 func (h *BookingHandlerImpl) GetUserBookings(r *ginext.Request) (*ginext.Response, error) {
 	userIDStr := r.GinCtx.Param("user_id")
+
 	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
-		return nil, ginext.NewBadRequestError("invalid user ID")
+		log.Error().Err(err).Str("user_id", userIDStr).Msg("invalid user id")
+		return nil, ginext.NewBadRequestError("invalid user id")
 	}
 
-	var query struct {
-		Page  int `form:"page,default=1"`
-		Limit int `form:"limit,default=10"`
-	}
-
-	if err := r.GinCtx.ShouldBindQuery(&query); err != nil {
+	var req model.PaginationRequest
+	if err := r.GinCtx.ShouldBindQuery(&req); err != nil {
+		log.Error().Err(err).Msg("failed to bind query parameters")
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
-	// Set defaults if not provided
-	if query.Page < 1 {
-		query.Page = 1
-	}
-	if query.Limit < 1 || query.Limit > 100 {
-		query.Limit = 10
-	}
+	req.Normalize()
 
-	bookings, err := h.bookingService.GetUserBookings(r.Context(), userID, query.Page, query.Limit)
+	bookings, total, err := h.bookingService.GetUserBookings(r.Context(), req, userID)
 	if err != nil {
-		log.Error().Err(err).Str("user_id", userIDStr).Msg("Failed to get user bookings")
+		log.Error().Err(err).Str("user_id", userIDStr).Msg("failed to get user bookings")
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(bookings), nil
+	return ginext.NewPaginatedResponse(bookings, req.Page, req.PageSize, total), nil
 }
 
 // GetTripBookings godoc
@@ -139,7 +133,7 @@ func (h *BookingHandlerImpl) GetUserBookings(r *ginext.Request) (*ginext.Respons
 // @Produce json
 // @Param trip_id path string true "Trip ID" format(uuid)
 // @Param page query int false "Page number" default(1)
-// @Param limit query int false "Items per page" default(10)
+// @Param page_size query int false "Items per page" default(10)
 // @Success 200 {object} ginext.Response{data=model.PaginatedBookingResponse}
 // @Failure 400 {object} ginext.Response
 // @Failure 500 {object} ginext.Response
@@ -148,33 +142,25 @@ func (h *BookingHandlerImpl) GetTripBookings(r *ginext.Request) (*ginext.Respons
 	tripIDStr := r.GinCtx.Param("trip_id")
 	tripID, err := uuid.Parse(tripIDStr)
 	if err != nil {
-		return nil, ginext.NewBadRequestError("invalid trip ID")
+		log.Error().Err(err).Str("trip_id", tripIDStr).Msg("invalid trip id")
+		return nil, ginext.NewBadRequestError("invalid trip id")
 	}
 
-	var query struct {
-		Page  int `form:"page,default=1"`
-		Limit int `form:"limit,default=10"`
-	}
-
-	if err := r.GinCtx.ShouldBindQuery(&query); err != nil {
+	var req model.PaginationRequest
+	if err := r.GinCtx.ShouldBindQuery(&req); err != nil {
+		log.Error().Err(err).Msg("failed to bind query parameters")
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
-	// Set defaults if not provided
-	if query.Page < 1 {
-		query.Page = 1
-	}
-	if query.Limit < 1 || query.Limit > 100 {
-		query.Limit = 10
-	}
+	req.Normalize()
 
-	bookings, err := h.bookingService.GetTripBookings(r.Context(), tripID, query.Page, query.Limit)
+	bookings, total, err := h.bookingService.GetTripBookings(r.Context(), req, tripID)
 	if err != nil {
-		log.Error().Err(err).Str("trip_id", tripIDStr).Msg("Failed to get trip bookings")
+		log.Error().Err(err).Str("trip_id", tripIDStr).Msg("failed to get trip bookings")
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse(bookings), nil
+	return ginext.NewPaginatedResponse(bookings, req.Page, req.PageSize, total), nil
 }
 
 // CancelBooking godoc
@@ -193,21 +179,22 @@ func (h *BookingHandlerImpl) CancelBooking(r *ginext.Request) (*ginext.Response,
 	idStr := r.GinCtx.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		return nil, ginext.NewBadRequestError("invalid booking ID")
+		log.Error().Err(err).Str("id", idStr).Msg("invalid booking id")
+		return nil, ginext.NewBadRequestError("invalid booking id")
 	}
 
 	var req model.CancelBookingRequest
 	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
-		log.Debug().Err(err).Msg("Invalid request body")
+		log.Error().Err(err).Msg("failed to bind request body")
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
 	if err := h.bookingService.CancelBooking(r.Context(), id, req.UserID, req.Reason); err != nil {
-		log.Error().Err(err).Str("booking_id", idStr).Msg("Failed to cancel booking")
+		log.Error().Err(err).Str("booking_id", idStr).Msg("failed to cancel booking")
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse("Booking cancelled successfully"), nil
+	return ginext.NewSuccessResponse("booking cancelled successfully"), nil
 }
 
 // UpdateBookingStatus godoc
@@ -226,19 +213,89 @@ func (h *BookingHandlerImpl) UpdateBookingStatus(r *ginext.Request) (*ginext.Res
 	idStr := r.GinCtx.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
-		return nil, ginext.NewBadRequestError("invalid booking ID")
+		log.Error().Err(err).Str("id", idStr).Msg("invalid booking id")
+		return nil, ginext.NewBadRequestError("invalid booking id")
 	}
 
 	var req model.UpdateBookingStatusRequest
 	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
-		log.Debug().Err(err).Msg("Invalid request body")
+		log.Error().Err(err).Msg("failed to bind request body")
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
 	if err := h.bookingService.UpdateBookingStatus(r.Context(), id, req.Status); err != nil {
-		log.Error().Err(err).Str("booking_id", idStr).Msg("Failed to update booking status")
+		log.Error().Err(err).Str("booking_id", idStr).Msg("failed to update booking status")
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse("Booking status updated successfully"), nil
+	return ginext.NewSuccessResponse("booking status updated successfully"), nil
+}
+
+// CreatePayment godoc
+// @Summary Create payment link for booking
+// @Description Create a PayOS payment link for a booking
+// @Tags bookings
+// @Accept json
+// @Produce json
+// @Param id path string true "Booking ID" format(uuid)
+// @Param request body model.CreatePaymentRequest true "Buyer information"
+// @Success 200 {object} ginext.Response{data=client.PaymentLinkResponse}
+// @Failure 400 {object} ginext.Response
+// @Failure 404 {object} ginext.Response
+// @Router /api/v1/bookings/{id}/payment [post]
+func (h *BookingHandlerImpl) CreatePayment(r *ginext.Request) (*ginext.Response, error) {
+	idStr := r.GinCtx.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		log.Error().Err(err).Str("id", idStr).Msg("invalid booking id")
+		return nil, ginext.NewBadRequestError("invalid booking id")
+	}
+
+	var req model.CreatePaymentRequest
+	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
+		log.Error().Err(err).Msg("failed to bind request body")
+		return nil, ginext.NewBadRequestError(err.Error())
+	}
+
+	paymentResp, err := h.bookingService.CreatePayment(r.Context(), id, &req.BuyerInfo)
+	if err != nil {
+		log.Error().Err(err).Str("booking_id", idStr).Msg("failed to create payment")
+		return nil, err
+	}
+
+	return ginext.NewSuccessResponse(paymentResp), nil
+}
+
+// UpdatePaymentStatus godoc
+// @Summary Update booking payment status
+// @Description Update booking payment status (internal use by payment service)
+// @Tags bookings
+// @Accept json
+// @Produce json
+// @Param id path string true "Booking ID" format(uuid)
+// @Param request body model.UpdatePaymentStatusRequest true "Payment status update"
+// @Success 200 {object} ginext.Response
+// @Failure 400 {object} ginext.Response
+// @Failure 404 {object} ginext.Response
+// @Router /api/v1/bookings/{id}/payment-status [put]
+func (h *BookingHandlerImpl) UpdatePaymentStatus(r *ginext.Request) (*ginext.Response, error) {
+	idStr := r.GinCtx.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		log.Error().Err(err).Str("id", idStr).Msg("invalid booking id")
+		return nil, ginext.NewBadRequestError("invalid booking id")
+	}
+
+	var req model.UpdatePaymentStatusRequest
+	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
+		log.Error().Err(err).Msg("failed to bind request body")
+		return nil, ginext.NewBadRequestError(err.Error())
+	}
+
+	if err := h.bookingService.UpdatePaymentStatus(r.Context(), id, req.PaymentStatus, req.BookingStatus, req.PaymentOrderID); err != nil {
+		log.Error().Err(err).Str("booking_id", idStr).Msg("failed to update payment status")
+		return nil, err
+	}
+
+	return ginext.NewSuccessResponse("payment status updated successfully"), nil
 }

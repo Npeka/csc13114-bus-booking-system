@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bus-booking/payment-service/internal/client"
 	"bus-booking/payment-service/internal/handler"
 	"bus-booking/payment-service/internal/repository"
 	"bus-booking/payment-service/internal/router"
@@ -11,18 +12,16 @@ import (
 )
 
 func (s *Server) buildHandler() http.Handler {
-	repositories := repository.NewRepositories(s.db.DB)
+	transactionRepo := repository.NewTransactionRepository(s.db.DB)
 
 	// Initialize PayOS client
-	payosClient := service.NewPayOSClient(
-		s.cfg.PayOS.ClientID,
-		s.cfg.PayOS.APIKey,
-		s.cfg.PayOS.ChecksumKey,
-	)
+	payosClient := service.NewPayOSClient(s.cfg.PayOS)
+	bookingClient := client.NewBookingClient(s.cfg.ServiceName, s.cfg.External.BookingServiceURL)
 
 	// Initialize services with PayOS client
 	transactionService := service.NewTransactionService(
-		repositories,
+		transactionRepo,
+		bookingClient,
 		payosClient,
 		s.cfg.PayOS.ReturnURL,
 		s.cfg.PayOS.CancelURL,

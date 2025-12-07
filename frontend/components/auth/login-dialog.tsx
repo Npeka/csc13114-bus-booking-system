@@ -119,7 +119,7 @@ export function LoginDialog({ isOpen, onOpenChange }: LoginDialogProps) {
 
       const user = useAuthStore.getState().user;
       if (user && isAdmin(user.role)) {
-        router.push("/admin/dashboard");
+        router.push("/admin");
       }
 
       setStep("phone");
@@ -145,7 +145,7 @@ export function LoginDialog({ isOpen, onOpenChange }: LoginDialogProps) {
 
       const user = useAuthStore.getState().user;
       if (user && isAdmin(user.role)) {
-        router.push("/admin/dashboard");
+        router.push("/admin");
       }
 
       setPhoneError("");
@@ -180,7 +180,7 @@ export function LoginDialog({ isOpen, onOpenChange }: LoginDialogProps) {
 
       const user = useAuthStore.getState().user;
       if (user && isAdmin(user.role)) {
-        router.push("/admin/dashboard");
+        router.push("/admin");
       }
 
       setEmail("");
@@ -222,7 +222,7 @@ export function LoginDialog({ isOpen, onOpenChange }: LoginDialogProps) {
 
       const user = useAuthStore.getState().user;
       if (user && isAdmin(user.role)) {
-        router.push("/admin/dashboard");
+        router.push("/admin");
       }
 
       setEmail("");

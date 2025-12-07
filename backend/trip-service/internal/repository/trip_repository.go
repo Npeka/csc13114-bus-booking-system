@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"bus-booking/trip-service/internal/constants"
 	"bus-booking/trip-service/internal/model"
 
 	"github.com/google/uuid"
@@ -35,12 +34,6 @@ func (r *TripRepositoryImpl) SearchTrips(ctx context.Context, req *model.TripSea
 	var trips []model.Trip
 	var total int64
 
-	// Parse date string
-	date, err := time.Parse("02/01/2006", req.Date)
-	if err != nil {
-		return nil, 0, err
-	}
-
 	// Build base query with Preload
 	query := r.db.WithContext(ctx).Model(&model.Trip{}).
 		Preload("Route", "is_active = ?", true).
@@ -48,26 +41,49 @@ func (r *TripRepositoryImpl) SearchTrips(ctx context.Context, req *model.TripSea
 		Joins("JOIN routes ON routes.id = trips.route_id").
 		Joins("JOIN buses ON buses.id = trips.bus_id")
 
-	// Basic filters
-	query = query.Where("trips.is_active = ?", true).
-		Where("trips.status = ?", "scheduled").
-		Where("routes.origin ILIKE ?", "%"+req.Origin+"%").
-		Where("routes.destination ILIKE ?", "%"+req.Destination+"%").
-		Where("DATE(trips.departure_time) = DATE(?)", date)
+	// Base filter - only active trips by default
+	query = query.Where("trips.is_active = ?", true)
 
-	// Advanced filters - parse time strings
+	// Optional filters
+	if req.Origin != nil && *req.Origin != "" {
+		query = query.Where("routes.origin ILIKE ?", "%"+*req.Origin+"%")
+	}
+	if req.Destination != nil && *req.Destination != "" {
+		query = query.Where("routes.destination ILIKE ?", "%"+*req.Destination+"%")
+	}
+
+	// Status filter (for admin, default to scheduled for public)
+	if req.Status != nil && *req.Status != "" {
+		query = query.Where("trips.status = ?", *req.Status)
+	} else {
+		// Default: only show scheduled trips for public search
+		query = query.Where("trips.status = ?", "scheduled")
+	}
+
+	// Time range filters
 	if req.DepartureTimeStart != nil && *req.DepartureTimeStart != "" {
-		startTime, err := time.Parse("02/01/2006 15:04", req.Date+" "+*req.DepartureTimeStart)
-		if err == nil {
-			query = query.Where("trips.departure_time >= ?", startTime)
+		// Try parsing as ISO8601 first, then HH:MM
+		if t, err := time.Parse(time.RFC3339, *req.DepartureTimeStart); err == nil {
+			query = query.Where("trips.departure_time >= ?", t)
 		}
 	}
 	if req.DepartureTimeEnd != nil && *req.DepartureTimeEnd != "" {
-		endTime, err := time.Parse("02/01/2006 15:04", req.Date+" "+*req.DepartureTimeEnd)
-		if err == nil {
-			query = query.Where("trips.departure_time <= ?", endTime)
+		if t, err := time.Parse(time.RFC3339, *req.DepartureTimeEnd); err == nil {
+			query = query.Where("trips.departure_time <= ?", t)
 		}
 	}
+	if req.ArrivalTimeStart != nil && *req.ArrivalTimeStart != "" {
+		if t, err := time.Parse(time.RFC3339, *req.ArrivalTimeStart); err == nil {
+			query = query.Where("trips.arrival_time >= ?", t)
+		}
+	}
+	if req.ArrivalTimeEnd != nil && *req.ArrivalTimeEnd != "" {
+		if t, err := time.Parse(time.RFC3339, *req.ArrivalTimeEnd); err == nil {
+			query = query.Where("trips.arrival_time <= ?", t)
+		}
+	}
+
+	// Price filters
 	if req.MinPrice != nil {
 		query = query.Where("trips.base_price >= ?", *req.MinPrice)
 	}
@@ -138,8 +154,6 @@ func (r *TripRepositoryImpl) SearchTrips(ctx context.Context, req *model.TripSea
 	// Map to TripDetail
 	results := make([]model.TripDetail, 0, len(trips))
 	for _, trip := range trips {
-		// Map status with display name
-		status := constants.TripStatus(trip.Status)
 		detail := model.TripDetail{
 			ID:            trip.ID,
 			RouteID:       trip.RouteID,
@@ -147,10 +161,7 @@ func (r *TripRepositoryImpl) SearchTrips(ctx context.Context, req *model.TripSea
 			DepartureTime: trip.DepartureTime,
 			ArrivalTime:   trip.ArrivalTime,
 			BasePrice:     trip.BasePrice,
-			Status: model.ConstantDisplay{
-				Value:       status.String(),
-				DisplayName: status.GetDisplayName(),
-			},
+			Status:        string(trip.Status),
 		}
 
 		// Map Route details
@@ -170,25 +181,14 @@ func (r *TripRepositoryImpl) SearchTrips(ctx context.Context, req *model.TripSea
 			var seatCount int64
 			r.db.Model(&model.Seat{}).Where("bus_id = ?", trip.Bus.ID).Count(&seatCount)
 
-			// Convert pq.StringArray to []ConstantDisplay with display names
-			amenities := make([]model.ConstantDisplay, len(trip.Bus.Amenities))
-			for i, a := range trip.Bus.Amenities {
-				amenity := constants.Amenity(a)
-				amenities[i] = model.ConstantDisplay{
-					Value:       amenity.String(),
-					DisplayName: amenity.GetDisplayName(),
-				}
-			}
+			// Convert pq.StringArray to []string
+			amenities := make([]string, len(trip.Bus.Amenities))
+			copy(amenities, trip.Bus.Amenities)
 
-			// Map bus type with display name
-			busType := constants.BusTypeStandard // Default, could be derived from model or separate field
 			detail.Bus = &model.BusDetail{
-				ID:    trip.Bus.ID,
-				Model: trip.Bus.Model,
-				BusType: model.ConstantDisplay{
-					Value:       busType.String(),
-					DisplayName: busType.GetDisplayName(),
-				},
+				ID:         trip.Bus.ID,
+				Model:      trip.Bus.Model,
+				BusType:    "standard",
 				TotalSeats: int(seatCount),
 				Amenities:  amenities,
 			}

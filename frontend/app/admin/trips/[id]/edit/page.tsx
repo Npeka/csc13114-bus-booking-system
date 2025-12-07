@@ -7,21 +7,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
-import { vi } from "date-fns/locale";
 import {
   ArrowLeft,
   Calendar,
   Bus as BusIcon,
   Route as RouteIcon,
   DollarSign,
-  MapPin,
-  Clock,
-  Users,
-  CheckCircle2,
-  XCircle,
   Info,
   Edit,
-  Navigation,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,7 +24,6 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -58,8 +50,12 @@ import {
   listRoutes,
   listBuses,
 } from "@/lib/api/trip-service";
-import type { Route, Trip, RouteStop } from "@/lib/types/trip";
-import { formatDateForInput, getValue, getDisplayName } from "@/lib/utils";
+import type { Route, Trip } from "@/lib/types/trip";
+import { formatDateForInput } from "@/lib/utils";
+import { TripHeaderBadges } from "./_components/trip-header-badges";
+import { TripOverviewStats } from "./_components/trip-overview-stats";
+import { TripRouteInfo } from "./_components/trip-route-info";
+import { TripBusInfo } from "./_components/trip-bus-info";
 
 const tripFormSchema = z
   .object({
@@ -126,7 +122,7 @@ export default function EditTripPage({
   // Fetch routes
   const { data: routesData, isLoading: routesLoading } = useQuery({
     queryKey: ["routes"],
-    queryFn: () => listRoutes({ limit: 100 }),
+    queryFn: () => listRoutes({ page_size: 100 }),
   });
 
   // Fetch buses
@@ -134,7 +130,7 @@ export default function EditTripPage({
     queryKey: ["buses"],
     queryFn: () =>
       listBuses({
-        limit: 100,
+        page_size: 100,
       }),
     enabled: !!selectedRoute,
   });
@@ -264,43 +260,7 @@ export default function EditTripPage({
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {trip?.is_active ? (
-              <Badge
-                variant="default"
-                className="bg-green-500/10 text-green-700 dark:text-green-400"
-              >
-                <CheckCircle2 className="mr-1 h-3 w-3" />
-                Hoạt động
-              </Badge>
-            ) : (
-              <Badge variant="secondary">
-                <XCircle className="mr-1 h-3 w-3" />
-                Không hoạt động
-              </Badge>
-            )}
-            <Badge
-              variant={
-                getValue(trip?.status) === "scheduled"
-                  ? "secondary"
-                  : getValue(trip?.status) === "in_progress"
-                    ? "default"
-                    : getValue(trip?.status) === "completed"
-                      ? "outline"
-                      : "destructive"
-              }
-            >
-              {getValue(trip?.status) === "scheduled"
-                ? "Đã lên lịch"
-                : getValue(trip?.status) === "in_progress"
-                  ? "Đang di chuyển"
-                  : getValue(trip?.status) === "completed"
-                    ? "Hoàn thành"
-                    : getValue(trip?.status) === "cancelled"
-                      ? "Đã hủy"
-                      : getDisplayName(trip?.status)}
-            </Badge>
-          </div>
+          <TripHeaderBadges trip={trip} />
         </div>
 
         {/* Main Content with Tabs */}
@@ -319,276 +279,17 @@ export default function EditTripPage({
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
             {/* Quick Stats */}
-            <div className="grid gap-4 md:grid-cols-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Giá vé cơ bản
-                  </CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-primary">
-                    {trip?.base_price
-                      ? new Intl.NumberFormat("vi-VN", {
-                          style: "currency",
-                          currency: "VND",
-                        }).format(trip.base_price)
-                      : "N/A"}
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Thời gian đi
-                  </CardTitle>
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-sm font-medium">
-                    {format(new Date(trip.departure_time), "dd/MM/yyyy", {
-                      locale: vi,
-                    })}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {format(new Date(trip.departure_time), "HH:mm", {
-                      locale: vi,
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Thời gian đến
-                  </CardTitle>
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-sm font-medium">
-                    {format(new Date(trip.arrival_time), "dd/MM/yyyy", {
-                      locale: vi,
-                    })}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {format(new Date(trip.arrival_time), "HH:mm", {
-                      locale: vi,
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Thời lượng
-                  </CardTitle>
-                  <Navigation className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{duration || "N/A"}</div>
-                </CardContent>
-              </Card>
-            </div>
+            <TripOverviewStats trip={trip} duration={duration} />
 
             {/* Route and Bus Information */}
             <div className="grid gap-6 md:grid-cols-2">
               {/* Route Information */}
               {trip?.route && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <RouteIcon className="h-5 w-5 text-primary" />
-                      Thông tin tuyến đường
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        Tuyến đường
-                      </p>
-                      <p className="text-lg font-semibold">
-                        {trip.route.origin} → {trip.route.destination}
-                      </p>
-                    </div>
-                    <Separator />
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground">
-                          Khoảng cách
-                        </p>
-                        <p className="text-lg font-semibold">
-                          {trip.route.distance_km} km
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">
-                          Thời gian ước tính
-                        </p>
-                        <p className="text-lg font-semibold">
-                          {duration || "N/A"}
-                        </p>
-                      </div>
-                    </div>
-                    {trip.route.route_stops &&
-                      trip.route.route_stops.length > 0 && (
-                        <>
-                          <Separator />
-                          <div>
-                            <p className="mb-3 text-sm font-medium">
-                              Điểm dừng ({trip.route.route_stops.length})
-                            </p>
-                            <div className="space-y-2">
-                              {trip.route.route_stops
-                                .sort((a, b) => a.stop_order - b.stop_order)
-                                .map((stop: RouteStop) => (
-                                  <div
-                                    key={stop.id}
-                                    className="flex items-start gap-3 rounded-lg border bg-card p-3 text-sm transition-colors hover:bg-muted/50"
-                                  >
-                                    <Badge
-                                      variant="outline"
-                                      className="shrink-0"
-                                    >
-                                      {stop.stop_order}
-                                    </Badge>
-                                    <div className="flex-1 space-y-1">
-                                      <div className="flex items-center gap-2">
-                                        <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                                        <span className="font-medium">
-                                          {stop.location}
-                                        </span>
-                                        <Badge
-                                          variant="secondary"
-                                          className="ml-auto text-xs"
-                                        >
-                                          {getValue(stop.stop_type) === "pickup"
-                                            ? "Đón"
-                                            : getValue(stop.stop_type) ===
-                                                "dropoff"
-                                              ? "Trả"
-                                              : "Cả hai"}
-                                        </Badge>
-                                      </div>
-                                      {stop.address && (
-                                        <p className="text-xs text-muted-foreground">
-                                          {stop.address}
-                                        </p>
-                                      )}
-                                      {stop.offset_minutes > 0 && (
-                                        <p className="text-xs text-muted-foreground">
-                                          +{stop.offset_minutes} phút từ điểm
-                                          xuất phát
-                                        </p>
-                                      )}
-                                    </div>
-                                  </div>
-                                ))}
-                            </div>
-                          </div>
-                        </>
-                      )}
-                  </CardContent>
-                </Card>
+                <TripRouteInfo route={trip.route} duration={duration} />
               )}
 
               {/* Bus Information */}
-              {trip?.bus && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <BusIcon className="h-5 w-5 text-primary" />
-                      Thông tin xe
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Mẫu xe</p>
-                      <p className="text-lg font-semibold">{trip.bus.model}</p>
-                    </div>
-                    <Separator />
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Biển số</p>
-                        <p className="text-lg font-semibold">
-                          {trip.bus.plate_number}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">
-                          Sức chứa
-                        </p>
-                        <p className="flex items-center gap-1 text-lg font-semibold">
-                          <Users className="h-4 w-4" />
-                          {trip.bus.seat_capacity} chỗ
-                        </p>
-                      </div>
-                    </div>
-                    {trip.bus.amenities && trip.bus.amenities.length > 0 && (
-                      <>
-                        <Separator />
-                        <div>
-                          <p className="mb-2 text-sm font-medium">Tiện ích</p>
-                          <div className="flex flex-wrap gap-2">
-                            {trip.bus.amenities.map((amenity, index) => (
-                              <Badge key={index} variant="secondary">
-                                {getDisplayName(amenity)}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      </>
-                    )}
-                    {trip.bus.seats && trip.bus.seats.length > 0 && (
-                      <>
-                        <Separator />
-                        <div>
-                          <p className="mb-2 text-sm font-medium">
-                            Thông tin ghế ({trip.bus.seats.length} ghế)
-                          </p>
-                          <div className="grid grid-cols-3 gap-2">
-                            <div className="rounded-lg bg-muted p-3 text-center">
-                              <p className="text-lg font-semibold">
-                                {
-                                  trip.bus.seats.filter(
-                                    (s) => getValue(s.seat_type) === "vip",
-                                  ).length
-                                }
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                VIP
-                              </p>
-                            </div>
-                            <div className="rounded-lg bg-muted p-3 text-center">
-                              <p className="text-lg font-semibold">
-                                {
-                                  trip.bus.seats.filter(
-                                    (s) => getValue(s.seat_type) === "standard",
-                                  ).length
-                                }
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                Thường
-                              </p>
-                            </div>
-                            <div className="rounded-lg bg-muted p-3 text-center">
-                              <p className="text-lg font-semibold">
-                                {
-                                  trip.bus.seats.filter((s) => s.is_available)
-                                    .length
-                                }
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                Trống
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
+              {trip?.bus && <TripBusInfo bus={trip.bus} />}
             </div>
           </TabsContent>
 

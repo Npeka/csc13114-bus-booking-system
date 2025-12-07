@@ -54,7 +54,7 @@ describe("ModeToggle component", () => {
   });
 
   it("should render disabled button before mounting", () => {
-    const { rerender } = render(<ModeToggle />);
+    render(<ModeToggle />);
     expect(screen.getByRole("button")).toBeInTheDocument();
   });
 

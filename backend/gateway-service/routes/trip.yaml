@@ -30,6 +30,9 @@ routes:
       required: true
       roles: ["admin"]
 
+  - path: "/api/v1/buses/:id"
+    methods: ["GET"]
+
   # Admin-only routes - Buses
   - path: "/api/v1/buses"
     methods: ["GET", "POST"]
@@ -38,7 +41,7 @@ routes:
       roles: ["admin"]
 
   - path: "/api/v1/buses/:id"
-    methods: ["GET", "PUT", "DELETE"]
+    methods: ["PUT", "DELETE"]
     auth:
       required: true
       roles: ["admin"]

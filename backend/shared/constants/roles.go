@@ -49,6 +49,36 @@ func FromInt(role int) UserRole {
 	return UserRole(role)
 }
 
+// UserStatus represents user account status
+type UserStatus string
+
+const (
+	UserStatusActive    UserStatus = "active"    // User account is active and can login
+	UserStatusInactive  UserStatus = "inactive"  // User account is inactive (not yet activated)
+	UserStatusSuspended UserStatus = "suspended" // User account is suspended (temporarily blocked)
+	UserStatusVerified  UserStatus = "verified"  // User account is verified (via Firebase/Email)
+)
+
+// IsValid checks if the status is valid
+func (s UserStatus) IsValid() bool {
+	switch s {
+	case UserStatusActive, UserStatusInactive, UserStatusSuspended, UserStatusVerified:
+		return true
+	default:
+		return false
+	}
+}
+
+// String returns the string representation of the status
+func (s UserStatus) String() string {
+	return string(s)
+}
+
+// CanLogin checks if user with this status can login
+func (s UserStatus) CanLogin() bool {
+	return s == UserStatusActive || s == UserStatusVerified
+}
+
 // ValidateRole checks if the role value is valid
 func ValidateRole(role int) bool {
 	return role == RolePassengerInt || role == RoleAdminInt ||

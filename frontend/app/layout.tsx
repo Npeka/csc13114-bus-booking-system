@@ -1,10 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Header } from "@/components/layout/header";
-import { Footer } from "@/components/layout/footer";
-import { ChatBot } from "@/components/chatbot/chatbot";
 import { AuthProvider } from "@/components/auth/auth-provider";
-import { HydrationGuard } from "@/components/auth/hydration-guard";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 
@@ -51,14 +47,7 @@ export default function RootLayout({
       <body className="flex min-h-screen flex-col antialiased">
         <QueryProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <AuthProvider>
-              <HydrationGuard>
-                <Header />
-              </HydrationGuard>
-              <main className="flex-1">{children}</main>
-              <Footer />
-              <ChatBot />
-            </AuthProvider>
+            <AuthProvider>{children}</AuthProvider>
           </ThemeProvider>
         </QueryProvider>
       </body>

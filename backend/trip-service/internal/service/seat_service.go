@@ -83,14 +83,11 @@ func (s *SeatServiceImpl) GetSeatMap(ctx context.Context, busID uuid.UUID) (*mod
 
 	for _, seat := range seats {
 		seatDetails = append(seatDetails, model.SeatDetail{
-			ID:         seat.ID,
-			SeatNumber: seat.SeatNumber,
-			Row:        seat.Row,
-			Column:     seat.Column,
-			SeatType: model.ConstantDisplay{
-				Value:       seat.SeatType.String(),
-				DisplayName: seat.SeatType.GetDisplayName(),
-			},
+			ID:              seat.ID,
+			SeatNumber:      seat.SeatNumber,
+			Row:             seat.Row,
+			Column:          seat.Column,
+			SeatType:        seat.SeatType.String(),
 			PriceMultiplier: seat.PriceMultiplier,
 			IsAvailable:     seat.IsAvailable,
 			Floor:           seat.Floor,

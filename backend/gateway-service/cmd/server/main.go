@@ -42,7 +42,7 @@ func main() {
 	// Add global middleware
 	router.Use(middleware.Logger())
 	router.Use(middleware.SetupCORS(&cfg.CORS))
-	router.Use(middleware.RequestContextMiddleware(cfg.ServiceName))
+	router.Use(middleware.RequestContext(cfg.ServiceName))
 	router.GET(health.Path, health.Handler(cfg.ServiceName))
 	router.Use(gin.Recovery())
 

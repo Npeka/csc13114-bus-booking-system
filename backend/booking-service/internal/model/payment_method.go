@@ -1,21 +1,16 @@
 package model
 
 import (
-	"time"
-
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type PaymentMethod struct {
-	ID          uuid.UUID      `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
-	Name        string         `gorm:"type:varchar(100);not null" json:"name" validate:"required"`
-	Code        string         `gorm:"type:varchar(50);not null;unique" json:"code" validate:"required"`
-	Description string         `gorm:"type:text" json:"description"`
-	IsActive    bool           `gorm:"type:boolean;not null;default:true" json:"is_active"`
-	CreatedAt   time.Time      `gorm:"type:timestamptz;not null;default:now()" json:"created_at"`
-	UpdatedAt   time.Time      `gorm:"type:timestamptz;not null;default:now()" json:"updated_at"`
-	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
+	BaseModel
+	Name        string `gorm:"type:varchar(100);not null" json:"name" validate:"required"`
+	Code        string `gorm:"type:varchar(50);not null;unique" json:"code" validate:"required"`
+	Description string `gorm:"type:text" json:"description"`
+	IsActive    bool   `gorm:"type:boolean;not null;default:true" json:"is_active"`
 }
 
 func (PaymentMethod) TableName() string { return "payment_methods" }

@@ -109,6 +109,7 @@ export function getValue(
 }
 
 import { ApiTripItem, TripDetail } from "@/lib/types/trip";
+import { getAmenityDisplay, getTripStatusDisplay } from "@/lib/constants/trip";
 
 /**
  * Transform API trip item to internal TripDetail format
@@ -121,9 +122,9 @@ export function transformApiTripToTripDetail(apiTrip: ApiTripItem): TripDetail {
   const minutes = durationMinutes % 60;
   const duration = `${hours}h ${minutes}m`;
 
-  // Extract amenity display names
-  const bus_amenities = apiTrip.bus.amenities.map(
-    (amenity) => amenity.display_name,
+  // Map raw amenity strings to display names using constants
+  const bus_amenities = apiTrip.bus.amenities.map((amenity) =>
+    getAmenityDisplay(amenity),
   );
 
   return {
@@ -133,7 +134,7 @@ export function transformApiTripToTripDetail(apiTrip: ApiTripItem): TripDetail {
     departure_time: apiTrip.departure_time,
     arrival_time: apiTrip.arrival_time,
     base_price: apiTrip.base_price,
-    status: apiTrip.status.display_name,
+    status: getTripStatusDisplay(apiTrip.status), // Map raw status to display name
     available_seats: apiTrip.available_seats,
     total_seats: apiTrip.total_seats,
     duration,

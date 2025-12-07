@@ -173,7 +173,7 @@ frontend/
 ### Authorization Flow
 
 ```
-1. User tries to access protected route (e.g., /admin/dashboard)
+1. User tries to access protected route (e.g., /admin)
    ↓
 2. ProtectedRoute component checks:
    - isAuthenticated? (access token exists)

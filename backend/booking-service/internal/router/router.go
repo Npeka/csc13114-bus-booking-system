@@ -3,6 +3,7 @@ package router
 import (
 	"bus-booking/booking-service/config"
 	"bus-booking/booking-service/internal/handler"
+	"bus-booking/shared/constants"
 	"bus-booking/shared/ginext"
 	"bus-booking/shared/health"
 	"bus-booking/shared/middleware"
@@ -15,73 +16,57 @@ import (
 
 type Handlers struct {
 	BookingHandler    handler.BookingHandler
-	PaymentHandler    handler.PaymentHandler
 	FeedbackHandler   handler.FeedbackHandler
 	StatisticsHandler handler.StatisticsHandler
-	SeatHandler       handler.SeatHandler
-	SeatLockHandler   handler.SeatLockHandler
 }
 
 func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 	router.Use(middleware.Logger())
 	router.Use(middleware.SetupCORS(&cfg.CORS))
-	router.Use(middleware.RequestContextMiddleware(cfg.ServiceName))
+	router.Use(middleware.RequestContext(cfg.ServiceName))
 	router.GET(health.Path, health.Handler(cfg.ServiceName))
 	router.GET(swagger.Path, ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	v1 := router.Group("/api/v1")
 	{
+		// User booking routes - require authentication
 		bookings := v1.Group("/bookings")
+		bookings.Use(middleware.RequireAuth())
 		{
 			bookings.POST("", ginext.WrapHandler(h.BookingHandler.CreateBooking))
 			bookings.GET("/:id", ginext.WrapHandler(h.BookingHandler.GetBooking))
 			bookings.POST("/:id/cancel", ginext.WrapHandler(h.BookingHandler.CancelBooking))
-			bookings.PUT("/:id/status", ginext.WrapHandler(h.BookingHandler.UpdateBookingStatus))
+			bookings.POST("/:id/payment", ginext.WrapHandler(h.BookingHandler.CreatePayment))
 			bookings.GET("/user/:user_id", ginext.WrapHandler(h.BookingHandler.GetUserBookings))
-			bookings.GET("/trip/:trip_id", ginext.WrapHandler(h.BookingHandler.GetTripBookings))
 		}
 
-		// Trips group for trip-related endpoints
-		trips := v1.Group("/trips")
+		// Internal routes for service-to-service communication
+		internal := v1.Group("/bookings")
 		{
-			trips.GET("/:trip_id/seats", ginext.WrapHandler(h.SeatHandler.GetSeatAvailability))
-			trips.GET("/:trip_id/locked-seats", ginext.WrapHandler(h.SeatLockHandler.GetLockedSeats))
+			internal.PUT("/:id/payment-status", ginext.WrapHandler(h.BookingHandler.UpdatePaymentStatus))
 		}
 
-		// Payment endpoints (using ginext)
-		payment := v1.Group("/payment")
-		{
-			payment.GET("/methods", ginext.WrapHandler(h.PaymentHandler.GetPaymentMethods))
-			payment.POST("/process", ginext.WrapHandler(h.PaymentHandler.ProcessPayment))
-		}
-
-		// Feedback endpoints (using ginext)
+		// Feedback endpoints - require authentication
 		feedback := v1.Group("/feedback")
+		feedback.Use(middleware.RequireAuth())
 		{
 			feedback.POST("", ginext.WrapHandler(h.FeedbackHandler.CreateFeedback))
 			feedback.GET("/booking/:booking_id", ginext.WrapHandler(h.FeedbackHandler.GetBookingFeedback))
 			feedback.GET("/trip/:trip_id", ginext.WrapHandler(h.FeedbackHandler.GetTripFeedbacks))
 		}
 
-		// Statistics endpoints (using ginext)
-		statistics := v1.Group("/statistics")
+		// Admin routes - require admin role
+		admin := v1.Group("/admin")
+		admin.Use(middleware.RequireAuth())
+		admin.Use(middleware.RequireRole(constants.RoleAdmin))
 		{
-			statistics.GET("/bookings", ginext.WrapHandler(h.StatisticsHandler.GetBookingStats))
-			statistics.GET("/popular-trips", ginext.WrapHandler(h.StatisticsHandler.GetPopularTrips))
-		}
+			// Booking management
+			admin.PUT("/bookings/:id/status", ginext.WrapHandler(h.BookingHandler.UpdateBookingStatus))
+			admin.GET("/bookings/trip/:trip_id", ginext.WrapHandler(h.BookingHandler.GetTripBookings))
 
-		// Seat operations (using ginext)
-		seats := v1.Group("/seats")
-		{
-			seats.POST("/reserve", ginext.WrapHandler(h.SeatHandler.ReserveSeat))
-			seats.POST("/release", ginext.WrapHandler(h.SeatHandler.ReleaseSeat))
-		}
-
-		// Seat locks (using ginext pattern)
-		seatLocks := v1.Group("/seat-locks")
-		{
-			seatLocks.POST("", ginext.WrapHandler(h.SeatLockHandler.LockSeats))
-			seatLocks.DELETE("", ginext.WrapHandler(h.SeatLockHandler.UnlockSeats))
+			// Statistics
+			admin.GET("/statistics/bookings", ginext.WrapHandler(h.StatisticsHandler.GetBookingStats))
+			admin.GET("/statistics/popular-trips", ginext.WrapHandler(h.StatisticsHandler.GetPopularTrips))
 		}
 	}
 }

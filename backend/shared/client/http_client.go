@@ -32,12 +32,32 @@ type HTTPResponse struct {
 	Headers    map[string][]string
 }
 
+// StandardResponse is the standard API response format {data: T, meta: M}
+type StandardResponse[T any, M any] struct {
+	Data T `json:"data"`
+	Meta M `json:"meta,omitempty"`
+}
+
+// DataResponse is a simple response with only data field
+type DataResponse[T any] struct {
+	Data T `json:"data"`
+}
+
+// PaginationMeta represents pagination metadata
+type PaginationMeta struct {
+	Page       int `json:"page"`
+	PageSize   int `json:"page_size"`
+	Total      int `json:"total"`
+	TotalPages int `json:"total_pages"`
+}
+
 // Config for HTTP client
 type Config struct {
 	Timeout        time.Duration
 	MaxRetries     int
 	RetryDelay     time.Duration
 	ServiceName    string
+	BaseURL        string
 	DefaultHeaders map[string]string
 }
 
@@ -45,6 +65,7 @@ type Config struct {
 type Client struct {
 	httpClient *http.Client
 	config     *Config
+	baseURL    string
 }
 
 // NewHTTPClient creates a new HTTP client for microservice communication
@@ -63,33 +84,49 @@ func NewHTTPClient(config *Config) HTTPClient {
 		httpClient: &http.Client{
 			Timeout: config.Timeout,
 		},
-		config: config,
+		config:  config,
+		baseURL: config.BaseURL,
 	}
 }
 
 // Get makes a GET request
 func (c *Client) Get(ctx context.Context, url string, headers map[string]string) (*HTTPResponse, error) {
-	return c.doRequest(ctx, http.MethodGet, url, nil, headers)
+	return c.doRequest(ctx, http.MethodGet, c.buildURL(url), nil, headers)
 }
 
 // Post makes a POST request
 func (c *Client) Post(ctx context.Context, url string, body interface{}, headers map[string]string) (*HTTPResponse, error) {
-	return c.doRequest(ctx, http.MethodPost, url, body, headers)
+	return c.doRequest(ctx, http.MethodPost, c.buildURL(url), body, headers)
 }
 
 // Put makes a PUT request
 func (c *Client) Put(ctx context.Context, url string, body interface{}, headers map[string]string) (*HTTPResponse, error) {
-	return c.doRequest(ctx, http.MethodPut, url, body, headers)
+	return c.doRequest(ctx, http.MethodPut, c.buildURL(url), body, headers)
 }
 
 // Delete makes a DELETE request
 func (c *Client) Delete(ctx context.Context, url string, headers map[string]string) (*HTTPResponse, error) {
-	return c.doRequest(ctx, http.MethodDelete, url, nil, headers)
+	return c.doRequest(ctx, http.MethodDelete, c.buildURL(url), nil, headers)
 }
 
 // Patch makes a PATCH request
 func (c *Client) Patch(ctx context.Context, url string, body interface{}, headers map[string]string) (*HTTPResponse, error) {
-	return c.doRequest(ctx, http.MethodPatch, url, body, headers)
+	return c.doRequest(ctx, http.MethodPatch, c.buildURL(url), body, headers)
+}
+
+// buildURL builds the full URL by combining baseURL with the given path
+// If path is already a full URL (starts with http:// or https://), returns it as-is
+// Otherwise, prepends the baseURL to the path
+func (c *Client) buildURL(path string) string {
+	if c.baseURL == "" {
+		return path
+	}
+	// If path is already a full URL, return as-is
+	if len(path) >= 7 && (path[:7] == "http://" || path[:8] == "https://") {
+		return path
+	}
+	// Combine baseURL with path
+	return c.baseURL + path
 }
 
 // doRequest performs the actual HTTP request with retry logic
@@ -169,7 +206,7 @@ func (c *Client) makeRequest(ctx context.Context, method, url string, body inter
 	log.Debug().
 		Str("method", method).
 		Str("url", url).
-		Str("request_id", req.Header.Get(constants.HeaderRequestID)).
+		Str("request_id", req.Header.Get(constants.XRequestID)).
 		Msg("Making HTTP request")
 
 	// Execute request
@@ -190,7 +227,7 @@ func (c *Client) makeRequest(ctx context.Context, method, url string, body inter
 		Str("method", method).
 		Str("url", url).
 		Int("status_code", resp.StatusCode).
-		Str("request_id", req.Header.Get(constants.HeaderRequestID)).
+		Str("request_id", req.Header.Get(constants.XRequestID)).
 		Msg("HTTP request completed")
 
 	return &HTTPResponse{
@@ -225,24 +262,24 @@ func (c *Client) setMicroserviceHeaders(req *http.Request, ctx context.Context) 
 
 	// Set request ID (generate if not present)
 	if reqCtx.RequestID != "" {
-		req.Header.Set(constants.HeaderRequestID, reqCtx.RequestID)
+		req.Header.Set(constants.XRequestID, reqCtx.RequestID)
 	} else {
-		req.Header.Set(constants.HeaderRequestID, sharedcontext.GenerateRequestID())
+		req.Header.Set(constants.XRequestID, sharedcontext.GenerateRequestID())
 	}
 
 	// Set user context headers if available
 	if reqCtx.UserID != uuid.Nil {
-		req.Header.Set(constants.HeaderUserID, reqCtx.UserID.String())
+		req.Header.Set(constants.XUserID, reqCtx.UserID.String())
 	}
 	if reqCtx.UserRole != 0 {
-		req.Header.Set(constants.HeaderUserRole, fmt.Sprintf("%d", reqCtx.UserRole))
+		req.Header.Set(constants.XUserRole, fmt.Sprintf("%d", reqCtx.UserRole))
 	}
 	if reqCtx.UserEmail != "" {
-		req.Header.Set(constants.HeaderUserEmail, reqCtx.UserEmail)
+		req.Header.Set(constants.XUserEmail, reqCtx.UserEmail)
 	}
 
 	// Set service name
-	req.Header.Set(constants.HeaderServiceName, c.config.ServiceName)
+	req.Header.Set(constants.XServiceName, c.config.ServiceName)
 }
 
 // UnmarshalResponse unmarshals JSON response body into target struct
@@ -263,4 +300,37 @@ func (r *HTTPResponse) IsClientError() bool {
 // IsServerError checks if response status code indicates server error (5xx)
 func (r *HTTPResponse) IsServerError() bool {
 	return r.StatusCode >= 500
+}
+
+// ParseData parses response with {data: T} format
+func ParseData[T any](resp *HTTPResponse) (*T, error) {
+	if !resp.IsSuccess() {
+		return nil, fmt.Errorf("request failed with status %d", resp.StatusCode)
+	}
+
+	var result DataResponse[T]
+	if err := json.Unmarshal(resp.Body, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	return &result.Data, nil
+}
+
+// ParseDataWithMeta parses response with {data: T, meta: M} format
+func ParseDataWithMeta[T any, M any](resp *HTTPResponse) (*T, *M, error) {
+	if !resp.IsSuccess() {
+		return nil, nil, fmt.Errorf("request failed with status %d", resp.StatusCode)
+	}
+
+	var result StandardResponse[T, M]
+	if err := json.Unmarshal(resp.Body, &result); err != nil {
+		return nil, nil, fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	return &result.Data, &result.Meta, nil
+}
+
+// ParseDataWithPagination parses response with {data: T, meta: PaginationMeta} format
+func ParseDataWithPagination[T any](resp *HTTPResponse) (*T, *PaginationMeta, error) {
+	return ParseDataWithMeta[T, PaginationMeta](resp)
 }

@@ -22,7 +22,7 @@ type Handlers struct {
 func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 	router.Use(middleware.Logger())
 	router.Use(middleware.SetupCORS(&cfg.CORS))
-	router.Use(middleware.RequestContextMiddleware(cfg.ServiceName))
+	router.Use(middleware.RequestContext(cfg.ServiceName))
 	router.GET(health.Path, health.Handler(cfg.ServiceName))
 	router.GET(swagger.Path, ginSwagger.WrapHandler(swaggerFiles.Handler))
 
@@ -35,27 +35,22 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 			auth.POST("/register", ginext.WrapHandler(h.AuthHandler.Register))
 			auth.POST("/login", ginext.WrapHandler(h.AuthHandler.Login))
 			auth.POST("/refresh-token", ginext.WrapHandler(h.AuthHandler.RefreshToken))
-			auth.POST("/logout", middleware.RequireAuthMiddleware(), ginext.WrapHandler(h.AuthHandler.Logout))
+			auth.POST("/logout", middleware.RequireAuth(), ginext.WrapHandler(h.AuthHandler.Logout))
 		}
 
 		users := v1.Group("/users")
-		users.Use(middleware.RequireAuthMiddleware())
+		users.Use(middleware.RequireAuth())
 		{
 			users.GET("/profile", ginext.WrapHandler(h.UserHandler.GetProfile))
-		}
+			users.PUT("/profile", ginext.WrapHandler(h.UserHandler.UpdateProfile))
 
-		admin := v1.Group("/admin")
-		admin.Use(middleware.RequireAuthMiddleware())
-		admin.Use(middleware.RequireRoleMiddleware(constants.RoleAdmin))
-		{
-			adminUsers := admin.Group("/users")
+			users.Use(middleware.RequireRole(constants.RoleAdmin))
 			{
-				adminUsers.POST("", ginext.WrapHandler(h.UserHandler.CreateUser))
-				adminUsers.GET("", ginext.WrapHandler(h.UserHandler.ListUsers))
-				adminUsers.GET("/:id", ginext.WrapHandler(h.UserHandler.GetUser))
-				adminUsers.PUT("/:id", ginext.WrapHandler(h.UserHandler.UpdateUser))
-				adminUsers.DELETE("/:id", ginext.WrapHandler(h.UserHandler.DeleteUser))
-				adminUsers.PATCH("/:id/status", ginext.WrapHandler(h.UserHandler.UpdateUserStatus))
+				users.GET("", ginext.WrapHandler(h.UserHandler.ListUsers))
+				users.GET("/:id", ginext.WrapHandler(h.UserHandler.GetUser))
+				users.POST("", ginext.WrapHandler(h.UserHandler.CreateUser))
+				users.PUT("/:id", ginext.WrapHandler(h.UserHandler.UpdateUser))
+				users.DELETE("/:id", ginext.WrapHandler(h.UserHandler.DeleteUser))
 			}
 		}
 	}

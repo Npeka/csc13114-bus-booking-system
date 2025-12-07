@@ -2,8 +2,9 @@ package service
 
 import (
 	"context"
-	"errors"
 	"time"
+
+	"bus-booking/shared/ginext"
 
 	"bus-booking/booking-service/internal/repository"
 
@@ -40,7 +41,7 @@ func (s *SeatLockServiceImpl) LockSeats(ctx context.Context, tripID uuid.UUID, s
 			return err
 		}
 		if locked {
-			return errors.New("one or more seats are already locked")
+			return ginext.NewConflictError("one or more seats are already locked")
 		}
 	}
 
@@ -69,7 +70,7 @@ func (s *SeatLockServiceImpl) ValidateSeatAvailability(ctx context.Context, trip
 			return err
 		}
 		if locked {
-			return errors.New("seat is not available")
+			return ginext.NewConflictError("seat is not available")
 		}
 	}
 	return nil

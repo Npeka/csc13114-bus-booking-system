@@ -20,7 +20,7 @@ type Handlers struct {
 func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 	router.Use(middleware.Logger())
 	router.Use(middleware.SetupCORS(&cfg.CORS))
-	router.Use(middleware.RequestContextMiddleware(cfg.ServiceName))
+	router.Use(middleware.RequestContext(cfg.ServiceName))
 	router.GET(health.Path, health.Handler(cfg.ServiceName))
 	router.GET(swagger.Path, ginSwagger.WrapHandler(swaggerFiles.Handler))
 
@@ -28,10 +28,8 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 	{
 		transactions := v1.Group("/transactions")
 		{
-			// Create basic transaction (deprecated - use payment-link instead)
 			transactions.POST("", ginext.WrapHandler(h.TransactionHandler.CreateTransaction))
 
-			// PayOS integration endpoints
 			transactions.POST("/payment-link", ginext.WrapHandler(h.TransactionHandler.CreatePaymentLink))
 			transactions.POST("/webhook", ginext.WrapHandler(h.TransactionHandler.HandlePaymentWebhook))
 			transactions.GET("/return", ginext.WrapHandler(h.TransactionHandler.HandlePaymentReturn))

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bus-booking/payment-service/internal/client"
 	"bus-booking/payment-service/internal/model"
 	"bus-booking/payment-service/internal/repository"
 	"context"
@@ -22,18 +23,26 @@ type TransactionService interface {
 }
 
 type TransactionServiceImpl struct {
-	repositories *repository.Repositories
-	payosClient  *PayOSClient
-	returnURL    string
-	cancelURL    string
+	transactionRepo repository.TransactionRepository
+	bookingClient   client.BookingClient
+	payosClient     PayOSClient
+	returnURL       string
+	cancelURL       string
 }
 
-func NewTransactionService(repositories *repository.Repositories, payosClient *PayOSClient, returnURL, cancelURL string) TransactionService {
+func NewTransactionService(
+	transactionRepo repository.TransactionRepository,
+	bookingClient client.BookingClient,
+	payosClient PayOSClient,
+	returnURL,
+	cancelURL string,
+) TransactionService {
 	return &TransactionServiceImpl{
-		repositories: repositories,
-		payosClient:  payosClient,
-		returnURL:    returnURL,
-		cancelURL:    cancelURL,
+		transactionRepo: transactionRepo,
+		bookingClient:   bookingClient,
+		payosClient:     payosClient,
+		returnURL:       returnURL,
+		cancelURL:       cancelURL,
 	}
 }
 
@@ -50,7 +59,7 @@ func (s *TransactionServiceImpl) CreateTransaction(ctx context.Context, req *mod
 		Status:        model.PaymentStatusPending,
 	}
 
-	err := s.repositories.Transaction.CreateTransaction(ctx, transaction)
+	err := s.transactionRepo.CreateTransaction(ctx, transaction)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create transaction")
 		return nil, fmt.Errorf("failed to create transaction: %w", err)
@@ -111,7 +120,7 @@ func (s *TransactionServiceImpl) CreatePaymentLink(ctx context.Context, req *mod
 	}
 
 	// Save to database
-	err = s.repositories.Transaction.CreateTransaction(ctx, transaction)
+	err = s.transactionRepo.CreateTransaction(ctx, transaction)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to save transaction")
 		return nil, fmt.Errorf("failed to save transaction: %w", err)
@@ -128,7 +137,7 @@ func (s *TransactionServiceImpl) CreatePaymentLink(ctx context.Context, req *mod
 
 // GetTransactionByOrderCode retrieves transaction by PayOS order code
 func (s *TransactionServiceImpl) GetTransactionByOrderCode(ctx context.Context, orderCode int64) (*model.Transaction, error) {
-	transaction, err := s.repositories.Transaction.GetTransactionByOrderCode(ctx, orderCode)
+	transaction, err := s.transactionRepo.GetTransactionByOrderCode(ctx, orderCode)
 	if err != nil {
 		return nil, fmt.Errorf("transaction not found: %w", err)
 	}
@@ -137,7 +146,7 @@ func (s *TransactionServiceImpl) GetTransactionByOrderCode(ctx context.Context, 
 
 // GetTransactionByBookingID retrieves transaction by booking ID
 func (s *TransactionServiceImpl) GetTransactionByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.Transaction, error) {
-	transaction, err := s.repositories.Transaction.GetTransactionByBookingID(ctx, bookingID)
+	transaction, err := s.transactionRepo.GetTransactionByBookingID(ctx, bookingID)
 	if err != nil {
 		return nil, fmt.Errorf("transaction not found: %w", err)
 	}
@@ -170,19 +179,32 @@ func (s *TransactionServiceImpl) HandlePaymentWebhook(ctx context.Context, webho
 	}
 
 	// Update in database
-	err = s.repositories.Transaction.UpdateTransaction(ctx, transaction)
+	err = s.transactionRepo.UpdateTransaction(ctx, transaction)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to update transaction")
 		return fmt.Errorf("failed to update transaction: %w", err)
 	}
 
-	// TODO: Notify booking service about payment success
-	// This should be done via message queue or HTTP call to booking service
-	log.Info().
-		Str("booking_id", transaction.BookingID.String()).
-		Int64("order_code", transaction.OrderCode).
-		Str("reference", transaction.Reference).
-		Msg("Payment confirmed via webhook")
+	// Notify booking service about payment success
+	updateReq := &client.UpdatePaymentStatusRequest{
+		PaymentStatus:  string(model.PaymentStatusPaid),
+		BookingStatus:  "confirmed",
+		PaymentOrderID: fmt.Sprintf("%d", transaction.OrderCode),
+	}
+
+	if err := s.bookingClient.UpdateBookingPaymentStatus(ctx, transaction.BookingID, updateReq); err != nil {
+		log.Error().Err(err).
+			Str("booking_id", transaction.BookingID.String()).
+			Msg("Failed to update booking payment status")
+		// Don't fail the webhook - payment is already recorded
+		// This can be retried via a background job
+	} else {
+		log.Info().
+			Str("booking_id", transaction.BookingID.String()).
+			Int64("order_code", transaction.OrderCode).
+			Str("reference", transaction.Reference).
+			Msg("Payment confirmed and booking updated")
+	}
 
 	return nil
 }
@@ -212,7 +234,7 @@ func (s *TransactionServiceImpl) ConfirmPayment(ctx context.Context, orderCode i
 			transaction.TransactionTime = &transTime
 		}
 
-		err = s.repositories.Transaction.UpdateTransaction(ctx, transaction)
+		err = s.transactionRepo.UpdateTransaction(ctx, transaction)
 		if err != nil {
 			return fmt.Errorf("failed to update transaction: %w", err)
 		}
@@ -241,7 +263,7 @@ func (s *TransactionServiceImpl) CancelPayment(ctx context.Context, orderCode in
 	}
 
 	transaction.Status = model.PaymentStatusCancelled
-	err = s.repositories.Transaction.UpdateTransaction(ctx, transaction)
+	err = s.transactionRepo.UpdateTransaction(ctx, transaction)
 	if err != nil {
 		return fmt.Errorf("failed to update transaction: %w", err)
 	}

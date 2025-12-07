@@ -3,7 +3,13 @@ definitions:
     properties:
       booking_reference:
         type: string
+      booking_seats:
+        description: Relations
+        items:
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.BookingSeat'
+        type: array
       cancellation_reason:
+        description: Optional
         type: string
       cancelled_at:
         type: string
@@ -12,28 +18,23 @@ definitions:
       created_at:
         type: string
       expires_at:
-        type: string
-      guest_email:
-        type: string
-      guest_name:
-        type: string
-      guest_phone:
+        description: Timestamps
         type: string
       id:
         type: string
-      passengers:
-        items:
-          $ref: "#/definitions/bus-booking_booking-service_internal_model.Passenger"
-        type: array
-      payment_id:
+      notes:
         type: string
-      payment_method:
+      payment_order_id:
+        description: Payment info - Payment Service handles PayOS integration
         type: string
       payment_status:
-        $ref: "#/definitions/bus-booking_booking-service_internal_model.PaymentStatus"
+        $ref: '#/definitions/bus-booking_booking-service_internal_model.PaymentStatus'
       status:
-        $ref: "#/definitions/bus-booking_booking-service_internal_model.BookingStatus"
+        allOf:
+        - $ref: '#/definitions/bus-booking_booking-service_internal_model.BookingStatus'
+        description: Status
       total_amount:
+        description: Pricing
         type: number
       trip_id:
         type: string
@@ -44,30 +45,29 @@ definitions:
     type: object
   bus-booking_booking-service_internal_model.BookingResponse:
     properties:
-      cancellation_reason:
+      booking_reference:
         type: string
       cancelled_at:
         type: string
-      completed_at:
+      confirmed_at:
         type: string
       created_at:
         type: string
+      expires_at:
+        type: string
       id:
         type: string
-      passenger_email:
+      notes:
         type: string
-      passenger_name:
+      payment_order_id:
         type: string
-      passenger_phone:
+      payment_status:
         type: string
-      payment_method:
-        $ref: "#/definitions/bus-booking_booking-service_internal_model.PaymentMethodResponse"
       seats:
+        description: Seats info
         items:
-          $ref: "#/definitions/bus-booking_booking-service_internal_model.BookingSeatResponse"
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.BookingSeatResponse'
         type: array
-      special_requests:
-        type: string
       status:
         type: string
       total_amount:
@@ -79,13 +79,51 @@ definitions:
       user_id:
         type: string
     type: object
+  bus-booking_booking-service_internal_model.BookingSeat:
+    properties:
+      booking_id:
+        type: string
+      created_at:
+        type: string
+      floor:
+        type: integer
+      id:
+        type: string
+      passenger_id:
+        type: string
+      passenger_name:
+        description: Optional passenger info (can be added later)
+        type: string
+      passenger_phone:
+        type: string
+      price:
+        type: number
+      price_multiplier:
+        type: number
+      seat_id:
+        type: string
+      seat_number:
+        type: string
+      seat_type:
+        type: string
+      updated_at:
+        type: string
+    type: object
   bus-booking_booking-service_internal_model.BookingSeatResponse:
     properties:
+      floor:
+        type: integer
       id:
         type: string
       price:
         type: number
+      price_multiplier:
+        type: number
       seat_id:
+        type: string
+      seat_number:
+        type: string
+      seat_type:
         type: string
     type: object
   bus-booking_booking-service_internal_model.BookingStatsResponse:
@@ -107,16 +145,21 @@ definitions:
     type: object
   bus-booking_booking-service_internal_model.BookingStatus:
     enum:
-      - pending
-      - confirmed
-      - cancelled
-      - expired
+    - pending
+    - confirmed
+    - cancelled
+    - expired
     type: string
+    x-enum-comments:
+      BookingStatusCancelled: Đã hủy
+      BookingStatusConfirmed: Đã xác nhận và thanh toán
+      BookingStatusExpired: Hết hạn (quá 15 phút chưa thanh toán)
+      BookingStatusPending: Chờ thanh toán
     x-enum-varnames:
-      - BookingStatusPending
-      - BookingStatusConfirmed
-      - BookingStatusCancelled
-      - BookingStatusExpired
+    - BookingStatusPending
+    - BookingStatusConfirmed
+    - BookingStatusCancelled
+    - BookingStatusExpired
   bus-booking_booking-service_internal_model.CancelBookingRequest:
     properties:
       reason:
@@ -124,18 +167,12 @@ definitions:
       user_id:
         type: string
     required:
-      - reason
-      - user_id
+    - reason
+    - user_id
     type: object
   bus-booking_booking-service_internal_model.CreateBookingRequest:
     properties:
-      passenger_email:
-        type: string
-      passenger_name:
-        type: string
-      passenger_phone:
-        type: string
-      payment_method_id:
+      notes:
         type: string
       seat_ids:
         items:
@@ -143,27 +180,11 @@ definitions:
         maxItems: 10
         minItems: 1
         type: array
-      seat_price:
-        minimum: 0
-        type: number
-      special_requests:
-        type: string
-      total_amount:
-        minimum: 0
-        type: number
       trip_id:
         type: string
-      user_id:
-        type: string
     required:
-      - passenger_name
-      - passenger_phone
-      - payment_method_id
-      - seat_ids
-      - seat_price
-      - total_amount
-      - trip_id
-      - user_id
+    - seat_ids
+    - trip_id
     type: object
   bus-booking_booking-service_internal_model.CreateFeedbackRequest:
     properties:
@@ -178,9 +199,9 @@ definitions:
       user_id:
         type: string
     required:
-      - booking_id
-      - rating
-      - user_id
+    - booking_id
+    - rating
+    - user_id
     type: object
   bus-booking_booking-service_internal_model.FeedbackResponse:
     properties:
@@ -199,6 +220,16 @@ definitions:
       user_id:
         type: string
     type: object
+  bus-booking_booking-service_internal_model.InitSeatsRequest:
+    properties:
+      seats:
+        items:
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.SeatInitData'
+        minItems: 1
+        type: array
+    required:
+    - seats
+    type: object
   bus-booking_booking-service_internal_model.LockSeatsRequest:
     properties:
       seat_ids:
@@ -212,19 +243,19 @@ definitions:
       trip_id:
         type: string
     required:
-      - seat_ids
-      - session_id
-      - trip_id
+    - seat_ids
+    - session_id
+    - trip_id
     type: object
   bus-booking_booking-service_internal_model.PaginatedBookingResponse:
     properties:
       data:
         items:
-          $ref: "#/definitions/bus-booking_booking-service_internal_model.BookingResponse"
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.BookingResponse'
         type: array
-      limit:
-        type: integer
       page:
+        type: integer
+      page_size:
         type: integer
       total:
         type: integer
@@ -235,41 +266,16 @@ definitions:
     properties:
       data:
         items:
-          $ref: "#/definitions/bus-booking_booking-service_internal_model.FeedbackResponse"
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.FeedbackResponse'
         type: array
-      limit:
-        type: integer
       page:
+        type: integer
+      page_size:
         type: integer
       total:
         type: integer
       total_pages:
         type: integer
-    type: object
-  bus-booking_booking-service_internal_model.Passenger:
-    properties:
-      booking_id:
-        type: string
-      created_at:
-        type: string
-      full_name:
-        type: string
-      id:
-        type: string
-      id_number:
-        type: string
-      phone_number:
-        type: string
-      price:
-        type: number
-      seat_id:
-        type: string
-      seat_number:
-        type: string
-      seat_type:
-        type: string
-      updated_at:
-        type: string
     type: object
   bus-booking_booking-service_internal_model.PaymentMethodResponse:
     properties:
@@ -301,16 +307,21 @@ definitions:
     type: object
   bus-booking_booking-service_internal_model.PaymentStatus:
     enum:
-      - pending
-      - paid
-      - refunded
-      - failed
+    - pending
+    - paid
+    - refunded
+    - failed
     type: string
+    x-enum-comments:
+      PaymentStatusFailed: Thanh toán thất bại
+      PaymentStatusPaid: Đã thanh toán
+      PaymentStatusPending: Chờ thanh toán
+      PaymentStatusRefunded: Đã hoàn tiền
     x-enum-varnames:
-      - PaymentStatusPending
-      - PaymentStatusPaid
-      - PaymentStatusRefunded
-      - PaymentStatusFailed
+    - PaymentStatusPending
+    - PaymentStatusPaid
+    - PaymentStatusRefunded
+    - PaymentStatusFailed
   bus-booking_booking-service_internal_model.ProcessPaymentRequest:
     properties:
       booking_id:
@@ -318,7 +329,7 @@ definitions:
       token:
         type: string
     required:
-      - booking_id
+    - booking_id
     type: object
   bus-booking_booking-service_internal_model.ReleaseSeatRequest:
     properties:
@@ -327,8 +338,8 @@ definitions:
       trip_id:
         type: string
     required:
-      - seat_id
-      - trip_id
+    - seat_id
+    - trip_id
     type: object
   bus-booking_booking-service_internal_model.ReserveSeatRequest:
     properties:
@@ -341,9 +352,9 @@ definitions:
       user_id:
         type: string
     required:
-      - seat_id
-      - trip_id
-      - user_id
+    - seat_id
+    - trip_id
+    - user_id
     type: object
   bus-booking_booking-service_internal_model.SeatAvailabilityResponse:
     properties:
@@ -361,15 +372,25 @@ definitions:
         type: array
       seat_details:
         additionalProperties:
-          $ref: "#/definitions/bus-booking_booking-service_internal_model.SeatStatus"
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.SeatStatus'
         type: object
       trip_id:
         type: string
     type: object
+  bus-booking_booking-service_internal_model.SeatInitData:
+    properties:
+      seat_id:
+        type: string
+      seat_number:
+        type: string
+    required:
+    - seat_id
+    - seat_number
+    type: object
   bus-booking_booking-service_internal_model.SeatStatus:
     properties:
       booking:
-        $ref: "#/definitions/bus-booking_booking-service_internal_model.Booking"
+        $ref: '#/definitions/bus-booking_booking-service_internal_model.Booking'
       booking_id:
         type: string
       created_at:
@@ -391,9 +412,9 @@ definitions:
       user_id:
         type: string
     required:
-      - seat_id
-      - seat_number
-      - trip_id
+    - seat_id
+    - seat_number
+    - trip_id
     type: object
   bus-booking_booking-service_internal_model.TripStatsResponse:
     properties:
@@ -411,19 +432,30 @@ definitions:
       session_id:
         type: string
     required:
-      - session_id
+    - session_id
     type: object
   bus-booking_booking-service_internal_model.UpdateBookingStatusRequest:
     properties:
       status:
         type: string
     required:
-      - status
+    - status
     type: object
   ginext.ErrorBody:
     properties:
       message:
         type: string
+    type: object
+  ginext.MetaData:
+    properties:
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
     type: object
   ginext.Response:
     properties:
@@ -431,11 +463,13 @@ definitions:
         type: integer
       data: {}
       error:
-        $ref: "#/definitions/ginext.ErrorBody"
+        $ref: '#/definitions/ginext.ErrorBody'
       header:
-        $ref: "#/definitions/http.Header"
+        $ref: '#/definitions/http.Header'
       message:
         type: string
+      meta:
+        $ref: '#/definitions/ginext.MetaData'
     type: object
   http.Header:
     additionalProperties:
@@ -459,668 +493,700 @@ paths:
   /api/v1/bookings:
     post:
       consumes:
-        - application/json
+      - application/json
       description: Create a new booking with seat selection
       parameters:
-        - description: Booking creation request
-          in: body
-          name: booking
-          required: true
-          schema:
-            $ref: "#/definitions/bus-booking_booking-service_internal_model.CreateBookingRequest"
+      - description: Booking creation request
+        in: body
+        name: booking
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.CreateBookingRequest'
       produces:
-        - application/json
+      - application/json
       responses:
         "201":
           description: Created
           schema:
             allOf:
-              - $ref: "#/definitions/ginext.Response"
-              - properties:
-                  data:
-                    $ref: "#/definitions/bus-booking_booking-service_internal_model.BookingResponse"
-                type: object
+            - $ref: '#/definitions/ginext.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bus-booking_booking-service_internal_model.BookingResponse'
+              type: object
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
       summary: Create a new booking
       tags:
-        - bookings
+      - bookings
   /api/v1/bookings/{id}:
     get:
       description: Get a specific booking by its ID
       parameters:
-        - description: Booking ID
-          format: uuid
-          in: path
-          name: id
-          required: true
-          type: string
+      - description: Booking ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
             allOf:
-              - $ref: "#/definitions/ginext.Response"
-              - properties:
-                  data:
-                    $ref: "#/definitions/bus-booking_booking-service_internal_model.BookingResponse"
-                type: object
+            - $ref: '#/definitions/ginext.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bus-booking_booking-service_internal_model.BookingResponse'
+              type: object
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
         "404":
           description: Not Found
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
       summary: Get booking by ID
       tags:
-        - bookings
+      - bookings
   /api/v1/bookings/{id}/cancel:
     post:
       consumes:
-        - application/json
+      - application/json
       description: Cancel a booking and release seats
       parameters:
-        - description: Booking ID
-          format: uuid
-          in: path
-          name: id
-          required: true
-          type: string
-        - description: Cancellation request
-          in: body
-          name: request
-          required: true
-          schema:
-            $ref: "#/definitions/bus-booking_booking-service_internal_model.CancelBookingRequest"
+      - description: Booking ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Cancellation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.CancelBookingRequest'
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
         "404":
           description: Not Found
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
       summary: Cancel a booking
       tags:
-        - bookings
+      - bookings
   /api/v1/bookings/{id}/status:
     put:
       consumes:
-        - application/json
+      - application/json
       description: Update the status of a booking
       parameters:
-        - description: Booking ID
-          format: uuid
-          in: path
-          name: id
-          required: true
-          type: string
-        - description: Status update request
-          in: body
-          name: request
-          required: true
-          schema:
-            $ref: "#/definitions/bus-booking_booking-service_internal_model.UpdateBookingStatusRequest"
+      - description: Booking ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Status update request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.UpdateBookingStatusRequest'
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
         "404":
           description: Not Found
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
       summary: Update booking status
       tags:
-        - bookings
+      - bookings
   /api/v1/bookings/trip/{trip_id}:
     get:
       description: Get all bookings for a specific trip with pagination
       parameters:
-        - description: Trip ID
-          format: uuid
-          in: path
-          name: trip_id
-          required: true
-          type: string
-        - default: 1
-          description: Page number
-          in: query
-          name: page
-          type: integer
-        - default: 10
-          description: Items per page
-          in: query
-          name: limit
-          type: integer
+      - description: Trip ID
+        format: uuid
+        in: path
+        name: trip_id
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: page_size
+        type: integer
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
             allOf:
-              - $ref: "#/definitions/ginext.Response"
-              - properties:
-                  data:
-                    $ref: "#/definitions/bus-booking_booking-service_internal_model.PaginatedBookingResponse"
-                type: object
+            - $ref: '#/definitions/ginext.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bus-booking_booking-service_internal_model.PaginatedBookingResponse'
+              type: object
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
       summary: Get trip bookings
       tags:
-        - bookings
+      - bookings
   /api/v1/bookings/user/{user_id}:
     get:
       description: Get all bookings for a specific user with pagination
       parameters:
-        - description: User ID
-          format: uuid
-          in: path
-          name: user_id
-          required: true
-          type: string
-        - default: 1
-          description: Page number
-          in: query
-          name: page
-          type: integer
-        - default: 10
-          description: Items per page
-          in: query
-          name: limit
-          type: integer
+      - description: User ID
+        format: uuid
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: page_size
+        type: integer
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
             allOf:
-              - $ref: "#/definitions/ginext.Response"
-              - properties:
-                  data:
-                    $ref: "#/definitions/bus-booking_booking-service_internal_model.PaginatedBookingResponse"
-                type: object
+            - $ref: '#/definitions/ginext.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bus-booking_booking-service_internal_model.PaginatedBookingResponse'
+              type: object
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
       summary: Get user bookings
       tags:
-        - bookings
+      - bookings
   /api/v1/feedback:
     post:
       consumes:
-        - application/json
+      - application/json
       description: Create feedback for a completed booking
       parameters:
-        - description: Feedback creation request
-          in: body
-          name: request
-          required: true
-          schema:
-            $ref: "#/definitions/bus-booking_booking-service_internal_model.CreateFeedbackRequest"
+      - description: Feedback creation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.CreateFeedbackRequest'
       produces:
-        - application/json
+      - application/json
       responses:
         "201":
           description: Created
           schema:
             allOf:
-              - $ref: "#/definitions/ginext.Response"
-              - properties:
-                  data:
-                    $ref: "#/definitions/bus-booking_booking-service_internal_model.FeedbackResponse"
-                type: object
+            - $ref: '#/definitions/ginext.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bus-booking_booking-service_internal_model.FeedbackResponse'
+              type: object
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
       summary: Create feedback
       tags:
-        - feedback
+      - feedback
   /api/v1/feedback/booking/{booking_id}:
     get:
       description: Get feedback for a specific booking
       parameters:
-        - description: Booking ID
-          format: uuid
-          in: path
-          name: booking_id
-          required: true
-          type: string
+      - description: Booking ID
+        format: uuid
+        in: path
+        name: booking_id
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
             allOf:
-              - $ref: "#/definitions/ginext.Response"
-              - properties:
-                  data:
-                    $ref: "#/definitions/bus-booking_booking-service_internal_model.FeedbackResponse"
-                type: object
+            - $ref: '#/definitions/ginext.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bus-booking_booking-service_internal_model.FeedbackResponse'
+              type: object
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
         "404":
           description: Not Found
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
       summary: Get booking feedback
       tags:
-        - feedback
+      - feedback
   /api/v1/feedback/trip/{trip_id}:
     get:
       description: Get all feedbacks for a specific trip with pagination
       parameters:
-        - description: Trip ID
-          format: uuid
-          in: path
-          name: trip_id
-          required: true
-          type: string
-        - default: 1
-          description: Page number
-          in: query
-          name: page
-          type: integer
-        - default: 10
-          description: Items per page
-          in: query
-          name: limit
-          type: integer
+      - description: Trip ID
+        format: uuid
+        in: path
+        name: trip_id
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: page_size
+        type: integer
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
             allOf:
-              - $ref: "#/definitions/ginext.Response"
-              - properties:
-                  data:
-                    $ref: "#/definitions/bus-booking_booking-service_internal_model.PaginatedFeedbackResponse"
-                type: object
+            - $ref: '#/definitions/ginext.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bus-booking_booking-service_internal_model.PaginatedFeedbackResponse'
+              type: object
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
       summary: Get trip feedbacks
       tags:
-        - feedback
+      - feedback
   /api/v1/payment/methods:
     get:
       description: Get all available payment methods
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
             allOf:
-              - $ref: "#/definitions/ginext.Response"
-              - properties:
-                  data:
-                    items:
-                      $ref: "#/definitions/bus-booking_booking-service_internal_model.PaymentMethodResponse"
-                    type: array
-                type: object
+            - $ref: '#/definitions/ginext.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/bus-booking_booking-service_internal_model.PaymentMethodResponse'
+                  type: array
+              type: object
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
       summary: Get payment methods
       tags:
-        - payment
+      - payment
   /api/v1/payment/process:
     post:
       consumes:
-        - application/json
+      - application/json
       description: Process payment for a booking
       parameters:
-        - description: Payment processing request
-          in: body
-          name: request
-          required: true
-          schema:
-            $ref: "#/definitions/bus-booking_booking-service_internal_model.ProcessPaymentRequest"
+      - description: Payment processing request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.ProcessPaymentRequest'
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
             allOf:
-              - $ref: "#/definitions/ginext.Response"
-              - properties:
-                  data:
-                    $ref: "#/definitions/bus-booking_booking-service_internal_model.PaymentResponse"
-                type: object
+            - $ref: '#/definitions/ginext.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bus-booking_booking-service_internal_model.PaymentResponse'
+              type: object
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
       summary: Process payment
       tags:
-        - payment
+      - payment
   /api/v1/seat-locks:
     delete:
       consumes:
-        - application/json
+      - application/json
       description: Release locked seats for a session
       parameters:
-        - description: Unlock data
-          in: body
-          name: request
-          required: true
-          schema:
-            $ref: "#/definitions/bus-booking_booking-service_internal_model.UnlockSeatsRequest"
+      - description: Unlock data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.UnlockSeatsRequest'
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: Seats unlocked successfully
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
         "400":
           description: Invalid request
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
       summary: Unlock seats
       tags:
-        - seat-locks
+      - seat-locks
     post:
       consumes:
-        - application/json
+      - application/json
       description: Lock selected seats for 15 minutes during booking process
       parameters:
-        - description: Seat lock data
-          in: body
-          name: request
-          required: true
-          schema:
-            $ref: "#/definitions/bus-booking_booking-service_internal_model.LockSeatsRequest"
+      - description: Seat lock data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.LockSeatsRequest'
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: Seats locked successfully
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
         "400":
           description: Invalid request
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
         "409":
           description: Seats already locked
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
       summary: Lock seats temporarily
       tags:
-        - seat-locks
+      - seat-locks
   /api/v1/seats/release:
     post:
       consumes:
-        - application/json
+      - application/json
       description: Release a reserved seat back to available status
       parameters:
-        - description: Seat release request
-          in: body
-          name: request
-          required: true
-          schema:
-            $ref: "#/definitions/bus-booking_booking-service_internal_model.ReleaseSeatRequest"
+      - description: Seat release request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.ReleaseSeatRequest'
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
       summary: Release a reserved seat
       tags:
-        - seats
+      - seats
   /api/v1/seats/reserve:
     post:
       consumes:
-        - application/json
+      - application/json
       description: Reserve a seat for a user temporarily
       parameters:
-        - description: Seat reservation request
-          in: body
-          name: request
-          required: true
-          schema:
-            $ref: "#/definitions/bus-booking_booking-service_internal_model.ReserveSeatRequest"
+      - description: Seat reservation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.ReserveSeatRequest'
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
       summary: Reserve a seat
       tags:
-        - seats
+      - seats
   /api/v1/statistics/bookings:
     get:
       description: Get booking statistics for a date range
       parameters:
-        - description: Start date (YYYY-MM-DD)
-          in: query
-          name: start_date
-          required: true
-          type: string
-        - description: End date (YYYY-MM-DD)
-          in: query
-          name: end_date
-          required: true
-          type: string
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        required: true
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
             allOf:
-              - $ref: "#/definitions/ginext.Response"
-              - properties:
-                  data:
-                    $ref: "#/definitions/bus-booking_booking-service_internal_model.BookingStatsResponse"
-                type: object
+            - $ref: '#/definitions/ginext.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bus-booking_booking-service_internal_model.BookingStatsResponse'
+              type: object
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
       summary: Get booking statistics
       tags:
-        - statistics
+      - statistics
   /api/v1/statistics/popular-trips:
     get:
       description: Get popular trips based on booking statistics
       parameters:
-        - default: 10
-          description: Number of trips to return
-          in: query
-          name: limit
-          type: integer
-        - default: 30
-          description: Number of days to look back
-          in: query
-          name: days
-          type: integer
+      - default: 10
+        description: Number of trips to return
+        in: query
+        name: limit
+        type: integer
+      - default: 30
+        description: Number of days to look back
+        in: query
+        name: days
+        type: integer
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
             allOf:
-              - $ref: "#/definitions/ginext.Response"
-              - properties:
-                  data:
-                    items:
-                      $ref: "#/definitions/bus-booking_booking-service_internal_model.TripStatsResponse"
-                    type: array
-                type: object
+            - $ref: '#/definitions/ginext.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/bus-booking_booking-service_internal_model.TripStatsResponse'
+                  type: array
+              type: object
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
       summary: Get popular trips
       tags:
-        - statistics
+      - statistics
   /api/v1/trips/{trip_id}/locked-seats:
     get:
       consumes:
-        - application/json
+      - application/json
       description: Get list of locked seats for a trip
       parameters:
-        - description: Trip ID
-          format: uuid
-          in: path
-          name: trip_id
-          required: true
-          type: string
+      - description: Trip ID
+        format: uuid
+        in: path
+        name: trip_id
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: Locked seat IDs
           schema:
             allOf:
-              - $ref: "#/definitions/ginext.Response"
-              - properties:
-                  data:
-                    items:
-                      type: string
-                    type: array
-                type: object
+            - $ref: '#/definitions/ginext.Response'
+            - properties:
+                data:
+                  items:
+                    type: string
+                  type: array
+              type: object
         "400":
           description: Invalid trip ID
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
       summary: Get locked seats
       tags:
-        - seat-locks
+      - seat-locks
   /api/v1/trips/{trip_id}/seats:
     get:
-      description: Get available, reserved, and booked seats for a specific trip
+      consumes:
+      - application/json
+      description: Get all seats and their statuses for a specific trip
       parameters:
-        - description: Trip ID
-          format: uuid
-          in: path
-          name: trip_id
-          required: true
-          type: string
+      - description: Trip ID
+        format: uuid
+        in: path
+        name: trip_id
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
           schema:
             allOf:
-              - $ref: "#/definitions/ginext.Response"
-              - properties:
-                  data:
-                    $ref: "#/definitions/bus-booking_booking-service_internal_model.SeatAvailabilityResponse"
-                type: object
+            - $ref: '#/definitions/ginext.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/bus-booking_booking-service_internal_model.SeatStatus'
+                  type: array
+              type: object
         "400":
           description: Bad Request
           schema:
-            $ref: "#/definitions/ginext.Response"
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: "#/definitions/ginext.Response"
+            $ref: '#/definitions/ginext.Response'
       summary: Get seat availability for a trip
       tags:
-        - seats
+      - seat-status
+  /api/v1/trips/{trip_id}/seats/init:
+    post:
+      consumes:
+      - application/json
+      description: Called by Trip Service when a new trip is created
+      parameters:
+      - description: Trip ID
+        format: uuid
+        in: path
+        name: trip_id
+        required: true
+        type: string
+      - description: Seat initialization data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.InitSeatsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: Initialize seat statuses for a trip
+      tags:
+      - seat-status
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer" followed by a space and JWT token.

@@ -1,34 +1,39 @@
 package model
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 )
 
+// CreateBookingRequest represents simplified booking creation request
+// Backend will calculate price from Trip Service
 type CreateBookingRequest struct {
-	TripID          uuid.UUID   `json:"trip_id" validate:"required"`
-	UserID          uuid.UUID   `json:"user_id" validate:"required"`
-	SeatIDs         []uuid.UUID `json:"seat_ids" validate:"required,min=1,max=10"`
-	PaymentMethodID uuid.UUID   `json:"payment_method_id" validate:"required"`
-	TotalAmount     float64     `json:"total_amount" validate:"required,min=0"`
-	SeatPrice       float64     `json:"seat_price" validate:"required,min=0"`
-	PassengerName   string      `json:"passenger_name" validate:"required"`
-	PassengerPhone  string      `json:"passenger_phone" validate:"required"`
-	PassengerEmail  string      `json:"passenger_email,omitempty" validate:"omitempty,email"`
-	SpecialRequests string      `json:"special_requests,omitempty"`
+	TripID  uuid.UUID   `json:"trip_id" binding:"required"`
+	SeatIDs []uuid.UUID `json:"seat_ids" binding:"required,min=1,max=10,dive"`
+	Notes   string      `json:"notes,omitempty"`
 }
 
 // CancelBookingRequest represents booking cancellation request
 type CancelBookingRequest struct {
-	UserID uuid.UUID `json:"user_id" validate:"required"`
-	Reason string    `json:"reason" validate:"required"`
+	UserID uuid.UUID `json:"user_id" binding:"required"`
+	Reason string    `json:"reason" binding:"required"`
 }
 
 // UpdateBookingStatusRequest represents booking status update request
 type UpdateBookingStatusRequest struct {
-	Status string `json:"status" validate:"required"`
+	Status string `json:"status" binding:"required"`
+}
+
+// InitSeatsRequest represents request to initialize seats for a trip
+type InitSeatsRequest struct {
+	Seats []SeatInitData `json:"seats" binding:"required,min=1,dive"`
+}
+
+// SeatInitData represents seat initialization data from trip service
+type SeatInitData struct {
+	SeatID     uuid.UUID `json:"seat_id" binding:"required"`
+	SeatNumber string    `json:"seat_number" binding:"required"`
 }
 
 // ReserveSeatRequest represents seat reservation request
@@ -52,40 +57,39 @@ type ProcessPaymentRequest struct {
 }
 
 // CreateFeedbackRequest represents feedback creation request
-type CreateFeedbackRequest struct {
-	BookingID uuid.UUID `json:"booking_id" validate:"required"`
-	UserID    uuid.UUID `json:"user_id" validate:"required"`
-	Rating    int       `json:"rating" validate:"required,min=1,max=5"`
-	Comment   string    `json:"comment,omitempty"`
-}
 
 // Response types
 
-// BookingResponse represents booking response
+// BookingResponse represents simplified booking response
 type BookingResponse struct {
-	ID                 uuid.UUID              `json:"id"`
-	UserID             uuid.UUID              `json:"user_id"`
-	TripID             uuid.UUID              `json:"trip_id"`
-	Status             string                 `json:"status"`
-	TotalAmount        float64                `json:"total_amount"`
-	PassengerName      string                 `json:"passenger_name"`
-	PassengerPhone     string                 `json:"passenger_phone"`
-	PassengerEmail     string                 `json:"passenger_email,omitempty"`
-	SpecialRequests    string                 `json:"special_requests,omitempty"`
-	CreatedAt          time.Time              `json:"created_at"`
-	UpdatedAt          time.Time              `json:"updated_at"`
-	CompletedAt        *time.Time             `json:"completed_at,omitempty"`
-	CancelledAt        *time.Time             `json:"cancelled_at,omitempty"`
-	CancellationReason string                 `json:"cancellation_reason,omitempty"`
-	Seats              []BookingSeatResponse  `json:"seats"`
-	PaymentMethod      *PaymentMethodResponse `json:"payment_method,omitempty"`
+	ID               uuid.UUID  `json:"id"`
+	BookingReference string     `json:"booking_reference"`
+	TripID           uuid.UUID  `json:"trip_id"`
+	UserID           uuid.UUID  `json:"user_id"`
+	TotalAmount      float64    `json:"total_amount"`
+	Status           string     `json:"status"`
+	PaymentStatus    string     `json:"payment_status"`
+	PaymentOrderID   string     `json:"payment_order_id,omitempty"`
+	Notes            string     `json:"notes,omitempty"`
+	ExpiresAt        *time.Time `json:"expires_at,omitempty"`
+	ConfirmedAt      *time.Time `json:"confirmed_at,omitempty"`
+	CancelledAt      *time.Time `json:"cancelled_at,omitempty"`
+	CreatedAt        time.Time  `json:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at"`
+
+	// Seats info
+	Seats []BookingSeatResponse `json:"seats"`
 }
 
-// BookingSeatResponse represents booking seat response
+// BookingSeatResponse represents booking seat in response
 type BookingSeatResponse struct {
-	ID     uuid.UUID `json:"id"`
-	SeatID uuid.UUID `json:"seat_id"`
-	Price  float64   `json:"price"`
+	ID              uuid.UUID `json:"id"`
+	SeatID          uuid.UUID `json:"seat_id"`
+	SeatNumber      string    `json:"seat_number"`
+	SeatType        string    `json:"seat_type"`
+	Floor           int       `json:"floor"`
+	Price           float64   `json:"price"`
+	PriceMultiplier float64   `json:"price_multiplier"`
 }
 
 // PaymentMethodResponse represents payment method response
@@ -132,7 +136,7 @@ type PaginatedBookingResponse struct {
 	Data       []*BookingResponse `json:"data"`
 	Total      int64              `json:"total"`
 	Page       int                `json:"page"`
-	Limit      int                `json:"limit"`
+	PageSize   int                `json:"page_size"`
 	TotalPages int64              `json:"total_pages"`
 }
 
@@ -140,7 +144,7 @@ type PaginatedFeedbackResponse struct {
 	Data       []*FeedbackResponse `json:"data"`
 	Total      int64               `json:"total"`
 	Page       int                 `json:"page"`
-	Limit      int                 `json:"limit"`
+	PageSize   int                 `json:"page_size"`
 	TotalPages int64               `json:"total_pages"`
 }
 
@@ -161,36 +165,13 @@ type HealthResponse struct {
 	Service   string    `json:"service"`
 }
 
-// Validation method
-func (req *CreateBookingRequest) Validate() error {
-	if req.UserID == uuid.Nil {
-		return fmt.Errorf("user ID is required")
-	}
-	if req.TripID == uuid.Nil {
-		return fmt.Errorf("trip ID is required")
-	}
-	if len(req.SeatIDs) == 0 {
-		return fmt.Errorf("at least one seat must be selected")
-	}
-	if req.TotalAmount <= 0 {
-		return fmt.Errorf("total amount must be greater than 0")
-	}
-	if req.PassengerName == "" {
-		return fmt.Errorf("passenger name is required")
-	}
-	if req.PassengerPhone == "" {
-		return fmt.Errorf("passenger phone is required")
-	}
-	return nil
-}
-
 // Seat lock requests
 type LockSeatsRequest struct {
-	TripID    uuid.UUID   `json:"trip_id" validate:"required"`
-	SeatIDs   []uuid.UUID `json:"seat_ids" validate:"required,min=1,max=10"`
-	SessionID string      `json:"session_id" validate:"required"`
+	TripID    uuid.UUID   `json:"trip_id" binding:"required"`
+	SeatIDs   []uuid.UUID `json:"seat_ids" binding:"required,min=1,max=10,dive"`
+	SessionID string      `json:"session_id" binding:"required"`
 }
 
 type UnlockSeatsRequest struct {
-	SessionID string `json:"session_id" validate:"required"`
+	SessionID string `json:"session_id" binding:"required"`
 }

@@ -1,16 +1,11 @@
 package model
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
-
-type BaseModel struct {
-	ID        uuid.UUID      `gorm:"type:uuid;primaryKey;" json:"id"`
-	CreatedAt int64          `gorm:"autoCreateTime:milli" json:"created_at"`
-	UpdatedAt int64          `gorm:"autoUpdateTime:milli" json:"updated_at"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
-}
 
 type Transaction struct {
 	BaseModel
@@ -59,8 +54,8 @@ type TransactionResponse struct {
 	Status        string    `json:"status"`
 	CheckoutURL   string    `json:"checkout_url,omitempty"`
 	QRCode        string    `json:"qr_code,omitempty"`
-	CreatedAt     int64     `json:"created_at"`
-	UpdatedAt     int64     `json:"updated_at"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }
 
 type PaymentCallbackRequest struct {

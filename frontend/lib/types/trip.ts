@@ -1,21 +1,34 @@
 // Trip search request parameters
 export interface TripSearchParams {
-  origin: string;
-  destination: string;
-  date: string; // Vietnamese date format: dd/MM/yyyy
-  passengers: number;
+  // Basic search - all optional now
+  origin?: string;
+  destination?: string;
+
+  // Time range filters (ISO8601 format)
+  departure_time_start?: string;
+  departure_time_end?: string;
+  arrival_time_start?: string;
+  arrival_time_end?: string;
+
+  // Other filters
+  passengers?: number; // Client-side only, for seat availability
   seat_type?: "standard" | "vip" | "sleeper";
   price_min?: number;
   price_max?: number;
-  departure_time_min?: string; // Format: "HH:MM" (e.g., "06:00")
-  departure_time_max?: string; // Format: "HH:MM" (e.g., "18:00")
+  departure_time_min?: string; // Deprecated, use departure_time_start
+  departure_time_max?: string; // Deprecated, use departure_time_end
   amenities?: string[]; // Filter by bus amenities
   bus_type?: string; // Filter by bus type/model
   operator_id?: string;
   sort_by?: "price" | "departure_time" | "arrival_time";
   sort_order?: "asc" | "desc";
+
+  // Admin filters
+  status?: string; // Filter by trip status
+
+  // Pagination
   page?: number;
-  limit?: number;
+  page_size?: number;
 }
 
 /**
@@ -44,22 +57,15 @@ export interface ApiTripRoute {
 }
 
 /**
- * Amenity from API response
- */
-export interface ApiAmenity {
-  value: string;
-  display_name: string;
-}
-
-/**
  * Bus information from API response
  */
 export interface ApiBusInfo {
   id: string;
   model: string;
-  bus_type: DisplayValue<string>;
+  plate_number?: string;
+  bus_type: string; // Raw string value: "standard" | "limousine" | "sleeper"
   total_seats: number;
-  amenities: ApiAmenity[];
+  amenities: string[]; // Raw string values: ["wifi", "ac", "toilet", ...]
 }
 
 /**
@@ -72,7 +78,8 @@ export interface ApiTripItem {
   departure_time: string; // ISO datetime with timezone
   arrival_time: string; // ISO datetime with timezone
   base_price: number;
-  status: DisplayValue<string>;
+  status: string; // Raw string value: "scheduled" | "in_progress" | "completed" | "cancelled"
+  is_active: boolean;
   available_seats: number;
   total_seats: number;
   route: ApiTripRoute;
@@ -129,10 +136,10 @@ export interface TripDetail {
 
 // Trip search response
 export interface TripSearchResponse {
-  trips: TripDetail[];
+  trips: ApiTripItem[];
   total: number;
   page: number;
-  limit: number;
+  page_size: number;
   total_pages: number;
 }
 
@@ -156,7 +163,7 @@ export interface BusSeat {
   row: number;
   column: number;
   floor: number;
-  seat_type: ConstantDisplay; // Backend returns {value, display_name}
+  seat_type: string; // Raw string value: "standard" | "vip" | "sleeper"
   price_multiplier: number;
   is_available: boolean;
 }

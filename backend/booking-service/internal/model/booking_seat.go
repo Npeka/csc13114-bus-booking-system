@@ -1,28 +1,26 @@
 package model
 
 import (
-	"time"
-
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
+// BookingSeat represents a seat in a booking
 type BookingSeat struct {
-	ID        uuid.UUID `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
-	BookingID uuid.UUID `gorm:"type:uuid;not null" json:"booking_id" validate:"required"`
-	SeatID    uuid.UUID `gorm:"type:uuid;not null" json:"seat_id" validate:"required"`
-	Price     float64   `gorm:"type:decimal(10,2);not null" json:"price" validate:"required,min=0"`
-	CreatedAt time.Time `gorm:"type:timestamptz;not null;default:now()" json:"created_at"`
-	UpdatedAt time.Time `gorm:"type:timestamptz;not null;default:now()" json:"updated_at"`
+	BaseModel
+	BookingID       uuid.UUID `json:"booking_id" gorm:"type:uuid;not null;index"`
+	SeatID          uuid.UUID `json:"seat_id" gorm:"type:uuid;not null"`
+	SeatNumber      string    `json:"seat_number" gorm:"type:varchar(10);not null"`
+	SeatType        string    `json:"seat_type" gorm:"type:varchar(50);not null"`
+	Floor           int       `json:"floor" gorm:"type:int;not null;default:1"`
+	Price           float64   `json:"price" gorm:"type:decimal(10,2);not null"`
+	PriceMultiplier float64   `json:"price_multiplier" gorm:"type:decimal(3,2);not null;default:1.0"`
 
-	Booking *Booking `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"booking,omitempty"`
+	// Optional passenger info (can be added later)
+	PassengerName  string `json:"passenger_name,omitempty" gorm:"type:varchar(255)"`
+	PassengerID    string `json:"passenger_id,omitempty" gorm:"type:varchar(50)"`
+	PassengerPhone string `json:"passenger_phone,omitempty" gorm:"type:varchar(20)"`
 }
 
-func (BookingSeat) TableName() string { return "booking_seats" }
-
-func (bs *BookingSeat) BeforeCreate(tx *gorm.DB) error {
-	if bs.ID == uuid.Nil {
-		bs.ID = uuid.New()
-	}
-	return nil
+func (BookingSeat) TableName() string {
+	return "booking_seats"
 }

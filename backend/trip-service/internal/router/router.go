@@ -26,7 +26,7 @@ type Handlers struct {
 func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 	router.Use(middleware.Logger())
 	router.Use(middleware.SetupCORS(&cfg.CORS))
-	router.Use(middleware.RequestContextMiddleware(cfg.ServiceName))
+	router.Use(middleware.RequestContext(cfg.ServiceName))
 	router.GET(health.Path, health.Handler(cfg.ServiceName))
 	router.GET(swagger.Path, ginSwagger.WrapHandler(swaggerFiles.Handler))
 
@@ -38,31 +38,17 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 		{
 			trips.GET("/search", ginext.WrapHandler(h.TripHandler.SearchTrips))
 			trips.GET("/:id", ginext.WrapHandler(h.TripHandler.GetTrip))
-			// trips.GET("/route/:route_id", ginext.WrapHandler(h.TripHandler.ListTripsByRoute))
 		}
 
-		// buses := v1.Group("/buses")
-		// {
-		// 	buses.GET("/:id/seats", ginext.WrapHandler(h.BusHandler.GetBusSeats))
-		// 	buses.GET("/:id/seat-map", ginext.WrapHandler(h.SeatHandler.GetSeatMap))
-		// }
-
-		// seats := v1.Group("/buses/seats")
-		// {
-		// 	seats.POST("/bulk", ginext.WrapHandler(h.SeatHandler.CreateSeatsFromTemplate))
-		// }
-
-		// routes := v1.Group("/routes")
-		// {
-		// 	routes.GET("/search", ginext.WrapHandler(h.RouteHandler.SearchRoutes))
-		// 	routes.GET("/:id/stops", ginext.WrapHandler(h.RouteStopHandler.ListRouteStops))
-		// 	routes.POST("/:id/stops/reorder", ginext.WrapHandler(h.RouteStopHandler.ReorderStops))
-		// }
+		buses := v1.Group("/buses")
+		{
+			buses.GET("/:id", ginext.WrapHandler(h.BusHandler.GetBus))
+		}
 	}
 
 	adminV1 := router.Group("/api/v1")
-	adminV1.Use(middleware.RequireAuthMiddleware())
-	adminV1.Use(middleware.RequireRoleMiddleware(constants.RoleAdmin))
+	adminV1.Use(middleware.RequireAuth())
+	adminV1.Use(middleware.RequireRole(constants.RoleAdmin))
 	{
 		trips := adminV1.Group("/trips")
 		{
@@ -75,7 +61,6 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 		buses := adminV1.Group("/buses")
 		{
 			buses.GET("", ginext.WrapHandler(h.BusHandler.ListBuses))
-			buses.GET("/:id", ginext.WrapHandler(h.BusHandler.GetBus))
 			buses.POST("", ginext.WrapHandler(h.BusHandler.CreateBus))
 			buses.PUT("/:id", ginext.WrapHandler(h.BusHandler.UpdateBus))
 			buses.DELETE("/:id", ginext.WrapHandler(h.BusHandler.DeleteBus))
