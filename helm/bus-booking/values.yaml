@@ -63,7 +63,7 @@ services:
   booking-service:
     containerName: booking-service
     image: npkhang22/bb-booking-service
-    tag: booking-service-a1340ab
+    tag: booking-service-7e8ad09
     port: 8080
     env:
       SERVICE_NAME: "booking-service"
