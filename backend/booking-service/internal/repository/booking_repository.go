@@ -13,10 +13,10 @@ import (
 
 type BookingRepository interface {
 	CreateBooking(ctx context.Context, booking *model.Booking) error
-	CheckSeatAvailability(ctx context.Context, tripID uuid.UUID, seatIDs []uuid.UUID) (map[uuid.UUID]bool, error)
-	GetBookedSeatsForTrip(ctx context.Context, tripID uuid.UUID) ([]uuid.UUID, error)
+	GetBookedSeatIDs(ctx context.Context, tripID uuid.UUID) ([]uuid.UUID, error)
 
 	GetBookingByID(ctx context.Context, id uuid.UUID) (*model.Booking, error)
+	GetBookingByReference(ctx context.Context, reference string) (*model.Booking, error)
 	GetBookingsByUserID(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*model.Booking, int64, error)
 	GetBookingsByTripID(ctx context.Context, tripID uuid.UUID, limit, offset int) ([]*model.Booking, int64, error)
 	GetTripBookings(ctx context.Context, tripID uuid.UUID, page, limit int) ([]*model.Booking, int64, error)
@@ -33,17 +33,11 @@ func NewBookingRepository(db *gorm.DB) BookingRepository {
 	return &bookingRepositoryImpl{db: db}
 }
 
-func (r *bookingRepositoryImpl) CreateBooking(ctx context.Context, booking *model.Booking) error {
-	return r.db.WithContext(ctx).Create(booking).Error
-}
-
 func (r *bookingRepositoryImpl) GetBookingByID(ctx context.Context, id uuid.UUID) (*model.Booking, error) {
 	var booking model.Booking
-	err := r.db.WithContext(ctx).
+	if err := r.db.WithContext(ctx).
 		Preload("BookingSeats").
-		First(&booking, "id = ?", id).Error
-
-	if err != nil {
+		First(&booking, "id = ?", id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("booking not found")
 		}
@@ -51,6 +45,35 @@ func (r *bookingRepositoryImpl) GetBookingByID(ctx context.Context, id uuid.UUID
 	}
 
 	return &booking, nil
+}
+
+func (r *bookingRepositoryImpl) GetBookingByReference(ctx context.Context, reference string) (*model.Booking, error) {
+	var booking model.Booking
+	if err := r.db.WithContext(ctx).
+		Preload("BookingSeats").
+		First(&booking, "booking_reference = ?", reference).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("booking not found")
+		}
+		return nil, fmt.Errorf("failed to get booking by reference: %w", err)
+	}
+
+	return &booking, nil
+}
+
+func (r *bookingRepositoryImpl) GetBookedSeatIDs(ctx context.Context, tripID uuid.UUID) ([]uuid.UUID, error) {
+	var seatIDs []uuid.UUID
+	if err := r.db.WithContext(ctx).
+		Model(&model.BookingSeat{}).
+		Select("booking_seats.seat_id").
+		Joins("JOIN bookings ON bookings.id = booking_seats.booking_id").
+		Where("bookings.trip_id = ? AND bookings.status IN ?", tripID, []model.BookingStatus{
+			model.BookingStatusPending,
+			model.BookingStatusConfirmed}).
+		Scan(&seatIDs).Error; err != nil {
+		return nil, fmt.Errorf("failed to get booked seat IDs: %w", err)
+	}
+	return seatIDs, nil
 }
 
 func (r *bookingRepositoryImpl) GetBookingsByUserID(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*model.Booking, int64, error) {
@@ -121,7 +144,10 @@ func (r *bookingRepositoryImpl) UpdateBooking(ctx context.Context, booking *mode
 	return nil
 }
 
-// UpdateStatus updates the status of a booking
+func (r *bookingRepositoryImpl) CreateBooking(ctx context.Context, booking *model.Booking) error {
+	return r.db.WithContext(ctx).Create(booking).Error
+}
+
 func (r *bookingRepositoryImpl) UpdateStatus(ctx context.Context, id uuid.UUID, status model.BookingStatus) error {
 	return r.db.WithContext(ctx).
 		Model(&model.Booking{}).
@@ -131,7 +157,6 @@ func (r *bookingRepositoryImpl) UpdateStatus(ctx context.Context, id uuid.UUID, 
 }
 
 func (r *bookingRepositoryImpl) CancelBooking(ctx context.Context, id uuid.UUID, reason string) error {
-	// Simply update booking status - no need to manage seats
 	now := time.Now().UTC()
 	return r.db.WithContext(ctx).Model(&model.Booking{}).
 		Where("id = ?", id).
@@ -141,50 +166,4 @@ func (r *bookingRepositoryImpl) CancelBooking(ctx context.Context, id uuid.UUID,
 			"cancelled_at":        &now,
 			"updated_at":          now,
 		}).Error
-}
-
-// GetBookedSeatsForTrip returns all seat IDs that are booked for a trip with valid status
-func (r *bookingRepositoryImpl) GetBookedSeatsForTrip(ctx context.Context, tripID uuid.UUID) ([]uuid.UUID, error) {
-	var seatIDs []uuid.UUID
-
-	// Get all booking_seats for bookings that are confirmed or pending (not cancelled/expired)
-	err := r.db.WithContext(ctx).
-		Model(&model.BookingSeat{}).
-		Joins("JOIN bookings ON bookings.id = booking_seats.booking_id").
-		Where("bookings.trip_id = ?", tripID).
-		Where("bookings.status IN ?", []model.BookingStatus{
-			model.BookingStatusPending,
-			model.BookingStatusConfirmed,
-		}).
-		Pluck("booking_seats.seat_id", &seatIDs).
-		Error
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to get booked seats: %w", err)
-	}
-
-	return seatIDs, nil
-}
-
-// CheckSeatAvailability checks if seats are available (not booked) for a trip
-// Returns a map of seatID -> isBooked (true if already booked, false if available)
-func (r *bookingRepositoryImpl) CheckSeatAvailability(ctx context.Context, tripID uuid.UUID, seatIDs []uuid.UUID) (map[uuid.UUID]bool, error) {
-	bookedSeats, err := r.GetBookedSeatsForTrip(ctx, tripID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a map for quick lookup
-	bookedMap := make(map[uuid.UUID]bool)
-	for _, seatID := range bookedSeats {
-		bookedMap[seatID] = true
-	}
-
-	// Check each requested seat
-	result := make(map[uuid.UUID]bool)
-	for _, seatID := range seatIDs {
-		result[seatID] = bookedMap[seatID]
-	}
-
-	return result, nil
 }

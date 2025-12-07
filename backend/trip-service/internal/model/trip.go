@@ -22,20 +22,6 @@ type Trip struct {
 	Bus   *Bus   `gorm:"constraint:OnUpdate:CASCADE" json:"bus,omitempty"`
 }
 
-// Deprecated: Use constants.TripStatus instead
-type TripStatus = constants.TripStatus
-
-const (
-	// Deprecated: Use constants.TripStatusScheduled instead
-	TripStatusScheduled = constants.TripStatusScheduled
-	// Deprecated: Use constants.TripStatusInProgress instead
-	TripStatusInProgress = constants.TripStatusInProgress
-	// Deprecated: Use constants.TripStatusCompleted instead
-	TripStatusCompleted = constants.TripStatusCompleted
-	// Deprecated: Use constants.TripStatusCancelled instead
-	TripStatusCancelled = constants.TripStatusCancelled
-)
-
 func (Trip) TableName() string {
 	return "trips"
 }
@@ -72,6 +58,14 @@ type TripSearchRequest struct {
 	// Pagination
 	Page     int `form:"page,default=1" json:"page" validate:"min=1"`
 	PageSize int `form:"page_size,default=20" json:"page_size" validate:"min=1,max=100"`
+}
+
+type GetTripByIDRequuest struct {
+	SeatBookingStatus bool `form:"seat_booking_status" json:"seat_booking_status"`
+	PreLoadRoute      bool `form:"preload_route" json:"preload_route"`
+	PreLoadRouteStop  bool `form:"preload_route_stop" json:"preload_route_stop"`
+	PreloadBus        bool `form:"preload_bus" json:"preload_bus"`
+	PreloadSeat       bool `form:"preload_seat" json:"preload_seat"`
 }
 
 type TripDetail struct {
@@ -142,9 +136,9 @@ type CreateTripRequest struct {
 }
 
 type UpdateTripRequest struct {
-	DepartureTime *time.Time  `json:"departure_time,omitempty" validate:"omitempty"`
-	ArrivalTime   *time.Time  `json:"arrival_time,omitempty" validate:"omitempty"`
-	BasePrice     *float64    `json:"base_price,omitempty" validate:"omitempty,min=0"`
-	Status        *TripStatus `json:"status,omitempty" validate:"omitempty,oneof=scheduled in_progress completed cancelled"`
-	IsActive      *bool       `json:"is_active,omitempty"`
+	DepartureTime *time.Time            `json:"departure_time,omitempty" validate:"omitempty"`
+	ArrivalTime   *time.Time            `json:"arrival_time,omitempty" validate:"omitempty"`
+	BasePrice     *float64              `json:"base_price,omitempty" validate:"omitempty,min=0"`
+	Status        *constants.TripStatus `json:"status,omitempty" validate:"omitempty,oneof=scheduled in_progress completed cancelled"`
+	IsActive      *bool                 `json:"is_active,omitempty"`
 }

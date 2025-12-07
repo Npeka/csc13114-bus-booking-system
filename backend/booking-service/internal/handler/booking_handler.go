@@ -13,22 +13,28 @@ import (
 
 type BookingHandler interface {
 	CreateBooking(r *ginext.Request) (*ginext.Response, error)
+	CreateGuestBooking(r *ginext.Request) (*ginext.Response, error)
 	GetBooking(r *ginext.Request) (*ginext.Response, error)
+	GetBookingByReference(r *ginext.Request) (*ginext.Response, error)
 	GetUserBookings(r *ginext.Request) (*ginext.Response, error)
 	GetTripBookings(r *ginext.Request) (*ginext.Response, error)
 	CancelBooking(r *ginext.Request) (*ginext.Response, error)
 	UpdateBookingStatus(r *ginext.Request) (*ginext.Response, error)
 	CreatePayment(r *ginext.Request) (*ginext.Response, error)
 	UpdatePaymentStatus(r *ginext.Request) (*ginext.Response, error)
+	GetSeatStatus(r *ginext.Request) (*ginext.Response, error)
+	DownloadETicket(r *ginext.Request) error
 }
 
 type BookingHandlerImpl struct {
 	bookingService service.BookingService
+	eTicketService service.ETicketService
 }
 
-func NewBookingHandler(bookingService service.BookingService) BookingHandler {
+func NewBookingHandler(bookingService service.BookingService, eTicketService service.ETicketService) BookingHandler {
 	return &BookingHandlerImpl{
 		bookingService: bookingService,
+		eTicketService: eTicketService,
 	}
 }
 
@@ -61,6 +67,33 @@ func (h *BookingHandlerImpl) CreateBooking(r *ginext.Request) (*ginext.Response,
 	return ginext.NewSuccessResponse(booking), nil
 }
 
+// CreateGuestBooking godoc
+// @Summary Create a guest booking
+// @Description Create a booking without authentication for guest users
+// @Tags bookings
+// @Accept json
+// @Produce json
+// @Param booking body model.CreateGuestBookingRequest true "Guest booking creation request"
+// @Success 201 {object} ginext.Response{data=model.BookingResponse}
+// @Failure 400 {object} ginext.Response
+// @Failure 500 {object} ginext.Response
+// @Router /api/v1/bookings/guest [post]
+func (h *BookingHandlerImpl) CreateGuestBooking(r *ginext.Request) (*ginext.Response, error) {
+	var req model.CreateGuestBookingRequest
+	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
+		log.Error().Err(err).Msg("failed to bind and validate guest booking request")
+		return nil, ginext.NewBadRequestError(err.Error())
+	}
+
+	booking, err := h.bookingService.CreateGuestBooking(r.Context(), &req)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to create guest booking")
+		return nil, err
+	}
+
+	return ginext.NewSuccessResponse(booking), nil
+}
+
 // GetBooking godoc
 // @Summary Get booking by ID
 // @Description Get a specific booking by its ID
@@ -82,6 +115,34 @@ func (h *BookingHandlerImpl) GetBooking(r *ginext.Request) (*ginext.Response, er
 	booking, err := h.bookingService.GetBookingByID(r.Context(), id)
 	if err != nil {
 		log.Error().Err(err).Str("booking_id", idStr).Msg("failed to get booking")
+		return nil, err
+	}
+
+	return ginext.NewSuccessResponse(booking), nil
+}
+
+// GetBookingByReference godoc
+// @Summary Get booking by reference number
+// @Description Get booking details using booking reference number (for guest lookup)
+// @Tags bookings
+// @Produce json
+// @Param reference query string true "Booking reference number"
+// @Param email query string false "Email for verification"
+// @Success 200 {object} ginext.Response{data=model.BookingResponse}
+// @Failure 400 {object} ginext.Response
+// @Failure 404 {object} ginext.Response
+// @Router /api/v1/bookings/lookup [get]
+func (h *BookingHandlerImpl) GetBookingByReference(r *ginext.Request) (*ginext.Response, error) {
+	reference := r.GinCtx.Query("reference")
+	email := r.GinCtx.Query("email")
+
+	if reference == "" {
+		return nil, ginext.NewBadRequestError("Booking reference is required")
+	}
+
+	booking, err := h.bookingService.GetBookingByReference(r.Context(), reference, email)
+	if err != nil {
+		log.Error().Err(err).Str("reference", reference).Msg("failed to get booking by reference")
 		return nil, err
 	}
 
@@ -298,4 +359,83 @@ func (h *BookingHandlerImpl) UpdatePaymentStatus(r *ginext.Request) (*ginext.Res
 	}
 
 	return ginext.NewSuccessResponse("payment status updated successfully"), nil
+}
+
+// GetSeatStatus godoc
+// @Summary Get seat status for a trip
+// @Description Get booking status of seats for a specific trip
+// @Tags bookings
+// @Accept json
+// @Produce json
+// @Param trip_id path string true "Trip ID" format(uuid)
+// @Param seat_ids query []string true "Seat IDs" collectionFormat(multi)
+// @Success 200 {object} ginext.Response{data=model.GetSeatStatusResponse}
+// @Failure 400 {object} ginext.Response
+// @Failure 500 {object} ginext.Response
+// @Router /api/v1/bookings/trips/{trip_id}/seats/status [get]
+func (h *BookingHandlerImpl) GetSeatStatus(r *ginext.Request) (*ginext.Response, error) {
+	tripIDStr := r.GinCtx.Param("trip_id")
+	tripID, err := uuid.Parse(tripIDStr)
+	if err != nil {
+		log.Error().Err(err).Str("trip_id", tripIDStr).Msg("invalid trip id")
+		return nil, ginext.NewBadRequestError("invalid trip id")
+	}
+
+	var req model.GetSeatStatusRequest
+	if err := r.GinCtx.ShouldBindQuery(&req); err != nil {
+		log.Error().Err(err).Msg("failed to bind query params")
+		return nil, ginext.NewBadRequestError(err.Error())
+	}
+
+	seatIDs := make([]uuid.UUID, 0, len(req.SeatIDs))
+	for _, seatIDStr := range req.SeatIDs {
+		seatID, err := uuid.Parse(seatIDStr)
+		if err != nil {
+			log.Error().Err(err).Str("seat_id", seatIDStr).Msg("invalid seat id")
+			return nil, ginext.NewBadRequestError("invalid seat id: " + seatIDStr)
+		}
+		seatIDs = append(seatIDs, seatID)
+	}
+
+	seatStatuses, err := h.bookingService.GetSeatStatus(r.Context(), tripID, seatIDs)
+	if err != nil {
+		log.Error().Err(err).Str("trip_id", tripIDStr).Msg("failed to get seat status")
+		return nil, err
+	}
+
+	return ginext.NewSuccessResponse(seatStatuses), nil
+}
+
+// DownloadETicket godoc
+// @Summary Download e-ticket PDF
+// @Description Download e-ticket PDF for a confirmed booking
+// @Tags bookings
+// @Produce application/pdf
+// @Param id path string true "Booking ID"
+// @Success 200 {file} binary "PDF file"
+// @Failure 400 {object} ginext.Response
+// @Failure 404 {object} ginext.Response
+// @Failure 500 {object} ginext.Response
+// @Router /api/v1/bookings/{id}/eticket [get]
+func (h *BookingHandlerImpl) DownloadETicket(r *ginext.Request) error {
+	bookingIDStr := r.GinCtx.Param("id")
+	bookingID, err := uuid.Parse(bookingIDStr)
+	if err != nil {
+		log.Error().Err(err).Str("booking_id", bookingIDStr).Msg("invalid booking id")
+		return ginext.NewBadRequestError("invalid booking id")
+	}
+
+	// Generate PDF
+	pdfBuffer, err := h.eTicketService.GenerateETicket(r.Context(), bookingID)
+	if err != nil {
+		log.Error().Err(err).Str("booking_id", bookingIDStr).Msg("failed to generate e-ticket")
+		return err
+	}
+
+	// Set headers for PDF download
+	r.GinCtx.Header("Content-Type", "application/pdf")
+	r.GinCtx.Header("Content-Disposition", "attachment; filename=eticket_"+bookingIDStr[:8]+".pdf")
+	r.GinCtx.Data(200, "application/pdf", pdfBuffer.Bytes())
+
+	return nil
 }

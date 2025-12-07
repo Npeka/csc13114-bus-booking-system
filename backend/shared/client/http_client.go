@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"time"
 
 	"bus-booking/shared/constants"
@@ -18,7 +19,7 @@ import (
 
 // HTTPClient interface for making HTTP requests to other microservices
 type HTTPClient interface {
-	Get(ctx context.Context, url string, headers map[string]string) (*HTTPResponse, error)
+	Get(ctx context.Context, url string, params map[string][]string, headers map[string]string) (*HTTPResponse, error)
 	Post(ctx context.Context, url string, body interface{}, headers map[string]string) (*HTTPResponse, error)
 	Put(ctx context.Context, url string, body interface{}, headers map[string]string) (*HTTPResponse, error)
 	Delete(ctx context.Context, url string, headers map[string]string) (*HTTPResponse, error)
@@ -90,8 +91,27 @@ func NewHTTPClient(config *Config) HTTPClient {
 }
 
 // Get makes a GET request
-func (c *Client) Get(ctx context.Context, url string, headers map[string]string) (*HTTPResponse, error) {
-	return c.doRequest(ctx, http.MethodGet, c.buildURL(url), nil, headers)
+func (c *Client) Get(ctx context.Context, path string, params map[string][]string, headers map[string]string) (*HTTPResponse, error) {
+	fullURL := c.buildURL(path)
+
+	// Add query parameters if provided
+	if len(params) > 0 {
+		parsedURL, err := url.Parse(fullURL)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse URL: %w", err)
+		}
+
+		q := parsedURL.Query()
+		for key, values := range params {
+			for _, value := range values {
+				q.Add(key, value)
+			}
+		}
+		parsedURL.RawQuery = q.Encode()
+		fullURL = parsedURL.String()
+	}
+
+	return c.doRequest(ctx, http.MethodGet, fullURL, nil, headers)
 }
 
 // Post makes a POST request
@@ -314,6 +334,21 @@ func ParseData[T any](resp *HTTPResponse) (*T, error) {
 	}
 
 	return &result.Data, nil
+}
+
+// ParseListData parses response with {data: {items_field: []T}} format and extracts the list
+// This is useful when the API returns {data: {seats: [...]}} and you want to get the slice directly
+func ParseListData[T any](resp *HTTPResponse) ([]T, error) {
+	if !resp.IsSuccess() {
+		return nil, fmt.Errorf("request failed with status %d", resp.StatusCode)
+	}
+
+	var result DataResponse[[]T]
+	if err := json.Unmarshal(resp.Body, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	return result.Data, nil
 }
 
 // ParseDataWithMeta parses response with {data: T, meta: M} format

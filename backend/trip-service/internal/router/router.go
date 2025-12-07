@@ -44,6 +44,12 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 		{
 			buses.GET("/:id", ginext.WrapHandler(h.BusHandler.GetBus))
 		}
+
+		// internal routes
+		seats := v1.Group("/buses/seats")
+		{
+			seats.GET("/ids", ginext.WrapHandler(h.SeatHandler.ListByIDs))
+		}
 	}
 
 	adminV1 := router.Group("/api/v1")

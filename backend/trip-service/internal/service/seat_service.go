@@ -13,6 +13,7 @@ import (
 )
 
 type SeatService interface {
+	ListByIDs(ctx context.Context, seatIDs []uuid.UUID) ([]model.Seat, error)
 	CreateSeatsFromTemplate(ctx context.Context, req *model.BulkCreateSeatsRequest) ([]model.Seat, error)
 	GetSeatMap(ctx context.Context, busID uuid.UUID) (*model.SeatMapResponse, error)
 	CreateSeat(ctx context.Context, req *model.CreateSeatRequest) (*model.Seat, error)
@@ -30,6 +31,15 @@ func NewSeatService(seatRepo repository.SeatRepository, busRepo repository.BusRe
 		seatRepo: seatRepo,
 		busRepo:  busRepo,
 	}
+}
+
+func (s *SeatServiceImpl) ListByIDs(ctx context.Context, seatIDs []uuid.UUID) ([]model.Seat, error) {
+	seats, err := s.seatRepo.ListByIDs(ctx, seatIDs)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to list seats by IDs")
+		return nil, fmt.Errorf("failed to list seats: %w", err)
+	}
+	return seats, nil
 }
 
 func (s *SeatServiceImpl) CreateSeatsFromTemplate(ctx context.Context, req *model.BulkCreateSeatsRequest) ([]model.Seat, error) {

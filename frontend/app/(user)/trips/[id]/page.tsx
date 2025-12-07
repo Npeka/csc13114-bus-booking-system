@@ -8,17 +8,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SeatMap, type Seat } from "@/components/trips/seat-map";
-import { getTripById, getTripSeats } from "@/lib/api/trip-service";
-import type { Trip, SeatDetail, RouteStop } from "@/lib/types/trip";
+import { getTripById } from "@/lib/api/trip-service";
+import type { Trip, RouteStop } from "@/lib/types/trip";
 import { TripHeader } from "./_components/trip-header";
 import { RouteStops } from "./_components/route-stops";
 import { BookingSidebar } from "./_components/booking-sidebar";
+import { useAuthStore } from "@/lib/stores/auth-store";
 
 function TripDetailsContent({ tripId }: { tripId: string }) {
   const router = useRouter();
+  const { user } = useAuthStore();
   const [selectedSeatIds, setSelectedSeatIds] = useState<string[]>([]);
 
-  // Fetch trip details
+  // Fetch trip details with seat status
   const {
     data: trip,
     isLoading: tripLoading,
@@ -28,48 +30,37 @@ function TripDetailsContent({ tripId }: { tripId: string }) {
     queryFn: () => getTripById(tripId),
   });
 
-  // Fetch seat availability
-  const {
-    data: seatData,
-    isLoading: seatsLoading,
-    error: seatsError,
-  } = useQuery({
-    queryKey: ["trip-seats", tripId],
-    queryFn: () => getTripSeats(tripId),
-    enabled: !!tripId,
-  });
-
-  // Convert API seat data to component format
+  // Convert bus seats to component format
   const seats: Seat[] = useMemo(() => {
-    if (!seatData?.seats) return [];
+    if (!trip?.bus?.seats) return [];
 
-    return seatData.seats.map((seat: SeatDetail, index: number) => {
-      // Parse seat code (e.g., "A1" -> row A, column 1)
-      const match = seat.seat_code.match(/^([A-Z])(\d+)$/);
-      const row = match
-        ? match[1].charCodeAt(0) - 64
-        : Math.floor(index / 4) + 1;
-      const column = match ? parseInt(match[2], 10) : (index % 4) + 1;
-
-      // Determine seat status
+    return trip.bus.seats.map((seat) => {
+      // Determine seat status from the status field
       let status: "available" | "booked" | "reserved" = "available";
-      if (seat.is_booked) {
+      if (seat.status?.is_booked) {
         status = "booked";
-      } else if (seat.is_locked) {
+      } else if (seat.status?.is_locked) {
         status = "reserved";
       }
 
       return {
         id: seat.id,
-        row,
-        column,
+        row: seat.row,
+        column: seat.column,
         status,
         type: (seat.seat_type || "standard") as "standard" | "vip" | "sleeper",
-        price: seat.price,
-        label: seat.seat_code,
+        price: trip.base_price * seat.price_multiplier,
+        label: seat.seat_number,
       };
     });
-  }, [seatData]);
+  }, [trip]);
+
+  // Calculate seat statistics
+  const seatStats = useMemo(() => {
+    if (seats.length === 0) return { available: 0, total: 0 };
+    const available = seats.filter((s) => s.status === "available").length;
+    return { available, total: seats.length };
+  }, [seats]);
 
   const selectedSeats = useMemo(() => {
     return seats.filter((seat) => selectedSeatIds.includes(seat.id));
@@ -90,7 +81,15 @@ function TripDetailsContent({ tripId }: { tripId: string }) {
   const handleProceedToBooking = () => {
     if (selectedSeatIds.length === 0) return;
     const seatParams = selectedSeatIds.join(",");
-    router.push(`/checkout?tripId=${tripId}&seats=${seatParams}`);
+
+    // Check if user is logged in
+    if (user) {
+      // Authenticated user -> go to protected checkout
+      router.push(`/checkout?tripId=${tripId}&seats=${seatParams}`);
+    } else {
+      // Guest user -> go to guest checkout
+      router.push(`/checkout-guest?tripId=${tripId}&seats=${seatParams}`);
+    }
   };
 
   // Get pickup and dropoff stops
@@ -166,23 +165,17 @@ function TripDetailsContent({ tripId }: { tripId: string }) {
               <CardContent className="p-4">
                 <div className="mb-3 flex items-center justify-between">
                   <h2 className="text-lg font-semibold">Chọn chỗ ngồi</h2>
-                  {seatData && (
+                  {seatStats.total > 0 && (
                     <p className="text-sm text-muted-foreground">
                       <span className="font-semibold text-foreground">
-                        {seatData.available_seats}
+                        {seatStats.available}
                       </span>
-                      /{seatData.total_seats} chỗ trống
+                      /{seatStats.total} chỗ trống
                     </p>
                   )}
                 </div>
-                {seatsLoading ? (
+                {tripLoading ? (
                   <Skeleton className="h-64 w-full" />
-                ) : seatsError ? (
-                  <p className="py-8 text-center text-sm text-muted-foreground">
-                    {seatsError instanceof Error
-                      ? seatsError.message
-                      : "Không thể tải thông tin ghế"}
-                  </p>
                 ) : seats.length > 0 ? (
                   <SeatMap
                     seats={seats}
@@ -204,7 +197,8 @@ function TripDetailsContent({ tripId }: { tripId: string }) {
             <BookingSidebar
               trip={trip}
               selectedSeats={selectedSeats}
-              seatData={seatData}
+              availableSeats={seatStats.available}
+              totalSeats={seatStats.total}
               onRemoveSeat={handleRemoveSeat}
               onProceed={handleProceedToBooking}
             />

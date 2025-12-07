@@ -15,7 +15,10 @@ type RouteStop struct {
 	IsActive      bool      `json:"is_active"`
 }
 
-type StopType struct {
-	Value       string `json:"value"`
-	DisplayName string `json:"display_name"`
-}
+type StopType string
+
+const (
+	StopTypePickup  StopType = "pickup"
+	StopTypeDropoff StopType = "dropoff"
+	StopTypeBoth    StopType = "both"
+)

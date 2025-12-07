@@ -20,14 +20,16 @@ func (s *Server) buildHandler() http.Handler {
 	// Initialize HTTP clients for other services
 	tripClient := client.NewTripClient(s.cfg.ServiceName, s.cfg.External.TripServiceURL)
 	paymentClient := client.NewPaymentClient(s.cfg.ServiceName, s.cfg.External.PaymentServiceURL)
+	userClient := client.NewUserClient(s.cfg.External.UserServiceURL)
 
 	// Initialize services
-	bookingService := service.NewBookingService(bookingRepo, paymentClient, tripClient)
+	bookingService := service.NewBookingService(bookingRepo, paymentClient, tripClient, userClient)
 	feedbackService := service.NewFeedbackService(bookingRepo, feedbackRepo)
 	statisticsService := service.NewStatisticsService(bookingStatsRepo)
+	eTicketService := service.NewETicketService(bookingRepo, tripClient)
 
 	// Initialize handlers
-	bookingHandler := handler.NewBookingHandler(bookingService)
+	bookingHandler := handler.NewBookingHandler(bookingService, eTicketService)
 	feedbackHandler := handler.NewFeedbackHandler(feedbackService)
 	statisticsHandler := handler.NewStatisticsHandler(statisticsService)
 

@@ -14,6 +14,16 @@ type CreateBookingRequest struct {
 	Notes   string      `json:"notes,omitempty"`
 }
 
+// CreateGuestBookingRequest represents guest booking creation (without authentication)
+type CreateGuestBookingRequest struct {
+	TripID   uuid.UUID   `json:"trip_id" binding:"required"`
+	SeatIDs  []uuid.UUID `json:"seat_ids" binding:"required,min=1,max=10,dive"`
+	Notes    string      `json:"notes,omitempty"`
+	FullName string      `json:"full_name" binding:"required,min=1,max=100"`
+	Email    string      `json:"email" binding:"omitempty,email"`
+	Phone    string      `json:"phone" binding:"omitempty,min=10,max=15"`
+}
+
 // CancelBookingRequest represents booking cancellation request
 type CancelBookingRequest struct {
 	UserID uuid.UUID `json:"user_id" binding:"required"`
@@ -174,4 +184,22 @@ type LockSeatsRequest struct {
 
 type UnlockSeatsRequest struct {
 	SessionID string `json:"session_id" binding:"required"`
+}
+
+// GetSeatStatusRequest represents request to check seat status for a trip
+type GetSeatStatusRequest struct {
+	SeatIDs []string `form:"seat_ids"`
+}
+
+// SeatStatusItem represents booking status of a single seat
+type SeatStatusItem struct {
+	SeatID   uuid.UUID `json:"seat_id"`
+	IsBooked bool      `json:"is_booked"`
+	IsLocked bool      `json:"is_locked"`
+}
+
+// SeatBookingStatus represents booking status (for backward compatibility)
+type SeatBookingStatus struct {
+	IsBooked bool `json:"is_booked"`
+	IsLocked bool `json:"is_locked"`
 }

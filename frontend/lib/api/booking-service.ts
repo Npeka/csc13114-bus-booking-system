@@ -10,6 +10,7 @@ import {
   PaginatedBookingResponse,
   CancelBookingRequest,
   CreateBookingRequest,
+  CreateGuestBookingRequest,
   UpdateBookingStatusRequest,
   SeatAvailabilityResponse,
   LockSeatsRequest,
@@ -92,11 +93,11 @@ export async function getBookingById(
       `/booking/api/v1/bookings/${bookingId}`,
     );
 
-    if (response.data.success && response.data.data) {
-      return response.data.data;
+    if (!response.data.data) {
+      throw new Error("Failed to fetch booking");
     }
 
-    throw new Error(response.data.error || "Failed to fetch booking");
+    return response.data.data;
   } catch (error) {
     throw new Error(handleApiError(error));
   }
@@ -125,11 +126,7 @@ export async function cancelBooking(
       requestBody,
     );
 
-    if (response.data.success) {
-      return response.data.message || "Booking cancelled successfully";
-    }
-
-    throw new Error(response.data.error || "Failed to cancel booking");
+    return "Booking cancelled successfully";
   } catch (error) {
     throw new Error(handleApiError(error));
   }
@@ -149,11 +146,35 @@ export async function createBooking(
       bookingData,
     );
 
-    if (response.data.success && response.data.data) {
-      return response.data.data;
+    if (!response.data.data) {
+      throw new Error("Failed to create booking");
     }
 
-    throw new Error(response.data.error || "Failed to create booking");
+    return response.data.data;
+  } catch (error) {
+    throw new Error(handleApiError(error));
+  }
+}
+
+/**
+ * Create a guest booking (without authentication)
+ * @param bookingData - Guest booking creation request
+ * @returns Created booking details
+ */
+export async function createGuestBooking(
+  bookingData: CreateGuestBookingRequest,
+): Promise<BookingResponse> {
+  try {
+    const response = await apiClient.post<ApiResponse<BookingResponse>>(
+      `/booking/api/v1/bookings/guest`,
+      bookingData,
+    );
+
+    if (!response.data.data) {
+      throw new Error("Failed to create guest booking");
+    }
+
+    return response.data.data;
   } catch (error) {
     throw new Error(handleApiError(error));
   }
@@ -179,11 +200,7 @@ export async function updateBookingStatus(
       requestBody,
     );
 
-    if (response.data.success) {
-      return response.data.message || "Booking status updated successfully";
-    }
-
-    throw new Error(response.data.error || "Failed to update booking status");
+    return "Booking status updated successfully";
   } catch (error) {
     throw new Error(handleApiError(error));
   }
@@ -209,11 +226,11 @@ export async function getTripBookings(
       },
     );
 
-    if (response.data.success && response.data.data) {
-      return response.data.data;
+    if (!response.data.data) {
+      throw new Error("Failed to fetch trip bookings");
     }
 
-    throw new Error(response.data.error || "Failed to fetch trip bookings");
+    return response.data.data;
   } catch (error) {
     throw new Error(handleApiError(error));
   }
@@ -232,11 +249,11 @@ export async function getSeatAvailability(
       `/booking/api/v1/trips/${tripId}/seats`,
     );
 
-    if (response.data.success && response.data.data) {
-      return response.data.data;
+    if (!response.data.data) {
+      throw new Error("Failed to fetch seat availability");
     }
 
-    throw new Error(response.data.error || "Failed to fetch seat availability");
+    return response.data.data;
   } catch (error) {
     throw new Error(handleApiError(error));
   }
@@ -254,11 +271,7 @@ export async function lockSeats(data: LockSeatsRequest): Promise<string> {
       data,
     );
 
-    if (response.data.success) {
-      return response.data.message || "Seats locked successfully";
-    }
-
-    throw new Error(response.data.error || "Failed to lock seats");
+    return "Seats locked successfully";
   } catch (error) {
     throw new Error(handleApiError(error));
   }
@@ -278,11 +291,7 @@ export async function unlockSeats(sessionId: string): Promise<string> {
       },
     );
 
-    if (response.data.success) {
-      return response.data.message || "Seats unlocked successfully";
-    }
-
-    throw new Error(response.data.error || "Failed to unlock seats");
+    return "Seats unlocked successfully";
   } catch (error) {
     throw new Error(handleApiError(error));
   }
@@ -304,11 +313,31 @@ export async function createPayment(
       data,
     );
 
-    if (response.data.success && response.data.data) {
-      return response.data.data;
+    if (!response.data.data) {
+      throw new Error("Failed to create payment");
     }
 
-    throw new Error(response.data.error || "Failed to create payment");
+    return response.data.data;
+  } catch (error) {
+    throw new Error(handleApiError(error));
+  }
+}
+
+/**
+ * Download e-ticket PDF for a booking
+ * @param bookingId - Booking UUID
+ * @returns Blob containing the PDF file
+ */
+export async function downloadETicket(bookingId: string): Promise<Blob> {
+  try {
+    const response = await apiClient.get(
+      `/booking/api/v1/bookings/${bookingId}/eticket`,
+      {
+        responseType: "blob",
+      },
+    );
+
+    return response.data;
   } catch (error) {
     throw new Error(handleApiError(error));
   }

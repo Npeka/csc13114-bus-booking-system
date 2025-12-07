@@ -35,7 +35,6 @@ type Booking struct {
 	BookingSeats []BookingSeat `json:"booking_seats,omitempty" gorm:"foreignKey:BookingID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 
-// BookingStatus represents the status of a booking
 type BookingStatus string
 
 const (
@@ -45,17 +44,18 @@ const (
 	BookingStatusExpired   BookingStatus = "expired"   // Hết hạn (quá 15 phút chưa thanh toán)
 )
 
-// IsValid checks if booking status is valid
 func (s BookingStatus) IsValid() bool {
 	switch s {
-	case BookingStatusPending, BookingStatusConfirmed, BookingStatusCancelled, BookingStatusExpired:
+	case BookingStatusPending,
+		BookingStatusConfirmed,
+		BookingStatusCancelled,
+		BookingStatusExpired:
 		return true
 	default:
 		return false
 	}
 }
 
-// PaymentStatus represents the payment status of a booking
 type PaymentStatus string
 
 const (
@@ -65,10 +65,12 @@ const (
 	PaymentStatusFailed   PaymentStatus = "failed"   // Thanh toán thất bại
 )
 
-// IsValid checks if payment status is valid
 func (s PaymentStatus) IsValid() bool {
 	switch s {
-	case PaymentStatusPending, PaymentStatusPaid, PaymentStatusRefunded, PaymentStatusFailed:
+	case PaymentStatusPending,
+		PaymentStatusPaid,
+		PaymentStatusRefunded,
+		PaymentStatusFailed:
 		return true
 	default:
 		return false

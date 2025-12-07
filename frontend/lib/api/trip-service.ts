@@ -55,8 +55,10 @@ export const searchTrips = async (
 export const getTripById = async (id: string): Promise<Trip> => {
   try {
     // Based on searchTrips and user input, the API returns data directly
+    const query =
+      "preload_route=true&preload_route_stop=true&preload_bus=true&preload_seat=true&seat_booking_status=true";
     const response = await apiClient.get<{ data: Trip }>(
-      `/trip/api/v1/trips/${id}`,
+      `/trip/api/v1/trips/${id}?${query}`,
     );
 
     if (!response.data.data) {
@@ -125,9 +127,7 @@ export const createTrip = async (tripData: {
     );
 
     if (!response.data.data) {
-      throw new Error(
-        response.data.message || response.data.error || "Failed to create trip",
-      );
+      throw new Error("Failed to create trip");
     }
 
     return response.data.data;
@@ -157,9 +157,7 @@ export const updateTrip = async (
     );
 
     if (!response.data.data) {
-      throw new Error(
-        response.data.message || response.data.error || "Failed to update trip",
-      );
+      throw new Error("Failed to update trip");
     }
 
     return response.data.data;
@@ -347,9 +345,7 @@ export const getRouteById = async (id: string): Promise<Route> => {
     );
 
     if (!response.data.data) {
-      throw new Error(
-        response.data.message || response.data.error || "Failed to get route",
-      );
+      throw new Error("Failed to get route");
     }
 
     return response.data.data;
@@ -369,9 +365,7 @@ export const getBusById = async (id: string): Promise<Bus> => {
     );
 
     if (!response.data.data) {
-      throw new Error(
-        response.data.message || response.data.error || "Failed to get bus",
-      );
+      throw new Error("Failed to get bus");
     }
 
     return response.data.data;
@@ -397,11 +391,7 @@ export const createRoute = async (routeData: {
     );
 
     if (!response.data.data) {
-      throw new Error(
-        response.data.message ||
-          response.data.error ||
-          "Failed to create route",
-      );
+      throw new Error("Failed to create route");
     }
 
     return response.data.data;
@@ -431,11 +421,7 @@ export const updateRoute = async (
     );
 
     if (!response.data.data) {
-      throw new Error(
-        response.data.message ||
-          response.data.error ||
-          "Failed to update route",
-      );
+      throw new Error("Failed to update route");
     }
 
     return response.data.data;
@@ -473,9 +459,7 @@ export const createBus = async (busData: {
     );
 
     if (!response.data.data) {
-      throw new Error(
-        response.data.message || response.data.error || "Failed to create bus",
-      );
+      throw new Error("Failed to create bus");
     }
 
     return response.data.data;
@@ -505,9 +489,7 @@ export const updateBus = async (
     );
 
     if (!response.data.data) {
-      throw new Error(
-        response.data.message || response.data.error || "Failed to update bus",
-      );
+      throw new Error("Failed to update bus");
     }
 
     return response.data.data;
@@ -565,11 +547,7 @@ export const bulkCreateSeats = async (
       request,
     );
     if (!response.data.data) {
-      throw new Error(
-        response.data.message ||
-          response.data.error ||
-          "Failed to create seats",
-      );
+      throw new Error("Failed to create seats");
     }
     return response.data.data;
   } catch (error) {
@@ -588,9 +566,7 @@ export const createSeat = async (request: CreateSeatRequest): Promise<Seat> => {
       request,
     );
     if (!response.data.data) {
-      throw new Error(
-        response.data.message || response.data.error || "Failed to create seat",
-      );
+      throw new Error("Failed to create seat");
     }
     return response.data.data;
   } catch (error) {
@@ -612,9 +588,7 @@ export const updateSeat = async (
       request,
     );
     if (!response.data.data) {
-      throw new Error(
-        response.data.message || response.data.error || "Failed to update seat",
-      );
+      throw new Error("Failed to update seat");
     }
     return response.data.data;
   } catch (error) {

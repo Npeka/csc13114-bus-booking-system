@@ -15,6 +15,7 @@ import (
 type UserRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*model.User, error)
 	GetByEmail(ctx context.Context, email string) (*model.User, error)
+	GetByPhone(ctx context.Context, phone string) (*model.User, error)
 	GetByFirebaseUID(ctx context.Context, firebaseUID string) (*model.User, error)
 	List(ctx context.Context, query model.UserListQuery) ([]*model.User, int64, error)
 	ListByRole(ctx context.Context, role constants.UserRole, limit, offset int) ([]*model.User, int64, error)
@@ -44,6 +45,14 @@ func (r *UserRepositoryImpl) GetByEmail(ctx context.Context, email string) (*mod
 	var user model.User
 	if err := r.db.WithContext(ctx).Where("email = ?", email).First(&user).Error; err != nil {
 		return nil, fmt.Errorf("failed to get user by email: %w", err)
+	}
+	return &user, nil
+}
+
+func (r *UserRepositoryImpl) GetByPhone(ctx context.Context, phone string) (*model.User, error) {
+	var user model.User
+	if err := r.db.WithContext(ctx).Where("phone = ?", phone).First(&user).Error; err != nil {
+		return nil, fmt.Errorf("failed to get user by phone: %w", err)
 	}
 	return &user, nil
 }

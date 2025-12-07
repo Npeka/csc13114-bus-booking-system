@@ -4,18 +4,20 @@ package constants
 type UserRole int
 
 const (
-	RolePassenger UserRole = 1 << iota // bit 0: 1
-	RoleAdmin                          // bit 1: 2
-	RoleOperator                       // bit 2: 4
-	RoleSupport                        // bit 3: 8
+	RoleGuest     UserRole = 1 << iota // bit 0: 1
+	RolePassenger                      // bit 1: 2
+	RoleAdmin                          // bit 2: 4
+	RoleOperator                       // bit 3: 8
+	RoleSupport                        // bit 4: 16
 )
 
 // Role constants as int for easier usage
 const (
-	RolePassengerInt = int(RolePassenger) // 1
-	RoleAdminInt     = int(RoleAdmin)     // 2
-	RoleOperatorInt  = int(RoleOperator)  // 4
-	RoleSupportInt   = int(RoleSupport)   // 8
+	RoleGuestInt     = int(RoleGuest)     // 1
+	RolePassengerInt = int(RolePassenger) // 2
+	RoleAdminInt     = int(RoleAdmin)     // 4
+	RoleOperatorInt  = int(RoleOperator)  // 8
+	RoleSupportInt   = int(RoleSupport)   // 16
 )
 
 // HasRole checks if a role has a specific permission
@@ -26,6 +28,8 @@ func (r UserRole) HasRole(role UserRole) bool {
 // String returns the string representation of the role
 func (r UserRole) String() string {
 	switch r {
+	case RoleGuest:
+		return "guest"
 	case RolePassenger:
 		return "passenger"
 	case RoleAdmin:
@@ -81,13 +85,15 @@ func (s UserStatus) CanLogin() bool {
 
 // ValidateRole checks if the role value is valid
 func ValidateRole(role int) bool {
-	return role == RolePassengerInt || role == RoleAdminInt ||
+	return role == RoleGuestInt || role == RolePassengerInt || role == RoleAdminInt ||
 		role == RoleOperatorInt || role == RoleSupportInt
 }
 
 // FromString converts role string to UserRole
 func FromString(role string) UserRole {
 	switch role {
+	case "guest":
+		return RoleGuest
 	case "passenger":
 		return RolePassenger
 	case "admin":
@@ -128,7 +134,7 @@ func IsValidRoleString(role string) bool {
 
 // ValidRoleStrings returns all valid role strings
 func ValidRoleStrings() []string {
-	return []string{"passenger", "admin", "operator", "support"}
+	return []string{"guest", "passenger", "admin", "operator", "support"}
 }
 
 // HasAnyRole checks if a role has any of the specified roles

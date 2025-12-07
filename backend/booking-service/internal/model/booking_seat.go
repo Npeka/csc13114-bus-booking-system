@@ -4,21 +4,17 @@ import (
 	"github.com/google/uuid"
 )
 
-// BookingSeat represents a seat in a booking
 type BookingSeat struct {
 	BaseModel
-	BookingID       uuid.UUID `json:"booking_id" gorm:"type:uuid;not null;index"`
-	SeatID          uuid.UUID `json:"seat_id" gorm:"type:uuid;not null"`
-	SeatNumber      string    `json:"seat_number" gorm:"type:varchar(10);not null"`
-	SeatType        string    `json:"seat_type" gorm:"type:varchar(50);not null"`
-	Floor           int       `json:"floor" gorm:"type:int;not null;default:1"`
-	Price           float64   `json:"price" gorm:"type:decimal(10,2);not null"`
-	PriceMultiplier float64   `json:"price_multiplier" gorm:"type:decimal(3,2);not null;default:1.0"`
+	BookingID uuid.UUID `json:"booking_id" gorm:"type:uuid;not null;index"`
+	SeatID    uuid.UUID `json:"seat_id" gorm:"type:uuid;not null"`
 
-	// Optional passenger info (can be added later)
-	PassengerName  string `json:"passenger_name,omitempty" gorm:"type:varchar(255)"`
-	PassengerID    string `json:"passenger_id,omitempty" gorm:"type:varchar(50)"`
-	PassengerPhone string `json:"passenger_phone,omitempty" gorm:"type:varchar(20)"`
+	// snapshot of seat info at booking time
+	SeatNumber      string  `json:"seat_number" gorm:"type:varchar(10);not null"`
+	SeatType        string  `json:"seat_type" gorm:"type:varchar(50);not null"`
+	Floor           int     `json:"floor" gorm:"type:int;not null;default:1"`
+	Price           float64 `json:"price" gorm:"type:decimal(10,2);not null"`
+	PriceMultiplier float64 `json:"price_multiplier" gorm:"type:decimal(3,2);not null;default:1.0"`
 }
 
 func (BookingSeat) TableName() string {

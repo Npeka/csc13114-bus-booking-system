@@ -605,3 +605,40 @@ export const hasValidSession = async (): Promise<boolean> => {
     return false;
   }
 };
+
+/**
+ * Request password reset email
+ * @param email - User email address
+ */
+export const requestPasswordReset = async (email: string): Promise<void> => {
+  try {
+    await apiClient.post<ApiResponse<void>>(
+      "/user/api/v1/auth/forgot-password",
+      { email },
+    );
+  } catch (error) {
+    throw new Error("Failed to send password reset email");
+  }
+};
+
+/**
+ * Reset password with token
+ * @param token - Reset token from email
+ * @param newPassword - New password
+ */
+export const resetPassword = async (
+  token: string,
+  newPassword: string,
+): Promise<void> => {
+  try {
+    await apiClient.post<ApiResponse<void>>(
+      "/user/api/v1/auth/reset-password",
+      {
+        token,
+        new_password: newPassword,
+      },
+    );
+  } catch (error) {
+    throw new Error("Failed to reset password");
+  }
+};

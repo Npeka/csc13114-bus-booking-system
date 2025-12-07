@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +17,7 @@ import { useAuthStore } from "@/lib/stores/auth-store";
 import { useRole } from "@/lib/auth/useRole";
 import { logout as authLogout } from "@/lib/api/auth-service";
 import { LoginDialog } from "@/components/auth/login-dialog";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 export function Header() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
@@ -37,22 +39,7 @@ export function Header() {
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-5 w-5 text-primary-foreground"
-            >
-              <rect x="3" y="11" width="18" height="10" rx="2" />
-              <path d="M7 11V7a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v4" />
-              <circle cx="8" cy="16" r="1" />
-              <circle cx="16" cy="16" r="1" />
-            </svg>
-          </div>
+          <Image src="/favicon.png" alt="BusTicket.vn" width={52} height={52} />
           <span className="text-xl font-bold text-foreground">
             BusTicket<span className="text-primary">.vn</span>
           </span>
@@ -61,7 +48,7 @@ export function Header() {
         {/* Desktop Navigation */}
 
         {/* Right side: Auth + Mobile Menu */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2">
           <nav className="hidden items-center space-x-6 md:flex">
             {isAdmin && (
               <Link
@@ -80,6 +67,7 @@ export function Header() {
               </Link>
             )}
           </nav>
+          <ThemeToggle />
           {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

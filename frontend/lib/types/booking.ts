@@ -161,6 +161,19 @@ export interface CreateBookingRequest {
 }
 
 /**
+ * Create guest booking request (without authentication)
+ * Matches backend: booking-service/internal/model/request.go - CreateGuestBookingRequest
+ */
+export interface CreateGuestBookingRequest {
+  trip_id: string;
+  seat_ids: string[];
+  notes?: string;
+  full_name: string;
+  email?: string;
+  phone?: string;
+}
+
+/**
  * Update booking status request
  * Matches backend: booking-service/internal/model/request.go - UpdateBookingStatusRequest
  */

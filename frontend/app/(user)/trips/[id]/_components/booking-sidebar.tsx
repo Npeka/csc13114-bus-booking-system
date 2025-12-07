@@ -7,10 +7,8 @@ import type { Trip } from "@/lib/types/trip";
 interface BookingSidebarProps {
   trip: Trip;
   selectedSeats: Seat[];
-  seatData?: {
-    available_seats: number;
-    total_seats: number;
-  };
+  availableSeats?: number;
+  totalSeats?: number;
   onRemoveSeat: (seatId: string) => void;
   onProceed: () => void;
 }
@@ -18,7 +16,8 @@ interface BookingSidebarProps {
 export function BookingSidebar({
   trip,
   selectedSeats,
-  seatData,
+  availableSeats,
+  totalSeats,
   onRemoveSeat,
   onProceed,
 }: BookingSidebarProps) {
@@ -67,11 +66,11 @@ export function BookingSidebar({
                   {durationHours}h {durationMinutes}m
                 </span>
               </div>
-              {seatData && (
+              {availableSeats !== undefined && totalSeats !== undefined && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Chỗ trống</span>
                   <span className="font-medium">
-                    {seatData.available_seats}/{seatData.total_seats}
+                    {availableSeats}/{totalSeats}
                   </span>
                 </div>
               )}

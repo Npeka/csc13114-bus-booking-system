@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Facebook, Mail, Phone, MapPin } from "lucide-react";
 
@@ -9,22 +10,12 @@ export function Footer() {
           {/* Company Info */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-5 w-5 text-white"
-                >
-                  <rect x="3" y="6" width="18" height="12" rx="2" />
-                  <path d="M3 12h18" />
-                  <path d="M8 6v6" />
-                  <path d="M16 6v6" />
-                </svg>
-              </div>
+              <Image
+                src="/favicon.png"
+                alt="BusTicket.vn"
+                width={52}
+                height={52}
+              />
               <span className="text-lg font-bold">
                 BusTicket<span className="text-primary">.vn</span>
               </span>

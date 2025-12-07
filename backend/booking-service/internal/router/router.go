@@ -29,10 +29,22 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 
 	v1 := router.Group("/api/v1")
 	{
-		// User booking routes - require authentication
 		bookings := v1.Group("/bookings")
-		bookings.Use(middleware.RequireAuth())
 		{
+			// Public routes
+			bookings.POST("/guest", ginext.WrapHandler(h.BookingHandler.CreateGuestBooking))
+			bookings.GET("/lookup", ginext.WrapHandler(h.BookingHandler.GetBookingByReference))
+
+			// E-ticket download - public route (accessible by booking ID)
+			bookings.GET("/:id/eticket", func(c *gin.Context) {
+				r := ginext.NewRequest(c)
+				if err := h.BookingHandler.DownloadETicket(r); err != nil {
+					c.JSON(400, gin.H{"error": err.Error()})
+				}
+			})
+
+			// Authenticated routes
+			bookings.Use(middleware.RequireAuth())
 			bookings.POST("", ginext.WrapHandler(h.BookingHandler.CreateBooking))
 			bookings.GET("/:id", ginext.WrapHandler(h.BookingHandler.GetBooking))
 			bookings.POST("/:id/cancel", ginext.WrapHandler(h.BookingHandler.CancelBooking))
@@ -40,13 +52,12 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 			bookings.GET("/user/:user_id", ginext.WrapHandler(h.BookingHandler.GetUserBookings))
 		}
 
-		// Internal routes for service-to-service communication
 		internal := v1.Group("/bookings")
 		{
 			internal.PUT("/:id/payment-status", ginext.WrapHandler(h.BookingHandler.UpdatePaymentStatus))
+			internal.GET("/trips/:trip_id/seats/status", ginext.WrapHandler(h.BookingHandler.GetSeatStatus))
 		}
 
-		// Feedback endpoints - require authentication
 		feedback := v1.Group("/feedback")
 		feedback.Use(middleware.RequireAuth())
 		{
@@ -55,16 +66,13 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 			feedback.GET("/trip/:trip_id", ginext.WrapHandler(h.FeedbackHandler.GetTripFeedbacks))
 		}
 
-		// Admin routes - require admin role
 		admin := v1.Group("/admin")
 		admin.Use(middleware.RequireAuth())
 		admin.Use(middleware.RequireRole(constants.RoleAdmin))
 		{
-			// Booking management
 			admin.PUT("/bookings/:id/status", ginext.WrapHandler(h.BookingHandler.UpdateBookingStatus))
 			admin.GET("/bookings/trip/:trip_id", ginext.WrapHandler(h.BookingHandler.GetTripBookings))
 
-			// Statistics
 			admin.GET("/statistics/bookings", ginext.WrapHandler(h.StatisticsHandler.GetBookingStats))
 			admin.GET("/statistics/popular-trips", ginext.WrapHandler(h.StatisticsHandler.GetPopularTrips))
 		}

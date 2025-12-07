@@ -18,6 +18,7 @@ type AuthHandler interface {
 	ForgotPassword(r *ginext.Request) (*ginext.Response, error)
 	ResetPassword(r *ginext.Request) (*ginext.Response, error)
 	RefreshToken(r *ginext.Request) (*ginext.Response, error)
+	CreateGuestAccount(r *ginext.Request) (*ginext.Response, error)
 }
 
 type AuthHandlerImpl struct {
@@ -250,4 +251,31 @@ func (h *AuthHandlerImpl) RefreshToken(r *ginext.Request) (*ginext.Response, err
 	}
 
 	return ginext.NewSuccessResponse(res), nil
+}
+
+// CreateGuestAccount godoc
+// @Summary Create guest account
+// @Description Creates a guest user account for non-authenticated bookings. Requires either email or phone.
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param request body model.CreateGuestAccountRequest true "Guest account creation request"
+// @Success 200 {object} ginext.Response{data=model.UserResponse} "Guest account created successfully"
+// @Failure 400 {object} ginext.Response "Invalid request data or missing contact info"
+// @Failure 500 {object} ginext.Response "Internal server error"
+// @Router /auth/guest [post]
+func (h *AuthHandlerImpl) CreateGuestAccount(r *ginext.Request) (*ginext.Response, error) {
+	req := model.CreateGuestAccountRequest{}
+	if err := r.GinCtx.ShouldBind(&req); err != nil {
+		log.Debug().Err(err).Msg("JSON binding failed")
+		return nil, ginext.NewBadRequestError("Invalid request data")
+	}
+
+	user, err := h.as.CreateGuestAccount(r.Context(), &req)
+	if err != nil {
+		log.Error().Err(err).Msg("Guest account creation failed")
+		return nil, err
+	}
+
+	return ginext.NewSuccessResponse(user), nil
 }

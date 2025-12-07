@@ -2,6 +2,7 @@ package model
 
 import (
 	"bus-booking/trip-service/internal/constants"
+	"bus-booking/trip-service/internal/model/booking"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -18,7 +19,7 @@ type Seat struct {
 	IsAvailable     bool               `gorm:"type:boolean;not null;default:true" json:"is_available"`
 	Floor           int                `gorm:"type:integer;not null;default:1" json:"floor" validate:"min=1,max=2"`
 
-	Bus *Bus `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"bus,omitempty"`
+	Status *booking.SeatStatus `gorm:"-" json:"status,omitempty"`
 }
 
 func (Seat) TableName() string {
@@ -29,7 +30,6 @@ func (s *Seat) BeforeCreate(tx *gorm.DB) error {
 	if s.ID == uuid.Nil {
 		s.ID = uuid.New()
 	}
-	// Set default price multiplier based on seat type if not set
 	if s.PriceMultiplier == 0 {
 		s.PriceMultiplier = s.SeatType.GetPriceMultiplier()
 	}
@@ -37,15 +37,20 @@ func (s *Seat) BeforeCreate(tx *gorm.DB) error {
 }
 
 type SeatResponse struct {
-	ID              uuid.UUID `json:"id"`
-	BusID           uuid.UUID `json:"bus_id"`
-	SeatNumber      string    `json:"seat_number"`
-	Row             int       `json:"row"`
-	Column          int       `json:"column"`
-	SeatType        string    `json:"seat_type"` // Raw string value, frontend will map display name
-	PriceMultiplier float64   `json:"price_multiplier"`
-	IsAvailable     bool      `json:"is_available"`
-	Floor           int       `json:"floor"`
+	ID              uuid.UUID                   `json:"id"`
+	BusID           uuid.UUID                   `json:"bus_id"`
+	SeatNumber      string                      `json:"seat_number"`
+	Row             int                         `json:"row"`
+	Column          int                         `json:"column"`
+	SeatType        string                      `json:"seat_type"` // Raw string value, frontend will map display name
+	PriceMultiplier float64                     `json:"price_multiplier"`
+	IsAvailable     bool                        `json:"is_available"`
+	Floor           int                         `json:"floor"`
+	Status          *booking.SeatStatusResponse `json:"status,omitempty"`
+}
+
+type ListSeatsByIDsRequest struct {
+	SeatIDs []string `form:"seat_ids"`
 }
 
 type CreateSeatRequest struct {
@@ -101,4 +106,18 @@ type LockSeatsRequest struct {
 	TripID    uuid.UUID   `json:"trip_id" validate:"required"`
 	SeatIDs   []uuid.UUID `json:"seat_ids" validate:"required,min=1,max=10"`
 	SessionID string      `json:"session_id" validate:"required"`
+}
+
+type SeatWithStatus struct {
+	ID              uuid.UUID `json:"id"`
+	SeatNumber      string    `json:"seat_number"`
+	Row             int       `json:"row"`
+	Column          int       `json:"column"`
+	SeatType        string    `json:"seat_type"`
+	PriceMultiplier float64   `json:"price_multiplier"`
+	Price           float64   `json:"price"`
+	Floor           int       `json:"floor"`
+	IsBooked        bool      `json:"is_booked"`
+	IsLocked        bool      `json:"is_locked"`
+	IsDisabled      bool      `json:"is_disabled"`
 }

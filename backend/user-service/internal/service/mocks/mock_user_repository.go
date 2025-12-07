@@ -31,6 +31,14 @@ func (m *MockUserRepository) GetByEmail(ctx context.Context, email string) (*mod
 	return args.Get(0).(*model.User), args.Error(1)
 }
 
+func (m *MockUserRepository) GetByPhone(ctx context.Context, phone string) (*model.User, error) {
+	args := m.Called(ctx, phone)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.User), args.Error(1)
+}
+
 func (m *MockUserRepository) GetByFirebaseUID(ctx context.Context, firebaseUID string) (*model.User, error) {
 	args := m.Called(ctx, firebaseUID)
 	if args.Get(0) == nil {

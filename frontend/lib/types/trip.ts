@@ -157,6 +157,11 @@ export interface Route {
 }
 
 // Bus Seat type from API
+export interface SeatStatus {
+  is_booked: boolean;
+  is_locked: boolean;
+}
+
 export interface BusSeat {
   id: string;
   seat_number: string;
@@ -166,6 +171,7 @@ export interface BusSeat {
   seat_type: string; // Raw string value: "standard" | "vip" | "sleeper"
   price_multiplier: number;
   is_available: boolean;
+  status?: SeatStatus; // Seat booking status from booking service
 }
 
 // Seat layout editor types

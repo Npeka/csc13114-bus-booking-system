@@ -93,7 +93,13 @@ func (h *TripHandlerImpl) GetTrip(r *ginext.Request) (*ginext.Response, error) {
 		return nil, ginext.NewBadRequestError("invalid trip ID")
 	}
 
-	trip, err := h.tripService.GetTripByID(r.Context(), id)
+	var req model.GetTripByIDRequuest
+	if err := r.GinCtx.ShouldBindQuery(&req); err != nil {
+		log.Error().Err(err).Msg("Query binding failed")
+		return nil, ginext.NewBadRequestError(err.Error())
+	}
+
+	trip, err := h.tripService.GetTripByID(r.Context(), &req, id)
 	if err != nil {
 		log.Error().Err(err).Str("trip_id", idStr).Msg("Failed to get trip")
 		return nil, err

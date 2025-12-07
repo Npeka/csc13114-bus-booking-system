@@ -25,6 +25,7 @@ type AuthService interface {
 	ForgotPassword(ctx context.Context, req *model.ForgotPasswordRequest) error
 	ResetPassword(ctx context.Context, req *model.ResetPasswordRequest) error
 	RefreshToken(ctx context.Context, req *model.RefreshTokenRequest) (*model.AuthResponse, error)
+	CreateGuestAccount(ctx context.Context, req *model.CreateGuestAccountRequest) (*model.UserResponse, error)
 }
 
 type AuthServiceImpl struct {
@@ -372,4 +373,55 @@ func (s *AuthServiceImpl) Logout(ctx context.Context, req model.LogoutRequest, u
 	s.tokenBlacklistMgr.BlacklistToken(ctx, req.RefreshToken)
 
 	return nil
+}
+
+// CreateGuestAccount creates a guest user account for non-authenticated bookings
+// Requires either email or phone number to be provided
+func (s *AuthServiceImpl) CreateGuestAccount(ctx context.Context, req *model.CreateGuestAccountRequest) (*model.UserResponse, error) {
+	// Validate: at least one contact method (email or phone) must be provided
+	if req.Email == "" && req.Phone == "" {
+		return nil, ginext.NewBadRequestError("Either email or phone must be provided")
+	}
+
+	// Check if guest already exists by email or phone
+	var existingUser *model.User
+	var err error
+
+	if req.Email != "" {
+		existingUser, err = s.userRepo.GetByEmail(ctx, req.Email)
+		if err == nil && existingUser != nil {
+			// User already exists with this email, return existing user
+			return existingUser.ToResponse(), nil
+		}
+	}
+
+	if req.Phone != "" && existingUser == nil {
+		existingUser, err = s.userRepo.GetByPhone(ctx, req.Phone)
+		if err == nil && existingUser != nil {
+			// User already exists with this phone, return existing user
+			return existingUser.ToResponse(), nil
+		}
+	}
+
+	// Create new guest user
+	guestUser := &model.User{
+		FullName: req.FullName,
+		Email:    req.Email,
+		Phone:    req.Phone,
+		Role:     constants.RoleGuest,
+		Status:   constants.UserStatusActive,
+	}
+
+	if err := s.userRepo.Create(ctx, guestUser); err != nil {
+		log.Error().Err(err).Msg("Failed to create guest account")
+		return nil, ginext.NewInternalServerError("Failed to create guest account")
+	}
+
+	log.Info().
+		Str("user_id", guestUser.ID.String()).
+		Str("email", guestUser.Email).
+		Str("phone", guestUser.Phone).
+		Msg("Guest account created successfully")
+
+	return guestUser.ToResponse(), nil
 }

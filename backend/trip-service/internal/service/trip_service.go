@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"bus-booking/shared/ginext"
+	"bus-booking/trip-service/internal/client"
 	"bus-booking/trip-service/internal/model"
+	"bus-booking/trip-service/internal/model/booking"
 	"bus-booking/trip-service/internal/repository"
 
 	"github.com/google/uuid"
@@ -15,7 +17,7 @@ import (
 
 type TripService interface {
 	SearchTrips(ctx context.Context, req *model.TripSearchRequest) ([]model.TripDetail, int64, error)
-	GetTripByID(ctx context.Context, id uuid.UUID) (*model.Trip, error)
+	GetTripByID(ctx context.Context, req *model.GetTripByIDRequuest, id uuid.UUID) (*model.Trip, error)
 	ListTrips(ctx context.Context, page, pageSize int) ([]model.Trip, int64, error)
 	GetSeatAvailability(ctx context.Context, tripID uuid.UUID) (*model.SeatAvailabilityResponse, error)
 	GetTripsByRouteAndDate(ctx context.Context, routeID uuid.UUID, departureDate time.Time) ([]model.Trip, error)
@@ -31,6 +33,7 @@ type TripServiceImpl struct {
 	routeStopRepo repository.RouteStopRepository
 	busRepo       repository.BusRepository
 	seatRepo      repository.SeatRepository
+	bookingClient client.BookingClient
 }
 
 func NewTripService(
@@ -39,6 +42,7 @@ func NewTripService(
 	routeStopRepo repository.RouteStopRepository,
 	busRepo repository.BusRepository,
 	seatRepo repository.SeatRepository,
+	bookingClient client.BookingClient,
 ) TripService {
 	return &TripServiceImpl{
 		tripRepo:      tripRepo,
@@ -46,6 +50,7 @@ func NewTripService(
 		routeStopRepo: routeStopRepo,
 		busRepo:       busRepo,
 		seatRepo:      seatRepo,
+		bookingClient: bookingClient,
 	}
 }
 
@@ -59,11 +64,42 @@ func (s *TripServiceImpl) SearchTrips(ctx context.Context, req *model.TripSearch
 	return trips, total, nil
 }
 
-func (s *TripServiceImpl) GetTripByID(ctx context.Context, id uuid.UUID) (*model.Trip, error) {
-	trip, err := s.tripRepo.GetTripByID(ctx, id)
+func (s *TripServiceImpl) GetTripByID(ctx context.Context, req *model.GetTripByIDRequuest, id uuid.UUID) (*model.Trip, error) {
+	trip, err := s.tripRepo.GetTripByID(ctx, req, id)
 	if err != nil {
 		return nil, ginext.NewInternalServerError("failed to get trip")
 	}
+
+	if req.SeatBookingStatus && req.PreloadBus && req.PreloadSeat && trip.Bus != nil && len(trip.Bus.Seats) > 0 {
+		seatIDs := make([]uuid.UUID, len(trip.Bus.Seats))
+		for i, seat := range trip.Bus.Seats {
+			seatIDs[i] = seat.ID
+		}
+
+		seatStatuses, err := s.bookingClient.GetSeatStatus(ctx, trip.ID, seatIDs)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to check seat status from booking service")
+			return nil, ginext.NewInternalServerError("failed to get seat status")
+		}
+
+		seatStatusMap := make(map[uuid.UUID]booking.SeatStatus)
+		for _, status := range seatStatuses {
+			seatStatusMap[status.SeatID] = status
+		}
+
+		for i, seat := range trip.Bus.Seats {
+			if status, ok := seatStatusMap[seat.ID]; ok {
+				trip.Bus.Seats[i].Status = &status
+				continue
+			}
+			trip.Bus.Seats[i].Status = &booking.SeatStatus{
+				SeatID:   seat.ID,
+				IsBooked: false,
+				IsLocked: false,
+			}
+		}
+	}
+
 	return trip, nil
 }
 
@@ -76,7 +112,11 @@ func (s *TripServiceImpl) ListTrips(ctx context.Context, page, pageSize int) ([]
 }
 
 func (s *TripServiceImpl) GetSeatAvailability(ctx context.Context, tripID uuid.UUID) (*model.SeatAvailabilityResponse, error) {
-	trip, err := s.tripRepo.GetTripByID(ctx, tripID)
+	req := &model.GetTripByIDRequuest{
+		PreloadBus:  true,
+		PreloadSeat: true,
+	}
+	trip, err := s.tripRepo.GetTripByID(ctx, req, tripID)
 	if err != nil {
 		return nil, ginext.NewInternalServerError("trip not found")
 	}
@@ -193,11 +233,11 @@ func (s *TripServiceImpl) CreateTrip(ctx context.Context, req *model.CreateTripR
 	}
 
 	// Load relationships
-	return s.GetTripByID(ctx, trip.ID)
+	return s.GetTripByID(ctx, &model.GetTripByIDRequuest{}, trip.ID)
 }
 
 func (s *TripServiceImpl) UpdateTrip(ctx context.Context, id uuid.UUID, req *model.UpdateTripRequest) (*model.Trip, error) {
-	trip, err := s.tripRepo.GetTripByID(ctx, id)
+	trip, err := s.tripRepo.GetTripByID(ctx, &model.GetTripByIDRequuest{}, id)
 	if err != nil {
 		return nil, ginext.NewInternalServerError("failed to get trip")
 	}
@@ -236,11 +276,11 @@ func (s *TripServiceImpl) UpdateTrip(ctx context.Context, id uuid.UUID, req *mod
 		return nil, ginext.NewInternalServerError("failed to update trip")
 	}
 
-	return s.GetTripByID(ctx, id)
+	return s.GetTripByID(ctx, &model.GetTripByIDRequuest{}, id)
 }
 
 func (s *TripServiceImpl) DeleteTrip(ctx context.Context, id uuid.UUID) error {
-	trip, err := s.tripRepo.GetTripByID(ctx, id)
+	trip, err := s.tripRepo.GetTripByID(ctx, &model.GetTripByIDRequuest{}, id)
 	if err != nil {
 		return fmt.Errorf("trip not found: %w", err)
 	}

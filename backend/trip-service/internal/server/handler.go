@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bus-booking/trip-service/internal/client"
 	"bus-booking/trip-service/internal/handler"
 	"bus-booking/trip-service/internal/repository"
 	"bus-booking/trip-service/internal/router"
@@ -11,13 +12,15 @@ import (
 )
 
 func (s *Server) buildHandler() http.Handler {
+	bookingClient := client.NewBookingClient(s.cfg.ServiceName, s.cfg.External.BookingServiceURL)
+
 	tripRepo := repository.NewTripRepository(s.db.DB)
 	routeRepo := repository.NewRouteRepository(s.db.DB)
 	routeStopRepo := repository.NewRouteStopRepository(s.db.DB)
 	busRepo := repository.NewBusRepository(s.db.DB)
 	seatRepo := repository.NewSeatRepository(s.db.DB)
 
-	tripService := service.NewTripService(tripRepo, routeRepo, routeStopRepo, busRepo, seatRepo)
+	tripService := service.NewTripService(tripRepo, routeRepo, routeStopRepo, busRepo, seatRepo, bookingClient)
 	routeService := service.NewRouteService(routeRepo)
 	busService := service.NewBusService(busRepo, seatRepo)
 	routeStopService := service.NewRouteStopService(routeStopRepo, routeRepo)

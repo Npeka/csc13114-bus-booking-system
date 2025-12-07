@@ -46,6 +46,13 @@ type RefreshTokenRequest struct {
 	RefreshToken string `json:"refresh_token" validate:"required,min=1"`
 }
 
+// CreateGuestAccountRequest for creating guest accounts (for bookings without authentication)
+type CreateGuestAccountRequest struct {
+	FullName string `json:"full_name" validate:"required,min=1,max=100"`
+	Email    string `json:"email" validate:"omitempty,email"`
+	Phone    string `json:"phone" validate:"omitempty,min=10,max=15"`
+}
+
 type AuthResponse struct {
 	User         *UserResponse `json:"user"`
 	AccessToken  string        `json:"access_token"`

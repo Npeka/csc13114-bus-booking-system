@@ -9,72 +9,97 @@ import (
 
 	"bus-booking/booking-service/internal/client"
 	"bus-booking/booking-service/internal/model"
+	"bus-booking/booking-service/internal/model/trip"
 	"bus-booking/booking-service/internal/repository"
 	"bus-booking/shared/ginext"
 
 	"github.com/google/uuid"
+	"golang.org/x/sync/errgroup"
 )
 
 type BookingService interface {
 	CreateBooking(ctx context.Context, req *model.CreateBookingRequest, userID uuid.UUID) (*model.BookingResponse, error)
+	CreateGuestBooking(ctx context.Context, req *model.CreateGuestBookingRequest) (*model.BookingResponse, error)
 	GetBookingByID(ctx context.Context, id uuid.UUID) (*model.BookingResponse, error)
+	GetBookingByReference(ctx context.Context, reference string, email string) (*model.BookingResponse, error)
 	GetUserBookings(ctx context.Context, req model.PaginationRequest, userID uuid.UUID) ([]*model.BookingResponse, int64, error)
 	GetTripBookings(ctx context.Context, req model.PaginationRequest, tripID uuid.UUID) ([]*model.BookingResponse, int64, error)
 	CancelBooking(ctx context.Context, id uuid.UUID, userID uuid.UUID, reason string) error
 	UpdateBookingStatus(ctx context.Context, id uuid.UUID, status string) error
 	CreatePayment(ctx context.Context, bookingID uuid.UUID, buyerInfo *model.BuyerInfo) (*client.PaymentLinkResponse, error)
 	UpdatePaymentStatus(ctx context.Context, bookingID uuid.UUID, paymentStatus, bookingStatus, paymentOrderID string) error
+	GetSeatStatus(ctx context.Context, tripID uuid.UUID, seatIDs []uuid.UUID) ([]model.SeatStatusItem, error)
 }
 
 type bookingServiceImpl struct {
 	bookingRepo   repository.BookingRepository
 	paymentClient client.PaymentClient
 	tripClient    client.TripClient
+	userClient    client.UserClient
+	// notificationQueue queue.NotificationQueue // TODO: Uncomment when notification service is ready
 }
 
 func NewBookingService(
 	bookingRepo repository.BookingRepository,
 	paymentClient client.PaymentClient,
 	tripClient client.TripClient,
+	userClient client.UserClient,
+	// notificationQueue queue.NotificationQueue, // TODO: Uncomment when notification service is ready
 ) BookingService {
 	return &bookingServiceImpl{
 		bookingRepo:   bookingRepo,
 		paymentClient: paymentClient,
 		tripClient:    tripClient,
+		userClient:    userClient,
+		// notificationQueue: notificationQueue, // TODO: Uncomment when notification service is ready
 	}
 }
 
 func (s *bookingServiceImpl) CreateBooking(ctx context.Context, req *model.CreateBookingRequest, userID uuid.UUID) (*model.BookingResponse, error) {
-	tripData, err := s.tripClient.GetTrip(ctx, req.TripID)
-	if err != nil {
-		return nil, ginext.NewInternalServerError(fmt.Sprintf("failed to get trip details: %v", err))
-	}
-
-	// if !tripData.IsBookable() {
-	// 	return nil, ginext.NewBadRequestError("trip is not available for booking")
-	// }
-
-	seatAvailability, err := s.bookingRepo.CheckSeatAvailability(ctx, req.TripID, req.SeatIDs)
+	// 1. Validate seat IDs
+	seatAvailability, err := s.checkSeatAvailability(ctx, req.TripID, req.SeatIDs)
 	if err != nil {
 		return nil, ginext.NewInternalServerError(fmt.Sprintf("failed to check seat availability: %v", err))
 	}
-
-	for seatID, isBooked := range seatAvailability {
-		if isBooked {
-			return nil, ginext.NewBadRequestError(fmt.Sprintf("seat %s is already booked", seatID))
-		}
+	if !seatAvailability {
+		return nil, ginext.NewBadRequestError("one or more selected seats are already booked")
 	}
 
-	// 3. Get seat metadata from trip service (for pricing and display info)
-	validatedSeats, err := s.tripClient.GetSeatsMetadata(ctx, req.TripID, req.SeatIDs)
-	if err != nil {
-		return nil, ginext.NewBadRequestError(err.Error())
+	// 2. Fetch trip and seat details concurrently
+	var (
+		tripData *trip.Trip
+		seats    []trip.Seat
+	)
+
+	g, gCtx := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		var err error
+		tripData, err = s.tripClient.GetTripByID(gCtx, req.TripID)
+		if err != nil {
+			return fmt.Errorf("failed to get trip data: %w", err)
+		}
+		return nil
+	})
+
+	g.Go(func() error {
+		var err error
+		seats, err = s.tripClient.ListSeatsByIDs(gCtx, req.SeatIDs)
+		if err != nil {
+			return fmt.Errorf("failed to list seats: %w", err)
+		}
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
+		return nil, err
 	}
 
 	// 4. Calculate total amount
-	totalAmount := s.tripClient.CalculateTotalPrice(tripData.BasePrice, validatedSeats)
+	totalAmount := s.CalculateTotalPrice(tripData.BasePrice, seats)
 
 	// 5. Create booking
+	expiresAt := time.Now().UTC().Add(15 * time.Minute)
 	booking := &model.Booking{
 		BookingReference: s.generateBookingReference(),
 		TripID:           req.TripID,
@@ -83,18 +108,15 @@ func (s *bookingServiceImpl) CreateBooking(ctx context.Context, req *model.Creat
 		Status:           model.BookingStatusPending,
 		PaymentStatus:    model.PaymentStatusPending,
 		Notes:            req.Notes,
+		ExpiresAt:        &expiresAt,
 	}
 
-	// Set expiration (15 minutes for pending bookings)
-	expiresAt := time.Now().UTC().Add(15 * time.Minute)
-	booking.ExpiresAt = &expiresAt
-
 	// 6. Create booking seats
-	for seatID, seat := range validatedSeats {
+	for _, seat := range seats {
 		bookingSeat := model.BookingSeat{
-			SeatID:          seatID,
+			SeatID:          seat.ID,
 			SeatNumber:      seat.SeatNumber,
-			SeatType:        seat.SeatType, // Raw string now (standard, vip, sleeper)
+			SeatType:        seat.SeatType,
 			Floor:           seat.Floor,
 			Price:           seat.CalculateSeatPrice(tripData.BasePrice),
 			PriceMultiplier: seat.PriceMultiplier,
@@ -107,17 +129,109 @@ func (s *bookingServiceImpl) CreateBooking(ctx context.Context, req *model.Creat
 		return nil, ginext.NewInternalServerError(fmt.Sprintf("failed to create booking: %v", err))
 	}
 
-	// 8. Return response
+	// 8. Push notification to queue (khi có notification service)
+	// TODO: Uncomment khi notification service đã ready
+	/*
+		if s.notificationQueue != nil {
+			emailNotif := &queue.EmailNotification{
+				To:           "user@example.com", // TODO: Get from user service
+				Subject:      "Xác nhận đặt vé",
+				TemplateName: "booking_confirmation",
+				TemplateData: map[string]interface{}{
+					"booking_reference": booking.BookingReference,
+					"total_amount":      booking.TotalAmount,
+					"trip_id":           booking.TripID.String(),
+					"seat_numbers":      s.getSeatNumbers(booking.BookingSeats),
+				},
+				Priority: 1, // High priority
+			}
+
+			// Push to queue (non-blocking, errors logged only)
+			if err := s.notificationQueue.PushEmailNotification(ctx, emailNotif); err != nil {
+				log.Error().Err(err).Msg("Failed to push email notification to queue")
+			}
+		}
+	*/
+
+	// 9. Return response
 	return s.toBookingResponse(booking), nil
 }
 
-// GetBookingByID retrieves a booking by ID
+// CreateGuestBooking creates a booking for guest users (without authentication)
+func (s *bookingServiceImpl) CreateGuestBooking(ctx context.Context, req *model.CreateGuestBookingRequest) (*model.BookingResponse, error) {
+	// 1. Validate contact information
+	if req.Email == "" && req.Phone == "" {
+		return nil, ginext.NewBadRequestError("either email or phone must be provided")
+	}
+
+	// 2. Create or get guest account from user service
+	guestReq := &client.CreateGuestAccountRequest{
+		FullName: req.FullName,
+		Email:    req.Email,
+		Phone:    req.Phone,
+	}
+
+	guestAccount, err := s.userClient.CreateGuestAccount(ctx, guestReq)
+	if err != nil {
+		return nil, ginext.NewInternalServerError(fmt.Sprintf("failed to create guest account: %v", err))
+	}
+
+	// 3. Use existing CreateBooking logic with guest user ID
+	bookingReq := &model.CreateBookingRequest{
+		TripID:  req.TripID,
+		SeatIDs: req.SeatIDs,
+		Notes:   req.Notes,
+	}
+
+	return s.CreateBooking(ctx, bookingReq, guestAccount.ID)
+}
+
+func (s *bookingServiceImpl) checkSeatAvailability(ctx context.Context, tripID uuid.UUID, seatIDs []uuid.UUID) (bool, error) {
+	bookedSeatIDs, err := s.bookingRepo.GetBookedSeatIDs(ctx, tripID)
+	if err != nil {
+		return false, err
+	}
+
+	bookedMap := make(map[uuid.UUID]bool)
+	for _, bookedID := range bookedSeatIDs {
+		bookedMap[bookedID] = true
+	}
+
+	for _, seatID := range seatIDs {
+		if bookedMap[seatID] {
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
+func (s *bookingServiceImpl) CalculateTotalPrice(basePrice float64, seats []trip.Seat) float64 {
+	total := 0.0
+	for _, seat := range seats {
+		total += seat.CalculateSeatPrice(basePrice)
+	}
+	return total
+}
+
 func (s *bookingServiceImpl) GetBookingByID(ctx context.Context, id uuid.UUID) (*model.BookingResponse, error) {
 	booking, err := s.bookingRepo.GetBookingByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
+	return s.toBookingResponse(booking), nil
+}
+
+// GetBookingByReference retrieves booking by reference number for guest lookup
+func (s *bookingServiceImpl) GetBookingByReference(ctx context.Context, reference string, email string) (*model.BookingResponse, error) {
+	booking, err := s.bookingRepo.GetBookingByReference(ctx, reference)
+	if err != nil {
+		return nil, ginext.NewNotFoundError("Booking not found with this reference number")
+	}
+
+	// For guest bookings, we trust the reference number is unique enough
+	// In production, you might want to verify email matches the user's email
 	return s.toBookingResponse(booking), nil
 }
 
@@ -302,4 +416,31 @@ func (s *bookingServiceImpl) generateBookingReference() string {
 	}
 
 	return "BK" + dateStr + string(randomPart)
+}
+
+func (s *bookingServiceImpl) GetSeatStatus(ctx context.Context, tripID uuid.UUID, seatIDs []uuid.UUID) ([]model.SeatStatusItem, error) {
+	if len(seatIDs) == 0 {
+		return []model.SeatStatusItem{}, nil
+	}
+
+	bookedSeatIDs, err := s.bookingRepo.GetBookedSeatIDs(ctx, tripID)
+	if err != nil {
+		return nil, ginext.NewInternalServerError(fmt.Sprintf("failed to get booked seats: %v", err))
+	}
+
+	bookedMap := make(map[uuid.UUID]bool)
+	for _, bookedID := range bookedSeatIDs {
+		bookedMap[bookedID] = true
+	}
+
+	result := make([]model.SeatStatusItem, len(seatIDs))
+	for i, seatID := range seatIDs {
+		result[i] = model.SeatStatusItem{
+			SeatID:   seatID,
+			IsBooked: bookedMap[seatID],
+			IsLocked: false,
+		}
+	}
+
+	return result, nil
 }

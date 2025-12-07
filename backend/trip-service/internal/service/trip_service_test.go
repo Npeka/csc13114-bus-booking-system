@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"bus-booking/trip-service/internal/constants"
 	"bus-booking/trip-service/internal/model"
 	"bus-booking/trip-service/internal/service/mocks"
 
@@ -21,7 +22,7 @@ func TestTripService_CreateTrip_Success(t *testing.T) {
 	mockBusRepo := new(mocks.MockBusRepository)
 	mockSeatRepo := new(mocks.MockSeatRepository)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, nil)
 	ctx := context.Background()
 
 	routeID := uuid.New()
@@ -57,7 +58,7 @@ func TestTripService_CreateTrip_Success(t *testing.T) {
 	mockBusRepo.On("GetBusByID", ctx, busID).Return(bus, nil)
 	mockTripRepo.On("GetTripsByBusAndDateRange", ctx, busID, mock.AnythingOfType("time.Time"), mock.AnythingOfType("time.Time")).Return([]model.Trip{}, nil)
 	mockTripRepo.On("CreateTrip", ctx, mock.AnythingOfType("*model.Trip")).Return(nil)
-	mockTripRepo.On("GetTripByID", ctx, mock.AnythingOfType("uuid.UUID")).Return(createdTrip, nil)
+	mockTripRepo.On("GetTripByID", ctx, mock.AnythingOfType("*model.GetTripByIDRequuest"), mock.AnythingOfType("uuid.UUID")).Return(createdTrip, nil)
 
 	// Act
 	result, err := service.CreateTrip(ctx, req)
@@ -78,7 +79,7 @@ func TestTripService_GetTripByID_Success(t *testing.T) {
 	mockBusRepo := new(mocks.MockBusRepository)
 	mockSeatRepo := new(mocks.MockSeatRepository)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, nil)
 	ctx := context.Background()
 
 	tripID := uuid.New()
@@ -90,10 +91,10 @@ func TestTripService_GetTripByID_Success(t *testing.T) {
 	}
 	expectedTrip.ID = tripID
 
-	mockTripRepo.On("GetTripByID", ctx, tripID).Return(expectedTrip, nil)
+	mockTripRepo.On("GetTripByID", ctx, mock.AnythingOfType("*model.GetTripByIDRequuest"), tripID).Return(expectedTrip, nil)
 
 	// Act
-	result, err := service.GetTripByID(ctx, tripID)
+	result, err := service.GetTripByID(ctx, &model.GetTripByIDRequuest{}, tripID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -110,7 +111,7 @@ func TestTripService_ListTrips_Success(t *testing.T) {
 	mockBusRepo := new(mocks.MockBusRepository)
 	mockSeatRepo := new(mocks.MockSeatRepository)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, nil)
 	ctx := context.Background()
 
 	trip1 := model.Trip{RouteID: uuid.New(), BusID: uuid.New(), Status: "scheduled"}
@@ -139,7 +140,7 @@ func TestTripService_UpdateTrip_Success(t *testing.T) {
 	mockBusRepo := new(mocks.MockBusRepository)
 	mockSeatRepo := new(mocks.MockSeatRepository)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, nil)
 	ctx := context.Background()
 
 	tripID := uuid.New()
@@ -152,13 +153,13 @@ func TestTripService_UpdateTrip_Success(t *testing.T) {
 	existingTrip.ID = tripID
 
 	newPrice := float64(250000)
-	newStatus := model.TripStatusCompleted
+	newStatus := constants.TripStatusCompleted
 	req := &model.UpdateTripRequest{
 		BasePrice: &newPrice,
 		Status:    &newStatus,
 	}
 
-	mockTripRepo.On("GetTripByID", ctx, tripID).Return(existingTrip, nil)
+	mockTripRepo.On("GetTripByID", ctx, mock.AnythingOfType("*model.GetTripByIDRequuest"), tripID).Return(existingTrip, nil)
 	mockTripRepo.On("UpdateTrip", ctx, existingTrip).Return(nil)
 
 	// Act
@@ -179,7 +180,7 @@ func TestTripService_DeleteTrip_Success(t *testing.T) {
 	mockBusRepo := new(mocks.MockBusRepository)
 	mockSeatRepo := new(mocks.MockSeatRepository)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, nil)
 	ctx := context.Background()
 
 	tripID := uuid.New()
@@ -187,7 +188,7 @@ func TestTripService_DeleteTrip_Success(t *testing.T) {
 	trip := &model.Trip{Status: "scheduled", DepartureTime: futureTime}
 	trip.ID = tripID
 
-	mockTripRepo.On("GetTripByID", ctx, tripID).Return(trip, nil)
+	mockTripRepo.On("GetTripByID", ctx, mock.AnythingOfType("*model.GetTripByIDRequuest"), tripID).Return(trip, nil)
 	mockTripRepo.On("DeleteTrip", ctx, tripID).Return(nil)
 
 	// Act
@@ -206,7 +207,7 @@ func TestTripService_GetSeatAvailability_Success(t *testing.T) {
 	mockBusRepo := new(mocks.MockBusRepository)
 	mockSeatRepo := new(mocks.MockSeatRepository)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, nil)
 	ctx := context.Background()
 
 	tripID := uuid.New()
@@ -221,7 +222,7 @@ func TestTripService_GetSeatAvailability_Success(t *testing.T) {
 	seat2.ID = uuid.New()
 	seats := []model.Seat{seat1, seat2}
 
-	mockTripRepo.On("GetTripByID", ctx, tripID).Return(trip, nil)
+	mockTripRepo.On("GetTripByID", ctx, mock.AnythingOfType("*model.GetTripByIDRequuest"), tripID).Return(trip, nil)
 	mockSeatRepo.On("ListByBusID", ctx, busID).Return(seats, nil)
 
 	// Act
@@ -244,7 +245,7 @@ func TestTripService_GetTripsByRouteAndDate_Success(t *testing.T) {
 	mockBusRepo := new(mocks.MockBusRepository)
 	mockSeatRepo := new(mocks.MockSeatRepository)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, nil)
 	ctx := context.Background()
 
 	routeID := uuid.New()

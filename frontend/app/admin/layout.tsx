@@ -28,6 +28,7 @@ import { User } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { logout as authLogout } from "@/lib/api/auth-service";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 export default function AdminLayout({
   children,
@@ -61,7 +62,7 @@ export default function AdminLayout({
             </Breadcrumb>
 
             {/* Right side - User menu */}
-            <div className="ml-auto flex items-center space-x-4">
+            <div className="ml-auto flex items-center space-x-2">
               <nav className="hidden items-center space-x-6 md:flex">
                 <Link
                   href="/my-bookings"
@@ -70,6 +71,7 @@ export default function AdminLayout({
                   Vé của tôi
                 </Link>
               </nav>
+              <ThemeToggle />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon">

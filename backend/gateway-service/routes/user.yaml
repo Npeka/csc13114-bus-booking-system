@@ -23,6 +23,9 @@ routes:
   - path: "/api/v1/auth/reset-password"
     methods: ["POST"]
 
+  - path: "/api/v1/auth/guest"
+    methods: ["POST"]
+
   - path: "/api/v1/auth/refresh-token"
     methods: ["POST"]
 

@@ -1,5 +1,7 @@
 package model
 
+import "bus-booking/trip-service/internal/model/booking"
+
 // ToBusResponse converts Bus entity to BusResponse with raw string values
 func ToBusResponse(bus *Bus) *BusResponse {
 	if bus == nil {
@@ -37,6 +39,14 @@ func ToSeatResponse(seat *Seat) *SeatResponse {
 		return nil
 	}
 
+	var status *booking.SeatStatusResponse
+	if seat.Status != nil {
+		status = &booking.SeatStatusResponse{
+			IsBooked: seat.Status.IsBooked,
+			IsLocked: seat.Status.IsLocked,
+		}
+	}
+
 	return &SeatResponse{
 		ID:              seat.ID,
 		BusID:           seat.BusID,
@@ -47,6 +57,7 @@ func ToSeatResponse(seat *Seat) *SeatResponse {
 		PriceMultiplier: seat.PriceMultiplier,
 		IsAvailable:     seat.IsAvailable,
 		Floor:           seat.Floor,
+		Status:          status,
 	}
 }
 

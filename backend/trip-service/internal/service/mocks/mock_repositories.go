@@ -98,6 +98,11 @@ func (m *MockSeatRepository) ListByBusID(ctx context.Context, busID uuid.UUID) (
 	return args.Get(0).([]model.Seat), args.Error(1)
 }
 
+func (m *MockSeatRepository) ListByIDs(ctx context.Context, ids []uuid.UUID) ([]model.Seat, error) {
+	args := m.Called(ctx, ids)
+	return args.Get(0).([]model.Seat), args.Error(1)
+}
+
 func (m *MockSeatRepository) GetSeatMap(ctx context.Context, busID uuid.UUID) ([]model.Seat, error) {
 	args := m.Called(ctx, busID)
 	return args.Get(0).([]model.Seat), args.Error(1)
@@ -217,8 +222,8 @@ func (m *MockTripRepository) Create(ctx context.Context, trip *model.Trip) error
 	return args.Error(0)
 }
 
-func (m *MockTripRepository) GetTripByID(ctx context.Context, id uuid.UUID) (*model.Trip, error) {
-	args := m.Called(ctx, id)
+func (m *MockTripRepository) GetTripByID(ctx context.Context, req *model.GetTripByIDRequuest, id uuid.UUID) (*model.Trip, error) {
+	args := m.Called(ctx, req, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}

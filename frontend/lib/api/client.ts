@@ -119,27 +119,39 @@ apiClient.interceptors.response.use(
 
 export default apiClient;
 
-// Type-safe API response wrapper
+// Backend error response format
+export interface BackendErrorResponse {
+  error?: {
+    message: string;
+  };
+  data?: unknown;
+}
+
+// Type-safe API response wrapper (for success responses)
 export interface ApiResponse<T = unknown> {
-  success: boolean;
-  message: string;
   data?: T;
-  error?: string;
+  meta?: {
+    page: number;
+    page_size: number;
+    total: number;
+    total_pages: number;
+  };
+  error?: {
+    message: string;
+  };
 }
 
 // Helper function to handle API errors
 export const handleApiError = (error: unknown): string => {
   if (axios.isAxiosError(error)) {
-    const axiosError = error as AxiosError<ApiResponse>;
+    const axiosError = error as AxiosError<BackendErrorResponse>;
 
-    if (axiosError.response?.data?.error) {
-      return axiosError.response.data.error;
+    // Check for error.error.message pattern (backend error format)
+    if (axiosError.response?.data?.error?.message) {
+      return axiosError.response.data.error.message;
     }
 
-    if (axiosError.response?.data?.message) {
-      return axiosError.response.data.message;
-    }
-
+    // Fallback to axios error message
     if (axiosError.message) {
       return axiosError.message;
     }

@@ -17,6 +17,7 @@ type SeatRepository interface {
 	Update(ctx context.Context, seat *model.Seat) error
 	Delete(ctx context.Context, id uuid.UUID) error
 	GetByID(ctx context.Context, id uuid.UUID) (*model.Seat, error)
+	ListByIDs(ctx context.Context, ids []uuid.UUID) ([]model.Seat, error)
 	ListByBusID(ctx context.Context, busID uuid.UUID) ([]model.Seat, error)
 	GetSeatMap(ctx context.Context, busID uuid.UUID) ([]model.Seat, error)
 	CountByBusID(ctx context.Context, busID uuid.UUID) (int64, error)
@@ -72,6 +73,16 @@ func (r *SeatRepositoryImpl) ListByBusID(ctx context.Context, busID uuid.UUID) (
 		Order("floor ASC, row ASC, \"column\" ASC").
 		Find(&seats).Error
 	if err != nil {
+		return nil, err
+	}
+	return seats, nil
+}
+
+func (r *SeatRepositoryImpl) ListByIDs(ctx context.Context, ids []uuid.UUID) ([]model.Seat, error) {
+	var seats []model.Seat
+	if err := r.db.WithContext(ctx).
+		Where("id IN ?", ids).
+		Find(&seats).Error; err != nil {
 		return nil, err
 	}
 	return seats, nil

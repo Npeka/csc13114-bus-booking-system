@@ -10,6 +10,7 @@ import (
 )
 
 type SeatHandler interface {
+	ListByIDs(r *ginext.Request) (*ginext.Response, error)
 	CreateSeat(r *ginext.Request) (*ginext.Response, error)
 	CreateSeatsFromTemplate(r *ginext.Request) (*ginext.Response, error)
 	UpdateSeat(r *ginext.Request) (*ginext.Response, error)
@@ -23,6 +24,32 @@ type SeatHandlerImpl struct {
 
 func NewSeatHandler(seatService service.SeatService) SeatHandler {
 	return &SeatHandlerImpl{seatService: seatService}
+}
+
+func (h *SeatHandlerImpl) ListByIDs(r *ginext.Request) (*ginext.Response, error) {
+	var req model.ListSeatsByIDsRequest
+	if err := r.GinCtx.ShouldBindQuery(&req); err != nil {
+		log.Debug().Err(err).Msg("Invalid query parameters")
+		return nil, ginext.NewBadRequestError(err.Error())
+	}
+
+	var seatIDs []uuid.UUID
+	for _, idStr := range req.SeatIDs {
+		id, err := uuid.Parse(idStr)
+		if err != nil {
+			log.Debug().Err(err).Str("seat_id", idStr).Msg("Invalid seat ID")
+			return nil, ginext.NewBadRequestError("invalid seat ID: " + idStr)
+		}
+		seatIDs = append(seatIDs, id)
+	}
+
+	seats, err := h.seatService.ListByIDs(r.Context(), seatIDs)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to list seats")
+		return nil, err
+	}
+
+	return ginext.NewSuccessResponse(seats), nil
 }
 
 // CreateSeat godoc
