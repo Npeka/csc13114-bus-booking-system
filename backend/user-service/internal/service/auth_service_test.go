@@ -272,8 +272,8 @@ func TestAuthService_FirebaseAuth_NewUser(t *testing.T) {
 	mockFirebase.On("VerifyIDToken", ctx, req.IDToken).Return(firebaseToken, nil)
 	mockRepo.On("GetByFirebaseUID", ctx, firebaseToken.UID).Return(nil, errors.New("not found"))
 	mockRepo.On("Create", ctx, mock.AnythingOfType("*model.User")).Return(nil)
-	mockJWT.On("GenerateAccessToken", mock.AnythingOfType("uuid.UUID"), "newuser@example.com", "1").Return("access.token", nil)
-	mockJWT.On("GenerateRefreshToken", mock.AnythingOfType("uuid.UUID"), "newuser@example.com", "1").Return("refresh.token", nil)
+	mockJWT.On("GenerateAccessToken", mock.AnythingOfType("uuid.UUID"), "newuser@example.com", "2").Return("access.token", nil)
+	mockJWT.On("GenerateRefreshToken", mock.AnythingOfType("uuid.UUID"), "newuser@example.com", "2").Return("refresh.token", nil)
 
 	// Act
 	result, err := service.FirebaseAuth(ctx, req)

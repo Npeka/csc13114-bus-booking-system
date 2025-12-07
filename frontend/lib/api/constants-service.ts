@@ -132,9 +132,7 @@ export const getAllConstants = async (): Promise<ConstantsResponse> => {
 
     if (!response.data.data) {
       throw new Error(
-        response.data.message ||
-          response.data.error ||
-          "Failed to get constants",
+        response.data.error?.message || "Failed to get constants",
       );
     }
 
@@ -156,9 +154,7 @@ export const getBusConstants = async (): Promise<BusConstants> => {
 
     if (!response.data.data) {
       throw new Error(
-        response.data.message ||
-          response.data.error ||
-          "Failed to get bus constants",
+        response.data.error?.message || "Failed to get bus constants",
       );
     }
 
@@ -180,9 +176,7 @@ export const getRouteConstants = async (): Promise<RouteConstants> => {
 
     if (!response.data.data) {
       throw new Error(
-        response.data.message ||
-          response.data.error ||
-          "Failed to get route constants",
+        response.data.error?.message || "Failed to get route constants",
       );
     }
 
@@ -204,9 +198,7 @@ export const getTripConstants = async (): Promise<TripConstants> => {
 
     if (!response.data.data) {
       throw new Error(
-        response.data.message ||
-          response.data.error ||
-          "Failed to get trip constants",
+        response.data.error?.message || "Failed to get trip constants",
       );
     }
 
@@ -229,8 +221,7 @@ export const getSearchFilterConstants =
 
       if (!response.data.data) {
         throw new Error(
-          response.data.message ||
-            response.data.error ||
+          response.data.error?.message ||
             "Failed to get search filter constants",
         );
       }
@@ -252,9 +243,7 @@ export const getCities = async (): Promise<string[]> => {
     );
 
     if (!response.data.data) {
-      throw new Error(
-        response.data.message || response.data.error || "Failed to get cities",
-      );
+      throw new Error(response.data.error?.message || "Failed to get cities");
     }
 
     return response.data.data;

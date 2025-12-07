@@ -1,138 +1,138 @@
 name: Backend Services Pipeline
 
 on:
-    push:
-        branches: [main, develop]
-        paths:
-            - "backend/**"
-            - ".github/workflows/**"
-    pull_request:
-        branches: [main, develop]
-        paths:
-            - "backend/**"
-            - ".github/workflows/**"
+  push:
+    branches: [main, develop]
+    paths:
+      - "backend/**"
+      - ".github/workflows/**"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "backend/**"
+      - ".github/workflows/**"
 
 permissions:
-    contents: write
-    packages: write
-    actions: read
-    security-events: write
+  contents: write
+  packages: write
+  actions: read
+  security-events: write
 
 jobs:
-    detect-changes:
-        runs-on: ubuntu-latest
-        outputs:
-            booking-service: ${{ steps.changes.outputs.booking-service }}
-            gateway-service: ${{ steps.changes.outputs.gateway-service }}
-            payment-service: ${{ steps.changes.outputs.payment-service }}
-            trip-service: ${{ steps.changes.outputs.trip-service }}
-            user-service: ${{ steps.changes.outputs.user-service }}
-        steps:
-            - uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-            - uses: dorny/paths-filter@v3.0.2
-              id: changes
-              with:
-                  filters: |
-                      booking-service:
-                        - 'backend/booking-service/**'
-                        - 'backend/shared/**'
-                      gateway-service:
-                        - 'backend/gateway-service/**'
-                        - 'backend/shared/**'
-                      payment-service:
-                        - 'backend/payment-service/**'
-                        - 'backend/shared/**'
-                      trip-service:
-                        - 'backend/trip-service/**'
-                        - 'backend/shared/**'
-                      user-service:
-                        - 'backend/user-service/**'
-                        - 'backend/shared/**'
-
-    booking-service:
-        needs: detect-changes
-        uses: ./.github/workflows/booking-service.yml
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      booking-service: ${{ steps.changes.outputs.booking-service }}
+      gateway-service: ${{ steps.changes.outputs.gateway-service }}
+      payment-service: ${{ steps.changes.outputs.payment-service }}
+      trip-service: ${{ steps.changes.outputs.trip-service }}
+      user-service: ${{ steps.changes.outputs.user-service }}
+    steps:
+      - uses: actions/checkout@v4
         with:
-            service-changed: ${{ needs.detect-changes.outputs.booking-service }}
-        secrets:
-            DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-            DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-            INFRA_DEPLOY_TOKEN: ${{ secrets.INFRA_DEPLOY_TOKEN }}
-
-    gateway-service:
-        needs: detect-changes
-        uses: ./.github/workflows/gateway-service.yml
+          fetch-depth: 0
+      - uses: dorny/paths-filter@v3.0.2
+        id: changes
         with:
-            service-changed: ${{ needs.detect-changes.outputs.gateway-service }}
-        secrets:
-            DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-            DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-            INFRA_DEPLOY_TOKEN: ${{ secrets.INFRA_DEPLOY_TOKEN }}
+          filters: |
+            booking-service:
+              - 'backend/booking-service/**'
+              - 'backend/shared/**'
+            gateway-service:
+              - 'backend/gateway-service/**'
+              - 'backend/shared/**'
+            payment-service:
+              - 'backend/payment-service/**'
+              - 'backend/shared/**'
+            trip-service:
+              - 'backend/trip-service/**'
+              - 'backend/shared/**'
+            user-service:
+              - 'backend/user-service/**'
+              - 'backend/shared/**'
 
-    payment-service:
-        needs: detect-changes
-        uses: ./.github/workflows/payment-service.yml
-        with:
-            service-changed: ${{ needs.detect-changes.outputs.payment-service }}
-        secrets:
-            DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-            DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-            INFRA_DEPLOY_TOKEN: ${{ secrets.INFRA_DEPLOY_TOKEN }}
+  booking-service:
+    needs: detect-changes
+    uses: ./.github/workflows/booking-service.yml
+    with:
+      service-changed: ${{ needs.detect-changes.outputs.booking-service }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      INFRA_DEPLOY_TOKEN: ${{ secrets.INFRA_DEPLOY_TOKEN }}
 
-    trip-service:
-        needs: detect-changes
-        uses: ./.github/workflows/trip-service.yml
-        with:
-            service-changed: ${{ needs.detect-changes.outputs.trip-service }}
-        secrets:
-            DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-            DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-            INFRA_DEPLOY_TOKEN: ${{ secrets.INFRA_DEPLOY_TOKEN }}
+  gateway-service:
+    needs: detect-changes
+    uses: ./.github/workflows/gateway-service.yml
+    with:
+      service-changed: ${{ needs.detect-changes.outputs.gateway-service }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      INFRA_DEPLOY_TOKEN: ${{ secrets.INFRA_DEPLOY_TOKEN }}
 
-    user-service:
-        needs: detect-changes
-        uses: ./.github/workflows/user-service.yml
-        with:
-            service-changed: ${{ needs.detect-changes.outputs.user-service }}
-        secrets:
-            DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-            DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-            INFRA_DEPLOY_TOKEN: ${{ secrets.INFRA_DEPLOY_TOKEN }}
+  payment-service:
+    needs: detect-changes
+    uses: ./.github/workflows/payment-service.yml
+    with:
+      service-changed: ${{ needs.detect-changes.outputs.payment-service }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      INFRA_DEPLOY_TOKEN: ${{ secrets.INFRA_DEPLOY_TOKEN }}
 
-    summary:
-        needs:
-            - detect-changes
-            - booking-service
-            - gateway-service
-            - payment-service
-            - trip-service
-            - user-service
-        if: always()
-        runs-on: ubuntu-latest
-        steps:
-            - name: Pipeline summary
-              run: |
-                  {
-                    echo "## Backend Services Pipeline Summary"
-                    echo
-                    echo "### Services Changed:"
-                    echo "- **booking-service**: ${{ needs.detect-changes.outputs.booking-service }}"
-                    echo "- **gateway-service**: ${{ needs.detect-changes.outputs.gateway-service }}"
-                    echo "- **payment-service**: ${{ needs.detect-changes.outputs.payment-service }}"
-                    echo "- **trip-service**: ${{ needs.detect-changes.outputs.trip-service }}"
-                    echo "- **user-service**: ${{ needs.detect-changes.outputs.user-service }}"
-                    echo
-                    echo "### Workflow Results:"
-                    echo "- **booking-service**: ${{ needs.booking-service.result }}"
-                    echo "- **gateway-service**: ${{ needs.gateway-service.result }}"
-                    echo "- **payment-service**: ${{ needs.payment-service.result }}"
-                    echo "- **trip-service**: ${{ needs.trip-service.result }}"
-                    echo "- **user-service**: ${{ needs.user-service.result }}"
-                    echo
-                    echo "### Notes:"
-                    echo "- Each service runs in its own workflow file"
-                    echo "- Failed quality checks prevent deployment for that service only"
-                    echo "- Other services continue independently"
-                  } >> "$GITHUB_STEP_SUMMARY"
+  trip-service:
+    needs: detect-changes
+    uses: ./.github/workflows/trip-service.yml
+    with:
+      service-changed: ${{ needs.detect-changes.outputs.trip-service }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      INFRA_DEPLOY_TOKEN: ${{ secrets.INFRA_DEPLOY_TOKEN }}
+
+  user-service:
+    needs: detect-changes
+    uses: ./.github/workflows/user-service.yml
+    with:
+      service-changed: ${{ needs.detect-changes.outputs.user-service }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      INFRA_DEPLOY_TOKEN: ${{ secrets.INFRA_DEPLOY_TOKEN }}
+
+  summary:
+    needs:
+      - detect-changes
+      - booking-service
+      - gateway-service
+      - payment-service
+      - trip-service
+      - user-service
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pipeline summary
+        run: |
+          {
+            echo "## Backend Services Pipeline Summary"
+            echo
+            echo "### Services Changed:"
+            echo "- **booking-service**: ${{ needs.detect-changes.outputs.booking-service }}"
+            echo "- **gateway-service**: ${{ needs.detect-changes.outputs.gateway-service }}"
+            echo "- **payment-service**: ${{ needs.detect-changes.outputs.payment-service }}"
+            echo "- **trip-service**: ${{ needs.detect-changes.outputs.trip-service }}"
+            echo "- **user-service**: ${{ needs.detect-changes.outputs.user-service }}"
+            echo
+            echo "### Workflow Results:"
+            echo "- **booking-service**: ${{ needs.booking-service.result }}"
+            echo "- **gateway-service**: ${{ needs.gateway-service.result }}"
+            echo "- **payment-service**: ${{ needs.payment-service.result }}"
+            echo "- **trip-service**: ${{ needs.trip-service.result }}"
+            echo "- **user-service**: ${{ needs.user-service.result }}"
+            echo
+            echo "### Notes:"
+            echo "- Each service runs in its own workflow file"
+            echo "- Failed quality checks prevent deployment for that service only"
+            echo "- Other services continue independently"
+          } >> "$GITHUB_STEP_SUMMARY"

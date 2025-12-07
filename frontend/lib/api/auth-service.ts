@@ -66,14 +66,9 @@ export const registerWithEmail = async (
 
     if (!response.data.data) {
       // Handle specific error responses from backend
-      if (!response.data.success) {
-        const errorMsg =
-          response.data.message ||
-          response.data.error ||
-          "Đăng ký thất bại. Vui lòng thử lại.";
-        throw new Error(errorMsg);
-      }
-      throw new Error("Nhận phản hồi không hợp lệ từ máy chủ");
+      const errorMsg =
+        response.data.error?.message || "Đăng ký thất bại. Vui lòng thử lại.";
+      throw new Error(errorMsg);
     }
 
     const { user, access_token, refresh_token, expires_in } =
@@ -133,14 +128,9 @@ export const loginWithEmail = async (
 
     if (!response.data.data) {
       // Handle specific error responses from backend
-      if (!response.data.success) {
-        const errorMsg =
-          response.data.message ||
-          response.data.error ||
-          "Đăng nhập thất bại. Vui lòng thử lại.";
-        throw new Error(errorMsg);
-      }
-      throw new Error("Nhận phản hồi không hợp lệ từ máy chủ");
+      const errorMsg =
+        response.data.error?.message || "Đăng nhập thất bại. Vui lòng thử lại.";
+      throw new Error(errorMsg);
     }
 
     const { user, access_token, refresh_token, expires_in } =
@@ -216,14 +206,9 @@ export const loginWithGoogle = async (): Promise<User> => {
 
     if (!response.data.data) {
       // Handle specific error responses from backend
-      if (!response.data.success) {
-        const errorMsg =
-          response.data.message ||
-          response.data.error ||
-          "Đăng nhập thất bại. Vui lòng thử lại.";
-        throw new Error(errorMsg);
-      }
-      throw new Error("Nhận phản hồi không hợp lệ từ máy chủ");
+      const errorMsg =
+        response.data.error?.message || "Đăng nhập thất bại. Vui lòng thử lại.";
+      throw new Error(errorMsg);
     }
 
     const { user, access_token, refresh_token, expires_in } =
@@ -359,14 +344,9 @@ export const verifyPhoneOTP = async (code: string): Promise<User> => {
 
     if (!response.data.data) {
       // Handle specific error responses from backend
-      if (!response.data.success) {
-        const errorMsg =
-          response.data.message ||
-          response.data.error ||
-          "Xác thực thất bại. Vui lòng thử lại.";
-        throw new Error(errorMsg);
-      }
-      throw new Error("Nhận phản hồi không hợp lệ từ máy chủ");
+      const errorMsg =
+        response.data.error?.message || "Xác thực thất bại. Vui lòng thử lại.";
+      throw new Error(errorMsg);
     }
 
     const { user, access_token, refresh_token } = response.data.data;
