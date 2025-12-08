@@ -9,30 +9,19 @@ import (
 
 type Booking struct {
 	BaseModel
-	BookingReference string    `json:"booking_reference" gorm:"type:varchar(20);unique;not null;index"`
-	TripID           uuid.UUID `json:"trip_id" gorm:"type:uuid;not null;index"`
-	UserID           uuid.UUID `json:"user_id" gorm:"type:uuid;not null;index"`
+	BookingReference   string                    `json:"booking_reference" gorm:"type:varchar(20);unique;not null;index"`
+	TripID             uuid.UUID                 `json:"trip_id" gorm:"type:uuid;not null;index"`
+	UserID             uuid.UUID                 `json:"user_id" gorm:"type:uuid;not null;index"`
+	TotalAmount        int                       `json:"total_amount" gorm:"type:decimal(10,2);not null"`
+	Status             BookingStatus             `json:"status" gorm:"type:varchar(20);not null;default:'pending';index"`
+	TransactionStatus  payment.TransactionStatus `json:"transaction_status" gorm:"type:varchar(20);not null;default:'pending';index"`
+	TransactionID      uuid.UUID                 `json:"transaction_id,omitempty" gorm:"type:uuid;index"`
+	ExpiresAt          *time.Time                `json:"expires_at,omitempty" gorm:"type:timestamptz;index"`
+	ConfirmedAt        *time.Time                `json:"confirmed_at,omitempty" gorm:"type:timestamptz"`
+	CancelledAt        *time.Time                `json:"cancelled_at,omitempty" gorm:"type:timestamptz"`
+	CancellationReason string                    `json:"cancellation_reason,omitempty" gorm:"type:text"`
+	Notes              string                    `json:"notes,omitempty" gorm:"type:text"`
 
-	// Pricing
-	TotalAmount int `json:"total_amount" gorm:"type:decimal(10,2);not null"`
-
-	// Status
-	Status            BookingStatus             `json:"status" gorm:"type:varchar(20);not null;default:'pending';index"`
-	TransactionStatus payment.TransactionStatus `json:"transaction_status" gorm:"type:varchar(20);not null;default:'pending';index"`
-
-	// Payment info - Payment Service handles PayOS integration
-	TransactionID uuid.UUID `json:"transaction_id,omitempty" gorm:"type:uuid;index"`
-
-	// Timestamps
-	ExpiresAt   *time.Time `json:"expires_at,omitempty" gorm:"type:timestamptz;index"`
-	ConfirmedAt *time.Time `json:"confirmed_at,omitempty" gorm:"type:timestamptz"`
-	CancelledAt *time.Time `json:"cancelled_at,omitempty" gorm:"type:timestamptz"`
-
-	// Optional
-	CancellationReason string `json:"cancellation_reason,omitempty" gorm:"type:text"`
-	Notes              string `json:"notes,omitempty" gorm:"type:text"`
-
-	// Relations
 	BookingSeats []BookingSeat `json:"booking_seats,omitempty" gorm:"foreignKey:BookingID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 

@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"strconv"
-
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 
@@ -15,7 +13,6 @@ import (
 type TransactionHandler interface {
 	CreatePaymentLink(r *ginext.Request) (*ginext.Response, error)
 	HandlePaymentWebhook(r *ginext.Request) (*ginext.Response, error)
-	GetTransactionByOrderCode(r *ginext.Request) (*ginext.Response, error)
 	GetByID(r *ginext.Request) (*ginext.Response, error)
 }
 
@@ -89,33 +86,6 @@ func (h *TransactionHandlerImpl) HandlePaymentWebhook(r *ginext.Request) (*ginex
 	}
 
 	return ginext.NewSuccessResponse("Webhook processed successfully"), nil
-}
-
-// GetTransactionByOrderCode godoc
-// @Summary Get transaction by order code
-// @Description Retrieve transaction details by PayOS order code
-// @Tags transactions
-// @Produce json
-// @Param order_code path int true "Order code"
-// @Success 200 {object} ginext.Response{data=model.TransactionResponse}
-// @Failure 400 {object} ginext.Response
-// @Failure 404 {object} ginext.Response
-// @Failure 500 {object} ginext.Response
-// @Router /api/v1/transactions/{order_code} [get]
-func (h *TransactionHandlerImpl) GetTransactionByOrderCode(r *ginext.Request) (*ginext.Response, error) {
-	orderCodeStr := r.GinCtx.Param("order_code")
-	orderCode, err := strconv.Atoi(orderCodeStr)
-	if err != nil {
-		return nil, ginext.NewBadRequestError("Invalid order code")
-	}
-
-	transaction, err := h.service.GetTransactionByOrderCode(r.GinCtx.Request.Context(), orderCode)
-	if err != nil {
-		log.Error().Err(err).Int("order_code", orderCode).Msg("Transaction not found")
-		return nil, ginext.NewNotFoundError("Transaction not found")
-	}
-
-	return ginext.NewSuccessResponse(transaction), nil
 }
 
 func (h *TransactionHandlerImpl) GetByID(r *ginext.Request) (*ginext.Response, error) {

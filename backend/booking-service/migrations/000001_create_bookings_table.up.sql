@@ -22,38 +22,26 @@ CREATE TABLE IF NOT EXISTS bookings (
     booking_reference VARCHAR(20) UNIQUE NOT NULL,
     trip_id UUID NOT NULL,
     user_id UUID NOT NULL,
-    
-    -- Pricing (changed from DECIMAL to INTEGER to match Go model)
     total_amount INTEGER NOT NULL,
-    
-    -- Status
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
-    payment_status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
-    
-    -- Payment info - PayOS integration handled by Payment Service
-    payment_order_id VARCHAR(255),
-    
-    -- Timestamps
+    transaction_status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    transaction_id UUID NOT NULL,
     expires_at TIMESTAMPTZ,
     confirmed_at TIMESTAMPTZ,
     cancelled_at TIMESTAMPTZ,
-    
-    -- Optional
     cancellation_reason TEXT,
     notes TEXT,
-    
-    -- Constraints
     CONSTRAINT chk_booking_status CHECK (status IN ('PENDING', 'CONFIRMED', 'CANCELLED', 'EXPIRED', 'FAILED')),
-    CONSTRAINT chk_payment_status CHECK (payment_status IN ('PENDING', 'CANCELLED', 'UNDERPAID', 'PAID', 'EXPIRED', 'PROCESSING', 'FAILED'))
+    CONSTRAINT chk_transaction_status CHECK (transaction_status IN ('PENDING', 'CANCELLED', 'UNDERPAID', 'PAID', 'EXPIRED', 'PROCESSING', 'FAILED'))
 );
 
 -- Create indexes
 CREATE INDEX IF NOT EXISTS idx_bookings_trip_id ON bookings(trip_id);
 CREATE INDEX IF NOT EXISTS idx_bookings_user_id ON bookings(user_id);
 CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings(status);
-CREATE INDEX IF NOT EXISTS idx_bookings_payment_status ON bookings(payment_status);
+CREATE INDEX IF NOT EXISTS idx_bookings_transaction_status ON bookings(transaction_status);
 CREATE INDEX IF NOT EXISTS idx_bookings_booking_reference ON bookings(booking_reference);
-CREATE INDEX IF NOT EXISTS idx_bookings_payment_order_id ON bookings(payment_order_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_transaction_id ON bookings(transaction_id);
 CREATE INDEX IF NOT EXISTS idx_bookings_expires_at ON bookings(expires_at);
 CREATE INDEX IF NOT EXISTS idx_bookings_deleted_at ON bookings(deleted_at);
 
