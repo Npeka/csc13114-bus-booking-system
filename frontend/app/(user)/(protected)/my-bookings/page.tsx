@@ -149,14 +149,14 @@ export default function MyBookingsPage() {
 
   // TODO: Once backend provides trip departure time, use that for date comparison
   const upcomingBookings = allBookings.filter(
-    (b) => b.status === "confirmed" || b.status === "pending",
+    (b) => b.status === "CONFIRMED" || b.status === "PENDING",
   );
 
   const pastBookings = allBookings.filter(
-    (b) => (b.status === "confirmed" || b.status === "pending") && false, // TODO: Add isPast check when trip time available
+    (b) => (b.status === "CONFIRMED" || b.status === "PENDING") && false, // TODO: Add isPast check when trip time available
   );
 
-  const cancelledBookings = allBookings.filter((b) => b.status === "cancelled");
+  const cancelledBookings = allBookings.filter((b) => b.status === "CANCELLED");
 
   return (
     <div className="min-h-screen bg-secondary/30">

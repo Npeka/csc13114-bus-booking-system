@@ -50,6 +50,14 @@ export function Header() {
         {/* Right side: Auth + Mobile Menu */}
         <div className="flex items-center space-x-2">
           <nav className="hidden items-center space-x-6 md:flex">
+            {!isAuthenticated && (
+              <Link
+                href="/booking-lookup"
+                className="text-sm font-semibold text-foreground/80 transition-colors hover:text-foreground"
+              >
+                Tra cứu vé
+              </Link>
+            )}
             {isAdmin && (
               <Link
                 href="/admin"

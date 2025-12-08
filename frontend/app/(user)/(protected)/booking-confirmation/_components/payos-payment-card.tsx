@@ -1,7 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, QrCode, Copy, Check } from "lucide-react";
+import {
+  ExternalLink,
+  QrCode,
+  Copy,
+  Check,
+  CreditCard,
+  Smartphone,
+  Lightbulb,
+  Shield,
+  AlertTriangle,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -43,7 +53,8 @@ export function PayOSPaymentCard({
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
-            💳 Thanh toán qua PayOS
+            <CreditCard className="h-5 w-5" />
+            Thanh toán qua PayOS
             {isPending && !isExpired && (
               <Badge variant="secondary" className="bg-warning/20 text-warning">
                 Chờ thanh toán
@@ -121,16 +132,18 @@ export function PayOSPaymentCard({
                     )}
                   </Button>
                 </div>
-                <p className="mt-3 text-center text-xs text-muted-foreground">
-                  💡 Sử dụng app ngân hàng hỗ trợ VietQR để quét mã
+                <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
+                  <Lightbulb className="h-3.5 w-3.5" />
+                  Sử dụng app ngân hàng hỗ trợ VietQR để quét mã
                 </p>
               </div>
             )}
 
             {/* Instructions */}
             <div className="rounded-lg bg-blue-50 p-4 text-sm">
-              <h4 className="mb-2 font-semibold text-blue-900">
-                📱 Hướng dẫn thanh toán:
+              <h4 className="mb-2 flex items-center gap-2 font-semibold text-blue-900">
+                <Smartphone className="h-4 w-4" />
+                Hướng dẫn thanh toán:
               </h4>
               <ol className="ml-4 list-decimal space-y-1 text-blue-800">
                 <li>Nhấn nút &quot;Mở trang thanh toán PayOS&quot; ở trên</li>
@@ -144,8 +157,9 @@ export function PayOSPaymentCard({
 
         {isExpired && (
           <div className="rounded-lg bg-red-50 p-4 text-center">
-            <p className="font-semibold text-red-900">
-              ⏰ Đã hết hạn thanh toán
+            <p className="flex items-center justify-center gap-2 font-semibold text-red-900">
+              <AlertTriangle className="h-5 w-5" />
+              Đã hết hạn thanh toán
             </p>
             <p className="mt-1 text-sm text-red-700">
               Vui lòng đặt vé mới để tiếp tục
@@ -154,8 +168,9 @@ export function PayOSPaymentCard({
         )}
 
         {/* Security Note */}
-        <p className="text-center text-xs text-muted-foreground">
-          🔒 Giao dịch được bảo mật bởi PayOS
+        <p className="flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
+          <Shield className="h-3.5 w-3.5" />
+          Giao dịch được bảo mật bởi PayOS
         </p>
       </CardContent>
     </Card>

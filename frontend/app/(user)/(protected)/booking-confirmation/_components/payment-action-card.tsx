@@ -1,4 +1,4 @@
-import { CreditCard } from "lucide-react";
+import { CreditCard, Shield } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -39,8 +39,9 @@ export function PaymentActionCard({
               ? "Đã hết hạn thanh toán"
               : `Thanh toán ${totalAmount.toLocaleString()}đ`}
         </Button>
-        <p className="text-center text-xs text-muted-foreground">
-          🔒 Thanh toán an toàn qua cổng PayOS
+        <p className="flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
+          <Shield className="h-3.5 w-3.5" />
+          Thanh toán an toàn qua cổng PayOS
         </p>
       </CardContent>
     </Card>

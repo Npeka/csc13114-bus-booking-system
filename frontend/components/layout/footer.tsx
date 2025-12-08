@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Facebook, Mail, Phone, MapPin } from "lucide-react";
+import { Mail, Phone, MapPin } from "lucide-react";
 
 export function Footer() {
   return (
@@ -24,17 +24,6 @@ export function Footer() {
               Nền tảng đặt vé xe khách hàng đầu Việt Nam. Đặt vé nhanh, an toàn
               và tiện lợi.
             </p>
-            <div className="flex space-x-4">
-              <a
-                href="https://facebook.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-neutral-400 transition-colors hover:text-primary"
-              >
-                <Facebook className="h-5 w-5" />
-                <span className="sr-only">Facebook</span>
-              </a>
-            </div>
           </div>
 
           {/* Quick Links */}

@@ -54,20 +54,20 @@ export default function BookingDetailsPage() {
   });
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "confirmed":
+    switch (status?.toUpperCase()) {
+      case "CONFIRMED":
         return (
           <Badge className="bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400">
             Đã xác nhận
           </Badge>
         );
-      case "pending":
+      case "PENDING":
         return (
           <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100 dark:bg-orange-900/20 dark:text-orange-400">
             Chờ thanh toán
           </Badge>
         );
-      case "cancelled":
+      case "CANCELLED":
         return (
           <Badge className="bg-red-100 text-red-700 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400">
             Đã hủy
@@ -119,7 +119,7 @@ export default function BookingDetailsPage() {
             size="lg"
             onClick={() => downloadMutation.mutate()}
             disabled={
-              downloadMutation.isPending || booking.status !== "confirmed"
+              downloadMutation.isPending || booking.status !== "CONFIRMED"
             }
           >
             <Download className="mr-2 h-4 w-4" />
@@ -197,13 +197,23 @@ export default function BookingDetailsPage() {
               <CardContent>
                 <div className="flex flex-wrap gap-2">
                   {booking.seats?.map((seat) => (
-                    <Badge
+                    <div
                       key={seat.id}
-                      variant="outline"
-                      className="h-8 px-3 font-mono"
+                      className="flex flex-col items-center rounded-md border p-2"
                     >
-                      {seat.seat_number}
-                    </Badge>
+                      <Badge
+                        variant="outline"
+                        className="mb-1 h-8 px-3 font-mono"
+                      >
+                        {seat.seat_number}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {seat.seat_type === "vip" ? "VIP" : "Thường"}
+                      </span>
+                      <span className="text-xs font-semibold">
+                        {seat.price.toLocaleString()}đ
+                      </span>
+                    </div>
                   ))}
                 </div>
               </CardContent>
@@ -241,12 +251,12 @@ export default function BookingDetailsPage() {
                   </span>
                   <Badge
                     variant={
-                      booking.payment_status === "paid"
+                      booking.transaction_status === "PAID"
                         ? "default"
                         : "secondary"
                     }
                   >
-                    {booking.payment_status === "paid"
+                    {booking.transaction_status === "PAID"
                       ? "Đã thanh toán"
                       : "Chưa thanh toán"}
                   </Badge>
@@ -259,10 +269,34 @@ export default function BookingDetailsPage() {
                   </span>
                 </div>
 
-                {booking.status === "pending" && (
-                  <Button className="w-full" size="lg">
-                    Thanh toán ngay
-                  </Button>
+                {booking.status === "PENDING" && booking.transaction && (
+                  <div className="space-y-3">
+                    {booking.transaction.checkout_url && (
+                      <Button
+                        className="w-full"
+                        size="lg"
+                        onClick={() =>
+                          window.open(
+                            booking.transaction!.checkout_url,
+                            "_blank",
+                          )
+                        }
+                      >
+                        Thanh toán ngay
+                      </Button>
+                    )}
+
+                    {booking.transaction.qr_code && (
+                      <div className="rounded-md border bg-muted/50 p-3">
+                        <p className="mb-2 text-xs font-medium text-muted-foreground">
+                          Mã QR chuyển khoản:
+                        </p>
+                        <pre className="font-mono text-[10px] leading-tight break-all whitespace-pre-wrap">
+                          {booking.transaction.qr_code}
+                        </pre>
+                      </div>
+                    )}
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -295,7 +329,7 @@ export default function BookingDetailsPage() {
                     </p>
                   </div>
                 )}
-                {booking.expires_at && booking.status === "pending" && (
+                {booking.expires_at && booking.status === "PENDING" && (
                   <div>
                     <p className="text-destructive">Hết hạn lúc:</p>
                     <p className="font-medium">

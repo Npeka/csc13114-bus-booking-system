@@ -189,7 +189,10 @@ function BookingConfirmationContent() {
         )}
 
         {/* Actions */}
-        <BookingActions />
+        <BookingActions
+          bookingId={booking.id}
+          bookingReference={booking.booking_reference}
+        />
 
         {/* Important Notes */}
         <ImportantNotes />

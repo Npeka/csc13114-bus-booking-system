@@ -27,7 +27,7 @@ import { Download, X } from "lucide-react";
 import Link from "next/link";
 import { BookingCard } from "./booking-card";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { cancelBooking } from "@/lib/api/booking-service";
+import { cancelBooking, downloadETicket } from "@/lib/api/booking-service";
 import { toast } from "sonner";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { useState } from "react";
@@ -74,6 +74,34 @@ export function BookingTabs({
   const [selectedReason, setSelectedReason] = useState<string>("");
   const [customReason, setCustomReason] = useState<string>("");
   const [dialogOpen, setDialogOpen] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  // Download e-ticket mutation
+  const downloadMutation = useMutation({
+    mutationFn: ({ id, reference }: { id: string; reference: string }) =>
+      downloadETicket(id).then((blob) => ({ blob, reference })),
+    onSuccess: ({ blob, reference }) => {
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `eticket_${reference}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success("Tải vé điện tử thành công!");
+      setDownloadingId(null);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Không thể tải vé điện tử");
+      setDownloadingId(null);
+    },
+  });
+
+  const handleDownloadTicket = (id: string, reference: string) => {
+    setDownloadingId(id);
+    downloadMutation.mutate({ id, reference });
+  };
 
   // Cancel booking mutation
   const cancelMutation = useMutation({
@@ -151,9 +179,19 @@ export function BookingTabs({
                 booking={booking}
                 actions={
                   <>
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        handleDownloadTicket(
+                          booking.id,
+                          booking.bookingReference,
+                        )
+                      }
+                      disabled={downloadingId === booking.id}
+                    >
                       <Download className="h-4 w-4" />
-                      Tải vé
+                      {downloadingId === booking.id ? "Đang tải..." : "Tải vé"}
                     </Button>
                     <AlertDialog
                       open={dialogOpen === booking.id}
@@ -286,9 +324,19 @@ export function BookingTabs({
                 booking={booking}
                 actions={
                   <>
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        handleDownloadTicket(
+                          booking.id,
+                          booking.bookingReference,
+                        )
+                      }
+                      disabled={downloadingId === booking.id}
+                    >
                       <Download className="mr-2 h-4 w-4" />
-                      Tải vé
+                      {downloadingId === booking.id ? "Đang tải..." : "Tải vé"}
                     </Button>
                     <Button variant="outline" size="sm">
                       Đặt lại
