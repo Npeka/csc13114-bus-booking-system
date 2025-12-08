@@ -87,6 +87,8 @@ services:
       PAYOS_CLIENT_ID: ce924919-6874-43ce-88fb-068b5e73988a
       PAYOS_API_KEY: 8d37f38e-f028-47c4-aa41-12674bf16328
       PAYOS_CHECKSUM_KEY: e01cb1038e2744ea9e479dc460dc80c91aff7e0b18d9a1431808f78e45dcde91
+      PAYOS_RETURN_URL: https://csc13114-bus-booking-system.vercel.app/payment/success
+      PAYOS_CANCEL_URL: https://csc13114-bus-booking-system.vercel.app/payment/cancel
     ingress:
       enabled: false # Traffic goes through gateway now
 
