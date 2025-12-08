@@ -139,7 +139,7 @@ func (s *bookingServiceImpl) CreateBooking(ctx context.Context, req *model.Creat
 		Amount:        totalAmount,
 		Currency:      payment.CurrencyVND,
 		PaymentMethod: payment.PaymentMethodPayOS,
-		Description:   fmt.Sprintf("Thanh toán vé %s", booking.BookingReference),
+		Description:   fmt.Sprintf("Don hang %s", booking.BookingReference),
 	})
 	if err != nil {
 		return nil, ginext.NewInternalServerError(fmt.Sprintf("failed to create payment link: %v", err))
@@ -370,6 +370,7 @@ func (s *bookingServiceImpl) toBookingResponse(booking *model.Booking) *model.Bo
 	return resp
 }
 
+// example: BK251208AB123
 func (s *bookingServiceImpl) generateBookingReference() string {
 	now := time.Now().UTC()
 	dateStr := now.Format("060102") // YYMMDD
