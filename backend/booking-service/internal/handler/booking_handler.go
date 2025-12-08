@@ -15,8 +15,8 @@ type BookingHandler interface {
 	CreateBooking(r *ginext.Request) (*ginext.Response, error)
 	CreateGuestBooking(r *ginext.Request) (*ginext.Response, error)
 
-	GetBooking(r *ginext.Request) (*ginext.Response, error)
-	GetBookingByReference(r *ginext.Request) (*ginext.Response, error)
+	GetByID(r *ginext.Request) (*ginext.Response, error)
+	GetByReference(r *ginext.Request) (*ginext.Response, error)
 	GetUserBookings(r *ginext.Request) (*ginext.Response, error)
 	GetTripBookings(r *ginext.Request) (*ginext.Response, error)
 	CancelBooking(r *ginext.Request) (*ginext.Response, error)
@@ -95,7 +95,7 @@ func (h *BookingHandlerImpl) CreateGuestBooking(r *ginext.Request) (*ginext.Resp
 	return ginext.NewSuccessResponse(booking), nil
 }
 
-// GetBooking godoc
+// GetByID godoc
 // @Summary Get booking by ID
 // @Description Get a specific booking by its ID
 // @Tags bookings
@@ -105,7 +105,7 @@ func (h *BookingHandlerImpl) CreateGuestBooking(r *ginext.Request) (*ginext.Resp
 // @Failure 400 {object} ginext.Response
 // @Failure 404 {object} ginext.Response
 // @Router /api/v1/bookings/{id} [get]
-func (h *BookingHandlerImpl) GetBooking(r *ginext.Request) (*ginext.Response, error) {
+func (h *BookingHandlerImpl) GetByID(r *ginext.Request) (*ginext.Response, error) {
 	idStr := r.GinCtx.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -113,7 +113,7 @@ func (h *BookingHandlerImpl) GetBooking(r *ginext.Request) (*ginext.Response, er
 		return nil, ginext.NewBadRequestError("invalid booking id")
 	}
 
-	booking, err := h.bookingService.GetBookingByID(r.Context(), id)
+	booking, err := h.bookingService.GetByID(r.Context(), id)
 	if err != nil {
 		log.Error().Err(err).Str("booking_id", idStr).Msg("failed to get booking")
 		return nil, err
@@ -122,7 +122,7 @@ func (h *BookingHandlerImpl) GetBooking(r *ginext.Request) (*ginext.Response, er
 	return ginext.NewSuccessResponse(booking), nil
 }
 
-// GetBookingByReference godoc
+// GetByReference godoc
 // @Summary Get booking by reference number
 // @Description Get booking details using booking reference number (for guest lookup)
 // @Tags bookings
@@ -133,7 +133,7 @@ func (h *BookingHandlerImpl) GetBooking(r *ginext.Request) (*ginext.Response, er
 // @Failure 400 {object} ginext.Response
 // @Failure 404 {object} ginext.Response
 // @Router /api/v1/bookings/lookup [get]
-func (h *BookingHandlerImpl) GetBookingByReference(r *ginext.Request) (*ginext.Response, error) {
+func (h *BookingHandlerImpl) GetByReference(r *ginext.Request) (*ginext.Response, error) {
 	reference := r.GinCtx.Query("reference")
 	email := r.GinCtx.Query("email")
 
@@ -141,7 +141,7 @@ func (h *BookingHandlerImpl) GetBookingByReference(r *ginext.Request) (*ginext.R
 		return nil, ginext.NewBadRequestError("Booking reference is required")
 	}
 
-	booking, err := h.bookingService.GetBookingByReference(r.Context(), reference, email)
+	booking, err := h.bookingService.GetByReference(r.Context(), reference, email)
 	if err != nil {
 		log.Error().Err(err).Str("reference", reference).Msg("failed to get booking by reference")
 		return nil, err

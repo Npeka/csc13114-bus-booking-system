@@ -35,7 +35,8 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 
 			// create booking
 			bookings.POST("/guest", ginext.WrapHandler(h.BookingHandler.CreateGuestBooking))
-			bookings.GET("/lookup", ginext.WrapHandler(h.BookingHandler.GetBookingByReference))
+			bookings.GET("/lookup", ginext.WrapHandler(h.BookingHandler.GetByReference))
+			bookings.GET("/:id", ginext.WrapHandler(h.BookingHandler.GetByID))
 
 			// E-ticket download - public route (accessible by booking ID)
 			bookings.GET("/:id/eticket", func(c *gin.Context) {
@@ -50,8 +51,6 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 			// Authenticated routes
 			bookings.Use(middleware.RequireAuth())
 			bookings.POST("", ginext.WrapHandler(h.BookingHandler.CreateBooking))
-
-			bookings.GET("/:id", ginext.WrapHandler(h.BookingHandler.GetBooking))
 			bookings.POST("/:id/cancel", ginext.WrapHandler(h.BookingHandler.CancelBooking))
 			bookings.GET("/user/:user_id", ginext.WrapHandler(h.BookingHandler.GetUserBookings))
 

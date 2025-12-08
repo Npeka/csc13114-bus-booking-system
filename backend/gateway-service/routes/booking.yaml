@@ -20,8 +20,6 @@ routes:
 
   - path: "/api/v1/bookings/:id"
     methods: ["GET"]
-    auth:
-      required: true
 
   - path: "/api/v1/bookings/:id/cancel"
     methods: ["POST"]

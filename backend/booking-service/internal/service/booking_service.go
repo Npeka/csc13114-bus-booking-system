@@ -24,8 +24,8 @@ type BookingService interface {
 	CreateGuestBooking(ctx context.Context, req *model.CreateGuestBookingRequest) (*model.BookingResponse, error)
 	UpdateBookingStatus(ctx context.Context, req *model.UpdateBookingStatusRequest, bookingID uuid.UUID) error
 
-	GetBookingByID(ctx context.Context, id uuid.UUID) (*model.BookingResponse, error)
-	GetBookingByReference(ctx context.Context, reference string, email string) (*model.BookingResponse, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*model.BookingResponse, error)
+	GetByReference(ctx context.Context, reference string, email string) (*model.BookingResponse, error)
 	GetUserBookings(ctx context.Context, req model.PaginationRequest, userID uuid.UUID) ([]*model.BookingResponse, int64, error)
 	GetTripBookings(ctx context.Context, req model.PaginationRequest, tripID uuid.UUID) ([]*model.BookingResponse, int64, error)
 
@@ -264,7 +264,7 @@ func (s *bookingServiceImpl) UpdateBookingStatus(ctx context.Context, req *model
 	return s.bookingRepo.UpdateBooking(ctx, booking)
 }
 
-func (s *bookingServiceImpl) GetBookingByID(ctx context.Context, id uuid.UUID) (*model.BookingResponse, error) {
+func (s *bookingServiceImpl) GetByID(ctx context.Context, id uuid.UUID) (*model.BookingResponse, error) {
 	booking, err := s.bookingRepo.GetBookingByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -281,8 +281,8 @@ func (s *bookingServiceImpl) GetBookingByID(ctx context.Context, id uuid.UUID) (
 	return resp, nil
 }
 
-// GetBookingByReference retrieves booking by reference number for guest lookup
-func (s *bookingServiceImpl) GetBookingByReference(ctx context.Context, reference string, email string) (*model.BookingResponse, error) {
+// GetByReference retrieves booking by reference number for guest lookup
+func (s *bookingServiceImpl) GetByReference(ctx context.Context, reference string, email string) (*model.BookingResponse, error) {
 	booking, err := s.bookingRepo.GetBookingByReference(ctx, reference)
 	if err != nil {
 		return nil, ginext.NewNotFoundError("Booking not found with this reference number")
