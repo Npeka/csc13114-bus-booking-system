@@ -9,7 +9,9 @@ import (
 
 	"bus-booking/booking-service/internal/client"
 	"bus-booking/booking-service/internal/model"
+	"bus-booking/booking-service/internal/model/payment"
 	"bus-booking/booking-service/internal/model/trip"
+	"bus-booking/booking-service/internal/model/user"
 	"bus-booking/booking-service/internal/repository"
 	"bus-booking/shared/ginext"
 
@@ -20,14 +22,16 @@ import (
 type BookingService interface {
 	CreateBooking(ctx context.Context, req *model.CreateBookingRequest, userID uuid.UUID) (*model.BookingResponse, error)
 	CreateGuestBooking(ctx context.Context, req *model.CreateGuestBookingRequest) (*model.BookingResponse, error)
+
 	GetBookingByID(ctx context.Context, id uuid.UUID) (*model.BookingResponse, error)
 	GetBookingByReference(ctx context.Context, reference string, email string) (*model.BookingResponse, error)
 	GetUserBookings(ctx context.Context, req model.PaginationRequest, userID uuid.UUID) ([]*model.BookingResponse, int64, error)
 	GetTripBookings(ctx context.Context, req model.PaginationRequest, tripID uuid.UUID) ([]*model.BookingResponse, int64, error)
+
 	CancelBooking(ctx context.Context, id uuid.UUID, userID uuid.UUID, reason string) error
 	UpdateBookingStatus(ctx context.Context, id uuid.UUID, status string) error
-	CreatePayment(ctx context.Context, bookingID uuid.UUID, buyerInfo *model.BuyerInfo) (*client.PaymentLinkResponse, error)
-	UpdatePaymentStatus(ctx context.Context, bookingID uuid.UUID, paymentStatus, bookingStatus, paymentOrderID string) error
+
+	UpdatePaymentStatus(ctx context.Context, req *model.UpdatePaymentStatusRequest, bookingID uuid.UUID) error
 	GetSeatStatus(ctx context.Context, tripID uuid.UUID, seatIDs []uuid.UUID) ([]model.SeatStatusItem, error)
 }
 
@@ -106,7 +110,7 @@ func (s *bookingServiceImpl) CreateBooking(ctx context.Context, req *model.Creat
 		UserID:           userID,
 		TotalAmount:      totalAmount,
 		Status:           model.BookingStatusPending,
-		PaymentStatus:    model.PaymentStatusPending,
+		PaymentStatus:    model.TransactionStatusPending,
 		Notes:            req.Notes,
 		ExpiresAt:        &expiresAt,
 	}
@@ -129,7 +133,19 @@ func (s *bookingServiceImpl) CreateBooking(ctx context.Context, req *model.Creat
 		return nil, ginext.NewInternalServerError(fmt.Sprintf("failed to create booking: %v", err))
 	}
 
-	// 8. Push notification to queue (khi có notification service)
+	// 8. Create payment link
+	transaction, err := s.paymentClient.CreatePaymentLink(ctx, &payment.CreatePaymentLinkRequest{
+		BookingID:     booking.ID,
+		Amount:        totalAmount,
+		Currency:      payment.CurrencyVND,
+		PaymentMethod: payment.PaymentMethodPayOS,
+		Description:   fmt.Sprintf("Thanh toán vé %s", booking.BookingReference),
+	})
+	if err != nil {
+		return nil, ginext.NewInternalServerError(fmt.Sprintf("failed to create payment link: %v", err))
+	}
+
+	// 9. Push notification to queue (khi có notification service)
 	// TODO: Uncomment khi notification service đã ready
 	/*
 		if s.notificationQueue != nil {
@@ -154,36 +170,34 @@ func (s *bookingServiceImpl) CreateBooking(ctx context.Context, req *model.Creat
 	*/
 
 	// 9. Return response
-	return s.toBookingResponse(booking), nil
+	res := s.toBookingResponse(booking)
+	res.Transaction = transaction
+	return res, nil
 }
 
 // CreateGuestBooking creates a booking for guest users (without authentication)
 func (s *bookingServiceImpl) CreateGuestBooking(ctx context.Context, req *model.CreateGuestBookingRequest) (*model.BookingResponse, error) {
 	// 1. Validate contact information
 	if req.Email == "" && req.Phone == "" {
-		return nil, ginext.NewBadRequestError("either email or phone must be provided")
+		return nil, ginext.NewBadRequestError("phải cung cấp email hoặc số điện thoại")
 	}
 
 	// 2. Create or get guest account from user service
-	guestReq := &client.CreateGuestAccountRequest{
+	guest, err := s.userClient.CreateGuest(ctx, &user.CreateGuestRequest{
 		FullName: req.FullName,
 		Email:    req.Email,
 		Phone:    req.Phone,
-	}
-
-	guestAccount, err := s.userClient.CreateGuestAccount(ctx, guestReq)
+	})
 	if err != nil {
-		return nil, ginext.NewInternalServerError(fmt.Sprintf("failed to create guest account: %v", err))
+		return nil, ginext.NewInternalServerError("không thể tạo tài khoản khách")
 	}
 
 	// 3. Use existing CreateBooking logic with guest user ID
-	bookingReq := &model.CreateBookingRequest{
+	return s.CreateBooking(ctx, &model.CreateBookingRequest{
 		TripID:  req.TripID,
 		SeatIDs: req.SeatIDs,
 		Notes:   req.Notes,
-	}
-
-	return s.CreateBooking(ctx, bookingReq, guestAccount.ID)
+	}, guest.ID)
 }
 
 func (s *bookingServiceImpl) checkSeatAvailability(ctx context.Context, tripID uuid.UUID, seatIDs []uuid.UUID) (bool, error) {
@@ -206,12 +220,12 @@ func (s *bookingServiceImpl) checkSeatAvailability(ctx context.Context, tripID u
 	return true, nil
 }
 
-func (s *bookingServiceImpl) CalculateTotalPrice(basePrice float64, seats []trip.Seat) float64 {
+func (s *bookingServiceImpl) CalculateTotalPrice(basePrice float64, seats []trip.Seat) int {
 	total := 0.0
 	for _, seat := range seats {
 		total += seat.CalculateSeatPrice(basePrice)
 	}
-	return total
+	return int(total)
 }
 
 func (s *bookingServiceImpl) GetBookingByID(ctx context.Context, id uuid.UUID) (*model.BookingResponse, error) {
@@ -299,65 +313,20 @@ func (s *bookingServiceImpl) UpdateBookingStatus(ctx context.Context, id uuid.UU
 	return s.bookingRepo.UpdateStatus(ctx, id, bookingStatus)
 }
 
-// CreatePayment creates a payment link for the booking
-func (s *bookingServiceImpl) CreatePayment(ctx context.Context, bookingID uuid.UUID, buyerInfo *model.BuyerInfo) (*client.PaymentLinkResponse, error) {
-	// Get booking details
-	booking, err := s.bookingRepo.GetBookingByID(ctx, bookingID)
-	if err != nil {
-		return nil, ginext.NewNotFoundError("booking not found")
-	}
-
-	// Validate booking status
-	if booking.Status != model.BookingStatusPending {
-		return nil, ginext.NewBadRequestError("booking is not in pending status")
-	}
-
-	// Check if booking has expired
-	if booking.ExpiresAt != nil && time.Now().After(*booking.ExpiresAt) {
-		return nil, ginext.NewBadRequestError("booking has expired")
-	}
-
-	// Create payment link request
-	paymentReq := &client.CreatePaymentLinkRequest{
-		BookingID:     bookingID,
-		Amount:        booking.TotalAmount,
-		Currency:      "VND",
-		PaymentMethod: "PAYOS",
-		Description:   fmt.Sprintf("Thanh toán vé %s", booking.BookingReference),
-		BuyerName:     buyerInfo.Name,
-		BuyerEmail:    buyerInfo.Email,
-		BuyerPhone:    buyerInfo.Phone,
-	}
-
-	// Call payment service
-	paymentResp, err := s.paymentClient.CreatePaymentLink(ctx, paymentReq)
-	if err != nil {
-		return nil, ginext.NewInternalServerError(fmt.Sprintf("failed to create payment link: %v", err))
-	}
-
-	// Update booking with payment order ID
-	booking.PaymentOrderID = fmt.Sprintf("%d", paymentResp.OrderCode)
-	if err := s.bookingRepo.UpdateBooking(ctx, booking); err != nil {
-		return nil, ginext.NewInternalServerError("failed to update booking with payment info")
-	}
-
-	return paymentResp, nil
-}
-
 // UpdatePaymentStatus updates booking payment status (called by payment service)
-func (s *bookingServiceImpl) UpdatePaymentStatus(ctx context.Context, bookingID uuid.UUID, paymentStatus, bookingStatus, paymentOrderID string) error {
+func (s *bookingServiceImpl) UpdatePaymentStatus(ctx context.Context, req *model.UpdatePaymentStatusRequest, bookingID uuid.UUID) error {
 	booking, err := s.bookingRepo.GetBookingByID(ctx, bookingID)
 	if err != nil {
 		return ginext.NewNotFoundError("booking not found")
 	}
 
 	// Update payment status
-	booking.PaymentStatus = model.PaymentStatus(paymentStatus)
-	booking.Status = model.BookingStatus(bookingStatus)
-	booking.PaymentOrderID = paymentOrderID
+	booking.PaymentStatus = req.PaymentStatus
+	booking.Status = req.BookingStatus
+	booking.PaymentOrderID = req.PaymentOrderID
 
 	// If payment is successful, set confirmed time
-	if paymentStatus == string(model.PaymentStatusPaid) && bookingStatus == string(model.BookingStatusConfirmed) {
+	if req.PaymentStatus == model.TransactionStatusPaid && req.BookingStatus == model.BookingStatusConfirmed {
 		now := time.Now()
 		booking.ConfirmedAt = &now
 	}
@@ -370,6 +339,8 @@ func (s *bookingServiceImpl) UpdatePaymentStatus(ctx context.Context, bookingID 
 func (s *bookingServiceImpl) toBookingResponse(booking *model.Booking) *model.BookingResponse {
 	resp := &model.BookingResponse{
 		ID:               booking.ID,
+		CreatedAt:        booking.CreatedAt,
+		UpdatedAt:        booking.UpdatedAt,
 		BookingReference: booking.BookingReference,
 		TripID:           booking.TripID,
 		UserID:           booking.UserID,
@@ -381,8 +352,6 @@ func (s *bookingServiceImpl) toBookingResponse(booking *model.Booking) *model.Bo
 		ExpiresAt:        booking.ExpiresAt,
 		ConfirmedAt:      booking.ConfirmedAt,
 		CancelledAt:      booking.CancelledAt,
-		CreatedAt:        booking.CreatedAt,
-		UpdatedAt:        booking.UpdatedAt,
 	}
 
 	// Map seats

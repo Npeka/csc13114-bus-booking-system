@@ -1,48 +1,4 @@
 definitions:
-  bus-booking_booking-service_internal_model.Booking:
-    properties:
-      booking_reference:
-        type: string
-      booking_seats:
-        description: Relations
-        items:
-          $ref: '#/definitions/bus-booking_booking-service_internal_model.BookingSeat'
-        type: array
-      cancellation_reason:
-        description: Optional
-        type: string
-      cancelled_at:
-        type: string
-      confirmed_at:
-        type: string
-      created_at:
-        type: string
-      expires_at:
-        description: Timestamps
-        type: string
-      id:
-        type: string
-      notes:
-        type: string
-      payment_order_id:
-        description: Payment info - Payment Service handles PayOS integration
-        type: string
-      payment_status:
-        $ref: '#/definitions/bus-booking_booking-service_internal_model.PaymentStatus'
-      status:
-        allOf:
-        - $ref: '#/definitions/bus-booking_booking-service_internal_model.BookingStatus'
-        description: Status
-      total_amount:
-        description: Pricing
-        type: number
-      trip_id:
-        type: string
-      updated_at:
-        type: string
-      user_id:
-        type: string
-    type: object
   bus-booking_booking-service_internal_model.BookingResponse:
     properties:
       booking_reference:
@@ -71,42 +27,14 @@ definitions:
       status:
         type: string
       total_amount:
-        type: number
+        type: integer
+      transaction:
+        $ref: '#/definitions/bus-booking_booking-service_internal_model_payment.TransactionResponse'
       trip_id:
         type: string
       updated_at:
         type: string
       user_id:
-        type: string
-    type: object
-  bus-booking_booking-service_internal_model.BookingSeat:
-    properties:
-      booking_id:
-        type: string
-      created_at:
-        type: string
-      floor:
-        type: integer
-      id:
-        type: string
-      passenger_id:
-        type: string
-      passenger_name:
-        description: Optional passenger info (can be added later)
-        type: string
-      passenger_phone:
-        type: string
-      price:
-        type: number
-      price_multiplier:
-        type: number
-      seat_id:
-        type: string
-      seat_number:
-        type: string
-      seat_type:
-        type: string
-      updated_at:
         type: string
     type: object
   bus-booking_booking-service_internal_model.BookingSeatResponse:
@@ -145,21 +73,18 @@ definitions:
     type: object
   bus-booking_booking-service_internal_model.BookingStatus:
     enum:
-    - pending
-    - confirmed
-    - cancelled
-    - expired
+    - PENDING
+    - CONFIRMED
+    - CANCELLED
+    - EXPIRED
+    - FAILED
     type: string
-    x-enum-comments:
-      BookingStatusCancelled: Đã hủy
-      BookingStatusConfirmed: Đã xác nhận và thanh toán
-      BookingStatusExpired: Hết hạn (quá 15 phút chưa thanh toán)
-      BookingStatusPending: Chờ thanh toán
     x-enum-varnames:
     - BookingStatusPending
     - BookingStatusConfirmed
     - BookingStatusCancelled
     - BookingStatusExpired
+    - BookingStatusFailed
   bus-booking_booking-service_internal_model.CancelBookingRequest:
     properties:
       reason:
@@ -202,6 +127,33 @@ definitions:
     - booking_id
     - rating
     - user_id
+    type: object
+  bus-booking_booking-service_internal_model.CreateGuestBookingRequest:
+    properties:
+      email:
+        type: string
+      full_name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      notes:
+        type: string
+      phone:
+        maxLength: 15
+        minLength: 10
+        type: string
+      seat_ids:
+        items:
+          type: string
+        maxItems: 10
+        minItems: 1
+        type: array
+      trip_id:
+        type: string
+    required:
+    - full_name
+    - seat_ids
+    - trip_id
     type: object
   bus-booking_booking-service_internal_model.FeedbackResponse:
     properties:
@@ -277,60 +229,6 @@ definitions:
       total_pages:
         type: integer
     type: object
-  bus-booking_booking-service_internal_model.PaymentMethodResponse:
-    properties:
-      code:
-        type: string
-      description:
-        type: string
-      id:
-        type: string
-      is_active:
-        type: boolean
-      name:
-        type: string
-    type: object
-  bus-booking_booking-service_internal_model.PaymentResponse:
-    properties:
-      amount:
-        type: number
-      booking_id:
-        type: string
-      payment_method_id:
-        type: string
-      processed_at:
-        type: string
-      status:
-        type: string
-      transaction_id:
-        type: string
-    type: object
-  bus-booking_booking-service_internal_model.PaymentStatus:
-    enum:
-    - pending
-    - paid
-    - refunded
-    - failed
-    type: string
-    x-enum-comments:
-      PaymentStatusFailed: Thanh toán thất bại
-      PaymentStatusPaid: Đã thanh toán
-      PaymentStatusPending: Chờ thanh toán
-      PaymentStatusRefunded: Đã hoàn tiền
-    x-enum-varnames:
-    - PaymentStatusPending
-    - PaymentStatusPaid
-    - PaymentStatusRefunded
-    - PaymentStatusFailed
-  bus-booking_booking-service_internal_model.ProcessPaymentRequest:
-    properties:
-      booking_id:
-        type: string
-      token:
-        type: string
-    required:
-    - booking_id
-    type: object
   bus-booking_booking-service_internal_model.ReleaseSeatRequest:
     properties:
       seat_id:
@@ -389,8 +287,6 @@ definitions:
     type: object
   bus-booking_booking-service_internal_model.SeatStatus:
     properties:
-      booking:
-        $ref: '#/definitions/bus-booking_booking-service_internal_model.Booking'
       booking_id:
         type: string
       created_at:
@@ -416,6 +312,33 @@ definitions:
     - seat_number
     - trip_id
     type: object
+  bus-booking_booking-service_internal_model.SeatStatusItem:
+    properties:
+      is_booked:
+        type: boolean
+      is_locked:
+        type: boolean
+      seat_id:
+        type: string
+    type: object
+  bus-booking_booking-service_internal_model.TransactionStatus:
+    enum:
+    - PENDING
+    - CANCELLED
+    - UNDERPAID
+    - PAID
+    - EXPIRED
+    - PROCESSING
+    - FAILED
+    type: string
+    x-enum-varnames:
+    - TransactionStatusPending
+    - TransactionStatusCancelled
+    - TransactionStatusUnderpaid
+    - TransactionStatusPaid
+    - TransactionStatusExpired
+    - TransactionStatusProcessing
+    - TransactionStatusFailed
   bus-booking_booking-service_internal_model.TripStatsResponse:
     properties:
       average_rating:
@@ -441,6 +364,74 @@ definitions:
     required:
     - status
     type: object
+  bus-booking_booking-service_internal_model.UpdatePaymentStatusRequest:
+    properties:
+      booking_status:
+        $ref: '#/definitions/bus-booking_booking-service_internal_model.BookingStatus'
+      payment_order_id:
+        type: string
+      payment_status:
+        $ref: '#/definitions/bus-booking_booking-service_internal_model.TransactionStatus'
+    required:
+    - booking_status
+    - payment_order_id
+    - payment_status
+    type: object
+  bus-booking_booking-service_internal_model_payment.Currency:
+    enum:
+    - VND
+    type: string
+    x-enum-varnames:
+    - CurrencyVND
+  bus-booking_booking-service_internal_model_payment.PaymentMethod:
+    enum:
+    - PAYOS
+    type: string
+    x-enum-varnames:
+    - PaymentMethodPayOS
+  bus-booking_booking-service_internal_model_payment.TransactionResponse:
+    properties:
+      amount:
+        type: integer
+      booking_id:
+        type: string
+      checkout_url:
+        type: string
+      created_at:
+        type: string
+      currency:
+        $ref: '#/definitions/bus-booking_booking-service_internal_model_payment.Currency'
+      id:
+        type: string
+      order_code:
+        type: integer
+      payment_method:
+        $ref: '#/definitions/bus-booking_booking-service_internal_model_payment.PaymentMethod'
+      qr_code:
+        type: string
+      status:
+        $ref: '#/definitions/bus-booking_booking-service_internal_model_payment.TransactionStatus'
+      updated_at:
+        type: string
+    type: object
+  bus-booking_booking-service_internal_model_payment.TransactionStatus:
+    enum:
+    - PENDING
+    - CANCELLED
+    - UNDERPAID
+    - PAID
+    - EXPIRED
+    - PROCESSING
+    - FAILED
+    type: string
+    x-enum-varnames:
+    - TransactionStatusPending
+    - TransactionStatusCancelled
+    - TransactionStatusUnderpaid
+    - TransactionStatusPaid
+    - TransactionStatusExpired
+    - TransactionStatusProcessing
+    - TransactionStatusFailed
   ginext.ErrorBody:
     properties:
       message:
@@ -594,6 +585,73 @@ paths:
       summary: Cancel a booking
       tags:
       - bookings
+  /api/v1/bookings/{id}/eticket:
+    get:
+      description: Download e-ticket PDF for a confirmed booking
+      parameters:
+      - description: Booking ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/pdf
+      responses:
+        "200":
+          description: PDF file
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: Download e-ticket PDF
+      tags:
+      - bookings
+  /api/v1/bookings/{id}/payment-status:
+    put:
+      consumes:
+      - application/json
+      description: Update booking payment status (internal use by payment service)
+      parameters:
+      - description: Booking ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Payment status update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.UpdatePaymentStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: Update booking payment status
+      tags:
+      - bookings
   /api/v1/bookings/{id}/status:
     put:
       consumes:
@@ -628,6 +686,77 @@ paths:
           schema:
             $ref: '#/definitions/ginext.Response'
       summary: Update booking status
+      tags:
+      - bookings
+  /api/v1/bookings/guest:
+    post:
+      consumes:
+      - application/json
+      description: Create a booking without authentication for guest users
+      parameters:
+      - description: Guest booking creation request
+        in: body
+        name: booking
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_booking-service_internal_model.CreateGuestBookingRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/ginext.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bus-booking_booking-service_internal_model.BookingResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: Create a guest booking
+      tags:
+      - bookings
+  /api/v1/bookings/lookup:
+    get:
+      description: Get booking details using booking reference number (for guest lookup)
+      parameters:
+      - description: Booking reference number
+        in: query
+        name: reference
+        required: true
+        type: string
+      - description: Email for verification
+        in: query
+        name: email
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/ginext.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bus-booking_booking-service_internal_model.BookingResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: Get booking by reference number
       tags:
       - bookings
   /api/v1/bookings/trip/{trip_id}:
@@ -671,6 +800,51 @@ paths:
           schema:
             $ref: '#/definitions/ginext.Response'
       summary: Get trip bookings
+      tags:
+      - bookings
+  /api/v1/bookings/trips/{trip_id}/seats/status:
+    get:
+      consumes:
+      - application/json
+      description: Get booking status of seats for a specific trip
+      parameters:
+      - description: Trip ID
+        format: uuid
+        in: path
+        name: trip_id
+        required: true
+        type: string
+      - collectionFormat: multi
+        description: Seat IDs
+        in: query
+        items:
+          type: string
+        name: seat_ids
+        required: true
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/ginext.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/bus-booking_booking-service_internal_model.SeatStatusItem'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: Get seat status for a trip
       tags:
       - bookings
   /api/v1/bookings/user/{user_id}:
@@ -827,65 +1001,6 @@ paths:
       summary: Get trip feedbacks
       tags:
       - feedback
-  /api/v1/payment/methods:
-    get:
-      description: Get all available payment methods
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/bus-booking_booking-service_internal_model.PaymentMethodResponse'
-                  type: array
-              type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ginext.Response'
-      summary: Get payment methods
-      tags:
-      - payment
-  /api/v1/payment/process:
-    post:
-      consumes:
-      - application/json
-      description: Process payment for a booking
-      parameters:
-      - description: Payment processing request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/bus-booking_booking-service_internal_model.ProcessPaymentRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/bus-booking_booking-service_internal_model.PaymentResponse'
-              type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ginext.Response'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ginext.Response'
-      summary: Process payment
-      tags:
-      - payment
   /api/v1/seat-locks:
     delete:
       consumes:

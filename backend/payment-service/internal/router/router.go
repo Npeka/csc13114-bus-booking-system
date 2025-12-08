@@ -28,12 +28,8 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 	{
 		transactions := v1.Group("/transactions")
 		{
-			transactions.POST("", ginext.WrapHandler(h.TransactionHandler.CreateTransaction))
-
 			transactions.POST("/payment-link", ginext.WrapHandler(h.TransactionHandler.CreatePaymentLink))
 			transactions.POST("/webhook", ginext.WrapHandler(h.TransactionHandler.HandlePaymentWebhook))
-			transactions.GET("/return", ginext.WrapHandler(h.TransactionHandler.HandlePaymentReturn))
-			transactions.GET("/cancel", ginext.WrapHandler(h.TransactionHandler.HandlePaymentCancel))
 			transactions.GET("/:order_code", ginext.WrapHandler(h.TransactionHandler.GetTransactionByOrderCode))
 		}
 	}

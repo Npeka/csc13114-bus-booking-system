@@ -23,12 +23,12 @@ CREATE TABLE IF NOT EXISTS bookings (
     trip_id UUID NOT NULL,
     user_id UUID NOT NULL,
     
-    -- Pricing
-    total_amount DECIMAL(10,2) NOT NULL,
+    -- Pricing (changed from DECIMAL to INTEGER to match Go model)
+    total_amount INTEGER NOT NULL,
     
     -- Status
-    status VARCHAR(20) NOT NULL DEFAULT 'pending',
-    payment_status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    payment_status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     
     -- Payment info - PayOS integration handled by Payment Service
     payment_order_id VARCHAR(255),
@@ -43,19 +43,21 @@ CREATE TABLE IF NOT EXISTS bookings (
     notes TEXT,
     
     -- Constraints
-    CONSTRAINT chk_booking_status CHECK (status IN ('pending', 'confirmed', 'cancelled', 'expired')),
-    CONSTRAINT chk_payment_status CHECK (payment_status IN ('pending', 'paid', 'refunded', 'failed'))
+    CONSTRAINT chk_booking_status CHECK (status IN ('PENDING', 'CONFIRMED', 'CANCELLED', 'EXPIRED', 'FAILED')),
+    CONSTRAINT chk_payment_status CHECK (payment_status IN ('PENDING', 'CANCELLED', 'UNDERPAID', 'PAID', 'EXPIRED', 'PROCESSING', 'FAILED'))
 );
 
 -- Create indexes
-CREATE INDEX idx_bookings_trip_id ON bookings(trip_id);
-CREATE INDEX idx_bookings_user_id ON bookings(user_id);
-CREATE INDEX idx_bookings_status ON bookings(status);
-CREATE INDEX idx_bookings_payment_status ON bookings(payment_status);
-CREATE INDEX idx_bookings_booking_reference ON bookings(booking_reference);
-CREATE INDEX idx_bookings_expires_at ON bookings(expires_at);
-CREATE INDEX idx_bookings_deleted_at ON bookings(deleted_at);
+CREATE INDEX IF NOT EXISTS idx_bookings_trip_id ON bookings(trip_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_user_id ON bookings(user_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings(status);
+CREATE INDEX IF NOT EXISTS idx_bookings_payment_status ON bookings(payment_status);
+CREATE INDEX IF NOT EXISTS idx_bookings_booking_reference ON bookings(booking_reference);
+CREATE INDEX IF NOT EXISTS idx_bookings_payment_order_id ON bookings(payment_order_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_expires_at ON bookings(expires_at);
+CREATE INDEX IF NOT EXISTS idx_bookings_deleted_at ON bookings(deleted_at);
 
 -- Add updated_at trigger
+DROP TRIGGER IF EXISTS update_bookings_updated_at ON bookings;
 CREATE TRIGGER update_bookings_updated_at BEFORE UPDATE ON bookings
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

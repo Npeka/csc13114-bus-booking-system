@@ -13,7 +13,7 @@ type TransactionRepository interface {
 	CreateTransaction(ctx context.Context, transaction *model.Transaction) error
 	UpdateTransaction(ctx context.Context, transaction *model.Transaction) error
 	GetTransactionByID(ctx context.Context, id uuid.UUID) (*model.Transaction, error)
-	GetTransactionByOrderCode(ctx context.Context, orderCode int64) (*model.Transaction, error)
+	GetTransactionByOrderCode(ctx context.Context, orderCode int) (*model.Transaction, error)
 	GetTransactionByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.Transaction, error)
 	GetTransactionsByBookingID(ctx context.Context, bookingID uuid.UUID) ([]*model.Transaction, error)
 }
@@ -49,7 +49,7 @@ func (r *transactionRepositoryImpl) GetTransactionByID(ctx context.Context, id u
 }
 
 // GetTransactionByOrderCode retrieves a transaction by PayOS order code
-func (r *transactionRepositoryImpl) GetTransactionByOrderCode(ctx context.Context, orderCode int64) (*model.Transaction, error) {
+func (r *transactionRepositoryImpl) GetTransactionByOrderCode(ctx context.Context, orderCode int) (*model.Transaction, error) {
 	var transaction model.Transaction
 	if err := r.db.WithContext(ctx).Where("order_code = ?", orderCode).First(&transaction).Error; err != nil {
 		return nil, fmt.Errorf("transaction not found: %w", err)

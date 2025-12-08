@@ -19,9 +19,9 @@ type TripClientImpl struct {
 	http client.HTTPClient
 }
 
-func NewTripClient(ServiceName, baseURL string) TripClient {
+func NewTripClient(serviceName, baseURL string) TripClient {
 	httpClient := client.NewHTTPClient(&client.Config{
-		ServiceName: ServiceName,
+		ServiceName: serviceName,
 		BaseURL:     baseURL,
 	})
 
@@ -33,12 +33,12 @@ func NewTripClient(ServiceName, baseURL string) TripClient {
 func (c *TripClientImpl) GetTripByID(ctx context.Context, tripID uuid.UUID) (*trip.Trip, error) {
 	endpoint := fmt.Sprintf("/api/v1/trips/%s", tripID.String())
 
-	resp, err := c.http.Get(ctx, endpoint, nil, nil)
+	res, err := c.http.Get(ctx, endpoint, nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get trip: %w", err)
 	}
 
-	tripData, err := client.ParseData[trip.Trip](resp)
+	tripData, err := client.ParseData[trip.Trip](res)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse trip response: %w", err)
 	}
@@ -56,12 +56,12 @@ func (c *TripClientImpl) ListSeatsByIDs(ctx context.Context, seatIDs []uuid.UUID
 	}
 	params["seat_ids"] = seatIDStrings
 
-	resp, err := c.http.Get(ctx, endpoint, params, nil)
+	res, err := c.http.Get(ctx, endpoint, params, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get trip: %w", err)
 	}
 
-	seats, err := client.ParseListData[trip.Seat](resp)
+	seats, err := client.ParseListData[trip.Seat](res)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse trip response: %w", err)
 	}

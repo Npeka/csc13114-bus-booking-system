@@ -1,6 +1,7 @@
 package model
 
 import (
+	"bus-booking/booking-service/internal/model/payment"
 	"time"
 
 	"github.com/google/uuid"
@@ -16,12 +17,10 @@ type CreateBookingRequest struct {
 
 // CreateGuestBookingRequest represents guest booking creation (without authentication)
 type CreateGuestBookingRequest struct {
-	TripID   uuid.UUID   `json:"trip_id" binding:"required"`
-	SeatIDs  []uuid.UUID `json:"seat_ids" binding:"required,min=1,max=10,dive"`
-	Notes    string      `json:"notes,omitempty"`
-	FullName string      `json:"full_name" binding:"required,min=1,max=100"`
-	Email    string      `json:"email" binding:"omitempty,email"`
-	Phone    string      `json:"phone" binding:"omitempty,min=10,max=15"`
+	CreateBookingRequest
+	FullName string `json:"full_name" binding:"required,min=1,max=100"`
+	Email    string `json:"email" binding:"omitempty,email"`
+	Phone    string `json:"phone" binding:"omitempty,min=10,max=15"`
 }
 
 // CancelBookingRequest represents booking cancellation request
@@ -60,23 +59,15 @@ type ReleaseSeatRequest struct {
 	SeatID uuid.UUID `json:"seat_id" validate:"required"`
 }
 
-// ProcessPaymentRequest represents payment processing request
-type ProcessPaymentRequest struct {
-	BookingID uuid.UUID `json:"booking_id" validate:"required"`
-	Token     string    `json:"token,omitempty"`
-}
-
-// CreateFeedbackRequest represents feedback creation request
-
-// Response types
-
 // BookingResponse represents simplified booking response
 type BookingResponse struct {
 	ID               uuid.UUID  `json:"id"`
+	CreatedAt        time.Time  `json:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at"`
 	BookingReference string     `json:"booking_reference"`
 	TripID           uuid.UUID  `json:"trip_id"`
 	UserID           uuid.UUID  `json:"user_id"`
-	TotalAmount      float64    `json:"total_amount"`
+	TotalAmount      int        `json:"total_amount"`
 	Status           string     `json:"status"`
 	PaymentStatus    string     `json:"payment_status"`
 	PaymentOrderID   string     `json:"payment_order_id,omitempty"`
@@ -84,11 +75,10 @@ type BookingResponse struct {
 	ExpiresAt        *time.Time `json:"expires_at,omitempty"`
 	ConfirmedAt      *time.Time `json:"confirmed_at,omitempty"`
 	CancelledAt      *time.Time `json:"cancelled_at,omitempty"`
-	CreatedAt        time.Time  `json:"created_at"`
-	UpdatedAt        time.Time  `json:"updated_at"`
 
 	// Seats info
-	Seats []BookingSeatResponse `json:"seats"`
+	Seats       []BookingSeatResponse        `json:"seats"`
+	Transaction *payment.TransactionResponse `json:"transaction,omitempty"`
 }
 
 // BookingSeatResponse represents booking seat in response
@@ -100,15 +90,6 @@ type BookingSeatResponse struct {
 	Floor           int       `json:"floor"`
 	Price           float64   `json:"price"`
 	PriceMultiplier float64   `json:"price_multiplier"`
-}
-
-// PaymentMethodResponse represents payment method response
-type PaymentMethodResponse struct {
-	ID          uuid.UUID `json:"id"`
-	Name        string    `json:"name"`
-	Code        string    `json:"code"`
-	Description string    `json:"description"`
-	IsActive    bool      `json:"is_active"`
 }
 
 // PaymentResponse represents payment response

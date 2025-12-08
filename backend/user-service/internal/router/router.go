@@ -37,8 +37,8 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 			auth.POST("/refresh-token", ginext.WrapHandler(h.AuthHandler.RefreshToken))
 			auth.POST("/forgot-password", ginext.WrapHandler(h.AuthHandler.ForgotPassword))
 			auth.POST("/reset-password", ginext.WrapHandler(h.AuthHandler.ResetPassword))
-			auth.POST("/guest", ginext.WrapHandler(h.AuthHandler.CreateGuestAccount))
 			auth.POST("/logout", middleware.RequireAuth(), ginext.WrapHandler(h.AuthHandler.Logout))
+			auth.POST("/guest", ginext.WrapHandler(h.AuthHandler.CreateGuestAccount))
 		}
 
 		users := v1.Group("/users")

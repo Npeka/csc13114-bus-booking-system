@@ -1,0 +1,49 @@
+info:
+  contact:
+    email: support@busbooking.com
+    name: API Support
+  description: |-
+    API for payment processing in the bus booking system
+    This service handles payment transactions, refunds, and payment history.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: Payment Service API
+  version: "1.0"
+paths:
+  /notifications:
+    post:
+      consumes:
+      - application/json
+      description: Create a new notification
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new notification
+      tags:
+      - notifications
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

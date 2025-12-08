@@ -20,7 +20,7 @@ func (s *Server) buildHandler() http.Handler {
 	// Initialize HTTP clients for other services
 	tripClient := client.NewTripClient(s.cfg.ServiceName, s.cfg.External.TripServiceURL)
 	paymentClient := client.NewPaymentClient(s.cfg.ServiceName, s.cfg.External.PaymentServiceURL)
-	userClient := client.NewUserClient(s.cfg.External.UserServiceURL)
+	userClient := client.NewUserClient(s.cfg.ServiceName, s.cfg.External.UserServiceURL)
 
 	// Initialize services
 	bookingService := service.NewBookingService(bookingRepo, paymentClient, tripClient, userClient)

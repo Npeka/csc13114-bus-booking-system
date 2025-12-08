@@ -107,7 +107,7 @@ func (s *eTicketServiceImpl) GenerateETicket(ctx context.Context, bookingID uuid
 
 	// Thông tin thanh toán
 	s.addSection(pdf, "THONG TIN THANH TOAN")
-	s.addInfoRow(pdf, "Tong tien:", fmt.Sprintf("%.0f VND", booking.TotalAmount))
+	s.addInfoRow(pdf, "Tong tien:", fmt.Sprintf("%d VND", booking.TotalAmount))
 	s.addInfoRow(pdf, "Trang thai:", s.getPaymentStatusText(booking.PaymentStatus))
 	if booking.ConfirmedAt != nil {
 		s.addInfoRow(pdf, "Xac nhan luc:", booking.ConfirmedAt.Format("15:04, 02/01/2006"))
@@ -115,7 +115,7 @@ func (s *eTicketServiceImpl) GenerateETicket(ctx context.Context, bookingID uuid
 	pdf.Ln(5)
 
 	// QR Code
-	qrData := fmt.Sprintf("BOOKING:%s|REF:%s|AMOUNT:%.0f",
+	qrData := fmt.Sprintf("BOOKING:%s|REF:%s|AMOUNT:%d",
 		booking.ID.String(),
 		booking.BookingReference,
 		booking.TotalAmount,
@@ -170,16 +170,14 @@ func (s *eTicketServiceImpl) addInfoRow(pdf *gofpdf.Fpdf, label, value string) {
 }
 
 // getPaymentStatusText chuyển payment status sang text hiển thị
-func (s *eTicketServiceImpl) getPaymentStatusText(status model.PaymentStatus) string {
+func (s *eTicketServiceImpl) getPaymentStatusText(status model.TransactionStatus) string {
 	switch status {
-	case model.PaymentStatusPending:
+	case model.TransactionStatusPending:
 		return "Cho thanh toan"
-	case model.PaymentStatusPaid:
+	case model.TransactionStatusPaid:
 		return "Da thanh toan"
-	case model.PaymentStatusFailed:
+	case model.TransactionStatusFailed:
 		return "That bai"
-	case model.PaymentStatusRefunded:
-		return "Da hoan tien"
 	default:
 		return string(status)
 	}

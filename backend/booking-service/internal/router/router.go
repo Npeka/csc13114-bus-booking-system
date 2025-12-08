@@ -8,6 +8,7 @@ import (
 	"bus-booking/shared/health"
 	"bus-booking/shared/middleware"
 	"bus-booking/shared/swagger"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -39,7 +40,9 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 			bookings.GET("/:id/eticket", func(c *gin.Context) {
 				r := ginext.NewRequest(c)
 				if err := h.BookingHandler.DownloadETicket(r); err != nil {
-					c.JSON(400, gin.H{"error": err.Error()})
+					c.JSON(http.StatusBadRequest, gin.H{
+						"error": gin.H{"message": err.Error()},
+					})
 				}
 			})
 
@@ -48,7 +51,6 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 			bookings.POST("", ginext.WrapHandler(h.BookingHandler.CreateBooking))
 			bookings.GET("/:id", ginext.WrapHandler(h.BookingHandler.GetBooking))
 			bookings.POST("/:id/cancel", ginext.WrapHandler(h.BookingHandler.CancelBooking))
-			bookings.POST("/:id/payment", ginext.WrapHandler(h.BookingHandler.CreatePayment))
 			bookings.GET("/user/:user_id", ginext.WrapHandler(h.BookingHandler.GetUserBookings))
 		}
 

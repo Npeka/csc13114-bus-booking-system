@@ -3,173 +3,107 @@ package service
 import (
 	"bus-booking/payment-service/internal/client"
 	"bus-booking/payment-service/internal/model"
+	"bus-booking/payment-service/internal/model/booking"
 	"bus-booking/payment-service/internal/repository"
+	"bus-booking/shared/ginext"
 	"context"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/payOSHQ/payos-lib-golang/v2"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/sync/errgroup"
 )
 
 type TransactionService interface {
-	CreateTransaction(ctx context.Context, req *model.CreateTransactionRequest) (*model.TransactionResponse, error)
-	CreatePaymentLink(ctx context.Context, req *model.CreateTransactionRequest) (*model.TransactionResponse, error)
-	GetTransactionByOrderCode(ctx context.Context, orderCode int64) (*model.Transaction, error)
-	GetTransactionByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.Transaction, error)
+	CreatePaymentLink(ctx context.Context, req *model.CreatePaymentLinkRequest, userID uuid.UUID) (*model.TransactionResponse, error)
 	HandlePaymentWebhook(ctx context.Context, webhookData *model.PaymentWebhookData) error
-	ConfirmPayment(ctx context.Context, orderCode int64) error
-	CancelPayment(ctx context.Context, orderCode int64, reason string) error
+	GetTransactionByOrderCode(ctx context.Context, orderCode int) (*model.Transaction, error)
+	GetTransactionByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.Transaction, error)
 }
 
 type TransactionServiceImpl struct {
 	transactionRepo repository.TransactionRepository
 	bookingClient   client.BookingClient
-	payosClient     PayOSClient
-	returnURL       string
-	cancelURL       string
+	payOSService    PayOSService
 }
 
 func NewTransactionService(
 	transactionRepo repository.TransactionRepository,
 	bookingClient client.BookingClient,
-	payosClient PayOSClient,
-	returnURL,
-	cancelURL string,
+	payOSService PayOSService,
 ) TransactionService {
 	return &TransactionServiceImpl{
 		transactionRepo: transactionRepo,
 		bookingClient:   bookingClient,
-		payosClient:     payosClient,
-		returnURL:       returnURL,
-		cancelURL:       cancelURL,
+		payOSService:    payOSService,
 	}
 }
 
-// CreateTransaction creates a basic transaction record (deprecated - use CreatePaymentLink)
-func (s *TransactionServiceImpl) CreateTransaction(ctx context.Context, req *model.CreateTransactionRequest) (*model.TransactionResponse, error) {
-	transaction := &model.Transaction{
-		BaseModel: model.BaseModel{
-			ID: uuid.New(),
-		},
-		BookingID:     req.BookingID,
-		Amount:        req.Amount,
-		Currency:      req.Currency,
-		PaymentMethod: req.PaymentMethod,
-		Status:        model.PaymentStatusPending,
-	}
-
-	err := s.transactionRepo.CreateTransaction(ctx, transaction)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to create transaction")
-		return nil, fmt.Errorf("failed to create transaction: %w", err)
-	}
-
-	return s.toTransactionResponse(transaction), nil
-}
-
-// CreatePaymentLink creates a transaction and PayOS payment link
-func (s *TransactionServiceImpl) CreatePaymentLink(ctx context.Context, req *model.CreateTransactionRequest) (*model.TransactionResponse, error) {
-	// Generate unique order code from timestamp
-	orderCode := time.Now().Unix()
-
-	// Create PayOS payment link request
-	payosReq := &model.CreatePaymentLinkRequest{
-		OrderCode:   orderCode,
-		Amount:      int(req.Amount), // Convert to int (VND doesn't have decimals)
+func (s *TransactionServiceImpl) CreatePaymentLink(ctx context.Context, req *model.CreatePaymentLinkRequest, userID uuid.UUID) (*model.TransactionResponse, error) {
+	payosResp, err := s.payOSService.CreatePaymentLink(ctx, &model.CreatePayOSPaymentLinkRequest{
+		Amount:      req.Amount,
 		Description: req.Description,
-		BuyerName:   req.BuyerName,
-		BuyerEmail:  req.BuyerEmail,
-		BuyerPhone:  req.BuyerPhone,
-		CancelURL:   s.cancelURL,
-		ReturnURL:   s.returnURL,
-		ExpiredAt:   time.Now().Add(15 * time.Minute).Unix(), // 15 minutes expiry
-	}
-
-	// Add default description if empty
-	if payosReq.Description == "" {
-		payosReq.Description = fmt.Sprintf("Payment for booking %s", req.BookingID.String())
-	}
-
-	// Call PayOS API
-	payosResp, err := s.payosClient.CreatePaymentLink(payosReq)
+	})
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to create PayOS payment link")
-		return nil, fmt.Errorf("failed to create payment link: %w", err)
+		return nil, ginext.NewInternalServerError(fmt.Sprintf("failed to create payment link: %v", err))
 	}
 
-	// Check PayOS response
-	if payosResp.Code != model.PayOSCodeSuccess {
-		return nil, fmt.Errorf("PayOS error: %s - %s", payosResp.Code, payosResp.Desc)
-	}
-
-	// Create transaction record
 	transaction := &model.Transaction{
 		BaseModel: model.BaseModel{
 			ID: uuid.New(),
 		},
 		BookingID:     req.BookingID,
+		UserID:        userID,
 		Amount:        req.Amount,
 		Currency:      req.Currency,
 		PaymentMethod: req.PaymentMethod,
-		OrderCode:     orderCode,
-		PaymentLinkID: payosResp.Data.PaymentLinkID,
-		Status:        payosResp.Data.Status,
-		CheckoutURL:   payosResp.Data.CheckoutURL,
-		QRCode:        payosResp.Data.QRCode,
+		OrderCode:     payosResp.OrderCode,
+		PaymentLinkID: payosResp.PaymentLinkId,
+		Status:        s.payOSService.ToTransactionStatus(payosResp.Status),
+		CheckoutURL:   payosResp.CheckoutUrl,
+		QRCode:        payosResp.QrCode,
 	}
 
-	// Save to database
-	err = s.transactionRepo.CreateTransaction(ctx, transaction)
-	if err != nil {
+	if err = s.transactionRepo.CreateTransaction(ctx, transaction); err != nil {
 		log.Error().Err(err).Msg("Failed to save transaction")
 		return nil, fmt.Errorf("failed to save transaction: %w", err)
 	}
 
-	log.Info().
-		Int64("order_code", orderCode).
-		Str("booking_id", req.BookingID.String()).
-		Str("payment_link_id", payosResp.Data.PaymentLinkID).
-		Msg("Payment link created successfully")
-
 	return s.toTransactionResponse(transaction), nil
 }
 
-// GetTransactionByOrderCode retrieves transaction by PayOS order code
-func (s *TransactionServiceImpl) GetTransactionByOrderCode(ctx context.Context, orderCode int64) (*model.Transaction, error) {
-	transaction, err := s.transactionRepo.GetTransactionByOrderCode(ctx, orderCode)
-	if err != nil {
-		return nil, fmt.Errorf("transaction not found: %w", err)
-	}
-	return transaction, nil
-}
-
-// GetTransactionByBookingID retrieves transaction by booking ID
-func (s *TransactionServiceImpl) GetTransactionByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.Transaction, error) {
-	transaction, err := s.transactionRepo.GetTransactionByBookingID(ctx, bookingID)
-	if err != nil {
-		return nil, fmt.Errorf("transaction not found: %w", err)
-	}
-	return transaction, nil
-}
-
-// HandlePaymentWebhook processes PayOS webhook notification
 func (s *TransactionServiceImpl) HandlePaymentWebhook(ctx context.Context, webhookData *model.PaymentWebhookData) error {
-	// Verify webhook signature
-	if !s.payosClient.VerifyWebhookSignature(webhookData) {
-		log.Error().Msg("Invalid webhook signature")
-		return fmt.Errorf("invalid webhook signature")
+	if err := s.payOSService.VerifyWebhook(ctx, webhookData); err != nil {
+		return ginext.NewUnauthorizedError("invalid webhook signature")
 	}
 
-	// Get transaction by order code
-	transaction, err := s.GetTransactionByOrderCode(ctx, webhookData.Data.OrderCode)
-	if err != nil {
-		log.Error().Err(err).Int64("order_code", webhookData.Data.OrderCode).Msg("Transaction not found")
+	var (
+		paymentLink *payos.PaymentLink
+		transaction *model.Transaction
+	)
+
+	g, gCtx := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		var err error
+		paymentLink, err = s.payOSService.GetPaymentLink(gCtx, webhookData.Data.PaymentLinkID)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		transaction, err = s.GetTransactionByOrderCode(gCtx, webhookData.Data.OrderCode)
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
 		return err
 	}
 
 	// Update transaction status
-	transaction.Status = model.PaymentStatusPaid
+	transaction.Status = s.payOSService.ToTransactionStatus(paymentLink.Status)
 	transaction.Reference = webhookData.Data.Reference
 
 	// Parse transaction datetime
@@ -179,16 +113,16 @@ func (s *TransactionServiceImpl) HandlePaymentWebhook(ctx context.Context, webho
 	}
 
 	// Update in database
-	err = s.transactionRepo.UpdateTransaction(ctx, transaction)
-	if err != nil {
+	if err := s.transactionRepo.UpdateTransaction(ctx, transaction); err != nil {
 		log.Error().Err(err).Msg("Failed to update transaction")
-		return fmt.Errorf("failed to update transaction: %w", err)
+		return ginext.NewInternalServerError("failed to update transaction")
 	}
 
 	// Notify booking service about payment success
-	updateReq := &client.UpdatePaymentStatusRequest{
-		PaymentStatus:  string(model.PaymentStatusPaid),
-		BookingStatus:  "confirmed",
+	updateReq := &booking.UpdatePaymentStatusRequest{
+		PaymentStatus:  transaction.Status,
+		BookingStatus:  s.toBookingStatus(transaction.Status),
+		TransactionID:  transaction.ID,
 		PaymentOrderID: fmt.Sprintf("%d", transaction.OrderCode),
 	}
 
@@ -209,77 +143,42 @@ func (s *TransactionServiceImpl) HandlePaymentWebhook(ctx context.Context, webho
 	return nil
 }
 
-// ConfirmPayment confirms payment by checking with PayOS
-func (s *TransactionServiceImpl) ConfirmPayment(ctx context.Context, orderCode int64) error {
-	// Get payment info from PayOS
-	paymentInfo, err := s.payosClient.GetPaymentInfo(orderCode)
-	if err != nil {
-		return fmt.Errorf("failed to get payment info: %w", err)
+func (s *TransactionServiceImpl) toBookingStatus(status model.TransactionStatus) booking.BookingStatus {
+	switch status {
+	case model.TransactionStatusCancelled:
+		return booking.BookingStatusCancelled
+	case model.TransactionStatusUnderpaid:
+		return booking.BookingStatusPending
+	case model.TransactionStatusPaid:
+		return booking.BookingStatusConfirmed
+	case model.TransactionStatusFailed:
+		return booking.BookingStatusFailed
+	default:
+		return booking.BookingStatusPending
 	}
-
-	// Get transaction from database
-	transaction, err := s.GetTransactionByOrderCode(ctx, orderCode)
-	if err != nil {
-		return err
-	}
-
-	// Update transaction status based on PayOS response
-	if paymentInfo.Code == model.PayOSCodeSuccess {
-		transaction.Status = paymentInfo.Data.Status
-
-		// Update reference if payment is completed
-		if len(paymentInfo.Data.Transactions) > 0 {
-			transaction.Reference = paymentInfo.Data.Transactions[0].Reference
-			transTime := paymentInfo.Data.Transactions[0].TransactionDateTime.Unix()
-			transaction.TransactionTime = &transTime
-		}
-
-		err = s.transactionRepo.UpdateTransaction(ctx, transaction)
-		if err != nil {
-			return fmt.Errorf("failed to update transaction: %w", err)
-		}
-
-		log.Info().
-			Int64("order_code", orderCode).
-			Str("status", transaction.Status).
-			Msg("Payment status confirmed")
-	}
-
-	return nil
 }
 
-// CancelPayment cancels a payment
-func (s *TransactionServiceImpl) CancelPayment(ctx context.Context, orderCode int64, reason string) error {
-	// Cancel via PayOS API
-	_, err := s.payosClient.CancelPayment(orderCode, reason)
+func (s *TransactionServiceImpl) GetTransactionByOrderCode(ctx context.Context, orderCode int) (*model.Transaction, error) {
+	transaction, err := s.transactionRepo.GetTransactionByOrderCode(ctx, orderCode)
 	if err != nil {
-		return fmt.Errorf("failed to cancel payment: %w", err)
+		return nil, ginext.NewNotFoundError("transaction not found")
 	}
-
-	// Update transaction status
-	transaction, err := s.GetTransactionByOrderCode(ctx, orderCode)
-	if err != nil {
-		return err
-	}
-
-	transaction.Status = model.PaymentStatusCancelled
-	err = s.transactionRepo.UpdateTransaction(ctx, transaction)
-	if err != nil {
-		return fmt.Errorf("failed to update transaction: %w", err)
-	}
-
-	log.Info().
-		Int64("order_code", orderCode).
-		Str("reason", reason).
-		Msg("Payment cancelled")
-
-	return nil
+	return transaction, nil
 }
 
-// toTransactionResponse converts Transaction model to response
+func (s *TransactionServiceImpl) GetTransactionByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.Transaction, error) {
+	transaction, err := s.transactionRepo.GetTransactionByBookingID(ctx, bookingID)
+	if err != nil {
+		return nil, ginext.NewNotFoundError("transaction not found")
+	}
+	return transaction, nil
+}
+
 func (s *TransactionServiceImpl) toTransactionResponse(t *model.Transaction) *model.TransactionResponse {
 	return &model.TransactionResponse{
 		ID:            t.ID,
+		CreatedAt:     t.CreatedAt,
+		UpdatedAt:     t.UpdatedAt,
 		BookingID:     t.BookingID,
 		Amount:        t.Amount,
 		Currency:      t.Currency,
@@ -288,7 +187,5 @@ func (s *TransactionServiceImpl) toTransactionResponse(t *model.Transaction) *mo
 		Status:        t.Status,
 		CheckoutURL:   t.CheckoutURL,
 		QRCode:        t.QRCode,
-		CreatedAt:     t.CreatedAt,
-		UpdatedAt:     t.UpdatedAt,
 	}
 }

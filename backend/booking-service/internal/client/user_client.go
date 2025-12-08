@@ -1,101 +1,47 @@
 package client
 
 import (
-	"bytes"
+	"bus-booking/booking-service/internal/model/user"
+	"bus-booking/shared/client"
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
-
-	"github.com/google/uuid"
-	"github.com/rs/zerolog/log"
 )
 
 // UserClient interface for user service communication
 type UserClient interface {
-	CreateGuestAccount(ctx context.Context, req *CreateGuestAccountRequest) (*GuestAccountResponse, error)
+	CreateGuest(ctx context.Context, req *user.CreateGuestRequest) (*user.GuestResponse, error)
 }
 
 type userClientImpl struct {
-	baseURL    string
-	httpClient *http.Client
+	http client.HTTPClient
 }
 
-func NewUserClient(baseURL string) UserClient {
+func NewUserClient(serviceName, baseURL string) UserClient {
+	httpClient := client.NewHTTPClient(&client.Config{
+		ServiceName: serviceName,
+		BaseURL:     baseURL,
+	})
+
 	return &userClientImpl{
-		baseURL:    baseURL,
-		httpClient: &http.Client{},
+		http: httpClient,
 	}
 }
 
 // Request/Response types
-type CreateGuestAccountRequest struct {
-	FullName string `json:"full_name"`
-	Email    string `json:"email,omitempty"`
-	Phone    string `json:"phone,omitempty"`
-}
 
-type GuestAccountResponse struct {
-	ID       uuid.UUID `json:"id"`
-	FullName string    `json:"full_name"`
-	Email    string    `json:"email,omitempty"`
-	Phone    string    `json:"phone,omitempty"`
-	Role     int       `json:"role"`
-}
+// CreateGuest creates a guest user account
+func (c *userClientImpl) CreateGuest(ctx context.Context, req *user.CreateGuestRequest) (*user.GuestResponse, error) {
+	endpoint := "/api/v1/auth/guest"
 
-type UserServiceResponse struct {
-	Success bool                  `json:"success"`
-	Message string                `json:"message,omitempty"`
-	Data    *GuestAccountResponse `json:"data,omitempty"`
-}
-
-// CreateGuestAccount creates a guest user account
-func (c *userClientImpl) CreateGuestAccount(ctx context.Context, req *CreateGuestAccountRequest) (*GuestAccountResponse, error) {
-	url := fmt.Sprintf("%s/api/v1/auth/guest", c.baseURL)
-
-	jsonData, err := json.Marshal(req)
+	res, err := c.http.Post(ctx, endpoint, req, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
+		return nil, fmt.Errorf("failed to get trip: %w", err)
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
+	guestData, err := client.ParseData[user.GuestResponse](res)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.httpClient.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("failed to call user service: %w", err)
-	}
-	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-			log.Error().Err(closeErr).Msg("Failed to close response body")
-		}
-	}()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
+		return nil, fmt.Errorf("failed to parse trip response: %w", err)
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		log.Error().
-			Int("status_code", resp.StatusCode).
-			Str("body", string(body)).
-			Msg("User service returned error")
-		return nil, fmt.Errorf("user service error: %s", string(body))
-	}
-
-	var userResp UserServiceResponse
-	if err := json.Unmarshal(body, &userResp); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
-	}
-
-	if !userResp.Success || userResp.Data == nil {
-		return nil, fmt.Errorf("invalid response from user service")
-	}
-
-	return userResp.Data, nil
+	return guestData, nil
 }

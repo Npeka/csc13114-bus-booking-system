@@ -14,6 +14,7 @@ import {
 import { useAuthStore, type User } from "@/lib/stores/auth-store";
 import { ProfileSummary } from "./_components/profile-summary";
 import { ProfileDetails } from "./_components/profile-details";
+import { ROLE_LABELS } from "@/lib/auth/roles";
 
 export default function ProfilePage() {
   const user = useAuthStore((state) => state.user);
@@ -211,7 +212,7 @@ export default function ProfilePage() {
         <div className="grid gap-4 lg:grid-cols-3">
           <ProfileSummary
             profile={profile}
-            getRoleName={getRoleName}
+            getRoleName={(role) => ROLE_LABELS[role]}
             getStatusBadge={getStatusBadge}
           />
           <ProfileDetails

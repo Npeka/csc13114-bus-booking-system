@@ -13,11 +13,11 @@ type Booking struct {
 	UserID           uuid.UUID `json:"user_id" gorm:"type:uuid;not null;index"`
 
 	// Pricing
-	TotalAmount float64 `json:"total_amount" gorm:"type:decimal(10,2);not null"`
+	TotalAmount int `json:"total_amount" gorm:"type:decimal(10,2);not null"`
 
 	// Status
-	Status        BookingStatus `json:"status" gorm:"type:varchar(20);not null;default:'pending';index"`
-	PaymentStatus PaymentStatus `json:"payment_status" gorm:"type:varchar(20);not null;default:'pending';index"`
+	Status        BookingStatus     `json:"status" gorm:"type:varchar(20);not null;default:'pending';index"`
+	PaymentStatus TransactionStatus `json:"payment_status" gorm:"type:varchar(20);not null;default:'pending';index"`
 
 	// Payment info - Payment Service handles PayOS integration
 	PaymentOrderID string `json:"payment_order_id,omitempty" gorm:"type:varchar(255);index"`
@@ -38,10 +38,11 @@ type Booking struct {
 type BookingStatus string
 
 const (
-	BookingStatusPending   BookingStatus = "pending"   // Chờ thanh toán
-	BookingStatusConfirmed BookingStatus = "confirmed" // Đã xác nhận và thanh toán
-	BookingStatusCancelled BookingStatus = "cancelled" // Đã hủy
-	BookingStatusExpired   BookingStatus = "expired"   // Hết hạn (quá 15 phút chưa thanh toán)
+	BookingStatusPending   BookingStatus = "PENDING"
+	BookingStatusConfirmed BookingStatus = "CONFIRMED"
+	BookingStatusCancelled BookingStatus = "CANCELLED"
+	BookingStatusExpired   BookingStatus = "EXPIRED"
+	BookingStatusFailed    BookingStatus = "FAILED"
 )
 
 func (s BookingStatus) IsValid() bool {
@@ -56,21 +57,27 @@ func (s BookingStatus) IsValid() bool {
 	}
 }
 
-type PaymentStatus string
+type TransactionStatus string
 
 const (
-	PaymentStatusPending  PaymentStatus = "pending"  // Chờ thanh toán
-	PaymentStatusPaid     PaymentStatus = "paid"     // Đã thanh toán
-	PaymentStatusRefunded PaymentStatus = "refunded" // Đã hoàn tiền
-	PaymentStatusFailed   PaymentStatus = "failed"   // Thanh toán thất bại
+	TransactionStatusPending    TransactionStatus = "PENDING"
+	TransactionStatusCancelled  TransactionStatus = "CANCELLED"
+	TransactionStatusUnderpaid  TransactionStatus = "UNDERPAID"
+	TransactionStatusPaid       TransactionStatus = "PAID"
+	TransactionStatusExpired    TransactionStatus = "EXPIRED"
+	TransactionStatusProcessing TransactionStatus = "PROCESSING"
+	TransactionStatusFailed     TransactionStatus = "FAILED"
 )
 
-func (s PaymentStatus) IsValid() bool {
+func (s TransactionStatus) IsValid() bool {
 	switch s {
-	case PaymentStatusPending,
-		PaymentStatusPaid,
-		PaymentStatusRefunded,
-		PaymentStatusFailed:
+	case TransactionStatusPending,
+		TransactionStatusCancelled,
+		TransactionStatusUnderpaid,
+		TransactionStatusPaid,
+		TransactionStatusExpired,
+		TransactionStatusProcessing,
+		TransactionStatusFailed:
 		return true
 	default:
 		return false
@@ -95,7 +102,7 @@ type CreatePaymentRequest struct {
 
 // UpdatePaymentStatusRequest updates booking payment status (internal use)
 type UpdatePaymentStatusRequest struct {
-	PaymentStatus  string `json:"payment_status" binding:"required"`
-	BookingStatus  string `json:"booking_status" binding:"required"`
-	PaymentOrderID string `json:"payment_order_id" binding:"required"`
+	PaymentStatus  TransactionStatus `json:"payment_status" binding:"required"`
+	BookingStatus  BookingStatus     `json:"booking_status" binding:"required"`
+	PaymentOrderID string            `json:"payment_order_id" binding:"required"`
 }

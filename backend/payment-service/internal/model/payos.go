@@ -2,21 +2,9 @@ package model
 
 import "time"
 
-// PayOS API Request/Response models
-
-// CreatePaymentLinkRequest represents request to create PayOS payment link
-type CreatePaymentLinkRequest struct {
-	OrderCode   int64         `json:"orderCode"`
-	Amount      int           `json:"amount"`
-	Description string        `json:"description"`
-	BuyerName   string        `json:"buyerName,omitempty"`
-	BuyerEmail  string        `json:"buyerEmail,omitempty"`
-	BuyerPhone  string        `json:"buyerPhone,omitempty"`
-	Items       []PaymentItem `json:"items,omitempty"`
-	CancelURL   string        `json:"cancelUrl"`
-	ReturnURL   string        `json:"returnUrl"`
-	ExpiredAt   int64         `json:"expiredAt,omitempty"`
-	Signature   string        `json:"signature"`
+type CreatePayOSPaymentLinkRequest struct {
+	Amount      int    `json:"amount"`
+	Description string `json:"description"`
 }
 
 // PaymentItem represents an item in payment
@@ -69,7 +57,7 @@ type PaymentWebhookData struct {
 
 // PaymentWebhookDetails contains payment transaction details
 type PaymentWebhookDetails struct {
-	OrderCode              int64  `json:"orderCode"`
+	OrderCode              int    `json:"orderCode"`
 	Amount                 int    `json:"amount"`
 	Description            string `json:"description"`
 	AccountNumber          string `json:"accountNumber"`

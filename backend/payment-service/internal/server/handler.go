@@ -15,7 +15,7 @@ func (s *Server) buildHandler() http.Handler {
 	transactionRepo := repository.NewTransactionRepository(s.db.DB)
 
 	// Initialize PayOS client
-	payosClient := service.NewPayOSClient(s.cfg.PayOS)
+	payosClient := service.NewPayOSService(s.cfg.PayOS)
 	bookingClient := client.NewBookingClient(s.cfg.ServiceName, s.cfg.External.BookingServiceURL)
 
 	// Initialize services with PayOS client
@@ -23,8 +23,6 @@ func (s *Server) buildHandler() http.Handler {
 		transactionRepo,
 		bookingClient,
 		payosClient,
-		s.cfg.PayOS.ReturnURL,
-		s.cfg.PayOS.CancelURL,
 	)
 
 	transactionHandler := handler.NewTransactionHandler(transactionService)

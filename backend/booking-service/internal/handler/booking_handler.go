@@ -14,15 +14,18 @@ import (
 type BookingHandler interface {
 	CreateBooking(r *ginext.Request) (*ginext.Response, error)
 	CreateGuestBooking(r *ginext.Request) (*ginext.Response, error)
+
 	GetBooking(r *ginext.Request) (*ginext.Response, error)
 	GetBookingByReference(r *ginext.Request) (*ginext.Response, error)
 	GetUserBookings(r *ginext.Request) (*ginext.Response, error)
 	GetTripBookings(r *ginext.Request) (*ginext.Response, error)
 	CancelBooking(r *ginext.Request) (*ginext.Response, error)
+
 	UpdateBookingStatus(r *ginext.Request) (*ginext.Response, error)
-	CreatePayment(r *ginext.Request) (*ginext.Response, error)
+
 	UpdatePaymentStatus(r *ginext.Request) (*ginext.Response, error)
 	GetSeatStatus(r *ginext.Request) (*ginext.Response, error)
+
 	DownloadETicket(r *ginext.Request) error
 }
 
@@ -292,41 +295,6 @@ func (h *BookingHandlerImpl) UpdateBookingStatus(r *ginext.Request) (*ginext.Res
 	return ginext.NewSuccessResponse("booking status updated successfully"), nil
 }
 
-// CreatePayment godoc
-// @Summary Create payment link for booking
-// @Description Create a PayOS payment link for a booking
-// @Tags bookings
-// @Accept json
-// @Produce json
-// @Param id path string true "Booking ID" format(uuid)
-// @Param request body model.CreatePaymentRequest true "Buyer information"
-// @Success 200 {object} ginext.Response{data=client.PaymentLinkResponse}
-// @Failure 400 {object} ginext.Response
-// @Failure 404 {object} ginext.Response
-// @Router /api/v1/bookings/{id}/payment [post]
-func (h *BookingHandlerImpl) CreatePayment(r *ginext.Request) (*ginext.Response, error) {
-	idStr := r.GinCtx.Param("id")
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		log.Error().Err(err).Str("id", idStr).Msg("invalid booking id")
-		return nil, ginext.NewBadRequestError("invalid booking id")
-	}
-
-	var req model.CreatePaymentRequest
-	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
-		log.Error().Err(err).Msg("failed to bind request body")
-		return nil, ginext.NewBadRequestError(err.Error())
-	}
-
-	paymentResp, err := h.bookingService.CreatePayment(r.Context(), id, &req.BuyerInfo)
-	if err != nil {
-		log.Error().Err(err).Str("booking_id", idStr).Msg("failed to create payment")
-		return nil, err
-	}
-
-	return ginext.NewSuccessResponse(paymentResp), nil
-}
-
 // UpdatePaymentStatus godoc
 // @Summary Update booking payment status
 // @Description Update booking payment status (internal use by payment service)
@@ -353,7 +321,7 @@ func (h *BookingHandlerImpl) UpdatePaymentStatus(r *ginext.Request) (*ginext.Res
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
-	if err := h.bookingService.UpdatePaymentStatus(r.Context(), id, req.PaymentStatus, req.BookingStatus, req.PaymentOrderID); err != nil {
+	if err := h.bookingService.UpdatePaymentStatus(r.Context(), &req, id); err != nil {
 		log.Error().Err(err).Str("booking_id", idStr).Msg("failed to update payment status")
 		return nil, err
 	}
@@ -369,7 +337,7 @@ func (h *BookingHandlerImpl) UpdatePaymentStatus(r *ginext.Request) (*ginext.Res
 // @Produce json
 // @Param trip_id path string true "Trip ID" format(uuid)
 // @Param seat_ids query []string true "Seat IDs" collectionFormat(multi)
-// @Success 200 {object} ginext.Response{data=model.GetSeatStatusResponse}
+// @Success 200 {object} ginext.Response{data=[]model.SeatStatusItem}
 // @Failure 400 {object} ginext.Response
 // @Failure 500 {object} ginext.Response
 // @Router /api/v1/bookings/trips/{trip_id}/seats/status [get]

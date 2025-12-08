@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bus-booking/payment-service/internal/model/booking"
 	"bus-booking/shared/client"
 	"context"
 	"fmt"
@@ -8,14 +9,8 @@ import (
 	"github.com/google/uuid"
 )
 
-type UpdatePaymentStatusRequest struct {
-	PaymentStatus  string `json:"payment_status"`
-	BookingStatus  string `json:"booking_status"`
-	PaymentOrderID string `json:"payment_order_id"`
-}
-
 type BookingClient interface {
-	UpdateBookingPaymentStatus(ctx context.Context, bookingID uuid.UUID, req *UpdatePaymentStatusRequest) error
+	UpdateBookingPaymentStatus(ctx context.Context, bookingID uuid.UUID, req *booking.UpdatePaymentStatusRequest) error
 }
 
 type BookingClientImpl struct {
@@ -33,7 +28,7 @@ func NewBookingClient(serviceName, baseURL string) BookingClient {
 	}
 }
 
-func (c *BookingClientImpl) UpdateBookingPaymentStatus(ctx context.Context, bookingID uuid.UUID, req *UpdatePaymentStatusRequest) error {
+func (c *BookingClientImpl) UpdateBookingPaymentStatus(ctx context.Context, bookingID uuid.UUID, req *booking.UpdatePaymentStatusRequest) error {
 	endpoint := fmt.Sprintf("/api/v1/bookings/%s/payment-status", bookingID.String())
 	_, err := c.http.Put(ctx, endpoint, req, nil)
 	if err != nil {

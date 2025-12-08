@@ -4,10 +4,11 @@ import { Mail, Phone, Calendar, Shield } from "lucide-react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import type { User } from "@/lib/stores/auth-store";
+import { Role } from "@/lib/auth/roles";
 
 interface ProfileSummaryProps {
   profile: User;
-  getRoleName: (role: number) => string;
+  getRoleName: (role: Role) => string;
   getStatusBadge: (status: string) => React.ReactNode;
 }
 

@@ -7,15 +7,13 @@ import (
 
 	"bus-booking/payment-service/internal/model"
 	"bus-booking/payment-service/internal/service"
+	sharedcontext "bus-booking/shared/context"
 	"bus-booking/shared/ginext"
 )
 
 type TransactionHandler interface {
-	CreateTransaction(r *ginext.Request) (*ginext.Response, error)
 	CreatePaymentLink(r *ginext.Request) (*ginext.Response, error)
 	HandlePaymentWebhook(r *ginext.Request) (*ginext.Response, error)
-	HandlePaymentReturn(r *ginext.Request) (*ginext.Response, error)
-	HandlePaymentCancel(r *ginext.Request) (*ginext.Response, error)
 	GetTransactionByOrderCode(r *ginext.Request) (*ginext.Response, error)
 }
 
@@ -29,52 +27,27 @@ func NewTransactionHandler(service service.TransactionService) TransactionHandle
 	}
 }
 
-// CreateTransaction godoc
-// @Summary Create a new transaction
-// @Description Create a new transaction for a booking
-// @Tags transactions
-// @Accept json
-// @Produce json
-// @Param transaction body model.CreateTransactionRequest true "Transaction creation request"
-// @Success 201 {object} map[string]string "Created"
-// @Failure 400 {object} map[string]string "Invalid request"
-// @Failure 500 {object} map[string]string "Internal server error"
-// @Router /transactions [post]
-func (h *TransactionHandlerImpl) CreateTransaction(r *ginext.Request) (*ginext.Response, error) {
-	var req model.CreateTransactionRequest
-	if err := r.GinCtx.ShouldBind(&req); err != nil {
-		log.Debug().Err(err).Msg("JSON binding failed")
-		return nil, ginext.NewBadRequestError("Invalid request data")
-	}
-
-	resp, err := h.service.CreateTransaction(r.GinCtx.Request.Context(), &req)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to create transaction")
-		return nil, ginext.NewInternalServerError("Failed to create transaction")
-	}
-
-	return ginext.NewSuccessResponse(resp), nil
-}
-
 // CreatePaymentLink godoc
 // @Summary Create a payment link
 // @Description Create a payment link via PayOS for a booking
 // @Tags transactions
 // @Accept json
 // @Produce json
-// @Param transaction body model.CreateTransactionRequest true "Payment creation request"
+// @Param transaction body model.CreatePaymentLinkRequest true "Payment creation request"
 // @Success 201 {object} ginext.Response{data=model.TransactionResponse}
 // @Failure 400 {object} ginext.Response
 // @Failure 500 {object} ginext.Response
 // @Router /api/v1/transactions/payment-link [post]
 func (h *TransactionHandlerImpl) CreatePaymentLink(r *ginext.Request) (*ginext.Response, error) {
-	var req model.CreateTransactionRequest
+	userID := sharedcontext.GetUserID(r.GinCtx)
+
+	var req model.CreatePaymentLinkRequest
 	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
 		log.Debug().Err(err).Msg("JSON binding failed")
 		return nil, ginext.NewBadRequestError("Invalid request data")
 	}
 
-	resp, err := h.service.CreatePaymentLink(r.GinCtx.Request.Context(), &req)
+	resp, err := h.service.CreatePaymentLink(r.GinCtx.Request.Context(), &req, userID)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create payment link")
 		return nil, ginext.NewInternalServerError("Failed to create payment link")
@@ -101,10 +74,11 @@ func (h *TransactionHandlerImpl) HandlePaymentWebhook(r *ginext.Request) (*ginex
 		return nil, ginext.NewBadRequestError("Invalid webhook data")
 	}
 
-	if webhookData.Data.OrderCode == 123 {
-		log.Warn().Msg("Received test webhook data")
-		return ginext.NewSuccessResponse("Test webhook received"), nil
-	}
+	// Handle test webhook data
+	// if webhookData.Data.OrderCode == 123 {
+	// 	log.Warn().Msg("Received test webhook data")
+	// 	return ginext.NewSuccessResponse("Test webhook received"), nil
+	// }
 
 	err := h.service.HandlePaymentWebhook(r.GinCtx.Request.Context(), &webhookData)
 	if err != nil {
@@ -113,84 +87,6 @@ func (h *TransactionHandlerImpl) HandlePaymentWebhook(r *ginext.Request) (*ginex
 	}
 
 	return ginext.NewSuccessResponse("Webhook processed successfully"), nil
-}
-
-// HandlePaymentReturn godoc
-// @Summary Handle payment return
-// @Description Handle return from PayOS payment page (success)
-// @Tags transactions
-// @Accept json
-// @Produce json
-// @Param orderCode query int true "Order code"
-// @Param status query string false "Payment status"
-// @Success 200 {object} ginext.Response
-// @Failure 400 {object} ginext.Response
-// @Failure 500 {object} ginext.Response
-// @Router /api/v1/transactions/return [get]
-func (h *TransactionHandlerImpl) HandlePaymentReturn(r *ginext.Request) (*ginext.Response, error) {
-	orderCodeStr := r.GinCtx.Query("orderCode")
-	if orderCodeStr == "" {
-		return nil, ginext.NewBadRequestError("Order code is required")
-	}
-
-	orderCode, err := strconv.ParseInt(orderCodeStr, 10, 64)
-	if err != nil {
-		return nil, ginext.NewBadRequestError("Invalid order code")
-	}
-
-	// Confirm payment with PayOS
-	err = h.service.ConfirmPayment(r.GinCtx.Request.Context(), orderCode)
-	if err != nil {
-		log.Error().Err(err).Int64("order_code", orderCode).Msg("Failed to confirm payment")
-		return nil, ginext.NewInternalServerError("Failed to confirm payment")
-	}
-
-	// Get updated transaction
-	transaction, err := h.service.GetTransactionByOrderCode(r.GinCtx.Request.Context(), orderCode)
-	if err != nil {
-		return nil, ginext.NewInternalServerError("Failed to get transaction")
-	}
-
-	return ginext.NewSuccessResponse(map[string]interface{}{
-		"order_code": orderCode,
-		"status":     transaction.Status,
-		"booking_id": transaction.BookingID,
-	}), nil
-}
-
-// HandlePaymentCancel godoc
-// @Summary Handle payment cancellation
-// @Description Handle cancel from PayOS payment page
-// @Tags transactions
-// @Accept json
-// @Produce json
-// @Param orderCode query int true "Order code"
-// @Success 200 {object} ginext.Response
-// @Failure 400 {object} ginext.Response
-// @Failure 500 {object} ginext.Response
-// @Router /api/v1/transactions/cancel [get]
-func (h *TransactionHandlerImpl) HandlePaymentCancel(r *ginext.Request) (*ginext.Response, error) {
-	orderCodeStr := r.GinCtx.Query("orderCode")
-	if orderCodeStr == "" {
-		return nil, ginext.NewBadRequestError("Order code is required")
-	}
-
-	orderCode, err := strconv.ParseInt(orderCodeStr, 10, 64)
-	if err != nil {
-		return nil, ginext.NewBadRequestError("Invalid order code")
-	}
-
-	// Cancel payment
-	err = h.service.CancelPayment(r.GinCtx.Request.Context(), orderCode, "User cancelled payment")
-	if err != nil {
-		log.Error().Err(err).Int64("order_code", orderCode).Msg("Failed to cancel payment")
-		// Don't return error - just log it
-	}
-
-	return ginext.NewSuccessResponse(map[string]interface{}{
-		"order_code": orderCode,
-		"status":     "CANCELLED",
-	}), nil
 }
 
 // GetTransactionByOrderCode godoc
@@ -206,14 +102,14 @@ func (h *TransactionHandlerImpl) HandlePaymentCancel(r *ginext.Request) (*ginext
 // @Router /api/v1/transactions/{order_code} [get]
 func (h *TransactionHandlerImpl) GetTransactionByOrderCode(r *ginext.Request) (*ginext.Response, error) {
 	orderCodeStr := r.GinCtx.Param("order_code")
-	orderCode, err := strconv.ParseInt(orderCodeStr, 10, 64)
+	orderCode, err := strconv.Atoi(orderCodeStr)
 	if err != nil {
 		return nil, ginext.NewBadRequestError("Invalid order code")
 	}
 
 	transaction, err := h.service.GetTransactionByOrderCode(r.GinCtx.Request.Context(), orderCode)
 	if err != nil {
-		log.Error().Err(err).Int64("order_code", orderCode).Msg("Transaction not found")
+		log.Error().Err(err).Int("order_code", orderCode).Msg("Transaction not found")
 		return nil, ginext.NewNotFoundError("Transaction not found")
 	}
 
