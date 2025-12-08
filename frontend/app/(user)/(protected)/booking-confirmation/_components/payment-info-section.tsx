@@ -24,10 +24,10 @@ export function PaymentInfoSection({ booking }: PaymentInfoSectionProps) {
           <span className="text-muted-foreground">Trạng thái:</span>
           <Badge
             variant={
-              booking.payment_status === "paid" ? "default" : "secondary"
+              booking.transaction_status === "PAID" ? "default" : "secondary"
             }
           >
-            {booking.payment_status === "paid"
+            {booking.transaction_status === "PAID"
               ? "Đã thanh toán"
               : "Chờ thanh toán"}
           </Badge>

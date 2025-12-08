@@ -3,14 +3,14 @@ import { Button } from "@/components/ui/button";
 
 interface BookingHeaderProps {
   bookingReference: string;
-  paymentStatus: string;
+  transactionStatus?: string;
   timeRemaining: number;
   onCopy: () => void;
 }
 
 export function BookingHeader({
   bookingReference,
-  paymentStatus,
+  transactionStatus,
   timeRemaining,
   onCopy,
 }: BookingHeaderProps) {
@@ -34,7 +34,7 @@ export function BookingHeader({
           <Copy className="h-4 w-4" />
         </Button>
       </div>
-      {paymentStatus === "pending" && timeRemaining > 0 && (
+      {transactionStatus === "PENDING" && timeRemaining > 0 && (
         <div className="mt-3 flex items-center justify-center gap-2 text-orange-600 dark:text-orange-400">
           <AlertCircle className="h-4 w-4" />
           <span className="text-sm">

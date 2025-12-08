@@ -88,6 +88,18 @@ func (h *TransactionHandlerImpl) HandlePaymentWebhook(r *ginext.Request) (*ginex
 	return ginext.NewSuccessResponse("Webhook processed successfully"), nil
 }
 
+// GetByID godoc
+// @Summary Get transaction by ID
+// @Description Retrieve transaction details by transaction ID
+// @Tags transactions
+// @Accept json
+// @Produce json
+// @Param id path string true "Transaction ID"
+// @Success 200 {object} ginext.Response{data=model.TransactionResponse}
+// @Failure 400 {object} ginext.Response
+// @Failure 404 {object} ginext.Response
+// @Failure 500 {object} ginext.Response
+// @Router /api/v1/transactions/{id} [get]
 func (h *TransactionHandlerImpl) GetByID(r *ginext.Request) (*ginext.Response, error) {
 	idStr := r.GinCtx.Param("id")
 	id, err := uuid.Parse(idStr)

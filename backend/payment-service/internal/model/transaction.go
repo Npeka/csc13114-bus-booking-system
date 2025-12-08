@@ -74,9 +74,3 @@ type TransactionResponse struct {
 	CheckoutURL   string            `json:"checkout_url,omitempty"`
 	QRCode        string            `json:"qr_code,omitempty"`
 }
-
-type PaymentCallbackRequest struct {
-	OrderCode int64  `form:"orderCode" binding:"required"`
-	Status    string `form:"status"`
-	Cancel    bool   `form:"cancel"`
-}

@@ -17,6 +17,7 @@ import { TripInfoSection } from "./_components/trip-info-section";
 import { PassengerInfoSection } from "./_components/passenger-info-section";
 import { PaymentInfoSection } from "./_components/payment-info-section";
 import { PaymentActionCard } from "./_components/payment-action-card";
+import { PayOSPaymentCard } from "./_components/payos-payment-card";
 import { BookingActions } from "./_components/booking-actions";
 import { ImportantNotes } from "./_components/important-notes";
 
@@ -124,7 +125,7 @@ function BookingConfirmationContent() {
         {/* Success Message */}
         <BookingHeader
           bookingReference={booking.booking_reference}
-          paymentStatus={booking.payment_status}
+          transactionStatus={booking.transaction_status}
           timeRemaining={timeRemaining}
           onCopy={copyBookingReference}
         />
@@ -166,14 +167,25 @@ function BookingConfirmationContent() {
           </CardContent>
         </Card>
 
-        {/* Payment Button - Only show if pending */}
-        {booking.payment_status === "pending" && (
-          <PaymentActionCard
-            totalAmount={booking.total_amount}
-            timeRemaining={timeRemaining}
-            isPaymentPending={paymentMutation.isPending}
-            onPayment={handlePayment}
-          />
+        {/* Payment Section - Only show if pending */}
+        {booking.transaction_status === "PENDING" && (
+          <>
+            {/* If transaction already exists, show PayOS payment */}
+            {booking.transaction ? (
+              <PayOSPaymentCard
+                transaction={booking.transaction}
+                timeRemaining={timeRemaining}
+              />
+            ) : (
+              /* If no transaction yet, show button to create payment link */
+              <PaymentActionCard
+                totalAmount={booking.total_amount}
+                timeRemaining={timeRemaining}
+                isPaymentPending={paymentMutation.isPending}
+                onPayment={handlePayment}
+              />
+            )}
+          </>
         )}
 
         {/* Actions */}

@@ -8,41 +8,52 @@ interface TripInfoSectionProps {
   trip: Trip;
 }
 
+interface InfoItemProps {
+  icon: React.ReactNode;
+  label: string;
+  value: string | React.ReactNode;
+}
+
+function InfoItem({ icon, label, value }: InfoItemProps) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="mt-0.5 text-muted-foreground">{icon}</div>
+      <div className="flex-1 text-sm">
+        <p className="text-muted-foreground">{label}</p>
+        <p className="font-medium">{value}</p>
+      </div>
+    </div>
+  );
+}
+
 export function TripInfoSection({ trip }: TripInfoSectionProps) {
+  const departureDate = new Date(trip.departure_time);
+  const arrivalTime = new Date(trip.arrival_time);
+
   return (
     <div>
       <h3 className="mb-4 font-semibold">Thông tin chuyến đi</h3>
-      <div className="space-y-3">
-        <div className="flex items-center space-x-3">
-          <Calendar className="h-5 w-5 text-muted-foreground" />
-          <span className="text-sm">
-            {format(new Date(trip.departure_time), "dd/MM/yyyy", {
-              locale: vi,
-            })}{" "}
-            •{" "}
-            {format(new Date(trip.departure_time), "HH:mm", {
-              locale: vi,
-            })}
-          </span>
-        </div>
-        <div className="flex items-start space-x-3">
-          <MapPin className="mt-0.5 h-5 w-5 text-muted-foreground" />
-          <div className="text-sm">
-            <p className="font-medium">{getDisplayName(trip.route?.origin)}</p>
-            <p className="text-muted-foreground">
-              → {getDisplayName(trip.route?.destination)}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center space-x-3">
-          <Clock className="h-5 w-5 text-muted-foreground" />
-          <span className="text-sm">
-            Đến nơi:{" "}
-            {format(new Date(trip.arrival_time), "HH:mm", {
-              locale: vi,
-            })}
-          </span>
-        </div>
+      <div className="grid gap-3">
+        <InfoItem
+          icon={<Calendar className="h-5 w-5" />}
+          label="Ngày khởi hành"
+          value={`${format(departureDate, "dd/MM/yyyy", { locale: vi })} • ${format(departureDate, "HH:mm", { locale: vi })}`}
+        />
+        <InfoItem
+          icon={<MapPin className="h-5 w-5" />}
+          label="Tuyến đường"
+          value={
+            <span>
+              {getDisplayName(trip.route?.origin)} →{" "}
+              {getDisplayName(trip.route?.destination)}
+            </span>
+          }
+        />
+        <InfoItem
+          icon={<Clock className="h-5 w-5" />}
+          label="Thời gian đến"
+          value={format(arrivalTime, "HH:mm", { locale: vi })}
+        />
       </div>
     </div>
   );

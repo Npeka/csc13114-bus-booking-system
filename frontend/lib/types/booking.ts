@@ -67,6 +67,23 @@ export interface CreatePaymentRequest {
 }
 
 /**
+ * Transaction response from payment service
+ */
+export interface Transaction {
+  id: string;
+  booking_id: string;
+  amount: number;
+  currency: string;
+  payment_method: string;
+  order_code: number;
+  status: string;
+  checkout_url: string;
+  qr_code: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
  * Payment link response from payment service
  */
 export interface PaymentLinkResponse {
@@ -117,8 +134,9 @@ export interface BookingResponse {
   trip_id: string;
   user_id: string;
   total_amount: number;
-  status: string;
-  payment_status: string;
+  status: string; // "PENDING", "CONFIRMED", "CANCELLED", etc.
+  transaction_status?: string; // "PENDING", "PAID", "FAILED", etc.
+  transaction_id?: string;
   payment_order_id?: string;
   notes?: string;
   expires_at?: string;
@@ -127,6 +145,7 @@ export interface BookingResponse {
   created_at: string;
   updated_at: string;
   seats: BookingSeat[];
+  transaction?: Transaction;
 }
 
 /**

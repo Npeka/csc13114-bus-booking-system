@@ -101,6 +101,8 @@ definitions:
         $ref: '#/definitions/bus-booking_payment-service_internal_model.TransactionStatus'
       updated_at:
         type: string
+      user_id:
+        type: string
     type: object
   bus-booking_payment-service_internal_model.TransactionStatus:
     enum:
@@ -169,15 +171,17 @@ info:
   title: Payment Service API
   version: "1.0"
 paths:
-  /api/v1/transactions/{order_code}:
+  /api/v1/transactions/{id}:
     get:
-      description: Retrieve transaction details by PayOS order code
+      consumes:
+      - application/json
+      description: Retrieve transaction details by transaction ID
       parameters:
-      - description: Order code
+      - description: Transaction ID
         in: path
-        name: order_code
+        name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
@@ -202,7 +206,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/ginext.Response'
-      summary: Get transaction by order code
+      summary: Get transaction by ID
       tags:
       - transactions
   /api/v1/transactions/payment-link:
