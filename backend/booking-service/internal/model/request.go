@@ -61,20 +61,20 @@ type ReleaseSeatRequest struct {
 
 // BookingResponse represents simplified booking response
 type BookingResponse struct {
-	ID               uuid.UUID  `json:"id"`
-	CreatedAt        time.Time  `json:"created_at"`
-	UpdatedAt        time.Time  `json:"updated_at"`
-	BookingReference string     `json:"booking_reference"`
-	TripID           uuid.UUID  `json:"trip_id"`
-	UserID           uuid.UUID  `json:"user_id"`
-	TotalAmount      int        `json:"total_amount"`
-	Status           string     `json:"status"`
-	PaymentStatus    string     `json:"payment_status"`
-	PaymentOrderID   string     `json:"payment_order_id,omitempty"`
-	Notes            string     `json:"notes,omitempty"`
-	ExpiresAt        *time.Time `json:"expires_at,omitempty"`
-	ConfirmedAt      *time.Time `json:"confirmed_at,omitempty"`
-	CancelledAt      *time.Time `json:"cancelled_at,omitempty"`
+	ID                uuid.UUID                 `json:"id"`
+	CreatedAt         time.Time                 `json:"created_at"`
+	UpdatedAt         time.Time                 `json:"updated_at"`
+	BookingReference  string                    `json:"booking_reference"`
+	TripID            uuid.UUID                 `json:"trip_id"`
+	UserID            uuid.UUID                 `json:"user_id"`
+	TotalAmount       int                       `json:"total_amount"`
+	Status            BookingStatus             `json:"status"`
+	TransactionStatus payment.TransactionStatus `json:"transaction_status"`
+	TransactionID     uuid.UUID                 `json:"transaction_id,omitempty"`
+	Notes             string                    `json:"notes,omitempty"`
+	ExpiresAt         *time.Time                `json:"expires_at,omitempty"`
+	ConfirmedAt       *time.Time                `json:"confirmed_at,omitempty"`
+	CancelledAt       *time.Time                `json:"cancelled_at,omitempty"`
 
 	// Seats info
 	Seats       []BookingSeatResponse        `json:"seats"`

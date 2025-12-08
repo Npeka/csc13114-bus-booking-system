@@ -24,6 +24,21 @@ const (
 	TransactionStatusFailed     TransactionStatus = "FAILED"
 )
 
+func (s TransactionStatus) IsValid() bool {
+	switch s {
+	case TransactionStatusPending,
+		TransactionStatusCancelled,
+		TransactionStatusUnderpaid,
+		TransactionStatusPaid,
+		TransactionStatusExpired,
+		TransactionStatusProcessing,
+		TransactionStatusFailed:
+		return true
+	default:
+		return false
+	}
+}
+
 type TransactionResponse struct {
 	ID            uuid.UUID         `json:"id"`
 	CreatedAt     time.Time         `json:"created_at"`

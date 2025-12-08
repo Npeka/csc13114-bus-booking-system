@@ -5,10 +5,13 @@ import (
 	"bus-booking/shared/client"
 	"context"
 	"fmt"
+
+	"github.com/google/uuid"
 )
 
 type PaymentClient interface {
 	CreatePaymentLink(ctx context.Context, req *payment.CreatePaymentLinkRequest) (*payment.TransactionResponse, error)
+	GetTransactionByID(ctx context.Context, id uuid.UUID) (*payment.TransactionResponse, error)
 }
 
 type PaymentClientImpl struct {
@@ -38,4 +41,18 @@ func (c *PaymentClientImpl) CreatePaymentLink(ctx context.Context, req *payment.
 	}
 
 	return paymentResp, nil
+}
+
+func (c *PaymentClientImpl) GetTransactionByID(ctx context.Context, id uuid.UUID) (*payment.TransactionResponse, error) {
+	resp, err := c.http.Get(ctx, fmt.Sprintf("/api/v1/transactions/%s", id), nil, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transaction: %w", err)
+	}
+
+	transactionResp, err := client.ParseData[payment.TransactionResponse](resp)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse transaction response: %w", err)
+	}
+
+	return transactionResp, nil
 }

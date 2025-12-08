@@ -12,9 +12,9 @@ import (
 type TransactionRepository interface {
 	CreateTransaction(ctx context.Context, transaction *model.Transaction) error
 	UpdateTransaction(ctx context.Context, transaction *model.Transaction) error
-	GetTransactionByID(ctx context.Context, id uuid.UUID) (*model.Transaction, error)
-	GetTransactionByOrderCode(ctx context.Context, orderCode int) (*model.Transaction, error)
-	GetTransactionByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.Transaction, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*model.Transaction, error)
+	GetByOrderCode(ctx context.Context, orderCode int) (*model.Transaction, error)
+	GetByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.Transaction, error)
 	GetTransactionsByBookingID(ctx context.Context, bookingID uuid.UUID) ([]*model.Transaction, error)
 }
 
@@ -40,7 +40,7 @@ func (r *transactionRepositoryImpl) UpdateTransaction(ctx context.Context, trans
 	return nil
 }
 
-func (r *transactionRepositoryImpl) GetTransactionByID(ctx context.Context, id uuid.UUID) (*model.Transaction, error) {
+func (r *transactionRepositoryImpl) GetByID(ctx context.Context, id uuid.UUID) (*model.Transaction, error) {
 	var transaction model.Transaction
 	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&transaction).Error; err != nil {
 		return nil, fmt.Errorf("transaction not found: %w", err)
@@ -48,8 +48,8 @@ func (r *transactionRepositoryImpl) GetTransactionByID(ctx context.Context, id u
 	return &transaction, nil
 }
 
-// GetTransactionByOrderCode retrieves a transaction by PayOS order code
-func (r *transactionRepositoryImpl) GetTransactionByOrderCode(ctx context.Context, orderCode int) (*model.Transaction, error) {
+// GetByOrderCode retrieves a transaction by PayOS order code
+func (r *transactionRepositoryImpl) GetByOrderCode(ctx context.Context, orderCode int) (*model.Transaction, error) {
 	var transaction model.Transaction
 	if err := r.db.WithContext(ctx).Where("order_code = ?", orderCode).First(&transaction).Error; err != nil {
 		return nil, fmt.Errorf("transaction not found: %w", err)
@@ -57,8 +57,8 @@ func (r *transactionRepositoryImpl) GetTransactionByOrderCode(ctx context.Contex
 	return &transaction, nil
 }
 
-// GetTransactionByBookingID retrieves the latest transaction for a booking
-func (r *transactionRepositoryImpl) GetTransactionByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.Transaction, error) {
+// GetByBookingID retrieves the latest transaction for a booking
+func (r *transactionRepositoryImpl) GetByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.Transaction, error) {
 	var transaction model.Transaction
 	if err := r.db.WithContext(ctx).
 		Where("booking_id = ?", bookingID).

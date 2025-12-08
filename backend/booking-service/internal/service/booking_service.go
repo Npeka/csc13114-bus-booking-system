@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"log"
 	"math/big"
 	"time"
 
@@ -105,14 +106,14 @@ func (s *bookingServiceImpl) CreateBooking(ctx context.Context, req *model.Creat
 	// 5. Create booking
 	expiresAt := time.Now().UTC().Add(15 * time.Minute)
 	booking := &model.Booking{
-		BookingReference: s.generateBookingReference(),
-		TripID:           req.TripID,
-		UserID:           userID,
-		TotalAmount:      totalAmount,
-		Status:           model.BookingStatusPending,
-		PaymentStatus:    model.TransactionStatusPending,
-		Notes:            req.Notes,
-		ExpiresAt:        &expiresAt,
+		BookingReference:  s.generateBookingReference(),
+		TripID:            req.TripID,
+		UserID:            userID,
+		TotalAmount:       totalAmount,
+		Status:            model.BookingStatusPending,
+		TransactionStatus: payment.TransactionStatusPending,
+		Notes:             req.Notes,
+		ExpiresAt:         &expiresAt,
 	}
 
 	// 6. Create booking seats
@@ -145,6 +146,15 @@ func (s *bookingServiceImpl) CreateBooking(ctx context.Context, req *model.Creat
 		return nil, ginext.NewInternalServerError(fmt.Sprintf("failed to create payment link: %v", err))
 	}
 
+	booking.TransactionID = transaction.ID
+	booking.TransactionStatus = transaction.Status
+
+	go func() {
+		if err := s.bookingRepo.UpdateBooking(ctx, booking); err != nil {
+			log.Printf("failed to update booking: %v", err)
+		}
+	}()
+
 	// 9. Push notification to queue (khi có notification service)
 	// TODO: Uncomment khi notification service đã ready
 	/*
@@ -170,9 +180,7 @@ func (s *bookingServiceImpl) CreateBooking(ctx context.Context, req *model.Creat
 	*/
 
 	// 9. Return response
-	res := s.toBookingResponse(booking)
-	res.Transaction = transaction
-	return res, nil
+	return s.toBookingResponse(booking), nil
 }
 
 // CreateGuestBooking creates a booking for guest users (without authentication)
@@ -234,7 +242,15 @@ func (s *bookingServiceImpl) GetBookingByID(ctx context.Context, id uuid.UUID) (
 		return nil, err
 	}
 
-	return s.toBookingResponse(booking), nil
+	// Get payment status from payment service
+	transaction, err := s.paymentClient.GetTransactionByID(ctx, booking.TransactionID)
+	if err != nil {
+		return nil, ginext.NewInternalServerError("không thể lấy thông tin giao dịch")
+	}
+
+	resp := s.toBookingResponse(booking)
+	resp.Transaction = transaction
+	return resp, nil
 }
 
 // GetBookingByReference retrieves booking by reference number for guest lookup
@@ -321,12 +337,11 @@ func (s *bookingServiceImpl) UpdatePaymentStatus(ctx context.Context, req *model
 	}
 
 	// Update payment status
-	booking.PaymentStatus = req.PaymentStatus
+	booking.TransactionStatus = req.PaymentStatus
 	booking.Status = req.BookingStatus
-	booking.PaymentOrderID = req.PaymentOrderID
 
 	// If payment is successful, set confirmed time
-	if req.PaymentStatus == model.TransactionStatusPaid && req.BookingStatus == model.BookingStatusConfirmed {
+	if req.PaymentStatus == payment.TransactionStatusPaid && req.BookingStatus == model.BookingStatusConfirmed {
 		now := time.Now()
 		booking.ConfirmedAt = &now
 	}
@@ -338,20 +353,20 @@ func (s *bookingServiceImpl) UpdatePaymentStatus(ctx context.Context, req *model
 
 func (s *bookingServiceImpl) toBookingResponse(booking *model.Booking) *model.BookingResponse {
 	resp := &model.BookingResponse{
-		ID:               booking.ID,
-		CreatedAt:        booking.CreatedAt,
-		UpdatedAt:        booking.UpdatedAt,
-		BookingReference: booking.BookingReference,
-		TripID:           booking.TripID,
-		UserID:           booking.UserID,
-		TotalAmount:      booking.TotalAmount,
-		Status:           string(booking.Status),
-		PaymentStatus:    string(booking.PaymentStatus),
-		PaymentOrderID:   booking.PaymentOrderID,
-		Notes:            booking.Notes,
-		ExpiresAt:        booking.ExpiresAt,
-		ConfirmedAt:      booking.ConfirmedAt,
-		CancelledAt:      booking.CancelledAt,
+		ID:                booking.ID,
+		CreatedAt:         booking.CreatedAt,
+		UpdatedAt:         booking.UpdatedAt,
+		BookingReference:  booking.BookingReference,
+		TripID:            booking.TripID,
+		UserID:            booking.UserID,
+		TotalAmount:       booking.TotalAmount,
+		Status:            booking.Status,
+		TransactionStatus: booking.TransactionStatus,
+		TransactionID:     booking.TransactionID,
+		Notes:             booking.Notes,
+		ExpiresAt:         booking.ExpiresAt,
+		ConfirmedAt:       booking.ConfirmedAt,
+		CancelledAt:       booking.CancelledAt,
 	}
 
 	// Map seats

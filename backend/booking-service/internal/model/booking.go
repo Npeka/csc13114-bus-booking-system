@@ -1,6 +1,7 @@
 package model
 
 import (
+	"bus-booking/booking-service/internal/model/payment"
 	"time"
 
 	"github.com/google/uuid"
@@ -16,11 +17,11 @@ type Booking struct {
 	TotalAmount int `json:"total_amount" gorm:"type:decimal(10,2);not null"`
 
 	// Status
-	Status        BookingStatus     `json:"status" gorm:"type:varchar(20);not null;default:'pending';index"`
-	PaymentStatus TransactionStatus `json:"payment_status" gorm:"type:varchar(20);not null;default:'pending';index"`
+	Status            BookingStatus             `json:"status" gorm:"type:varchar(20);not null;default:'pending';index"`
+	TransactionStatus payment.TransactionStatus `json:"transaction_status" gorm:"type:varchar(20);not null;default:'pending';index"`
 
 	// Payment info - Payment Service handles PayOS integration
-	PaymentOrderID string `json:"payment_order_id,omitempty" gorm:"type:varchar(255);index"`
+	TransactionID uuid.UUID `json:"transaction_id,omitempty" gorm:"type:uuid;index"`
 
 	// Timestamps
 	ExpiresAt   *time.Time `json:"expires_at,omitempty" gorm:"type:timestamptz;index"`
@@ -57,33 +58,6 @@ func (s BookingStatus) IsValid() bool {
 	}
 }
 
-type TransactionStatus string
-
-const (
-	TransactionStatusPending    TransactionStatus = "PENDING"
-	TransactionStatusCancelled  TransactionStatus = "CANCELLED"
-	TransactionStatusUnderpaid  TransactionStatus = "UNDERPAID"
-	TransactionStatusPaid       TransactionStatus = "PAID"
-	TransactionStatusExpired    TransactionStatus = "EXPIRED"
-	TransactionStatusProcessing TransactionStatus = "PROCESSING"
-	TransactionStatusFailed     TransactionStatus = "FAILED"
-)
-
-func (s TransactionStatus) IsValid() bool {
-	switch s {
-	case TransactionStatusPending,
-		TransactionStatusCancelled,
-		TransactionStatusUnderpaid,
-		TransactionStatusPaid,
-		TransactionStatusExpired,
-		TransactionStatusProcessing,
-		TransactionStatusFailed:
-		return true
-	default:
-		return false
-	}
-}
-
 func (Booking) TableName() string {
 	return "bookings"
 }
@@ -102,7 +76,7 @@ type CreatePaymentRequest struct {
 
 // UpdatePaymentStatusRequest updates booking payment status (internal use)
 type UpdatePaymentStatusRequest struct {
-	PaymentStatus  TransactionStatus `json:"payment_status" binding:"required"`
-	BookingStatus  BookingStatus     `json:"booking_status" binding:"required"`
-	PaymentOrderID string            `json:"payment_order_id" binding:"required"`
+	PaymentStatus  payment.TransactionStatus `json:"payment_status" binding:"required"`
+	BookingStatus  BookingStatus             `json:"booking_status" binding:"required"`
+	PaymentOrderID string                    `json:"payment_order_id" binding:"required"`
 }

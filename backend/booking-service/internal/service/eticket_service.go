@@ -8,6 +8,7 @@ import (
 
 	"bus-booking/booking-service/internal/client"
 	"bus-booking/booking-service/internal/model"
+	"bus-booking/booking-service/internal/model/payment"
 	"bus-booking/booking-service/internal/repository"
 	"bus-booking/shared/ginext"
 
@@ -108,7 +109,7 @@ func (s *eTicketServiceImpl) GenerateETicket(ctx context.Context, bookingID uuid
 	// Thông tin thanh toán
 	s.addSection(pdf, "THONG TIN THANH TOAN")
 	s.addInfoRow(pdf, "Tong tien:", fmt.Sprintf("%d VND", booking.TotalAmount))
-	s.addInfoRow(pdf, "Trang thai:", s.getPaymentStatusText(booking.PaymentStatus))
+	s.addInfoRow(pdf, "Trang thai:", s.getPaymentStatusText(booking.TransactionStatus))
 	if booking.ConfirmedAt != nil {
 		s.addInfoRow(pdf, "Xac nhan luc:", booking.ConfirmedAt.Format("15:04, 02/01/2006"))
 	}
@@ -170,13 +171,13 @@ func (s *eTicketServiceImpl) addInfoRow(pdf *gofpdf.Fpdf, label, value string) {
 }
 
 // getPaymentStatusText chuyển payment status sang text hiển thị
-func (s *eTicketServiceImpl) getPaymentStatusText(status model.TransactionStatus) string {
+func (s *eTicketServiceImpl) getPaymentStatusText(status payment.TransactionStatus) string {
 	switch status {
-	case model.TransactionStatusPending:
+	case payment.TransactionStatusPending:
 		return "Cho thanh toan"
-	case model.TransactionStatusPaid:
+	case payment.TransactionStatusPaid:
 		return "Da thanh toan"
-	case model.TransactionStatusFailed:
+	case payment.TransactionStatusFailed:
 		return "That bai"
 	default:
 		return string(status)

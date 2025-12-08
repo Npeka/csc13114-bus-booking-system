@@ -3,6 +3,7 @@ package handler
 import (
 	"strconv"
 
+	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 
 	"bus-booking/payment-service/internal/model"
@@ -15,6 +16,7 @@ type TransactionHandler interface {
 	CreatePaymentLink(r *ginext.Request) (*ginext.Response, error)
 	HandlePaymentWebhook(r *ginext.Request) (*ginext.Response, error)
 	GetTransactionByOrderCode(r *ginext.Request) (*ginext.Response, error)
+	GetByID(r *ginext.Request) (*ginext.Response, error)
 }
 
 type TransactionHandlerImpl struct {
@@ -110,6 +112,22 @@ func (h *TransactionHandlerImpl) GetTransactionByOrderCode(r *ginext.Request) (*
 	transaction, err := h.service.GetTransactionByOrderCode(r.GinCtx.Request.Context(), orderCode)
 	if err != nil {
 		log.Error().Err(err).Int("order_code", orderCode).Msg("Transaction not found")
+		return nil, ginext.NewNotFoundError("Transaction not found")
+	}
+
+	return ginext.NewSuccessResponse(transaction), nil
+}
+
+func (h *TransactionHandlerImpl) GetByID(r *ginext.Request) (*ginext.Response, error) {
+	idStr := r.GinCtx.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		return nil, ginext.NewBadRequestError("Invalid transaction ID")
+	}
+
+	transaction, err := h.service.GetByID(r.GinCtx.Request.Context(), id)
+	if err != nil {
+		log.Error().Err(err).Str("id", idStr).Msg("Transaction not found")
 		return nil, ginext.NewNotFoundError("Transaction not found")
 	}
 

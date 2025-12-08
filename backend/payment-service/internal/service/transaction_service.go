@@ -21,6 +21,7 @@ type TransactionService interface {
 	HandlePaymentWebhook(ctx context.Context, webhookData *model.PaymentWebhookData) error
 	GetTransactionByOrderCode(ctx context.Context, orderCode int) (*model.Transaction, error)
 	GetTransactionByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.Transaction, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*model.Transaction, error)
 }
 
 type TransactionServiceImpl struct {
@@ -159,7 +160,7 @@ func (s *TransactionServiceImpl) toBookingStatus(status model.TransactionStatus)
 }
 
 func (s *TransactionServiceImpl) GetTransactionByOrderCode(ctx context.Context, orderCode int) (*model.Transaction, error) {
-	transaction, err := s.transactionRepo.GetTransactionByOrderCode(ctx, orderCode)
+	transaction, err := s.transactionRepo.GetByOrderCode(ctx, orderCode)
 	if err != nil {
 		return nil, ginext.NewNotFoundError("transaction not found")
 	}
@@ -167,7 +168,15 @@ func (s *TransactionServiceImpl) GetTransactionByOrderCode(ctx context.Context, 
 }
 
 func (s *TransactionServiceImpl) GetTransactionByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.Transaction, error) {
-	transaction, err := s.transactionRepo.GetTransactionByBookingID(ctx, bookingID)
+	transaction, err := s.transactionRepo.GetByBookingID(ctx, bookingID)
+	if err != nil {
+		return nil, ginext.NewNotFoundError("transaction not found")
+	}
+	return transaction, nil
+}
+
+func (s *TransactionServiceImpl) GetByID(ctx context.Context, id uuid.UUID) (*model.Transaction, error) {
+	transaction, err := s.transactionRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, ginext.NewNotFoundError("transaction not found")
 	}
@@ -180,6 +189,7 @@ func (s *TransactionServiceImpl) toTransactionResponse(t *model.Transaction) *mo
 		CreatedAt:     t.CreatedAt,
 		UpdatedAt:     t.UpdatedAt,
 		BookingID:     t.BookingID,
+		UserID:        t.UserID,
 		Amount:        t.Amount,
 		Currency:      t.Currency,
 		PaymentMethod: t.PaymentMethod,

@@ -65,6 +65,7 @@ type TransactionResponse struct {
 	CreatedAt     time.Time         `json:"created_at"`
 	UpdatedAt     time.Time         `json:"updated_at"`
 	BookingID     uuid.UUID         `json:"booking_id"`
+	UserID        uuid.UUID         `json:"user_id"`
 	Amount        int               `json:"amount"`
 	Currency      Currency          `json:"currency"`
 	PaymentMethod PaymentMethod     `json:"payment_method"`
