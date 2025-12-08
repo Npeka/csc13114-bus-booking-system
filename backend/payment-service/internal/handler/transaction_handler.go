@@ -101,6 +101,11 @@ func (h *TransactionHandlerImpl) HandlePaymentWebhook(r *ginext.Request) (*ginex
 		return nil, ginext.NewBadRequestError("Invalid webhook data")
 	}
 
+	if webhookData.Data.OrderCode == 123 {
+		log.Warn().Msg("Received test webhook data")
+		return ginext.NewSuccessResponse("Test webhook received"), nil
+	}
+
 	err := h.service.HandlePaymentWebhook(r.GinCtx.Request.Context(), &webhookData)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to process webhook")
