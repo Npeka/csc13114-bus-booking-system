@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
-	"log"
 	"math/big"
 	"time"
 
@@ -149,11 +148,9 @@ func (s *bookingServiceImpl) CreateBooking(ctx context.Context, req *model.Creat
 	booking.TransactionID = transaction.ID
 	booking.TransactionStatus = transaction.Status
 
-	go func() {
-		if err := s.bookingRepo.UpdateBooking(ctx, booking); err != nil {
-			log.Printf("failed to update booking: %v", err)
-		}
-	}()
+	if err := s.bookingRepo.UpdateBooking(ctx, booking); err != nil {
+		return nil, ginext.NewInternalServerError(fmt.Sprintf("failed to update booking with transaction ID: %v", err))
+	}
 
 	// 9. Push notification to queue (khi có notification service)
 	// TODO: Uncomment khi notification service đã ready
