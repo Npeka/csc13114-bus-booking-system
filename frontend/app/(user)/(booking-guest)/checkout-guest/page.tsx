@@ -11,10 +11,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getTripById, getBusSeats } from "@/lib/api/trip-service";
 import { createGuestBooking } from "@/lib/api/booking-service";
 import { toast } from "sonner";
-import { TripSummary } from "../(protected)/checkout/_components/trip-summary";
-import { PaymentSummary } from "../(protected)/checkout/_components/payment-summary";
-import { ImportantNotes } from "../(protected)/checkout/_components/important-notes";
-import { TermsConditions } from "../(protected)/checkout/_components/terms-conditions";
+import { TripSummary } from "../../(protected)/checkout/_components/trip-summary";
+import { PaymentSummary } from "../../(protected)/checkout/_components/payment-summary";
+import { ImportantNotes } from "../../(protected)/checkout/_components/important-notes";
+import { TermsConditions } from "../../(protected)/checkout/_components/terms-conditions";
 
 function CheckoutGuestContent() {
   const router = useRouter();
