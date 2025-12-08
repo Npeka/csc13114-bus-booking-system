@@ -22,6 +22,7 @@ import (
 type BookingService interface {
 	CreateBooking(ctx context.Context, req *model.CreateBookingRequest, userID uuid.UUID) (*model.BookingResponse, error)
 	CreateGuestBooking(ctx context.Context, req *model.CreateGuestBookingRequest) (*model.BookingResponse, error)
+	UpdateBookingStatus(ctx context.Context, req *model.UpdateBookingStatusRequest, bookingID uuid.UUID) error
 
 	GetBookingByID(ctx context.Context, id uuid.UUID) (*model.BookingResponse, error)
 	GetBookingByReference(ctx context.Context, reference string, email string) (*model.BookingResponse, error)
@@ -29,9 +30,7 @@ type BookingService interface {
 	GetTripBookings(ctx context.Context, req model.PaginationRequest, tripID uuid.UUID) ([]*model.BookingResponse, int64, error)
 
 	CancelBooking(ctx context.Context, id uuid.UUID, userID uuid.UUID, reason string) error
-	UpdateBookingStatus(ctx context.Context, id uuid.UUID, status string) error
 
-	UpdatePaymentStatus(ctx context.Context, req *model.UpdatePaymentStatusRequest, bookingID uuid.UUID) error
 	GetSeatStatus(ctx context.Context, tripID uuid.UUID, seatIDs []uuid.UUID) ([]model.SeatStatusItem, error)
 }
 
@@ -100,7 +99,7 @@ func (s *bookingServiceImpl) CreateBooking(ctx context.Context, req *model.Creat
 	}
 
 	// 4. Calculate total amount
-	totalAmount := s.CalculateTotalPrice(tripData.BasePrice, seats)
+	totalAmount := s.calculateTotalPrice(tripData.BasePrice, seats)
 
 	// 5. Create booking
 	expiresAt := time.Now().UTC().Add(15 * time.Minute)
@@ -180,7 +179,6 @@ func (s *bookingServiceImpl) CreateBooking(ctx context.Context, req *model.Creat
 	return s.toBookingResponse(booking), nil
 }
 
-// CreateGuestBooking creates a booking for guest users (without authentication)
 func (s *bookingServiceImpl) CreateGuestBooking(ctx context.Context, req *model.CreateGuestBookingRequest) (*model.BookingResponse, error) {
 	// 1. Validate contact information
 	if req.Email == "" && req.Phone == "" {
@@ -225,12 +223,45 @@ func (s *bookingServiceImpl) checkSeatAvailability(ctx context.Context, tripID u
 	return true, nil
 }
 
-func (s *bookingServiceImpl) CalculateTotalPrice(basePrice float64, seats []trip.Seat) int {
+func (s *bookingServiceImpl) calculateTotalPrice(basePrice float64, seats []trip.Seat) int {
 	total := 0.0
 	for _, seat := range seats {
 		total += seat.CalculateSeatPrice(basePrice)
 	}
 	return int(total)
+}
+
+func (s *bookingServiceImpl) UpdateBookingStatus(ctx context.Context, req *model.UpdateBookingStatusRequest, bookingID uuid.UUID) error {
+	booking, err := s.bookingRepo.GetBookingByID(ctx, bookingID)
+	if err != nil {
+		return ginext.NewNotFoundError("booking not found")
+	}
+
+	// Update payment status
+	booking.TransactionStatus = req.TransactionStatus
+	switch booking.TransactionStatus {
+	case payment.TransactionStatusPending:
+		booking.Status = model.BookingStatusPending
+
+	case payment.TransactionStatusPaid:
+		booking.Status = model.BookingStatusConfirmed
+
+	case payment.TransactionStatusCancelled:
+		booking.Status = model.BookingStatusCancelled
+		now := time.Now()
+		booking.CancelledAt = &now
+
+	case payment.TransactionStatusExpired:
+		booking.Status = model.BookingStatusExpired
+
+	case payment.TransactionStatusFailed:
+		booking.Status = model.BookingStatusFailed
+
+	default:
+		booking.Status = model.BookingStatusFailed
+	}
+
+	return s.bookingRepo.UpdateBooking(ctx, booking)
 }
 
 func (s *bookingServiceImpl) GetBookingByID(ctx context.Context, id uuid.UUID) (*model.BookingResponse, error) {
@@ -313,37 +344,6 @@ func (s *bookingServiceImpl) GetTripBookings(ctx context.Context, req model.Pagi
 	}
 
 	return responses, total, nil
-}
-
-// UpdateBookingStatus updates the status of a booking (admin only)
-func (s *bookingServiceImpl) UpdateBookingStatus(ctx context.Context, id uuid.UUID, status string) error {
-	// Validate status
-	bookingStatus := model.BookingStatus(status)
-	if !bookingStatus.IsValid() {
-		return ginext.NewBadRequestError("invalid booking status")
-	}
-
-	return s.bookingRepo.UpdateStatus(ctx, id, bookingStatus)
-}
-
-// UpdatePaymentStatus updates booking payment status (called by payment service)
-func (s *bookingServiceImpl) UpdatePaymentStatus(ctx context.Context, req *model.UpdatePaymentStatusRequest, bookingID uuid.UUID) error {
-	booking, err := s.bookingRepo.GetBookingByID(ctx, bookingID)
-	if err != nil {
-		return ginext.NewNotFoundError("booking not found")
-	}
-
-	// Update payment status
-	booking.TransactionStatus = req.PaymentStatus
-	booking.Status = req.BookingStatus
-
-	// If payment is successful, set confirmed time
-	if req.PaymentStatus == payment.TransactionStatusPaid && req.BookingStatus == model.BookingStatusConfirmed {
-		now := time.Now()
-		booking.ConfirmedAt = &now
-	}
-
-	return s.bookingRepo.UpdateBooking(ctx, booking)
 }
 
 // Helper methods

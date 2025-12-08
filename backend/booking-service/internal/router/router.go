@@ -32,7 +32,8 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 	{
 		bookings := v1.Group("/bookings")
 		{
-			// Public routes
+
+			// create booking
 			bookings.POST("/guest", ginext.WrapHandler(h.BookingHandler.CreateGuestBooking))
 			bookings.GET("/lookup", ginext.WrapHandler(h.BookingHandler.GetBookingByReference))
 
@@ -49,14 +50,16 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 			// Authenticated routes
 			bookings.Use(middleware.RequireAuth())
 			bookings.POST("", ginext.WrapHandler(h.BookingHandler.CreateBooking))
+
 			bookings.GET("/:id", ginext.WrapHandler(h.BookingHandler.GetBooking))
 			bookings.POST("/:id/cancel", ginext.WrapHandler(h.BookingHandler.CancelBooking))
 			bookings.GET("/user/:user_id", ginext.WrapHandler(h.BookingHandler.GetUserBookings))
+
 		}
 
 		internal := v1.Group("/bookings")
 		{
-			internal.PUT("/:id/payment-status", ginext.WrapHandler(h.BookingHandler.UpdatePaymentStatus))
+			internal.PUT("/:id/status", ginext.WrapHandler(h.BookingHandler.UpdateBookingStatus))
 			internal.GET("/trips/:trip_id/seats/status", ginext.WrapHandler(h.BookingHandler.GetSeatStatus))
 		}
 
@@ -72,7 +75,6 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 		admin.Use(middleware.RequireAuth())
 		admin.Use(middleware.RequireRole(constants.RoleAdmin))
 		{
-			admin.PUT("/bookings/:id/status", ginext.WrapHandler(h.BookingHandler.UpdateBookingStatus))
 			admin.GET("/bookings/trip/:trip_id", ginext.WrapHandler(h.BookingHandler.GetTripBookings))
 
 			admin.GET("/statistics/bookings", ginext.WrapHandler(h.StatisticsHandler.GetBookingStats))

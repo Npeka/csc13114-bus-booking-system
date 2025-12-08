@@ -63,9 +63,8 @@ type CreatePaymentRequest struct {
 	BuyerInfo BuyerInfo `json:"buyer_info" binding:"required"`
 }
 
-// UpdatePaymentStatusRequest updates booking payment status (internal use)
-type UpdatePaymentStatusRequest struct {
-	PaymentStatus  payment.TransactionStatus `json:"payment_status" binding:"required"`
-	BookingStatus  BookingStatus             `json:"booking_status" binding:"required"`
-	PaymentOrderID string                    `json:"payment_order_id" binding:"required"`
+// UpdateBookingStatusRequest updates booking payment status (internal use)
+type UpdateBookingStatusRequest struct {
+	TransactionID     uuid.UUID                 `json:"transaction_id" validate:"required"`
+	TransactionStatus payment.TransactionStatus `json:"transaction_status" validate:"required"`
 }

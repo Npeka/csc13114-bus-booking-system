@@ -10,7 +10,7 @@ import (
 )
 
 type BookingClient interface {
-	UpdateBookingPaymentStatus(ctx context.Context, bookingID uuid.UUID, req *booking.UpdatePaymentStatusRequest) error
+	UpdateBookingStatus(ctx context.Context, req *booking.UpdateBookingStatusRequest, bookingID uuid.UUID) error
 }
 
 type BookingClientImpl struct {
@@ -28,8 +28,8 @@ func NewBookingClient(serviceName, baseURL string) BookingClient {
 	}
 }
 
-func (c *BookingClientImpl) UpdateBookingPaymentStatus(ctx context.Context, bookingID uuid.UUID, req *booking.UpdatePaymentStatusRequest) error {
-	endpoint := fmt.Sprintf("/api/v1/bookings/%s/payment-status", bookingID.String())
+func (c *BookingClientImpl) UpdateBookingStatus(ctx context.Context, req *booking.UpdateBookingStatusRequest, bookingID uuid.UUID) error {
+	endpoint := fmt.Sprintf("/api/v1/bookings/%s/status", bookingID.String())
 	_, err := c.http.Put(ctx, endpoint, req, nil)
 	if err != nil {
 		return fmt.Errorf("failed to update booking payment status: %w", err)

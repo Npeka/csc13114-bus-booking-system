@@ -22,8 +22,6 @@ type BookingHandler interface {
 	CancelBooking(r *ginext.Request) (*ginext.Response, error)
 
 	UpdateBookingStatus(r *ginext.Request) (*ginext.Response, error)
-
-	UpdatePaymentStatus(r *ginext.Request) (*ginext.Response, error)
 	GetSeatStatus(r *ginext.Request) (*ginext.Response, error)
 
 	DownloadETicket(r *ginext.Request) error
@@ -262,17 +260,17 @@ func (h *BookingHandlerImpl) CancelBooking(r *ginext.Request) (*ginext.Response,
 }
 
 // UpdateBookingStatus godoc
-// @Summary Update booking status
-// @Description Update the status of a booking
+// @Summary Update booking payment status
+// @Description Update booking payment status (internal use by payment service)
 // @Tags bookings
 // @Accept json
 // @Produce json
 // @Param id path string true "Booking ID" format(uuid)
-// @Param request body model.UpdateBookingStatusRequest true "Status update request"
+// @Param request body model.UpdatePaymentStatusRequest true "Payment status update"
 // @Success 200 {object} ginext.Response
 // @Failure 400 {object} ginext.Response
 // @Failure 404 {object} ginext.Response
-// @Router /api/v1/bookings/{id}/status [put]
+// @Router /api/v1/bookings/{id}/payment-status [put]
 func (h *BookingHandlerImpl) UpdateBookingStatus(r *ginext.Request) (*ginext.Response, error) {
 	idStr := r.GinCtx.Param("id")
 	id, err := uuid.Parse(idStr)
@@ -287,41 +285,7 @@ func (h *BookingHandlerImpl) UpdateBookingStatus(r *ginext.Request) (*ginext.Res
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
-	if err := h.bookingService.UpdateBookingStatus(r.Context(), id, req.Status); err != nil {
-		log.Error().Err(err).Str("booking_id", idStr).Msg("failed to update booking status")
-		return nil, err
-	}
-
-	return ginext.NewSuccessResponse("booking status updated successfully"), nil
-}
-
-// UpdatePaymentStatus godoc
-// @Summary Update booking payment status
-// @Description Update booking payment status (internal use by payment service)
-// @Tags bookings
-// @Accept json
-// @Produce json
-// @Param id path string true "Booking ID" format(uuid)
-// @Param request body model.UpdatePaymentStatusRequest true "Payment status update"
-// @Success 200 {object} ginext.Response
-// @Failure 400 {object} ginext.Response
-// @Failure 404 {object} ginext.Response
-// @Router /api/v1/bookings/{id}/payment-status [put]
-func (h *BookingHandlerImpl) UpdatePaymentStatus(r *ginext.Request) (*ginext.Response, error) {
-	idStr := r.GinCtx.Param("id")
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		log.Error().Err(err).Str("id", idStr).Msg("invalid booking id")
-		return nil, ginext.NewBadRequestError("invalid booking id")
-	}
-
-	var req model.UpdatePaymentStatusRequest
-	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
-		log.Error().Err(err).Msg("failed to bind request body")
-		return nil, ginext.NewBadRequestError(err.Error())
-	}
-
-	if err := h.bookingService.UpdatePaymentStatus(r.Context(), &req, id); err != nil {
+	if err := h.bookingService.UpdateBookingStatus(r.Context(), &req, id); err != nil {
 		log.Error().Err(err).Str("booking_id", idStr).Msg("failed to update payment status")
 		return nil, err
 	}

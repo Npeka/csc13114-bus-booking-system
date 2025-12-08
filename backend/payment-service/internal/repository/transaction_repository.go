@@ -13,9 +13,8 @@ type TransactionRepository interface {
 	CreateTransaction(ctx context.Context, transaction *model.Transaction) error
 	UpdateTransaction(ctx context.Context, transaction *model.Transaction) error
 	GetByID(ctx context.Context, id uuid.UUID) (*model.Transaction, error)
-	GetByOrderCode(ctx context.Context, orderCode int) (*model.Transaction, error)
 	GetByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.Transaction, error)
-	GetTransactionsByBookingID(ctx context.Context, bookingID uuid.UUID) ([]*model.Transaction, error)
+	GetByWebhookData(ctx context.Context, orderCode int, paymentLinkID string) (*model.Transaction, error)
 }
 
 type transactionRepositoryImpl struct {
@@ -48,16 +47,16 @@ func (r *transactionRepositoryImpl) GetByID(ctx context.Context, id uuid.UUID) (
 	return &transaction, nil
 }
 
-// GetByOrderCode retrieves a transaction by PayOS order code
-func (r *transactionRepositoryImpl) GetByOrderCode(ctx context.Context, orderCode int) (*model.Transaction, error) {
+func (r *transactionRepositoryImpl) GetByWebhookData(ctx context.Context, orderCode int, paymentLinkID string) (*model.Transaction, error) {
 	var transaction model.Transaction
-	if err := r.db.WithContext(ctx).Where("order_code = ?", orderCode).First(&transaction).Error; err != nil {
+	if err := r.db.WithContext(ctx).
+		Where("order_code = ? and payment_link_id = ?", orderCode, paymentLinkID).
+		First(&transaction).Error; err != nil {
 		return nil, fmt.Errorf("transaction not found: %w", err)
 	}
 	return &transaction, nil
 }
 
-// GetByBookingID retrieves the latest transaction for a booking
 func (r *transactionRepositoryImpl) GetByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.Transaction, error) {
 	var transaction model.Transaction
 	if err := r.db.WithContext(ctx).
@@ -67,15 +66,4 @@ func (r *transactionRepositoryImpl) GetByBookingID(ctx context.Context, bookingI
 		return nil, fmt.Errorf("transaction not found: %w", err)
 	}
 	return &transaction, nil
-}
-
-func (r *transactionRepositoryImpl) GetTransactionsByBookingID(ctx context.Context, bookingID uuid.UUID) ([]*model.Transaction, error) {
-	var transactions []*model.Transaction
-	if err := r.db.WithContext(ctx).
-		Where("booking_id = ?", bookingID).
-		Order("created_at DESC").
-		Find(&transactions).Error; err != nil {
-		return nil, fmt.Errorf("failed to get transactions: %w", err)
-	}
-	return transactions, nil
 }

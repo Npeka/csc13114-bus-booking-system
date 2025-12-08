@@ -29,11 +29,6 @@ type CancelBookingRequest struct {
 	Reason string    `json:"reason" binding:"required"`
 }
 
-// UpdateBookingStatusRequest represents booking status update request
-type UpdateBookingStatusRequest struct {
-	Status string `json:"status" binding:"required"`
-}
-
 // InitSeatsRequest represents request to initialize seats for a trip
 type InitSeatsRequest struct {
 	Seats []SeatInitData `json:"seats" binding:"required,min=1,dive"`

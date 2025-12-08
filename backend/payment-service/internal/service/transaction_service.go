@@ -19,9 +19,8 @@ import (
 type TransactionService interface {
 	CreatePaymentLink(ctx context.Context, req *model.CreatePaymentLinkRequest, userID uuid.UUID) (*model.TransactionResponse, error)
 	HandlePaymentWebhook(ctx context.Context, webhookData *model.PaymentWebhookData) error
-	GetTransactionByOrderCode(ctx context.Context, orderCode int) (*model.Transaction, error)
-	GetTransactionByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.Transaction, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*model.Transaction, error)
+	GetByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.Transaction, error)
 }
 
 type TransactionServiceImpl struct {
@@ -95,7 +94,9 @@ func (s *TransactionServiceImpl) HandlePaymentWebhook(ctx context.Context, webho
 
 	g.Go(func() error {
 		var err error
-		transaction, err = s.GetTransactionByOrderCode(gCtx, webhookData.Data.OrderCode)
+		orderCode := webhookData.Data.OrderCode
+		paymentLinkID := webhookData.Data.PaymentLinkID
+		transaction, err = s.transactionRepo.GetByWebhookData(ctx, orderCode, paymentLinkID)
 		return err
 	})
 
@@ -120,63 +121,28 @@ func (s *TransactionServiceImpl) HandlePaymentWebhook(ctx context.Context, webho
 	}
 
 	// Notify booking service about payment success
-	updateReq := &booking.UpdatePaymentStatusRequest{
-		PaymentStatus:  transaction.Status,
-		BookingStatus:  s.toBookingStatus(transaction.Status),
-		TransactionID:  transaction.ID,
-		PaymentOrderID: fmt.Sprintf("%d", transaction.OrderCode),
-	}
-
-	if err := s.bookingClient.UpdateBookingPaymentStatus(ctx, transaction.BookingID, updateReq); err != nil {
+	if err := s.bookingClient.UpdateBookingStatus(ctx, &booking.UpdateBookingStatusRequest{
+		TransactionStatus: transaction.Status,
+	}, transaction.BookingID); err != nil {
 		log.Error().Err(err).
 			Str("booking_id", transaction.BookingID.String()).
 			Msg("Failed to update booking payment status")
 		// Don't fail the webhook - payment is already recorded
 		// This can be retried via a background job
-	} else {
-		log.Info().
-			Str("booking_id", transaction.BookingID.String()).
-			Int64("order_code", transaction.OrderCode).
-			Str("reference", transaction.Reference).
-			Msg("Payment confirmed and booking updated")
 	}
 
 	return nil
 }
-
-func (s *TransactionServiceImpl) toBookingStatus(status model.TransactionStatus) booking.BookingStatus {
-	switch status {
-	case model.TransactionStatusCancelled:
-		return booking.BookingStatusCancelled
-	case model.TransactionStatusUnderpaid:
-		return booking.BookingStatusPending
-	case model.TransactionStatusPaid:
-		return booking.BookingStatusConfirmed
-	case model.TransactionStatusFailed:
-		return booking.BookingStatusFailed
-	default:
-		return booking.BookingStatusPending
-	}
-}
-
-func (s *TransactionServiceImpl) GetTransactionByOrderCode(ctx context.Context, orderCode int) (*model.Transaction, error) {
-	transaction, err := s.transactionRepo.GetByOrderCode(ctx, orderCode)
-	if err != nil {
-		return nil, ginext.NewNotFoundError("transaction not found")
-	}
-	return transaction, nil
-}
-
-func (s *TransactionServiceImpl) GetTransactionByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.Transaction, error) {
-	transaction, err := s.transactionRepo.GetByBookingID(ctx, bookingID)
-	if err != nil {
-		return nil, ginext.NewNotFoundError("transaction not found")
-	}
-	return transaction, nil
-}
-
 func (s *TransactionServiceImpl) GetByID(ctx context.Context, id uuid.UUID) (*model.Transaction, error) {
 	transaction, err := s.transactionRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, ginext.NewNotFoundError("transaction not found")
+	}
+	return transaction, nil
+}
+
+func (s *TransactionServiceImpl) GetByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.Transaction, error) {
+	transaction, err := s.transactionRepo.GetByBookingID(ctx, bookingID)
 	if err != nil {
 		return nil, ginext.NewNotFoundError("transaction not found")
 	}
