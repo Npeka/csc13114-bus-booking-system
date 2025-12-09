@@ -47,6 +47,7 @@ func (s *TransactionServiceImpl) CreatePaymentLink(ctx context.Context, req *mod
 	payosResp, err := s.payOSService.CreatePaymentLink(ctx, &model.CreatePayOSPaymentLinkRequest{
 		Amount:      req.Amount,
 		Description: req.Description,
+		ExpiredAt:   req.ExpiredAt,
 	})
 	if err != nil {
 		return nil, ginext.NewInternalServerError(fmt.Sprintf("failed to create payment link: %v", err))

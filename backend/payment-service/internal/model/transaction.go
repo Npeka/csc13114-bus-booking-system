@@ -58,6 +58,7 @@ type CreatePaymentLinkRequest struct {
 	Currency      Currency      `json:"currency" binding:"required"`
 	PaymentMethod PaymentMethod `json:"payment_method" binding:"required"`
 	Description   string        `json:"description"`
+	ExpiredAt     time.Time     `json:"expired_at"`
 }
 
 type TransactionResponse struct {

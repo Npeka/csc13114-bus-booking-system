@@ -1,6 +1,10 @@
 package payment
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type CreatePaymentLinkRequest struct {
 	BookingID     uuid.UUID     `json:"booking_id"`
@@ -8,4 +12,5 @@ type CreatePaymentLinkRequest struct {
 	Currency      Currency      `json:"currency"`
 	PaymentMethod PaymentMethod `json:"payment_method"`
 	Description   string        `json:"description"`
+	ExpiresAt     time.Time     `json:"expires_at"`
 }

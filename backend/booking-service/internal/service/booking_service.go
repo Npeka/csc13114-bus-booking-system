@@ -145,6 +145,7 @@ func (s *bookingServiceImpl) CreateBooking(ctx context.Context, req *model.Creat
 		Currency:      payment.CurrencyVND,
 		PaymentMethod: payment.PaymentMethodPayOS,
 		Description:   fmt.Sprintf("Don hang %s", booking.BookingReference),
+		ExpiresAt:     expiresAt,
 	})
 	if err != nil {
 		return nil, ginext.NewInternalServerError(fmt.Sprintf("failed to create payment link: %v", err))

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"math"
 	"time"
 
 	"bus-booking/payment-service/config"
@@ -44,12 +45,22 @@ func NewPayOSService(cfg config.PayOSConfig) PayOSService {
 }
 
 func (c *PayOSServiceImpl) CreatePaymentLink(ctx context.Context, req *model.CreatePayOSPaymentLinkRequest) (*payos.CreatePaymentLinkResponse, error) {
+	ts := req.ExpiredAt.Unix()
+	if ts < 0 {
+		return nil, fmt.Errorf("expiredAt must be in the future")
+	}
+	if ts > math.MaxInt32 {
+		return nil, fmt.Errorf("expiredAt timestamp %d overflows int32", ts)
+	}
+
+	expiredAt := int(int32(ts))
 	paymentLinkRequest := payos.CreatePaymentLinkRequest{
 		OrderCode:   c.generateOrderCode(),
 		Amount:      req.Amount,
 		Description: req.Description,
 		CancelUrl:   c.CancelURL,
 		ReturnUrl:   c.ReturnURL,
+		ExpiredAt:   &expiredAt,
 	}
 
 	paymentLinkResponse, err := c.payOSClient.PaymentRequests.Create(ctx, paymentLinkRequest)
