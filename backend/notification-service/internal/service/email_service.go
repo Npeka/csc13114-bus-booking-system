@@ -201,6 +201,7 @@ func (s *EmailServiceImpl) getLogoHTML() template.HTML {
 	}
 
 	imgTag := fmt.Sprintf(`<img src="%s" alt="Bus Booking Logo" class="logo">`, s.logoURL)
+	//nolint:gosec // G203: Logo URL is from trusted config source, not user input
 	return template.HTML(imgTag)
 }
 
