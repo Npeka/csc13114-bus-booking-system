@@ -5,7 +5,7 @@ import "time"
 type CreatePayOSPaymentLinkRequest struct {
 	Amount      int       `json:"amount"`
 	Description string    `json:"description"`
-	ExpiredAt   time.Time `json:"expired_at"`
+	ExpiresAt   time.Time `json:"expires_at"`
 }
 
 // PaymentItem represents an item in payment

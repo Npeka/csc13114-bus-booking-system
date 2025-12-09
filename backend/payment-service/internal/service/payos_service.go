@@ -45,7 +45,7 @@ func NewPayOSService(cfg config.PayOSConfig) PayOSService {
 
 func (c *PayOSServiceImpl) CreatePaymentLink(ctx context.Context, req *model.CreatePayOSPaymentLinkRequest) (*payos.CreatePaymentLinkResponse, error) {
 	// Convert to UTC to ensure consistent timezone handling
-	expiredAtUTC := req.ExpiredAt.UTC()
+	expiredAtUTC := req.ExpiresAt.UTC()
 	nowUTC := time.Now().UTC()
 
 	// Validate that expiration is in the future (UTC comparison)
