@@ -91,6 +91,22 @@ services:
       PAYOS_CANCEL_URL: https://csc13114-bus-booking-system.vercel.app/payment/cancel
     ingress:
       enabled: false # Traffic goes through gateway now
+  
+  notification-service:
+    containerName: notification-service
+    image: npkhang22/bb-notification-service
+    tag: notification-service-d454e5b
+    port: 8080
+    env:
+      SERVICE_NAME: "notification-service"
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: 587
+      SMTP_EMAIL: npkhang22@clc.fitus.edu.vn
+      SMTP_PASSWORD: clws hlpv qavv vpcc
+      TEMPLATE_PATH: templates
+      LOGO_URL: https://csc13114-bus-booking-system.vercel.app/_next/image?url=%2Ffavicon.png&w=128&q=75
+    ingress:
+      enabled: false # Traffic goes through gateway now
 
 # Environment Variables
 env:
