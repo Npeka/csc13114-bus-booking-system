@@ -19,8 +19,9 @@ import (
 type TransactionService interface {
 	CreatePaymentLink(ctx context.Context, req *model.CreatePaymentLinkRequest, userID uuid.UUID) (*model.TransactionResponse, error)
 	HandlePaymentWebhook(ctx context.Context, webhookData *model.PaymentWebhookData) error
-	GetByID(ctx context.Context, id uuid.UUID) (*model.Transaction, error)
-	GetByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.Transaction, error)
+	CancelPayment(ctx context.Context, transactionID uuid.UUID) (*model.TransactionResponse, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*model.TransactionResponse, error)
+	GetByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.TransactionResponse, error)
 }
 
 type TransactionServiceImpl struct {
@@ -133,20 +134,69 @@ func (s *TransactionServiceImpl) HandlePaymentWebhook(ctx context.Context, webho
 
 	return nil
 }
-func (s *TransactionServiceImpl) GetByID(ctx context.Context, id uuid.UUID) (*model.Transaction, error) {
+func (s *TransactionServiceImpl) GetByID(ctx context.Context, id uuid.UUID) (*model.TransactionResponse, error) {
 	transaction, err := s.transactionRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, ginext.NewNotFoundError("transaction not found")
 	}
-	return transaction, nil
+	return s.toTransactionResponse(transaction), nil
 }
 
-func (s *TransactionServiceImpl) GetByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.Transaction, error) {
+func (s *TransactionServiceImpl) GetByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.TransactionResponse, error) {
 	transaction, err := s.transactionRepo.GetByBookingID(ctx, bookingID)
 	if err != nil {
 		return nil, ginext.NewNotFoundError("transaction not found")
 	}
-	return transaction, nil
+	return s.toTransactionResponse(transaction), nil
+}
+
+// CancelPayment cancels a payment and updates transaction status
+func (s *TransactionServiceImpl) CancelPayment(ctx context.Context, transactionID uuid.UUID) (*model.TransactionResponse, error) {
+	// Get transaction from DB
+	transaction, err := s.transactionRepo.GetByID(ctx, transactionID)
+	if err != nil {
+		return nil, ginext.NewNotFoundError("transaction not found")
+	}
+
+	// Check if already cancelled or completed
+	if transaction.Status == model.TransactionStatusCancelled {
+		return nil, ginext.NewBadRequestError("transaction already cancelled")
+	}
+
+	if transaction.Status == model.TransactionStatusPaid {
+		return nil, ginext.NewBadRequestError("cannot cancel a paid transaction")
+	}
+
+	// Cancel PayOS payment link
+	reason := "Booking cancelled by user"
+	paymentLink, err := s.payOSService.CancelPaymentLink(ctx, transaction.PaymentLinkID, &reason)
+	if err != nil {
+		log.Error().Err(err).
+			Str("transaction_id", transactionID.String()).
+			Str("payment_link_id", transaction.PaymentLinkID).
+			Msg("Failed to cancel PayOS payment link")
+		// Continue to update local status even if PayOS call fails
+	}
+
+	// Update transaction status
+	if paymentLink != nil {
+		transaction.Status = s.payOSService.ToTransactionStatus(paymentLink.Status)
+	} else {
+		// If PayOS call failed, mark as cancelled locally
+		transaction.Status = model.TransactionStatusCancelled
+	}
+
+	if err := s.transactionRepo.UpdateTransaction(ctx, transaction); err != nil {
+		log.Error().Err(err).Msg("Failed to update transaction status")
+		return nil, ginext.NewInternalServerError("failed to update transaction")
+	}
+
+	log.Info().
+		Str("transaction_id", transactionID.String()).
+		Str("new_status", string(transaction.Status)).
+		Msg("Successfully cancelled payment")
+
+	return s.toTransactionResponse(transaction), nil
 }
 
 func (s *TransactionServiceImpl) toTransactionResponse(t *model.Transaction) *model.TransactionResponse {

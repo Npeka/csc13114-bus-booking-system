@@ -8,6 +8,9 @@ import {
   SeatAvailabilityResponse,
   SeatDetail,
   Route,
+  RouteStop,
+  CreateRouteStopRequest,
+  UpdateRouteStopRequest,
   Bus,
   BusSeat,
   Seat,
@@ -437,6 +440,66 @@ export const updateRoute = async (
 export const deleteRoute = async (id: string): Promise<void> => {
   try {
     await apiClient.delete(`/trip/api/v1/routes/${id}`);
+  } catch (error) {
+    const errorMessage = handleApiError(error);
+    throw new Error(errorMessage);
+  }
+};
+
+/**
+ * Create a route stop (admin only)
+ */
+export const createRouteStop = async (
+  routeId: string,
+  stopData: CreateRouteStopRequest,
+): Promise<RouteStop> => {
+  try {
+    const response = await apiClient.post<ApiResponse<RouteStop>>(
+      "/trip/api/v1/routes/stops",
+      { route_id: routeId, ...stopData },
+    );
+
+    if (!response.data.data) {
+      throw new Error("Failed to create route stop");
+    }
+
+    return response.data.data;
+  } catch (error) {
+    const errorMessage = handleApiError(error);
+    throw new Error(errorMessage);
+  }
+};
+
+/**
+ * Update a route stop (admin only)
+ */
+export const updateRouteStop = async (
+  stopId: string,
+  stopData: UpdateRouteStopRequest,
+): Promise<RouteStop> => {
+  try {
+    const response = await apiClient.put<ApiResponse<RouteStop>>(
+      `/trip/api/v1/routes/stops/${stopId}`,
+      stopData,
+    );
+
+    if (!response.data.data) {
+      throw new Error("Failed to update route stop");
+    }
+
+    return response.data.data;
+  } catch (error) {
+    const errorMessage = handleApiError(error);
+    throw new Error(errorMessage);
+  }
+};
+
+/**
+ * Delete a route stop (admin only)
+ */
+export const deleteRouteStop = async (stopId: string): Promise<void> => {
+  try {
+    await apiClient.delete(`/trip/api/v1/routes/stops/${stopId}`);
   } catch (error) {
     const errorMessage = handleApiError(error);
     throw new Error(errorMessage);

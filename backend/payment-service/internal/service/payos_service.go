@@ -15,6 +15,7 @@ type PayOSService interface {
 	CreatePaymentLink(ctx context.Context, req *model.CreatePayOSPaymentLinkRequest) (*payos.CreatePaymentLinkResponse, error)
 	GetPaymentLink(ctx context.Context, paymentLinkID string) (*payos.PaymentLink, error)
 	VerifyWebhook(ctx context.Context, webhookData *model.PaymentWebhookData) error
+	CancelPaymentLink(ctx context.Context, paymentLinkID string, cancellationReason *string) (*payos.PaymentLink, error)
 	ToTransactionStatus(payOSStatus payos.PaymentLinkStatus) model.TransactionStatus
 }
 
@@ -73,6 +74,10 @@ func (c *PayOSServiceImpl) VerifyWebhook(ctx context.Context, webhookData *model
 		return err
 	}
 	return nil
+}
+
+func (c *PayOSServiceImpl) CancelPaymentLink(ctx context.Context, paymentLinkID string, cancellationReason *string) (*payos.PaymentLink, error) {
+	return c.payOSClient.PaymentRequests.Cancel(ctx, paymentLinkID, cancellationReason)
 }
 
 func (c *PayOSServiceImpl) ToTransactionStatus(payOSStatus payos.PaymentLinkStatus) model.TransactionStatus {

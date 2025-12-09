@@ -63,13 +63,13 @@ export function SeatMap({
 
   const getSeatColor = (seat: Seat) => {
     if (seat.status === "driver") {
-      return "bg-neutral-800 cursor-not-allowed";
+      return "bg-neutral-800 dark:bg-neutral-700 cursor-not-allowed";
     }
     if (seat.status === "booked") {
-      return "bg-neutral-300 cursor-not-allowed";
+      return "bg-neutral-300 dark:bg-neutral-700 cursor-not-allowed";
     }
     if (seat.status === "reserved") {
-      return "bg-orange-300 cursor-not-allowed";
+      return "bg-orange-300 dark:bg-orange-700 cursor-not-allowed";
     }
     if (selectedSeats.includes(seat.id)) {
       return "bg-primary text-white";
@@ -77,11 +77,11 @@ export function SeatMap({
 
     switch (seat.type) {
       case "vip":
-        return "bg-warning/20 hover:bg-warning/30 border-warning";
+        return "bg-warning/20 dark:bg-warning/40 hover:bg-warning/30 dark:hover:bg-warning/50 border-warning";
       case "sleeper":
-        return "bg-info/20 hover:bg-info/30 border-info";
+        return "bg-info/20 dark:bg-info/40 hover:bg-info/30 dark:hover:bg-info/50 border-info";
       default:
-        return "bg-success/20 hover:bg-success/30 border-success";
+        return "bg-success/20 dark:bg-success/40 hover:bg-success/30 dark:hover:bg-success/50 border-success";
     }
   };
 
@@ -90,15 +90,15 @@ export function SeatMap({
       {/* Legend */}
       <div className="flex flex-wrap gap-3 text-xs">
         <div className="flex items-center space-x-1.5">
-          <div className="h-5 w-5 rounded border-2 border-success bg-success/20" />
+          <div className="h-5 w-5 rounded border-2 border-success bg-success/20 dark:bg-success/40" />
           <span>Ghế thường</span>
         </div>
         <div className="flex items-center space-x-1.5">
-          <div className="h-5 w-5 rounded border-2 border-info bg-info/20" />
+          <div className="h-5 w-5 rounded border-2 border-info bg-info/20 dark:bg-info/40" />
           <span>Giường nằm</span>
         </div>
         <div className="flex items-center space-x-1.5">
-          <div className="h-5 w-5 rounded border-2 border-warning bg-warning/20" />
+          <div className="h-5 w-5 rounded border-2 border-warning bg-warning/20 dark:bg-warning/40" />
           <span>Ghế VIP</span>
         </div>
         <div className="flex items-center space-x-1.5">
@@ -106,11 +106,11 @@ export function SeatMap({
           <span>Đã chọn</span>
         </div>
         <div className="flex items-center space-x-1.5">
-          <div className="h-5 w-5 rounded bg-orange-300" />
+          <div className="h-5 w-5 rounded bg-orange-300 dark:bg-orange-700" />
           <span>Đang giữ chỗ</span>
         </div>
         <div className="flex items-center space-x-1.5">
-          <div className="h-5 w-5 rounded border-2 bg-neutral-300" />
+          <div className="h-5 w-5 rounded border-2 bg-neutral-300 dark:bg-neutral-700" />
           <span>Đã đặt</span>
         </div>
       </div>

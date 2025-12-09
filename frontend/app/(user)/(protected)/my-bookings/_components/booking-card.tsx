@@ -27,29 +27,42 @@ interface BookingCardProps {
 
 export function BookingCard({ booking, actions }: BookingCardProps) {
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "confirmed":
+    const normalizedStatus = status.toUpperCase();
+    switch (normalizedStatus) {
+      case "CONFIRMED":
         return (
           <Badge className="bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400">
             Đã xác nhận
           </Badge>
         );
-      case "pending":
+      case "PENDING":
         return (
           <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100 dark:bg-orange-900/20 dark:text-orange-400">
             Chờ thanh toán
           </Badge>
         );
-      case "completed":
+      case "COMPLETED":
         return (
           <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400">
             Hoàn thành
           </Badge>
         );
-      case "cancelled":
+      case "CANCELLED":
         return (
           <Badge className="bg-red-100 text-red-700 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400">
             Đã hủy
+          </Badge>
+        );
+      case "EXPIRED":
+        return (
+          <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100 dark:bg-gray-900/20 dark:text-gray-400">
+            Hết hạn
+          </Badge>
+        );
+      case "FAILED":
+        return (
+          <Badge className="bg-red-100 text-red-700 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400">
+            Thất bại
           </Badge>
         );
       default:

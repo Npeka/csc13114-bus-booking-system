@@ -95,7 +95,7 @@ function BookingConfirmationContent() {
 
   if (bookingLoading || tripLoading) {
     return (
-      <div className="min-h-screen bg-neutral-50 py-12">
+      <div className="min-h-screen bg-background py-12">
         <div className="container max-w-3xl">
           <Skeleton className="mb-8 h-32 w-full" />
           <Skeleton className="h-96 w-full" />
@@ -106,7 +106,7 @@ function BookingConfirmationContent() {
 
   if (!booking || !trip) {
     return (
-      <div className="min-h-screen bg-neutral-50 py-12">
+      <div className="min-h-screen bg-background py-12">
         <div className="container max-w-3xl">
           <div className="text-center">
             <h1 className="text-2xl font-bold">Không tìm thấy đơn đặt vé</h1>
@@ -120,7 +120,7 @@ function BookingConfirmationContent() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 py-12">
+    <div className="min-h-screen bg-background py-12">
       <div className="container max-w-3xl">
         {/* Success Message */}
         <BookingHeader

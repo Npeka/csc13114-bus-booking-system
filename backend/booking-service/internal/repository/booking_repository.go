@@ -17,7 +17,7 @@ type BookingRepository interface {
 
 	GetBookingByID(ctx context.Context, id uuid.UUID) (*model.Booking, error)
 	GetBookingByReference(ctx context.Context, reference string) (*model.Booking, error)
-	GetBookingsByUserID(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*model.Booking, int64, error)
+	GetBookingsByUserID(ctx context.Context, userID uuid.UUID, statuses []model.BookingStatus, limit, offset int) ([]*model.Booking, int64, error)
 	GetBookingsByTripID(ctx context.Context, tripID uuid.UUID, limit, offset int) ([]*model.Booking, int64, error)
 	GetTripBookings(ctx context.Context, tripID uuid.UUID, page, limit int) ([]*model.Booking, int64, error)
 	UpdateBooking(ctx context.Context, booking *model.Booking) error
@@ -76,22 +76,28 @@ func (r *bookingRepositoryImpl) GetBookedSeatIDs(ctx context.Context, tripID uui
 	return seatIDs, nil
 }
 
-func (r *bookingRepositoryImpl) GetBookingsByUserID(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*model.Booking, int64, error) {
+func (r *bookingRepositoryImpl) GetBookingsByUserID(ctx context.Context, userID uuid.UUID, statuses []model.BookingStatus, limit, offset int) ([]*model.Booking, int64, error) {
 	var bookings []*model.Booking
 	var total int64
 
+	// Build query
+	query := r.db.WithContext(ctx).Model(&model.Booking{}).Where("user_id = ?", userID)
+	if len(statuses) > 0 {
+		query = query.Where("status IN ?", statuses)
+	}
+
 	// Count total
-	if err := r.db.WithContext(ctx).
-		Model(&model.Booking{}).
-		Where("user_id = ?", userID).
-		Count(&total).Error; err != nil {
+	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, fmt.Errorf("failed to count bookings: %w", err)
 	}
 
 	// Get bookings
-	err := r.db.WithContext(ctx).
+	query = r.db.WithContext(ctx).Where("user_id = ?", userID)
+	if len(statuses) > 0 {
+		query = query.Where("status IN ?", statuses)
+	}
+	err := query.
 		Preload("BookingSeats").
-		Where("user_id = ?", userID).
 		Order("created_at DESC").
 		Limit(limit).
 		Offset(offset).

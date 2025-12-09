@@ -25,8 +25,7 @@ type CreateGuestBookingRequest struct {
 
 // CancelBookingRequest represents booking cancellation request
 type CancelBookingRequest struct {
-	UserID uuid.UUID `json:"user_id" binding:"required"`
-	Reason string    `json:"reason" binding:"required"`
+	Reason string `json:"reason" binding:"required"`
 }
 
 // InitSeatsRequest represents request to initialize seats for a trip

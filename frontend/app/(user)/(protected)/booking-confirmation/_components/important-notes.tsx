@@ -4,7 +4,7 @@ import { AlertCircle, Clock, IdCard, Mail, Phone } from "lucide-react";
 export function ImportantNotes() {
   return (
     <Card className="mt-6 border-warning/50 bg-warning/5">
-      <CardContent className="pt-6">
+      <CardContent>
         <div className="mb-3 flex items-center gap-2">
           <AlertCircle className="h-5 w-5 text-warning" />
           <h4 className="font-semibold">Lưu ý quan trọng</h4>

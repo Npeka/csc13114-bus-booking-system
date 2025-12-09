@@ -209,6 +209,39 @@ paths:
       summary: Get transaction by ID
       tags:
       - transactions
+  /api/v1/transactions/{id}/cancel:
+    post:
+      consumes:
+      - application/json
+      description: Cancel a payment transaction and PayOS payment link
+      parameters:
+      - description: Transaction ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: Cancel a payment
+      tags:
+      - transactions
   /api/v1/transactions/payment-link:
     post:
       consumes:

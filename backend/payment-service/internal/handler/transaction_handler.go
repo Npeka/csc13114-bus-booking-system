@@ -13,6 +13,7 @@ import (
 type TransactionHandler interface {
 	CreatePaymentLink(r *ginext.Request) (*ginext.Response, error)
 	HandlePaymentWebhook(r *ginext.Request) (*ginext.Response, error)
+	CancelPayment(r *ginext.Request) (*ginext.Response, error)
 	GetByID(r *ginext.Request) (*ginext.Response, error)
 }
 
@@ -111,6 +112,34 @@ func (h *TransactionHandlerImpl) GetByID(r *ginext.Request) (*ginext.Response, e
 	if err != nil {
 		log.Error().Err(err).Str("id", idStr).Msg("Transaction not found")
 		return nil, ginext.NewNotFoundError("Transaction not found")
+	}
+
+	return ginext.NewSuccessResponse(transaction), nil
+}
+
+// CancelPayment godoc
+// @Summary Cancel a payment
+// @Description Cancel a payment transaction and PayOS payment link
+// @Tags transactions
+// @Accept json
+// @Produce json
+// @Param id path string true "Transaction ID"
+// @Success 200 {object} ginext.Response
+// @Failure 400 {object} ginext.Response
+// @Failure 404 {object} ginext.Response
+// @Failure 500 {object} ginext.Response
+// @Router /api/v1/transactions/{id}/cancel [post]
+func (h *TransactionHandlerImpl) CancelPayment(r *ginext.Request) (*ginext.Response, error) {
+	idStr := r.GinCtx.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		return nil, ginext.NewBadRequestError("Invalid transaction ID")
+	}
+
+	transaction, err := h.service.CancelPayment(r.GinCtx.Request.Context(), id)
+	if err != nil {
+		log.Error().Err(err).Str("id", idStr).Msg("Failed to cancel payment")
+		return nil, err
 	}
 
 	return ginext.NewSuccessResponse(transaction), nil

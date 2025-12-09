@@ -27,7 +27,7 @@ export function LocationPanel({
   return (
     <Card
       data-location-panel
-      className="absolute top-0 left-1/2 z-40 w-[min(28rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-4 animate-in rounded-2xl border p-4 shadow-elevated fade-in-0 zoom-in-95"
+      className="absolute top-0 left-1/2 z-40 w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-4 animate-in rounded-2xl border p-4 shadow-elevated fade-in-0 zoom-in-95"
       style={{ transformOrigin: "top" }}
     >
       <div className="space-y-5">

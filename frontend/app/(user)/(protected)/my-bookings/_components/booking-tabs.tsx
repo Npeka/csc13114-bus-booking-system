@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -26,11 +27,15 @@ import { Input } from "@/components/ui/input";
 import { Download, X } from "lucide-react";
 import Link from "next/link";
 import { BookingCard } from "./booking-card";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { cancelBooking, downloadETicket } from "@/lib/api/booking-service";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  cancelBooking,
+  downloadETicket,
+  getUserBookings,
+} from "@/lib/api/booking-service";
 import { toast } from "sonner";
-import { useAuthStore } from "@/lib/stores/auth-store";
-import { useState } from "react";
+import type { BookingResponse } from "@/lib/types/booking";
+import { PaginationWithLinks } from "@/components/ui/pagination-with-links";
 
 type UIBooking = {
   id: string;
@@ -50,12 +55,10 @@ type UIBooking = {
 };
 
 interface BookingTabsProps {
-  upcomingBookings: UIBooking[];
-  pastBookings: UIBooking[];
-  cancelledBookings: UIBooking[];
+  userId: string;
+  transformBooking: (apiBooking: BookingResponse) => UIBooking;
 }
 
-// Common cancellation reasons
 const CANCEL_REASONS = [
   { value: "change_plans", label: "Thay đổi kế hoạch" },
   { value: "wrong_booking", label: "Đặt nhầm chuyến" },
@@ -64,17 +67,46 @@ const CANCEL_REASONS = [
   { value: "other", label: "Lý do khác" },
 ];
 
-export function BookingTabs({
-  upcomingBookings,
-  pastBookings,
-  cancelledBookings,
-}: BookingTabsProps) {
+export function BookingTabs({ userId, transformBooking }: BookingTabsProps) {
   const queryClient = useQueryClient();
-  const user = useAuthStore((state) => state.user);
   const [selectedReason, setSelectedReason] = useState<string>("");
   const [customReason, setCustomReason] = useState<string>("");
   const [dialogOpen, setDialogOpen] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  // Pagination state per tab
+  const [upcomingPage, setUpcomingPage] = useState(1);
+  const [cancelledPage, setCancelledPage] = useState(1);
+  const pageSize = 10;
+
+  // Fetch upcoming bookings (PENDING or CONFIRMED - active bookings)
+  const { data: upcomingData, isLoading: upcomingLoading } = useQuery({
+    queryKey: ["userBookings", userId, "upcoming", upcomingPage, pageSize],
+    queryFn: () =>
+      getUserBookings(userId, upcomingPage, pageSize, ["PENDING", "CONFIRMED"]),
+    enabled: !!userId,
+  });
+
+  // Fetch past bookings (TODO: Need trip date to properly filter past bookings)
+  // For now, return empty until backend provides trip information
+  const pastBookings: UIBooking[] = [];
+  const pastLoading = false;
+
+  // Fetch cancelled bookings (CANCELLED, EXPIRED, FAILED)
+  const { data: cancelledData, isLoading: cancelledLoading } = useQuery({
+    queryKey: ["userBookings", userId, "cancelled", cancelledPage, pageSize],
+    queryFn: () =>
+      getUserBookings(userId, cancelledPage, pageSize, [
+        "CANCELLED",
+        "EXPIRED",
+        "FAILED",
+      ]),
+    enabled: !!userId,
+  });
+
+  // Transform bookings
+  const upcomingBookings = upcomingData?.data.map(transformBooking) || [];
+  const cancelledBookings = cancelledData?.data.map(transformBooking) || [];
 
   // Download e-ticket mutation
   const downloadMutation = useMutation({
@@ -112,16 +144,13 @@ export function BookingTabs({
       bookingId: string;
       reason: string;
     }) => {
-      if (!user?.id) throw new Error("User not authenticated");
-      return cancelBooking(bookingId, user.id, reason);
+      return cancelBooking(bookingId, userId, reason);
     },
     onSuccess: () => {
       toast.success("Đã hủy vé thành công");
-      // Reset form
       setSelectedReason("");
       setCustomReason("");
       setDialogOpen(null);
-      // Invalidate and refetch bookings
       queryClient.invalidateQueries({ queryKey: ["userBookings"] });
     },
     onError: (error: Error) => {
@@ -144,23 +173,37 @@ export function BookingTabs({
     cancelMutation.mutate({ bookingId, reason });
   };
 
+  const createPageURL_upcoming = (page: number) => {
+    setUpcomingPage(page);
+    return `#upcoming-${page}`;
+  };
+
+  const createPageURL_cancelled = (page: number) => {
+    setCancelledPage(page);
+    return `#cancelled-${page}`;
+  };
+
   return (
     <Tabs defaultValue="upcoming" className="space-y-4">
       <TabsList>
         <TabsTrigger value="upcoming">
-          Sắp diễn ra ({upcomingBookings.length})
+          Sắp diễn ra ({upcomingData?.total || 0})
         </TabsTrigger>
-        <TabsTrigger value="past">
-          Đã hoàn thành ({pastBookings.length})
-        </TabsTrigger>
+        <TabsTrigger value="past">Đã hoàn thành (0)</TabsTrigger>
         <TabsTrigger value="cancelled">
-          Đã hủy ({cancelledBookings.length})
+          Đã hủy ({cancelledData?.total || 0})
         </TabsTrigger>
       </TabsList>
 
       {/* Upcoming Bookings */}
       <TabsContent value="upcoming" className="space-y-4">
-        {upcomingBookings.length === 0 ? (
+        {upcomingLoading ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="text-muted-foreground">Đang tải...</p>
+            </CardContent>
+          </Card>
+        ) : upcomingBookings.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
               <p className="text-muted-foreground">
@@ -172,143 +215,166 @@ export function BookingTabs({
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {upcomingBookings.map((booking) => (
-              <BookingCard
-                key={booking.id}
-                booking={booking}
-                actions={
-                  <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        handleDownloadTicket(
-                          booking.id,
-                          booking.bookingReference,
-                        )
-                      }
-                      disabled={downloadingId === booking.id}
-                    >
-                      <Download className="h-4 w-4" />
-                      {downloadingId === booking.id ? "Đang tải..." : "Tải vé"}
-                    </Button>
-                    <AlertDialog
-                      open={dialogOpen === booking.id}
-                      onOpenChange={(open) => {
-                        setDialogOpen(open ? booking.id : null);
-                        if (!open) {
-                          setSelectedReason("");
-                          setCustomReason("");
+          <>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {upcomingBookings.map((booking) => (
+                <BookingCard
+                  key={booking.id}
+                  booking={booking}
+                  actions={
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          handleDownloadTicket(
+                            booking.id,
+                            booking.bookingReference,
+                          )
                         }
-                      }}
-                    >
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={
-                            cancelMutation.isPending ||
-                            booking.status === "confirmed"
+                        disabled={
+                          downloadingId === booking.id ||
+                          booking.status !== "CONFIRMED"
+                        }
+                      >
+                        <Download className="h-4 w-4" />
+                        {downloadingId === booking.id
+                          ? "Đang tải..."
+                          : "Tải vé"}
+                      </Button>
+                      <AlertDialog
+                        open={dialogOpen === booking.id}
+                        onOpenChange={(open) => {
+                          setDialogOpen(open ? booking.id : null);
+                          if (!open) {
+                            setSelectedReason("");
+                            setCustomReason("");
                           }
-                        >
-                          <X className="h-4 w-4" />
-                          Hủy vé
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent className="max-w-md">
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Xác nhận hủy vé?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Bạn đang hủy vé{" "}
-                            <strong>{booking.bookingReference}</strong>. Hành
-                            động này không thể hoàn tác.
-                            {booking.status === "pending" && (
-                              <span className="mt-2 block text-sm">
-                                💡 Vé chưa thanh toán sẽ được hủy ngay lập tức.
-                              </span>
-                            )}
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
+                        }}
+                      >
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={
+                              cancelMutation.isPending ||
+                              booking.status === "confirmed"
+                            }
+                          >
+                            <X className="h-4 w-4" />
+                            Hủy vé
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="max-w-md">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              Xác nhận hủy vé?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Bạn đang hủy vé{" "}
+                              <strong>{booking.bookingReference}</strong>. Hành
+                              động này không thể hoàn tác.
+                              {booking.status === "pending" && (
+                                <span className="mt-2 block text-sm">
+                                  💡 Vé chưa thanh toán sẽ được hủy ngay lập
+                                  tức.
+                                </span>
+                              )}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
 
-                        <div className="space-y-4 py-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="cancel-reason">
-                              Lý do hủy vé{" "}
-                              <span className="text-red-500">*</span>
-                            </Label>
-                            <Select
-                              value={selectedReason}
-                              onValueChange={setSelectedReason}
-                            >
-                              <SelectTrigger id="cancel-reason">
-                                <SelectValue placeholder="Chọn lý do..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {CANCEL_REASONS.map((reason) => (
-                                  <SelectItem
-                                    key={reason.value}
-                                    value={reason.value}
-                                  >
-                                    {reason.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          {selectedReason === "other" && (
+                          <div className="space-y-4 py-4">
                             <div className="space-y-2">
-                              <Label htmlFor="custom-reason">
-                                Chi tiết lý do{" "}
+                              <Label htmlFor="cancel-reason">
+                                Lý do hủy vé{" "}
                                 <span className="text-red-500">*</span>
                               </Label>
-                              <Input
-                                id="custom-reason"
-                                placeholder="Nhập lý do hủy vé..."
-                                value={customReason}
-                                onChange={(e) =>
-                                  setCustomReason(e.target.value)
-                                }
-                                maxLength={200}
-                              />
-                              <p className="text-xs text-muted-foreground">
-                                {customReason.length}/200 ký tự
-                              </p>
+                              <Select
+                                value={selectedReason}
+                                onValueChange={setSelectedReason}
+                              >
+                                <SelectTrigger id="cancel-reason">
+                                  <SelectValue placeholder="Chọn lý do..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {CANCEL_REASONS.map((reason) => (
+                                    <SelectItem
+                                      key={reason.value}
+                                      value={reason.value}
+                                    >
+                                      {reason.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </div>
-                          )}
-                        </div>
 
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Không</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleCancelBooking(booking.id)}
-                            disabled={
-                              !selectedReason ||
-                              (selectedReason === "other" &&
-                                !customReason.trim()) ||
-                              cancelMutation.isPending
-                            }
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            {cancelMutation.isPending
-                              ? "Đang hủy..."
-                              : "Xác nhận hủy"}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </>
-                }
+                            {selectedReason === "other" && (
+                              <div className="space-y-2">
+                                <Label htmlFor="custom-reason">
+                                  Chi tiết lý do{" "}
+                                  <span className="text-red-500">*</span>
+                                </Label>
+                                <Input
+                                  id="custom-reason"
+                                  placeholder="Nhập lý do hủy vé..."
+                                  value={customReason}
+                                  onChange={(e) =>
+                                    setCustomReason(e.target.value)
+                                  }
+                                  maxLength={200}
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                  {customReason.length}/200 ký tự
+                                </p>
+                              </div>
+                            )}
+                          </div>
+
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Không</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleCancelBooking(booking.id)}
+                              disabled={
+                                !selectedReason ||
+                                (selectedReason === "other" &&
+                                  !customReason.trim()) ||
+                                cancelMutation.isPending
+                              }
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              {cancelMutation.isPending
+                                ? "Đang hủy..."
+                                : "Xác nhận hủy"}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </>
+                  }
+                />
+              ))}
+            </div>
+            {upcomingData && upcomingData.total_pages > 1 && (
+              <PaginationWithLinks
+                page={upcomingPage}
+                totalPages={upcomingData.total_pages}
+                createPageURL={createPageURL_upcoming}
               />
-            ))}
-          </div>
+            )}
+          </>
         )}
       </TabsContent>
 
       {/* Past Bookings */}
       <TabsContent value="past" className="space-y-4">
-        {pastBookings.length === 0 ? (
+        {pastLoading ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="text-muted-foreground">Đang tải...</p>
+            </CardContent>
+          </Card>
+        ) : pastBookings.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
               <p className="text-muted-foreground">
@@ -333,7 +399,10 @@ export function BookingTabs({
                           booking.bookingReference,
                         )
                       }
-                      disabled={downloadingId === booking.id}
+                      disabled={
+                        downloadingId === booking.id ||
+                        booking.status !== "CONFIRMED"
+                      }
                     >
                       <Download className="mr-2 h-4 w-4" />
                       {downloadingId === booking.id ? "Đang tải..." : "Tải vé"}
@@ -351,26 +420,41 @@ export function BookingTabs({
 
       {/* Cancelled Bookings */}
       <TabsContent value="cancelled" className="space-y-4">
-        {cancelledBookings.length === 0 ? (
+        {cancelledLoading ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="text-muted-foreground">Đang tải...</p>
+            </CardContent>
+          </Card>
+        ) : cancelledBookings.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
               <p className="text-muted-foreground">Chưa có vé nào bị hủy</p>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {cancelledBookings.map((booking) => (
-              <BookingCard
-                key={booking.id}
-                booking={booking}
-                actions={
-                  <Button variant="outline" size="sm">
-                    Đặt lại
-                  </Button>
-                }
+          <>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {cancelledBookings.map((booking) => (
+                <BookingCard
+                  key={booking.id}
+                  booking={booking}
+                  actions={
+                    <Button variant="outline" size="sm">
+                      Đặt lại
+                    </Button>
+                  }
+                />
+              ))}
+            </div>
+            {cancelledData && cancelledData.total_pages > 1 && (
+              <PaginationWithLinks
+                page={cancelledPage}
+                totalPages={cancelledData.total_pages}
+                createPageURL={createPageURL_cancelled}
               />
-            ))}
-          </div>
+            )}
+          </>
         )}
       </TabsContent>
     </Tabs>

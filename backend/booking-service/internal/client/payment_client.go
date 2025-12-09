@@ -12,6 +12,7 @@ import (
 type PaymentClient interface {
 	CreatePaymentLink(ctx context.Context, req *payment.CreatePaymentLinkRequest) (*payment.TransactionResponse, error)
 	GetTransactionByID(ctx context.Context, id uuid.UUID) (*payment.TransactionResponse, error)
+	CancelPayment(ctx context.Context, transactionID uuid.UUID) (*payment.TransactionResponse, error)
 }
 
 type PaymentClientImpl struct {
@@ -52,6 +53,20 @@ func (c *PaymentClientImpl) GetTransactionByID(ctx context.Context, id uuid.UUID
 	transactionResp, err := client.ParseData[payment.TransactionResponse](resp)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse transaction response: %w", err)
+	}
+
+	return transactionResp, nil
+}
+
+func (c *PaymentClientImpl) CancelPayment(ctx context.Context, transactionID uuid.UUID) (*payment.TransactionResponse, error) {
+	resp, err := c.http.Post(ctx, fmt.Sprintf("/api/v1/transactions/%s/cancel", transactionID), nil, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to cancel payment: %w", err)
+	}
+
+	transactionResp, err := client.ParseData[payment.TransactionResponse](resp)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse cancel payment response: %w", err)
 	}
 
 	return transactionResp, nil

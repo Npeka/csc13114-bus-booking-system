@@ -68,3 +68,8 @@ type UpdateBookingStatusRequest struct {
 	TransactionID     uuid.UUID                 `json:"transaction_id" validate:"required"`
 	TransactionStatus payment.TransactionStatus `json:"transaction_status" validate:"required"`
 }
+
+type GetUserBookingsRequest struct {
+	PaginationRequest
+	Status []BookingStatus `form:"status[]" json:"status"`
+}

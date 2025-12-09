@@ -172,7 +172,7 @@ func (h *BookingHandlerImpl) GetUserBookings(r *ginext.Request) (*ginext.Respons
 		return nil, ginext.NewBadRequestError("invalid user id")
 	}
 
-	var req model.PaginationRequest
+	var req model.GetUserBookingsRequest
 	if err := r.GinCtx.ShouldBindQuery(&req); err != nil {
 		log.Error().Err(err).Msg("failed to bind query parameters")
 		return nil, ginext.NewBadRequestError(err.Error())
@@ -252,7 +252,7 @@ func (h *BookingHandlerImpl) CancelBooking(r *ginext.Request) (*ginext.Response,
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
-	if err := h.bookingService.CancelBooking(r.Context(), id, req.UserID, req.Reason); err != nil {
+	if err := h.bookingService.CancelBooking(r.Context(), id, req.Reason); err != nil {
 		log.Error().Err(err).Str("booking_id", idStr).Msg("failed to cancel booking")
 		return nil, err
 	}

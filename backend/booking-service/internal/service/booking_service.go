@@ -28,10 +28,10 @@ type BookingService interface {
 
 	GetByID(ctx context.Context, id uuid.UUID) (*model.BookingResponse, error)
 	GetByReference(ctx context.Context, reference string, email string) (*model.BookingResponse, error)
-	GetUserBookings(ctx context.Context, req model.PaginationRequest, userID uuid.UUID) ([]*model.BookingResponse, int64, error)
+	GetUserBookings(ctx context.Context, req model.GetUserBookingsRequest, userID uuid.UUID) ([]*model.BookingResponse, int64, error)
 	GetTripBookings(ctx context.Context, req model.PaginationRequest, tripID uuid.UUID) ([]*model.BookingResponse, int64, error)
 
-	CancelBooking(ctx context.Context, id uuid.UUID, userID uuid.UUID, reason string) error
+	CancelBooking(ctx context.Context, id uuid.UUID, reason string) error
 
 	GetSeatStatus(ctx context.Context, tripID uuid.UUID, seatIDs []uuid.UUID) ([]model.SeatStatusItem, error)
 	ExpireBooking(ctx context.Context, bookingID uuid.UUID) error
@@ -357,30 +357,26 @@ func (s *bookingServiceImpl) GetByReference(ctx context.Context, reference strin
 }
 
 // GetUserBookings retrieves bookings for a user with pagination
-func (s *bookingServiceImpl) GetUserBookings(ctx context.Context, req model.PaginationRequest, userID uuid.UUID) ([]*model.BookingResponse, int64, error) {
+func (s *bookingServiceImpl) GetUserBookings(ctx context.Context, req model.GetUserBookingsRequest, userID uuid.UUID) ([]*model.BookingResponse, int64, error) {
 	offset := (req.Page - 1) * req.PageSize
-	bookings, total, err := s.bookingRepo.GetBookingsByUserID(ctx, userID, req.PageSize, offset)
+	bookings, total, err := s.bookingRepo.GetBookingsByUserID(ctx, userID, req.Status, req.PageSize, offset)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	var bookingResponses []*model.BookingResponse
-	for _, booking := range bookings {
-		bookingResponses = append(bookingResponses, s.toBookingResponse(booking))
+	responses := make([]*model.BookingResponse, len(bookings))
+	for i, booking := range bookings {
+		responses[i] = s.toBookingResponse(booking)
 	}
 
-	return bookingResponses, total, nil
+	return responses, total, nil
 }
 
 // CancelBooking cancels a booking
-func (s *bookingServiceImpl) CancelBooking(ctx context.Context, id uuid.UUID, userID uuid.UUID, reason string) error {
+func (s *bookingServiceImpl) CancelBooking(ctx context.Context, id uuid.UUID, reason string) error {
 	booking, err := s.bookingRepo.GetBookingByID(ctx, id)
 	if err != nil {
 		return err
-	}
-
-	if booking.UserID != userID {
-		return ginext.NewForbiddenError("you don't have permission to cancel this booking")
 	}
 
 	if booking.Status == model.BookingStatusCancelled {
@@ -391,7 +387,40 @@ func (s *bookingServiceImpl) CancelBooking(ctx context.Context, id uuid.UUID, us
 		return ginext.NewBadRequestError("cannot cancel confirmed booking")
 	}
 
-	return s.bookingRepo.CancelBooking(ctx, id, reason)
+	// Cancel the booking first
+	if err := s.bookingRepo.CancelBooking(ctx, id, reason); err != nil {
+		return err
+	}
+
+	// Try to cancel payment if transaction exists
+	transaction, err := s.paymentClient.CancelPayment(ctx, booking.TransactionID)
+	if err != nil {
+		// Log error but don't fail booking cancellation
+		log.Error().
+			Err(err).
+			Str("booking_id", id.String()).
+			Str("transaction_id", booking.TransactionID.String()).
+			Msg("Failed to cancel payment, but booking is cancelled")
+		// Continue - booking is already cancelled
+	} else {
+		// Update booking's transaction status based on payment response
+		booking.TransactionStatus = transaction.Status
+		if err := s.bookingRepo.UpdateBooking(ctx, booking); err != nil {
+			log.Error().
+				Err(err).
+				Str("booking_id", id.String()).
+				Msg("Failed to update booking transaction status after payment cancellation")
+			// Continue - payment is cancelled, just status update failed
+		} else {
+			log.Info().
+				Str("booking_id", id.String()).
+				Str("transaction_id", booking.TransactionID.String()).
+				Str("new_transaction_status", string(transaction.Status)).
+				Msg("Successfully cancelled payment and updated booking transaction status")
+		}
+	}
+
+	return nil
 }
 
 // GetTripBookings retrieves all bookings for a trip with pagination

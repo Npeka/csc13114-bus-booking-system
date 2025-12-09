@@ -24,20 +24,29 @@ import {
  * Get all bookings for a specific user with pagination
  * @param userId - User UUID
  * @param page - Page number (default: 1)
- * @param pageSize - Items per page (default: 5)
+ * @param pageSize - Items per page (default: 10)
+ * @param status - Optional array of statuses to filter by
  * @returns Paginated booking response
  */
 export async function getUserBookings(
   userId: string,
   page: number = 1,
-  pageSize: number = 5,
+  pageSize: number = 10,
+  status?: string[],
 ): Promise<PaginatedBookingResponse> {
   try {
+    const params: Record<string, string | number | string[]> = {
+      page,
+      page_size: pageSize,
+    };
+
+    if (status && status.length > 0) {
+      params.status = status;
+    }
+
     const response = await apiClient.get<{ data: unknown; meta?: unknown }>(
       `/booking/api/v1/bookings/user/${userId}`,
-      {
-        params: { page, page_size: pageSize },
-      },
+      { params },
     );
 
     // Backend returns {data: [...], meta: {...}} directly
