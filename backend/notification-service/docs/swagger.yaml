@@ -1,3 +1,65 @@
+definitions:
+  bus-booking_notification-service_internal_model.GenericNotificationRequest:
+    properties:
+      payload:
+        additionalProperties: true
+        type: object
+      type:
+        $ref: '#/definitions/bus-booking_notification-service_internal_model.NotificationType'
+    required:
+    - payload
+    - type
+    type: object
+  bus-booking_notification-service_internal_model.NotificationType:
+    enum:
+    - OTP
+    - TRIP_REMINDER
+    - BOOKING_CONFIRMATION
+    - BOOKING_FAILURE
+    - BOOKING_PENDING
+    type: string
+    x-enum-varnames:
+    - NotificationTypeOTP
+    - NotificationTypeTripReminder
+    - NotificationTypeBookingConfirmation
+    - NotificationTypeBookingFailure
+    - NotificationTypeBookingPending
+  ginext.ErrorBody:
+    properties:
+      message:
+        type: string
+    type: object
+  ginext.MetaData:
+    properties:
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  ginext.Response:
+    properties:
+      code:
+        type: integer
+      data: {}
+      error:
+        $ref: '#/definitions/ginext.ErrorBody'
+      header:
+        $ref: '#/definitions/http.Header'
+      message:
+        type: string
+      meta:
+        $ref: '#/definitions/ginext.MetaData'
+    type: object
+  http.Header:
+    additionalProperties:
+      items:
+        type: string
+      type: array
+    type: object
 info:
   contact:
     email: support@busbooking.com
@@ -15,29 +77,30 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create a new notification
+      description: Send a notification based on type
+      parameters:
+      - description: Notification request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_notification-service_internal_model.GenericNotificationRequest'
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: Notification sent successfully
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/ginext.Response'
         "400":
           description: Invalid request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/ginext.Response'
         "500":
           description: Internal server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Create a new notification
+            $ref: '#/definitions/ginext.Response'
+      summary: Send a generic notification
       tags:
       - notifications
 securityDefinitions:

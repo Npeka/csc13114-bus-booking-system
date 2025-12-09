@@ -24,6 +24,7 @@ jobs:
     outputs:
       booking-service: ${{ steps.changes.outputs.booking-service }}
       gateway-service: ${{ steps.changes.outputs.gateway-service }}
+      notification-service: ${{ steps.changes.outputs.notification-service }}
       payment-service: ${{ steps.changes.outputs.payment-service }}
       trip-service: ${{ steps.changes.outputs.trip-service }}
       user-service: ${{ steps.changes.outputs.user-service }}
@@ -40,6 +41,9 @@ jobs:
               - 'backend/shared/**'
             gateway-service:
               - 'backend/gateway-service/**'
+              - 'backend/shared/**'
+            notification-service:
+              - 'backend/notification-service/**'
               - 'backend/shared/**'
             payment-service:
               - 'backend/payment-service/**'
@@ -101,11 +105,22 @@ jobs:
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
       INFRA_DEPLOY_TOKEN: ${{ secrets.INFRA_DEPLOY_TOKEN }}
 
+  notification-service:
+    needs: detect-changes
+    uses: ./.github/workflows/notification-service.yml
+    with:
+      service-changed: ${{ needs.detect-changes.outputs.notification-service }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      INFRA_DEPLOY_TOKEN: ${{ secrets.INFRA_DEPLOY_TOKEN }}
+
   summary:
     needs:
       - detect-changes
       - booking-service
       - gateway-service
+      - notification-service
       - payment-service
       - trip-service
       - user-service
@@ -120,6 +135,7 @@ jobs:
             echo "### Services Changed:"
             echo "- **booking-service**: ${{ needs.detect-changes.outputs.booking-service }}"
             echo "- **gateway-service**: ${{ needs.detect-changes.outputs.gateway-service }}"
+            echo "- **notification-service**: ${{ needs.detect-changes.outputs.notification-service }}"
             echo "- **payment-service**: ${{ needs.detect-changes.outputs.payment-service }}"
             echo "- **trip-service**: ${{ needs.detect-changes.outputs.trip-service }}"
             echo "- **user-service**: ${{ needs.detect-changes.outputs.user-service }}"
@@ -127,6 +143,7 @@ jobs:
             echo "### Workflow Results:"
             echo "- **booking-service**: ${{ needs.booking-service.result }}"
             echo "- **gateway-service**: ${{ needs.gateway-service.result }}"
+            echo "- **notification-service**: ${{ needs.notification-service.result }}"
             echo "- **payment-service**: ${{ needs.payment-service.result }}"
             echo "- **trip-service**: ${{ needs.trip-service.result }}"
             echo "- **user-service**: ${{ needs.user-service.result }}"
