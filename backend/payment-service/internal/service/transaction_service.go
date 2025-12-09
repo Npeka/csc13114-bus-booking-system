@@ -7,6 +7,7 @@ import (
 	"bus-booking/payment-service/internal/repository"
 	"bus-booking/shared/ginext"
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -18,7 +19,7 @@ import (
 
 type TransactionService interface {
 	CreatePaymentLink(ctx context.Context, req *model.CreatePaymentLinkRequest, userID uuid.UUID) (*model.TransactionResponse, error)
-	HandlePaymentWebhook(ctx context.Context, webhookData *model.PaymentWebhookData) error
+	HandlePaymentWebhook(ctx context.Context, webhookData map[string]interface{}) error
 	CancelPayment(ctx context.Context, transactionID uuid.UUID) (*model.TransactionResponse, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*model.TransactionResponse, error)
 	GetByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.TransactionResponse, error)
@@ -75,9 +76,20 @@ func (s *TransactionServiceImpl) CreatePaymentLink(ctx context.Context, req *mod
 	return s.toTransactionResponse(transaction), nil
 }
 
-func (s *TransactionServiceImpl) HandlePaymentWebhook(ctx context.Context, webhookData *model.PaymentWebhookData) error {
+func (s *TransactionServiceImpl) HandlePaymentWebhook(ctx context.Context, webhookData map[string]interface{}) error {
 	if err := s.payOSService.VerifyWebhook(ctx, webhookData); err != nil {
 		return ginext.NewUnauthorizedError("invalid webhook signature")
+	}
+
+	// Convert map to struct: marshal to JSON bytes, then unmarshal to struct
+	webhookBytes, err := json.Marshal(webhookData)
+	if err != nil {
+		return ginext.NewBadRequestError("invalid webhook data format")
+	}
+
+	var webhookDataModel model.PaymentWebhookData
+	if err := json.Unmarshal(webhookBytes, &webhookDataModel); err != nil {
+		return ginext.NewBadRequestError("invalid webhook data")
 	}
 
 	var (
@@ -89,14 +101,14 @@ func (s *TransactionServiceImpl) HandlePaymentWebhook(ctx context.Context, webho
 
 	g.Go(func() error {
 		var err error
-		paymentLink, err = s.payOSService.GetPaymentLink(gCtx, webhookData.Data.PaymentLinkID)
+		paymentLink, err = s.payOSService.GetPaymentLink(gCtx, webhookDataModel.Data.PaymentLinkID)
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		orderCode := webhookData.Data.OrderCode
-		paymentLinkID := webhookData.Data.PaymentLinkID
+		orderCode := webhookDataModel.Data.OrderCode
+		paymentLinkID := webhookDataModel.Data.PaymentLinkID
 		transaction, err = s.transactionRepo.GetByWebhookData(ctx, orderCode, paymentLinkID)
 		return err
 	})
@@ -107,10 +119,10 @@ func (s *TransactionServiceImpl) HandlePaymentWebhook(ctx context.Context, webho
 
 	// Update transaction status
 	transaction.Status = s.payOSService.ToTransactionStatus(paymentLink.Status)
-	transaction.Reference = webhookData.Data.Reference
+	transaction.Reference = webhookDataModel.Data.Reference
 
 	// Parse transaction datetime
-	if transTime, err := time.Parse("2006-01-02 15:04:05", webhookData.Data.TransactionDateTime); err == nil {
+	if transTime, err := time.Parse("2006-01-02 15:04:05", webhookDataModel.Data.TransactionDateTime); err == nil {
 		transTimeUnix := transTime.Unix()
 		transaction.TransactionTime = &transTimeUnix
 	}

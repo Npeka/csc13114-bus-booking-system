@@ -14,7 +14,7 @@ import (
 type PayOSService interface {
 	CreatePaymentLink(ctx context.Context, req *model.CreatePayOSPaymentLinkRequest) (*payos.CreatePaymentLinkResponse, error)
 	GetPaymentLink(ctx context.Context, paymentLinkID string) (*payos.PaymentLink, error)
-	VerifyWebhook(ctx context.Context, webhookData *model.PaymentWebhookData) error
+	VerifyWebhook(ctx context.Context, webhookData map[string]interface{}) error
 	CancelPaymentLink(ctx context.Context, paymentLinkID string, cancellationReason *string) (*payos.PaymentLink, error)
 	ToTransactionStatus(payOSStatus payos.PaymentLinkStatus) model.TransactionStatus
 }
@@ -68,7 +68,7 @@ func (c *PayOSServiceImpl) generateOrderCode() int64 {
 	return time.Now().UnixNano() / int64(time.Millisecond)
 }
 
-func (c *PayOSServiceImpl) VerifyWebhook(ctx context.Context, webhookData *model.PaymentWebhookData) error {
+func (c *PayOSServiceImpl) VerifyWebhook(ctx context.Context, webhookData map[string]interface{}) error {
 	_, err := c.payOSClient.Webhooks.VerifyData(ctx, webhookData)
 	if err != nil {
 		return err
