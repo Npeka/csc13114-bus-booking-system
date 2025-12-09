@@ -177,6 +177,7 @@ env:
   JWT_AUDIENCE: bus-booking-users
 
   # Logging Configuration
+  EXTERNAL_NOTIFICATION_SERVICE_URL: http://notification-service
   EXTERNAL_BOOKING_SERVICE_URL: http://booking-service
   EXTERNAL_PAYMENT_SERVICE_URL: http://payment-service
   EXTERNAL_TRIP_SERVICE_URL: http://trip-service
