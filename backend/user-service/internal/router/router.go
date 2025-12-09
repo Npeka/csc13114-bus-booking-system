@@ -34,19 +34,24 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 			auth.POST("/firebase/auth", ginext.WrapHandler(h.AuthHandler.FirebaseAuth))
 			auth.POST("/register", ginext.WrapHandler(h.AuthHandler.Register))
 			auth.POST("/login", ginext.WrapHandler(h.AuthHandler.Login))
-			auth.POST("/refresh-token", ginext.WrapHandler(h.AuthHandler.RefreshToken))
-			auth.POST("/forgot-password", ginext.WrapHandler(h.AuthHandler.ForgotPassword))
-			auth.POST("/reset-password", ginext.WrapHandler(h.AuthHandler.ResetPassword))
 			auth.POST("/logout", middleware.RequireAuth(), ginext.WrapHandler(h.AuthHandler.Logout))
+			auth.POST("/forgot-password", ginext.WrapHandler(h.AuthHandler.ForgotPassword))
+			auth.POST("/verify-otp", ginext.WrapHandler(h.AuthHandler.VerifyOTP))
+			auth.POST("/reset-password", ginext.WrapHandler(h.AuthHandler.ResetPassword))
+			auth.POST("/refresh-token", ginext.WrapHandler(h.AuthHandler.RefreshToken))
+
+			// internal
 			auth.POST("/guest", ginext.WrapHandler(h.AuthHandler.CreateGuestAccount))
 		}
 
 		users := v1.Group("/users")
 		users.Use(middleware.RequireAuth())
 		{
+			// user
 			users.GET("/profile", ginext.WrapHandler(h.UserHandler.GetProfile))
 			users.PUT("/profile", ginext.WrapHandler(h.UserHandler.UpdateProfile))
 
+			// admin
 			users.Use(middleware.RequireRole(constants.RoleAdmin))
 			{
 				users.GET("", ginext.WrapHandler(h.UserHandler.ListUsers))

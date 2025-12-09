@@ -113,6 +113,14 @@ apiClient.interceptors.response.use(
       }
     }
 
+    // Extract error message from response data if available
+    const axiosError = error as AxiosError<BackendErrorResponse>;
+    if (axiosError.response?.data?.error?.message) {
+      // Create a new error with the server message
+      const serverError = new Error(axiosError.response.data.error.message);
+      return Promise.reject(serverError);
+    }
+
     return Promise.reject(error);
   },
 );

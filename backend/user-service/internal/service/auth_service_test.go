@@ -24,14 +24,14 @@ func TestAuthService_VerifyToken_Success(t *testing.T) {
 	// Arrange
 	mockRepo := new(mocks.MockUserRepository)
 	mockJWT := new(mocks.MockJWTManager)
-	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	mockTokenManager := new(mocks.MockTokenManager)
 	cfg := &config.Config{
 		JWT: config.JWTConfig{
 			AccessTokenTTL: 15 * time.Minute,
 		},
 	}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
+	service := NewAuthService(cfg, mockJWT, nil, mockTokenManager, mockRepo, nil, nil)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -55,8 +55,8 @@ func TestAuthService_VerifyToken_Success(t *testing.T) {
 	}
 
 	mockJWT.On("ValidateAccessToken", token).Return(claims, nil)
-	mockBlacklist.On("IsTokenBlacklisted", ctx, token).Return(false)
-	mockBlacklist.On("IsUserTokensBlacklisted", ctx, userID, claims.IssuedAt.Unix()).Return(false)
+	mockTokenManager.On("IsBlacklisted", ctx, token).Return(false)
+	mockTokenManager.On("IsUserTokensBlacklisted", ctx, userID, claims.IssuedAt.Unix()).Return(false)
 	mockRepo.On("GetByID", ctx, userID).Return(user, nil)
 
 	// Act
@@ -69,7 +69,7 @@ func TestAuthService_VerifyToken_Success(t *testing.T) {
 	assert.Equal(t, user.Email, result.Email)
 	assert.Equal(t, user.Role, result.Role)
 	mockJWT.AssertExpectations(t)
-	mockBlacklist.AssertExpectations(t)
+	mockTokenManager.AssertExpectations(t)
 	mockRepo.AssertExpectations(t)
 }
 
@@ -77,10 +77,10 @@ func TestAuthService_VerifyToken_InvalidToken(t *testing.T) {
 	// Arrange
 	mockRepo := new(mocks.MockUserRepository)
 	mockJWT := new(mocks.MockJWTManager)
-	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	mockTokenManager := new(mocks.MockTokenManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
+	service := NewAuthService(cfg, mockJWT, nil, mockTokenManager, mockRepo, nil, nil)
 	ctx := context.Background()
 
 	token := "invalid.token"
@@ -100,10 +100,10 @@ func TestAuthService_VerifyToken_TokenBlacklisted(t *testing.T) {
 	// Arrange
 	mockRepo := new(mocks.MockUserRepository)
 	mockJWT := new(mocks.MockJWTManager)
-	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	mockTokenManager := new(mocks.MockTokenManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
+	service := NewAuthService(cfg, mockJWT, nil, mockTokenManager, mockRepo, nil, nil)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -115,7 +115,7 @@ func TestAuthService_VerifyToken_TokenBlacklisted(t *testing.T) {
 	claims.IssuedAt = jwt.NewNumericDate(now)
 
 	mockJWT.On("ValidateAccessToken", token).Return(claims, nil)
-	mockBlacklist.On("IsTokenBlacklisted", ctx, token).Return(true)
+	mockTokenManager.On("IsTokenBlacklisted", ctx, token).Return(true)
 
 	// Act
 	result, err := service.VerifyToken(ctx, token)
@@ -125,17 +125,17 @@ func TestAuthService_VerifyToken_TokenBlacklisted(t *testing.T) {
 	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), "token is blacklisted")
 	mockJWT.AssertExpectations(t)
-	mockBlacklist.AssertExpectations(t)
+	mockTokenManager.AssertExpectations(t)
 }
 
 func TestAuthService_VerifyToken_UserTokensBlacklisted(t *testing.T) {
 	// Arrange
 	mockRepo := new(mocks.MockUserRepository)
 	mockJWT := new(mocks.MockJWTManager)
-	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	mockTokenManager := new(mocks.MockTokenManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
+	service := NewAuthService(cfg, mockJWT, nil, mockTokenManager, mockRepo, nil, nil)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -147,8 +147,8 @@ func TestAuthService_VerifyToken_UserTokensBlacklisted(t *testing.T) {
 	claims.IssuedAt = jwt.NewNumericDate(now)
 
 	mockJWT.On("ValidateAccessToken", token).Return(claims, nil)
-	mockBlacklist.On("IsTokenBlacklisted", ctx, token).Return(false)
-	mockBlacklist.On("IsUserTokensBlacklisted", ctx, userID, claims.IssuedAt.Unix()).Return(true)
+	mockTokenManager.On("IsTokenBlacklisted", ctx, token).Return(false)
+	mockTokenManager.On("IsUserTokensBlacklisted", ctx, userID, claims.IssuedAt.Unix()).Return(true)
 
 	// Act
 	result, err := service.VerifyToken(ctx, token)
@@ -158,17 +158,17 @@ func TestAuthService_VerifyToken_UserTokensBlacklisted(t *testing.T) {
 	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), "user tokens are blacklisted")
 	mockJWT.AssertExpectations(t)
-	mockBlacklist.AssertExpectations(t)
+	mockTokenManager.AssertExpectations(t)
 }
 
 func TestAuthService_VerifyToken_UserNotFound(t *testing.T) {
 	// Arrange
 	mockRepo := new(mocks.MockUserRepository)
 	mockJWT := new(mocks.MockJWTManager)
-	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	mockTokenManager := new(mocks.MockTokenManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
+	service := NewAuthService(cfg, mockJWT, nil, mockTokenManager, mockRepo, nil, nil)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -180,8 +180,8 @@ func TestAuthService_VerifyToken_UserNotFound(t *testing.T) {
 	claims.IssuedAt = jwt.NewNumericDate(now)
 
 	mockJWT.On("ValidateAccessToken", token).Return(claims, nil)
-	mockBlacklist.On("IsTokenBlacklisted", ctx, token).Return(false)
-	mockBlacklist.On("IsUserTokensBlacklisted", ctx, userID, claims.IssuedAt.Unix()).Return(false)
+	mockTokenManager.On("IsTokenBlacklisted", ctx, token).Return(false)
+	mockTokenManager.On("IsUserTokensBlacklisted", ctx, userID, claims.IssuedAt.Unix()).Return(false)
 	mockRepo.On("GetByID", ctx, userID).Return(nil, errors.New("not found"))
 
 	// Act
@@ -192,7 +192,7 @@ func TestAuthService_VerifyToken_UserNotFound(t *testing.T) {
 	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), "user not found")
 	mockJWT.AssertExpectations(t)
-	mockBlacklist.AssertExpectations(t)
+	mockTokenManager.AssertExpectations(t)
 	mockRepo.AssertExpectations(t)
 }
 
@@ -200,10 +200,10 @@ func TestAuthService_VerifyToken_UserNotActive(t *testing.T) {
 	// Arrange
 	mockRepo := new(mocks.MockUserRepository)
 	mockJWT := new(mocks.MockJWTManager)
-	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	mockTokenManager := new(mocks.MockTokenManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
+	service := NewAuthService(cfg, mockJWT, nil, mockTokenManager, mockRepo, nil, nil)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -220,8 +220,8 @@ func TestAuthService_VerifyToken_UserNotActive(t *testing.T) {
 	}
 
 	mockJWT.On("ValidateAccessToken", token).Return(claims, nil)
-	mockBlacklist.On("IsTokenBlacklisted", ctx, token).Return(false)
-	mockBlacklist.On("IsUserTokensBlacklisted", ctx, userID, claims.IssuedAt.Unix()).Return(false)
+	mockTokenManager.On("IsTokenBlacklisted", ctx, token).Return(false)
+	mockTokenManager.On("IsUserTokensBlacklisted", ctx, userID, claims.IssuedAt.Unix()).Return(false)
 	mockRepo.On("GetByID", ctx, userID).Return(user, nil)
 
 	// Act
@@ -232,7 +232,7 @@ func TestAuthService_VerifyToken_UserNotActive(t *testing.T) {
 	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), "user is not active")
 	mockJWT.AssertExpectations(t)
-	mockBlacklist.AssertExpectations(t)
+	mockTokenManager.AssertExpectations(t)
 	mockRepo.AssertExpectations(t)
 }
 
@@ -241,7 +241,7 @@ func TestAuthService_FirebaseAuth_NewUser(t *testing.T) {
 	mockRepo := new(mocks.MockUserRepository)
 	mockJWT := new(mocks.MockJWTManager)
 	mockFirebase := new(mocks.MockFirebaseAuthClient)
-	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	mockTokenManager := new(mocks.MockTokenManager)
 	cfg := &config.Config{
 		JWT: config.JWTConfig{
 			AccessTokenTTL: 15 * time.Minute,
@@ -249,11 +249,11 @@ func TestAuthService_FirebaseAuth_NewUser(t *testing.T) {
 	}
 
 	service := &AuthServiceImpl{
-		userRepo:          mockRepo,
-		jwtManager:        mockJWT,
-		firebaseAuth:      mockFirebase,
-		config:            cfg,
-		tokenBlacklistMgr: mockBlacklist,
+		userRepo:     mockRepo,
+		jwtManager:   mockJWT,
+		firebaseAuth: mockFirebase,
+		config:       cfg,
+		tokenManager: mockTokenManager,
 	}
 
 	ctx := context.Background()
@@ -294,7 +294,7 @@ func TestAuthService_FirebaseAuth_ExistingUser(t *testing.T) {
 	mockRepo := new(mocks.MockUserRepository)
 	mockJWT := new(mocks.MockJWTManager)
 	mockFirebase := new(mocks.MockFirebaseAuthClient)
-	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	mockTokenManager := new(mocks.MockTokenManager)
 	cfg := &config.Config{
 		JWT: config.JWTConfig{
 			AccessTokenTTL: 15 * time.Minute,
@@ -302,11 +302,11 @@ func TestAuthService_FirebaseAuth_ExistingUser(t *testing.T) {
 	}
 
 	service := &AuthServiceImpl{
-		userRepo:          mockRepo,
-		jwtManager:        mockJWT,
-		firebaseAuth:      mockFirebase,
-		config:            cfg,
-		tokenBlacklistMgr: mockBlacklist,
+		userRepo:     mockRepo,
+		jwtManager:   mockJWT,
+		firebaseAuth: mockFirebase,
+		config:       cfg,
+		tokenManager: mockTokenManager,
 	}
 
 	ctx := context.Background()
@@ -348,15 +348,15 @@ func TestAuthService_FirebaseAuth_InvalidToken(t *testing.T) {
 	mockRepo := new(mocks.MockUserRepository)
 	mockJWT := new(mocks.MockJWTManager)
 	mockFirebase := new(mocks.MockFirebaseAuthClient)
-	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	mockTokenManager := new(mocks.MockTokenManager)
 	cfg := &config.Config{}
 
 	service := &AuthServiceImpl{
-		userRepo:          mockRepo,
-		jwtManager:        mockJWT,
-		firebaseAuth:      mockFirebase,
-		config:            cfg,
-		tokenBlacklistMgr: mockBlacklist,
+		userRepo:     mockRepo,
+		jwtManager:   mockJWT,
+		firebaseAuth: mockFirebase,
+		config:       cfg,
+		tokenManager: mockTokenManager,
 	}
 
 	ctx := context.Background()
@@ -380,14 +380,14 @@ func TestAuthService_RefreshToken_Success(t *testing.T) {
 	// Arrange
 	mockRepo := new(mocks.MockUserRepository)
 	mockJWT := new(mocks.MockJWTManager)
-	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	mockTokenManager := new(mocks.MockTokenManager)
 	cfg := &config.Config{
 		JWT: config.JWTConfig{
 			AccessTokenTTL: 15 * time.Minute,
 		},
 	}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
+	service := NewAuthService(cfg, mockJWT, nil, mockTokenManager, mockRepo, nil, nil)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -411,10 +411,10 @@ func TestAuthService_RefreshToken_Success(t *testing.T) {
 	}
 
 	mockJWT.On("ValidateRefreshToken", req.RefreshToken).Return(claims, nil)
-	mockBlacklist.On("IsTokenBlacklisted", ctx, req.RefreshToken).Return(false)
-	mockBlacklist.On("IsUserTokensBlacklisted", ctx, userID, claims.IssuedAt.Unix()).Return(false)
+	mockTokenManager.On("IsTokenBlacklisted", ctx, req.RefreshToken).Return(false)
+	mockTokenManager.On("IsUserTokensBlacklisted", ctx, userID, claims.IssuedAt.Unix()).Return(false)
 	mockRepo.On("GetByID", ctx, userID).Return(user, nil)
-	mockBlacklist.On("BlacklistToken", ctx, req.RefreshToken).Return(true)
+	mockTokenManager.On("BlacklistToken", ctx, req.RefreshToken).Return(true)
 	mockJWT.On("GenerateAccessToken", userID, user.Email, strconv.Itoa(int(constants.RolePassenger))).Return("new.access.token", nil)
 	mockJWT.On("GenerateRefreshToken", userID, user.Email, strconv.Itoa(int(constants.RolePassenger))).Return("new.refresh.token", nil)
 
@@ -427,7 +427,7 @@ func TestAuthService_RefreshToken_Success(t *testing.T) {
 	assert.Equal(t, "new.access.token", result.AccessToken)
 	assert.Equal(t, "new.refresh.token", result.RefreshToken)
 	mockJWT.AssertExpectations(t)
-	mockBlacklist.AssertExpectations(t)
+	mockTokenManager.AssertExpectations(t)
 	mockRepo.AssertExpectations(t)
 }
 
@@ -435,10 +435,10 @@ func TestAuthService_RefreshToken_InvalidToken(t *testing.T) {
 	// Arrange
 	mockRepo := new(mocks.MockUserRepository)
 	mockJWT := new(mocks.MockJWTManager)
-	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	mockTokenManager := new(mocks.MockTokenManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
+	service := NewAuthService(cfg, mockJWT, nil, mockTokenManager, mockRepo, nil, nil)
 	ctx := context.Background()
 
 	req := &model.RefreshTokenRequest{
@@ -461,10 +461,10 @@ func TestAuthService_RefreshToken_UserMismatch(t *testing.T) {
 	// Arrange
 	mockRepo := new(mocks.MockUserRepository)
 	mockJWT := new(mocks.MockJWTManager)
-	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	mockTokenManager := new(mocks.MockTokenManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
+	service := NewAuthService(cfg, mockJWT, nil, mockTokenManager, mockRepo, nil, nil)
 	ctx := context.Background()
 
 	differentUserID := uuid.New()
@@ -480,8 +480,8 @@ func TestAuthService_RefreshToken_UserMismatch(t *testing.T) {
 	}
 
 	mockJWT.On("ValidateRefreshToken", req.RefreshToken).Return(claims, nil)
-	mockBlacklist.On("IsTokenBlacklisted", ctx, req.RefreshToken).Return(false)
-	mockBlacklist.On("IsUserTokensBlacklisted", ctx, differentUserID, mock.AnythingOfType("int64")).Return(false)
+	mockTokenManager.On("IsTokenBlacklisted", ctx, req.RefreshToken).Return(false)
+	mockTokenManager.On("IsUserTokensBlacklisted", ctx, differentUserID, mock.AnythingOfType("int64")).Return(false)
 	mockRepo.On("GetByID", ctx, differentUserID).Return(nil, errors.New("user not found"))
 
 	// Act
@@ -492,7 +492,7 @@ func TestAuthService_RefreshToken_UserMismatch(t *testing.T) {
 	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), "user not found")
 	mockJWT.AssertExpectations(t)
-	mockBlacklist.AssertExpectations(t)
+	mockTokenManager.AssertExpectations(t)
 	mockRepo.AssertExpectations(t)
 }
 
@@ -500,10 +500,10 @@ func TestAuthService_Logout_Success(t *testing.T) {
 	// Arrange
 	mockRepo := new(mocks.MockUserRepository)
 	mockJWT := new(mocks.MockJWTManager)
-	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	mockTokenManager := new(mocks.MockTokenManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
+	service := NewAuthService(cfg, mockJWT, nil, mockTokenManager, mockRepo, nil, nil)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -517,8 +517,8 @@ func TestAuthService_Logout_Success(t *testing.T) {
 	}
 
 	mockJWT.On("ValidateRefreshToken", req.RefreshToken).Return(claims, nil)
-	mockBlacklist.On("BlacklistToken", ctx, req.AccessToken).Return(true)
-	mockBlacklist.On("BlacklistToken", ctx, req.RefreshToken).Return(true)
+	mockTokenManager.On("BlacklistToken", ctx, req.AccessToken).Return(true)
+	mockTokenManager.On("BlacklistToken", ctx, req.RefreshToken).Return(true)
 
 	// Act
 	err := service.Logout(ctx, req, userID)
@@ -526,21 +526,21 @@ func TestAuthService_Logout_Success(t *testing.T) {
 	// Assert
 	assert.NoError(t, err)
 	mockJWT.AssertExpectations(t)
-	mockBlacklist.AssertExpectations(t)
+	mockTokenManager.AssertExpectations(t)
 }
 
 func TestAuthService_Register_Success(t *testing.T) {
 	// Arrange
 	mockRepo := new(mocks.MockUserRepository)
 	mockJWT := new(mocks.MockJWTManager)
-	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	mockTokenManager := new(mocks.MockTokenManager)
 	cfg := &config.Config{
 		JWT: config.JWTConfig{
 			AccessTokenTTL: 15 * time.Minute,
 		},
 	}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
+	service := NewAuthService(cfg, mockJWT, nil, mockTokenManager, mockRepo, nil, nil)
 	ctx := context.Background()
 
 	req := &model.RegisterRequest{
@@ -574,10 +574,10 @@ func TestAuthService_Register_EmailAlreadyExists(t *testing.T) {
 	// Arrange
 	mockRepo := new(mocks.MockUserRepository)
 	mockJWT := new(mocks.MockJWTManager)
-	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	mockTokenManager := new(mocks.MockTokenManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
+	service := NewAuthService(cfg, mockJWT, nil, mockTokenManager, mockRepo, nil, nil)
 	ctx := context.Background()
 
 	req := &model.RegisterRequest{
@@ -607,14 +607,14 @@ func TestAuthService_Login_Success(t *testing.T) {
 	// Arrange
 	mockRepo := new(mocks.MockUserRepository)
 	mockJWT := new(mocks.MockJWTManager)
-	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	mockTokenManager := new(mocks.MockTokenManager)
 	cfg := &config.Config{
 		JWT: config.JWTConfig{
 			AccessTokenTTL: 15 * time.Minute,
 		},
 	}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
+	service := NewAuthService(cfg, mockJWT, nil, mockTokenManager, mockRepo, nil, nil)
 	ctx := context.Background()
 
 	req := &model.LoginRequest{
@@ -654,10 +654,10 @@ func TestAuthService_Login_UserNotFound(t *testing.T) {
 	// Arrange
 	mockRepo := new(mocks.MockUserRepository)
 	mockJWT := new(mocks.MockJWTManager)
-	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	mockTokenManager := new(mocks.MockTokenManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
+	service := NewAuthService(cfg, mockJWT, nil, mockTokenManager, mockRepo, nil, nil)
 	ctx := context.Background()
 
 	req := &model.LoginRequest{
@@ -681,10 +681,10 @@ func TestAuthService_Login_NoPasswordSet(t *testing.T) {
 	// Arrange
 	mockRepo := new(mocks.MockUserRepository)
 	mockJWT := new(mocks.MockJWTManager)
-	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	mockTokenManager := new(mocks.MockTokenManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
+	service := NewAuthService(cfg, mockJWT, nil, mockTokenManager, mockRepo, nil, nil)
 	ctx := context.Background()
 
 	req := &model.LoginRequest{
@@ -715,10 +715,10 @@ func TestAuthService_Login_WrongPassword(t *testing.T) {
 	// Arrange
 	mockRepo := new(mocks.MockUserRepository)
 	mockJWT := new(mocks.MockJWTManager)
-	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	mockTokenManager := new(mocks.MockTokenManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
+	service := NewAuthService(cfg, mockJWT, nil, mockTokenManager, mockRepo, nil, nil)
 	ctx := context.Background()
 
 	req := &model.LoginRequest{
@@ -753,10 +753,10 @@ func TestAuthService_Login_UserNotActive(t *testing.T) {
 	// Arrange
 	mockRepo := new(mocks.MockUserRepository)
 	mockJWT := new(mocks.MockJWTManager)
-	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	mockTokenManager := new(mocks.MockTokenManager)
 	cfg := &config.Config{}
 
-	service := NewAuthService(cfg, mockJWT, nil, mockBlacklist, mockRepo, nil)
+	service := NewAuthService(cfg, mockJWT, nil, mockTokenManager, mockRepo, nil, nil)
 	ctx := context.Background()
 
 	req := &model.LoginRequest{
@@ -796,9 +796,8 @@ func TestAuthService_ForgotPassword_Success(t *testing.T) {
 	cfg := &config.Config{}
 
 	service := &AuthServiceImpl{
-		userRepo:             mockRepo,
-		config:               cfg,
-		passwordResetService: mockPasswordReset,
+		userRepo: mockRepo,
+		config:   cfg,
 	}
 	ctx := context.Background()
 
@@ -833,9 +832,8 @@ func TestAuthService_ForgotPassword_UserNotFound(t *testing.T) {
 	cfg := &config.Config{}
 
 	service := &AuthServiceImpl{
-		userRepo:             mockRepo,
-		config:               cfg,
-		passwordResetService: mockPasswordReset,
+		userRepo: mockRepo,
+		config:   cfg,
 	}
 	ctx := context.Background()
 
@@ -861,9 +859,8 @@ func TestAuthService_ForgotPassword_FirebaseOnlyUser(t *testing.T) {
 	cfg := &config.Config{}
 
 	service := &AuthServiceImpl{
-		userRepo:             mockRepo,
-		config:               cfg,
-		passwordResetService: mockPasswordReset,
+		userRepo: mockRepo,
+		config:   cfg,
 	}
 	ctx := context.Background()
 
@@ -894,15 +891,14 @@ func TestAuthService_ForgotPassword_FirebaseOnlyUser(t *testing.T) {
 func TestAuthService_ResetPassword_Success(t *testing.T) {
 	// Arrange
 	mockRepo := new(mocks.MockUserRepository)
-	mockBlacklist := new(mocks.MockTokenBlacklistManager)
+	mockTokenManager := new(mocks.MockTokenManager)
 	mockPasswordReset := new(mocks.MockPasswordResetService)
 	cfg := &config.Config{}
 
 	service := &AuthServiceImpl{
-		userRepo:             mockRepo,
-		config:               cfg,
-		tokenBlacklistMgr:    mockBlacklist,
-		passwordResetService: mockPasswordReset,
+		userRepo:     mockRepo,
+		config:       cfg,
+		tokenManager: mockTokenManager,
 	}
 	ctx := context.Background()
 
@@ -927,7 +923,7 @@ func TestAuthService_ResetPassword_Success(t *testing.T) {
 		return u.Email == email && u.PasswordHash != nil && *u.PasswordHash != oldHashedPassword
 	})).Return(nil)
 	mockPasswordReset.On("InvalidateResetToken", ctx, req.Token).Return(nil)
-	mockBlacklist.On("BlacklistUserTokens", ctx, user.ID).Return(true)
+	mockTokenManager.On("BlacklistUserTokens", ctx, user.ID).Return(true)
 
 	// Act
 	err := service.ResetPassword(ctx, req)
@@ -936,7 +932,7 @@ func TestAuthService_ResetPassword_Success(t *testing.T) {
 	assert.NoError(t, err)
 	mockPasswordReset.AssertExpectations(t)
 	mockRepo.AssertExpectations(t)
-	mockBlacklist.AssertExpectations(t)
+	mockTokenManager.AssertExpectations(t)
 }
 
 func TestAuthService_ResetPassword_InvalidToken(t *testing.T) {
@@ -945,8 +941,7 @@ func TestAuthService_ResetPassword_InvalidToken(t *testing.T) {
 	cfg := &config.Config{}
 
 	service := &AuthServiceImpl{
-		config:               cfg,
-		passwordResetService: mockPasswordReset,
+		config: cfg,
 	}
 	ctx := context.Background()
 
@@ -973,9 +968,8 @@ func TestAuthService_ResetPassword_UserNotFound(t *testing.T) {
 	cfg := &config.Config{}
 
 	service := &AuthServiceImpl{
-		userRepo:             mockRepo,
-		config:               cfg,
-		passwordResetService: mockPasswordReset,
+		userRepo: mockRepo,
+		config:   cfg,
 	}
 	ctx := context.Background()
 

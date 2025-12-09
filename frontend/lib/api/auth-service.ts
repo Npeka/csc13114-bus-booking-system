@@ -592,12 +592,27 @@ export const hasValidSession = async (): Promise<boolean> => {
  */
 export const requestPasswordReset = async (email: string): Promise<void> => {
   try {
-    await apiClient.post<ApiResponse<void>>(
+    const response = await apiClient.post<ApiResponse<void>>(
       "/user/api/v1/auth/forgot-password",
       { email },
     );
+
+    // Check if response has error
+    if (response.data.error) {
+      throw new Error(
+        response.data.error.message || "Không thể gửi email đặt lại mật khẩu",
+      );
+    }
   } catch (error) {
-    throw new Error("Failed to send password reset email");
+    console.error("Password reset request error:", error);
+
+    // Handle different error types with user-friendly messages
+    if (error instanceof Error) {
+      // Return the error message if it's already user-friendly
+      throw error;
+    }
+
+    throw new Error("Không thể gửi email đặt lại mật khẩu. Vui lòng thử lại.");
   }
 };
 
@@ -611,14 +626,29 @@ export const resetPassword = async (
   newPassword: string,
 ): Promise<void> => {
   try {
-    await apiClient.post<ApiResponse<void>>(
+    const response = await apiClient.post<ApiResponse<void>>(
       "/user/api/v1/auth/reset-password",
       {
         token,
         new_password: newPassword,
       },
     );
+
+    // Check if response has error
+    if (response.data.error) {
+      throw new Error(
+        response.data.error.message || "Không thể đặt lại mật khẩu",
+      );
+    }
   } catch (error) {
-    throw new Error("Failed to reset password");
+    console.error("Password reset error:", error);
+
+    // Handle different error types with user-friendly messages
+    if (error instanceof Error) {
+      // Return the error message if it's already user-friendly
+      throw error;
+    }
+
+    throw new Error("Không thể đặt lại mật khẩu. Vui lòng thử lại.");
   }
 };

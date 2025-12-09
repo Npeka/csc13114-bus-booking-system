@@ -4,16 +4,28 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"bus-booking/shared/constants"
+	"bus-booking/shared/db"
 	"bus-booking/shared/ginext"
 	"bus-booking/user-service/config"
+	"bus-booking/user-service/internal/client"
 	"bus-booking/user-service/internal/model"
 	"bus-booking/user-service/internal/repository"
 	"bus-booking/user-service/internal/utils"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/sync/errgroup"
+)
+
+// Redis key prefixes for password reset flow
+const (
+	redisKeyResetOTP        = "reset:otp:"            // Stores OTP -> email mapping
+	redisKeyResetEmailToOTP = "reset:email_to_otp:"   // Stores email -> OTP mapping
+	redisKeyResetRateLimit  = "reset:otp_rate_limit:" // Rate limit for OTP requests
+	redisKeyResetVerified   = "reset:verified:"       // Verified email after OTP check
 )
 
 type AuthService interface {
@@ -23,60 +35,63 @@ type AuthService interface {
 	Login(ctx context.Context, req *model.LoginRequest) (*model.AuthResponse, error)
 	Logout(ctx context.Context, req model.LogoutRequest, userID uuid.UUID) error
 	ForgotPassword(ctx context.Context, req *model.ForgotPasswordRequest) error
+	VerifyOTP(ctx context.Context, otp string) error
 	ResetPassword(ctx context.Context, req *model.ResetPasswordRequest) error
 	RefreshToken(ctx context.Context, req *model.RefreshTokenRequest) (*model.AuthResponse, error)
 	CreateGuestAccount(ctx context.Context, req *model.CreateGuestAccountRequest) (*model.UserResponse, error)
 }
 
 type AuthServiceImpl struct {
-	userRepo             repository.UserRepository
-	jwtManager           utils.JWTManager
-	firebaseAuth         FirebaseAuthClient
-	config               *config.Config
-	tokenBlacklistMgr    TokenBlacklistManager
-	passwordResetService PasswordResetService
+	config             *config.Config
+	userRepo           repository.UserRepository
+	jwtManager         utils.JWTManager
+	firebaseAuth       FirebaseAuthClient
+	tokenManager       TokenManager
+	redisClient        *db.RedisManager
+	notificationClient client.NotificationClient
 }
 
 func NewAuthService(
 	config *config.Config,
 	jwtManager utils.JWTManager,
 	firebaseAuth FirebaseAuthClient,
-	tokenBlacklistMgr TokenBlacklistManager,
+	tokenManager TokenManager,
 	userRepo repository.UserRepository,
-	passwordResetService PasswordResetService,
+	redisClient *db.RedisManager,
+	notificationClient client.NotificationClient,
 ) AuthService {
 	return &AuthServiceImpl{
-		config:               config,
-		jwtManager:           jwtManager,
-		firebaseAuth:         firebaseAuth,
-		tokenBlacklistMgr:    tokenBlacklistMgr,
-		userRepo:             userRepo,
-		passwordResetService: passwordResetService,
+		config:             config,
+		jwtManager:         jwtManager,
+		firebaseAuth:       firebaseAuth,
+		tokenManager:       tokenManager,
+		userRepo:           userRepo,
+		redisClient:        redisClient,
+		notificationClient: notificationClient,
 	}
 }
 
 func (s *AuthServiceImpl) VerifyToken(ctx context.Context, accessToken string) (*model.TokenVerifyResponse, error) {
 	claims, err := s.jwtManager.ValidateAccessToken(accessToken)
 	if err != nil {
-		return nil, ginext.NewUnauthorizedError("invalid access token")
+		return nil, ginext.NewUnauthorizedError("token không hợp lệ")
 	}
 
-	// Check blacklist - đơn giản không cần handle error phức tạp
-	if s.tokenBlacklistMgr.IsTokenBlacklisted(ctx, accessToken) {
-		return nil, ginext.NewUnauthorizedError("token is blacklisted")
+	if s.tokenManager.IsBlacklisted(ctx, accessToken) {
+		return nil, ginext.NewUnauthorizedError("token đã bị blacklisted")
 	}
 
-	if s.tokenBlacklistMgr.IsUserTokensBlacklisted(ctx, claims.UserID, claims.IssuedAt.Unix()) {
-		return nil, ginext.NewUnauthorizedError("user tokens are blacklisted")
+	if s.tokenManager.IsUserTokensBlacklisted(ctx, claims.UserID, claims.IssuedAt.Unix()) {
+		return nil, ginext.NewUnauthorizedError("token của người dùng đã bị blacklisted")
 	}
 
 	user, err := s.userRepo.GetByID(ctx, claims.UserID)
 	if err != nil || user == nil {
-		return nil, ginext.NewUnauthorizedError("user not found")
+		return nil, ginext.NewUnauthorizedError("không tìm thấy người dùng")
 	}
 
 	if user.Status != constants.UserStatusActive && user.Status != constants.UserStatusVerified {
-		return nil, ginext.NewUnauthorizedError("user is not active")
+		return nil, ginext.NewUnauthorizedError("tài khoản không hoạt động")
 	}
 
 	return &model.TokenVerifyResponse{
@@ -88,23 +103,18 @@ func (s *AuthServiceImpl) VerifyToken(ctx context.Context, accessToken string) (
 }
 
 func (s *AuthServiceImpl) FirebaseAuth(ctx context.Context, req *model.FirebaseAuthRequest) (*model.AuthResponse, error) {
-	if s.firebaseAuth == nil {
-		log.Error().Msg("Firebase Auth is not initialized")
-		return nil, ginext.NewInternalServerError("Firebase Auth is not available")
-	}
-
 	token, err := s.firebaseAuth.VerifyIDToken(ctx, req.IDToken)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to verify Firebase ID token")
-		return nil, ginext.NewUnauthorizedError("Invalid Firebase token")
+		return nil, ginext.NewUnauthorizedError("firebase token không hợp lệ")
 	}
 
-	// Check if user already exists by Firebase UID
 	user, err := s.userRepo.GetByFirebaseUID(ctx, token.UID)
-	if err == nil && user != nil {
-		// User exists, return auth response
+	if err != nil {
+		return nil, ginext.NewInternalServerError(err.Error())
+	}
+	if user != nil {
 		if user.Status != constants.UserStatusActive && user.Status != constants.UserStatusVerified {
-			return nil, ginext.NewForbiddenError("Account is not active")
+			return nil, ginext.NewForbiddenError("tài khoản không hoạt động")
 		}
 		return s.generateAuthResponse(user)
 	}
@@ -165,7 +175,7 @@ func (s *AuthServiceImpl) FirebaseAuth(ctx context.Context, req *model.FirebaseA
 
 	if err := s.userRepo.Create(ctx, user); err != nil {
 		log.Error().Err(err).Msg("Failed to create Firebase user")
-		return nil, ginext.NewInternalServerError("Failed to create user")
+		return nil, ginext.NewInternalServerError("Không thể tạo người dùng")
 	}
 
 	return s.generateAuthResponse(user)
@@ -176,14 +186,14 @@ func (s *AuthServiceImpl) Register(ctx context.Context, req *model.RegisterReque
 	existingUser, err := s.userRepo.GetByEmail(ctx, req.Email)
 	if err == nil && existingUser != nil {
 		log.Warn().Str("email", req.Email).Msg("Email already registered")
-		return nil, ginext.NewBadRequestError("Email already registered")
+		return nil, ginext.NewBadRequestError("Email đã được đăng ký")
 	}
 
 	// Hash password
 	passwordHash, err := utils.HashPassword(req.Password)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to hash password")
-		return nil, ginext.NewInternalServerError("Failed to create account")
+		return nil, ginext.NewInternalServerError("Không thể tạo tài khoản")
 	}
 
 	// Create new user
@@ -200,7 +210,7 @@ func (s *AuthServiceImpl) Register(ctx context.Context, req *model.RegisterReque
 
 	if err := s.userRepo.Create(ctx, user); err != nil {
 		log.Error().Err(err).Msg("Failed to create user")
-		return nil, ginext.NewInternalServerError("Failed to create account")
+		return nil, ginext.NewInternalServerError("Không thể tạo tài khoản")
 	}
 
 	return s.generateAuthResponse(user)
@@ -211,24 +221,24 @@ func (s *AuthServiceImpl) Login(ctx context.Context, req *model.LoginRequest) (*
 	user, err := s.userRepo.GetByEmail(ctx, req.Email)
 	if err != nil {
 		log.Error().Err(err).Str("email", req.Email).Msg("User not found")
-		return nil, ginext.NewUnauthorizedError("Invalid email or password")
+		return nil, ginext.NewUnauthorizedError("Email hoặc mật khẩu không đúng")
 	}
 
 	// Check if user has password set (not a Firebase-only user)
 	if user.PasswordHash == nil {
 		log.Warn().Str("email", req.Email).Msg("User does not have password set")
-		return nil, ginext.NewUnauthorizedError("Invalid email or password")
+		return nil, ginext.NewUnauthorizedError("Email hoặc mật khẩu không đúng")
 	}
 
 	// Verify password
 	if !utils.CheckPasswordHash(req.Password, *user.PasswordHash) {
 		log.Error().Str("email", req.Email).Msg("Password verification failed")
-		return nil, ginext.NewUnauthorizedError("Invalid email or password")
+		return nil, ginext.NewUnauthorizedError("Email hoặc mật khẩu không đúng")
 	}
 
 	// Check user status
 	if user.Status != constants.UserStatusActive && user.Status != constants.UserStatusVerified {
-		return nil, ginext.NewForbiddenError("Account is not active")
+		return nil, ginext.NewForbiddenError("Tài khoản không hoạt động")
 	}
 
 	return s.generateAuthResponse(user)
@@ -238,72 +248,172 @@ func (s *AuthServiceImpl) ForgotPassword(ctx context.Context, req *model.ForgotP
 	// Check if user exists with email/password auth
 	user, err := s.userRepo.GetByEmail(ctx, req.Email)
 	if err != nil {
-		// Don't reveal if email exists - return success anyway for security
-		log.Info().Str("email", req.Email).Msg("Password reset requested for non-existent email")
-		return nil
+		return ginext.NewInternalServerError("Không thể xử lý yêu cầu đặt lại mật khẩu")
+	}
+	if user == nil {
+		return ginext.NewBadRequestError("Tài khoản không tồn tại")
 	}
 
 	// Check if user has password (not Firebase-only user)
 	if user.PasswordHash == nil {
 		log.Warn().Str("email", req.Email).Msg("Password reset requested for Firebase-only user")
-		return nil // Don't reveal this to user
+		return ginext.NewBadRequestError("Tài khoảng chưa đặt mật khẩu")
 	}
 
-	// Generate reset token
-	token, err := s.passwordResetService.GenerateResetToken(ctx, req.Email)
+	// Check rate limit FIRST before doing anything
+	rateLimitKey := redisKeyResetRateLimit + req.Email
+	_, err = s.redisClient.Get(ctx, rateLimitKey)
+	if err == nil {
+		// Key exists, rate limit active - user must wait
+		ttl, err := s.redisClient.TTL(ctx, rateLimitKey)
+		if err != nil {
+			ttl = 30 * time.Second // Default fallback
+		}
+		return ginext.NewBadRequestError(fmt.Sprintf("Vui lòng đợi %d giây trước khi gửi lại", int(ttl.Seconds())))
+	}
+
+	// Rate limit passed, now blacklist old OTP if exists
+	emailOTPKey := redisKeyResetEmailToOTP + req.Email
+	oldOTP, err := s.redisClient.Get(ctx, emailOTPKey)
+	if err == nil && oldOTP != "" {
+		// Delete the old OTP key to blacklist it
+		oldOTPKey := redisKeyResetOTP + oldOTP
+		if err := s.redisClient.Del(ctx, oldOTPKey); err != nil {
+			log.Warn().Err(err).Str("otp", oldOTP).Msg("Failed to blacklist old OTP")
+		}
+	}
+
+	// Generate 6-digit OTP
+	otp, err := utils.GenerateOTP(6)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to generate reset token")
-		return ginext.NewInternalServerError("Failed to process password reset request")
+		log.Error().Err(err).Msg("Failed to generate OTP")
+		return ginext.NewInternalServerError("Không thể xử lý yêu cầu đặt lại mật khẩu")
 	}
 
-	// TODO: Send email with reset link
-	// For now, just log the token (development only)
-	resetLink := fmt.Sprintf("http://localhost:3000/reset-password?token=%s", token)
-	log.Info().Str("email", req.Email).Str("reset_link", resetLink).Msg("Password reset link generated")
+	// Store OTP in Redis (OTP itself is the "token")
+	key := redisKeyResetOTP + otp
+	if err := s.redisClient.Set(ctx, key, req.Email, 15*time.Minute); err != nil {
+		log.Error().Err(err).Msg("Failed to store OTP")
+		return ginext.NewInternalServerError("Không thể xử lý yêu cầu đặt lại mật khẩu")
+	}
+
+	// Store email-to-OTP mapping for blacklisting old OTPs
+	if err := s.redisClient.Set(ctx, emailOTPKey, otp, 15*time.Minute); err != nil {
+		log.Warn().Err(err).Msg("Failed to store email-OTP mapping")
+	}
+
+	// Store rate limit key for this email (30 seconds)
+	if err := s.redisClient.Set(ctx, rateLimitKey, "1", 30*time.Second); err != nil {
+		log.Warn().Err(err).Msg("Failed to set rate limit")
+	}
+
+	// Send OTP email via notification service
+	go func() {
+		// Use background context to avoid cancellation when request completes
+		bgCtx := context.Background()
+		if err := s.notificationClient.Send(bgCtx, req.Email, user.FullName, otp); err != nil {
+			log.Error().Err(err).Msg("Failed to send OTP email")
+			// Continue even if email fails - don't reveal to user
+		}
+	}()
+
+	return nil
+}
+
+func (s *AuthServiceImpl) VerifyOTP(ctx context.Context, otp string) error {
+	// Validate OTP exists in Redis
+	otpKey := redisKeyResetOTP + otp
+	email, err := s.redisClient.Get(ctx, otpKey)
+	if err != nil {
+		log.Error().Err(err).Msg("Invalid or expired OTP")
+		return ginext.NewBadRequestError("Mã OTP không hợp lệ hoặc đã hết hạn")
+	}
+
+	// Blacklist this OTP after verification to prevent reuse
+	// Delete the OTP key so it can't be used again
+	if err := s.redisClient.Del(ctx, otpKey); err != nil {
+		log.Warn().Err(err).Str("otp", otp).Msg("Failed to blacklist verified OTP")
+	}
+
+	// Store the OTP->email mapping with verified key
+	// This gives user 5 minutes to complete password reset after OTP verification
+	// Key is OTP (not email) so ResetPassword can look it up by OTP
+	verifiedKey := redisKeyResetVerified + otp
+	if err := s.redisClient.Set(ctx, verifiedKey, email, 5*time.Minute); err != nil {
+		log.Warn().Err(err).Msg("Failed to store verified OTP")
+	}
 
 	return nil
 }
 
 func (s *AuthServiceImpl) ResetPassword(ctx context.Context, req *model.ResetPasswordRequest) error {
-	// Validate reset token and get email
-	email, err := s.passwordResetService.ValidateResetToken(ctx, req.Token)
+	// Note: OTP has already been verified and deleted in VerifyOTP step
+	// We now validate using the verified key which was created after OTP verification
+
+	// Try to get email from verified key (created in VerifyOTP)
+	// The req.Token here is still the OTP that user entered
+	verifiedKey := redisKeyResetVerified + req.Token
+	email, err := s.redisClient.Get(ctx, verifiedKey)
+
+	// If verified key doesn't exist, fallback to checking OTP key
+	// (for backward compatibility or if OTP wasn't verified yet)
 	if err != nil {
-		log.Error().Err(err).Msg("Invalid reset token")
-		return ginext.NewBadRequestError("Invalid or expired reset token")
+		otpKey := redisKeyResetOTP + req.Token
+		email, err = s.redisClient.Get(ctx, otpKey)
+		if err != nil {
+			log.Error().Err(err).Msg("Invalid or expired OTP")
+			return ginext.NewBadRequestError("Token đặt lại mật khẩu không hợp lệ hoặc đã hết hạn")
+		}
 	}
 
 	// Get user by email
 	user, err := s.userRepo.GetByEmail(ctx, email)
 	if err != nil {
 		log.Error().Err(err).Str("email", email).Msg("User not found for reset")
-		return ginext.NewBadRequestError("Invalid reset token")
+		return ginext.NewBadRequestError("Token đặt lại mật khẩu không hợp lệ")
 	}
 
 	// Hash new password
 	newPasswordHash, err := utils.HashPassword(req.NewPassword)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to hash new password")
-		return ginext.NewInternalServerError("Failed to reset password")
+		return ginext.NewInternalServerError("Không thể đặt lại mật khẩu")
 	}
 
 	// Update user password
 	user.PasswordHash = &newPasswordHash
 	if err := s.userRepo.Update(ctx, user); err != nil {
 		log.Error().Err(err).Msg("Failed to update password")
-		return ginext.NewInternalServerError("Failed to reset password")
+		return ginext.NewInternalServerError("Không thể đặt lại mật khẩu")
 	}
 
-	// Invalidate the reset token
-	if err := s.passwordResetService.InvalidateResetToken(ctx, req.Token); err != nil {
-		log.Error().Err(err).Msg("Failed to invalidate reset token")
-		// Don't fail the request, password is already updated
-	}
+	// Cleanup tasks asynchronously (password already updated successfully)
+	go func() {
+		// Use background context to avoid cancellation when request completes
+		bgCtx := context.Background()
 
-	// Invalidate all user sessions (blacklist all tokens issued before now)
-	if !s.tokenBlacklistMgr.BlacklistUserTokens(ctx, user.ID) {
-		log.Error().Msg("Failed to blacklist user tokens")
-		// Don't fail the request
-	}
+		// Delete verified key
+		if err := s.redisClient.Del(bgCtx, verifiedKey); err != nil {
+			log.Warn().Err(err).Msg("Failed to delete verified key")
+		}
+
+		// Delete OTP key if it still exists
+		otpKey := redisKeyResetOTP + req.Token
+		if err := s.redisClient.Del(bgCtx, otpKey); err != nil {
+			log.Warn().Err(err).Msg("Failed to delete OTP key")
+		}
+
+		// Delete email-to-OTP mapping
+		emailOTPKey := redisKeyResetEmailToOTP + email
+		if err := s.redisClient.Del(bgCtx, emailOTPKey); err != nil {
+			log.Warn().Err(err).Msg("Failed to delete email-OTP mapping")
+		}
+
+		// Invalidate all user sessions (blacklist all tokens issued before now)
+		if !s.tokenManager.BlacklistUserTokens(bgCtx, user.ID) {
+			log.Error().Msg("Failed to blacklist user tokens")
+		}
+	}()
 
 	log.Info().Str("email", email).Msg("Password reset successful")
 	return nil
@@ -312,42 +422,65 @@ func (s *AuthServiceImpl) ResetPassword(ctx context.Context, req *model.ResetPas
 func (s *AuthServiceImpl) RefreshToken(ctx context.Context, req *model.RefreshTokenRequest) (*model.AuthResponse, error) {
 	claims, err := s.jwtManager.ValidateRefreshToken(req.RefreshToken)
 	if err != nil {
-		return nil, ginext.NewUnauthorizedError("invalid refresh token")
+		return nil, ginext.NewUnauthorizedError("refresh token không hợp lệ")
 	}
 
 	// Check blacklist - đơn giản
-	if s.tokenBlacklistMgr.IsTokenBlacklisted(ctx, req.RefreshToken) {
-		return nil, ginext.NewUnauthorizedError("refresh token has been revoked")
+	if s.tokenManager.IsBlacklisted(ctx, req.RefreshToken) {
+		return nil, ginext.NewUnauthorizedError("refresh token đã bị thu hồi")
 	}
 
-	if s.tokenBlacklistMgr.IsUserTokensBlacklisted(ctx, claims.UserID, claims.IssuedAt.Unix()) {
-		return nil, ginext.NewUnauthorizedError("all user tokens have been revoked")
+	if s.tokenManager.IsUserTokensBlacklisted(ctx, claims.UserID, claims.IssuedAt.Unix()) {
+		return nil, ginext.NewUnauthorizedError("tất cả token người dùng đã bị thu hồi")
 	}
 
 	user, err := s.userRepo.GetByID(ctx, claims.UserID)
 	if err != nil || user == nil {
-		return nil, ginext.NewInternalServerError("user not found")
+		return nil, ginext.NewInternalServerError("không tìm thấy người dùng")
 	}
 
 	if user.Status != constants.UserStatusActive && user.Status != constants.UserStatusVerified {
-		return nil, ginext.NewForbiddenError("account is not active")
+		return nil, ginext.NewForbiddenError("tài khoản không hoạt động")
 	}
 
 	// Blacklist old refresh token
-	s.tokenBlacklistMgr.BlacklistToken(ctx, req.RefreshToken)
+	s.tokenManager.Blacklist(ctx, req.RefreshToken)
 
 	return s.generateAuthResponse(user)
 }
 
 func (s *AuthServiceImpl) generateAuthResponse(user *model.User) (*model.AuthResponse, error) {
-	accessToken, err := s.jwtManager.GenerateAccessToken(user.ID, user.Email, fmt.Sprintf("%d", user.Role))
-	if err != nil {
-		return nil, ginext.NewInternalServerError("Failed to generate access token")
-	}
+	var (
+		accessToken  string
+		refreshToken string
+	)
 
-	refreshToken, err := s.jwtManager.GenerateRefreshToken(user.ID, user.Email, fmt.Sprintf("%d", user.Role))
-	if err != nil {
-		return nil, ginext.NewInternalServerError("Failed to generate refresh token")
+	// Generate both tokens in parallel using errgroup
+	g := new(errgroup.Group)
+
+	// Generate access token
+	g.Go(func() error {
+		token, err := s.jwtManager.GenerateAccessToken(user.ID, user.Email, fmt.Sprintf("%d", user.Role))
+		if err != nil {
+			return ginext.NewInternalServerError("Không thể tạo token truy cập")
+		}
+		accessToken = token
+		return nil
+	})
+
+	// Generate refresh token
+	g.Go(func() error {
+		token, err := s.jwtManager.GenerateRefreshToken(user.ID, user.Email, fmt.Sprintf("%d", user.Role))
+		if err != nil {
+			return ginext.NewInternalServerError("Không thể tạo refresh token")
+		}
+		refreshToken = token
+		return nil
+	})
+
+	// Wait for both to complete
+	if err := g.Wait(); err != nil {
+		return nil, err
 	}
 
 	return &model.AuthResponse{
@@ -361,45 +494,49 @@ func (s *AuthServiceImpl) generateAuthResponse(user *model.User) (*model.AuthRes
 func (s *AuthServiceImpl) Logout(ctx context.Context, req model.LogoutRequest, userID uuid.UUID) error {
 	claims, err := s.jwtManager.ValidateRefreshToken(req.RefreshToken)
 	if err != nil {
-		return ginext.NewUnauthorizedError("invalid refresh token")
+		return ginext.NewUnauthorizedError("refresh token không hợp lệ")
 	}
 
 	if claims.UserID != userID {
-		return ginext.NewUnauthorizedError("refresh token does not match user")
+		return ginext.NewUnauthorizedError("refresh token không khớp với người dùng")
 	}
 
-	// Đơn giản - chỉ blacklist token
-	s.tokenBlacklistMgr.BlacklistToken(ctx, req.AccessToken)
-	s.tokenBlacklistMgr.BlacklistToken(ctx, req.RefreshToken)
+	// Blacklist tokens asynchronously (user already logged out from client)
+	go func() {
+		// Use background context to avoid cancellation when request completes
+		bgCtx := context.Background()
+		s.tokenManager.Blacklist(bgCtx, req.AccessToken)
+		s.tokenManager.Blacklist(bgCtx, req.RefreshToken)
+	}()
 
 	return nil
 }
 
 // CreateGuestAccount creates a guest user account for non-authenticated bookings
-// Requires either email or phone number to be provided
 func (s *AuthServiceImpl) CreateGuestAccount(ctx context.Context, req *model.CreateGuestAccountRequest) (*model.UserResponse, error) {
 	// Validate: at least one contact method (email or phone) must be provided
 	if req.Email == "" && req.Phone == "" {
-		return nil, ginext.NewBadRequestError("Either email or phone must be provided")
+		return nil, ginext.NewBadRequestError("Phải cung cấp email hoặc số điện thoại")
 	}
 
 	// Check if guest already exists by email or phone
-	var existingUser *model.User
-	var err error
-
 	if req.Email != "" {
-		existingUser, err = s.userRepo.GetByEmail(ctx, req.Email)
-		if err == nil && existingUser != nil {
-			// User already exists with this email, return existing user
-			return existingUser.ToResponse(), nil
+		existingUser, err := s.userRepo.GetByEmail(ctx, req.Email)
+		if err != nil {
+			return nil, ginext.NewInternalServerError("Không thể kiểm tra người dùng")
+		}
+		if existingUser != nil {
+			return nil, ginext.NewBadRequestError("Email đã được đăng ký")
 		}
 	}
 
-	if req.Phone != "" && existingUser == nil {
-		existingUser, err = s.userRepo.GetByPhone(ctx, req.Phone)
-		if err == nil && existingUser != nil {
-			// User already exists with this phone, return existing user
-			return existingUser.ToResponse(), nil
+	if req.Phone != "" {
+		existingUser, err := s.userRepo.GetByPhone(ctx, req.Phone)
+		if err != nil {
+			return nil, ginext.NewInternalServerError("Không thể kiểm tra người dùng")
+		}
+		if existingUser != nil {
+			return nil, ginext.NewBadRequestError("Số điện thoại đã được đăng ký")
 		}
 	}
 
@@ -414,14 +551,8 @@ func (s *AuthServiceImpl) CreateGuestAccount(ctx context.Context, req *model.Cre
 
 	if err := s.userRepo.Create(ctx, guestUser); err != nil {
 		log.Error().Err(err).Msg("Failed to create guest account")
-		return nil, ginext.NewInternalServerError("Failed to create guest account")
+		return nil, ginext.NewInternalServerError("Không thể tạo tài khoản khách")
 	}
-
-	log.Info().
-		Str("user_id", guestUser.ID.String()).
-		Str("email", guestUser.Email).
-		Str("phone", guestUser.Phone).
-		Msg("Guest account created successfully")
 
 	return guestUser.ToResponse(), nil
 }

@@ -19,6 +19,7 @@ type BookingHandler interface {
 	GetByReference(r *ginext.Request) (*ginext.Response, error)
 	GetUserBookings(r *ginext.Request) (*ginext.Response, error)
 	GetTripBookings(r *ginext.Request) (*ginext.Response, error)
+
 	CancelBooking(r *ginext.Request) (*ginext.Response, error)
 
 	UpdateBookingStatus(r *ginext.Request) (*ginext.Response, error)

@@ -14,7 +14,6 @@ import (
 
 type RedisManager struct {
 	Client *redis.Client
-	Config *config.RedisConfig
 }
 
 func MustNewRedisConnection(cfg *config.RedisConfig) *RedisManager {
@@ -63,10 +62,7 @@ func NewRedisConnection(cfg *config.RedisConfig) (*RedisManager, error) {
 		Int("db", cfg.DB).
 		Msg("Successfully connected to Redis")
 
-	return &RedisManager{
-		Client: client,
-		Config: cfg,
-	}, nil
+	return &RedisManager{Client: client}, nil
 }
 
 func (rm *RedisManager) Close() error {

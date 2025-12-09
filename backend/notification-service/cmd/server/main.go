@@ -20,7 +20,6 @@ import (
 	"bus-booking/notification-service/config"
 	_ "bus-booking/notification-service/docs"
 	"bus-booking/notification-service/internal/server"
-	"bus-booking/shared/db"
 	"bus-booking/shared/logger"
 	"bus-booking/shared/validator"
 )
@@ -30,8 +29,7 @@ func main() {
 	logger.MustSetupLogger(&cfg.Log)
 	validator.MustSetupValidator()
 
-	pg := db.MustNewPostgresConnection(&cfg.Database)
-	sv := server.NewServer(cfg, pg)
+	sv := server.NewServer(cfg)
 	defer sv.Close()
 
 	sv.Run()

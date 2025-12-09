@@ -14,10 +14,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type TokenBlacklistManager interface {
+type TokenManager interface {
 	// Core blacklist operations
-	BlacklistToken(ctx context.Context, token string) bool
-	IsTokenBlacklisted(ctx context.Context, token string) bool
+	Blacklist(ctx context.Context, token string) bool
+	IsBlacklisted(ctx context.Context, token string) bool
 
 	// User-wide blacklist
 	BlacklistUserTokens(ctx context.Context, userID uuid.UUID) bool
@@ -29,46 +29,40 @@ type TokenBlacklistManagerImpl struct {
 	jwtManager  utils.JWTManager
 }
 
-func NewTokenBlacklistManager(
+func NewTokenManager(
 	redisManager *db.RedisManager,
 	jwtManager utils.JWTManager,
-) TokenBlacklistManager {
+) TokenManager {
 	return &TokenBlacklistManagerImpl{
 		redisClient: redisManager.Client,
 		jwtManager:  jwtManager,
 	}
 }
 
-// BlacklistToken - Blacklist một token với TTL chính xác từ token expiration
-func (tbm *TokenBlacklistManagerImpl) BlacklistToken(ctx context.Context, token string) bool {
+func (tbm *TokenBlacklistManagerImpl) Blacklist(ctx context.Context, token string) bool {
 	key := fmt.Sprintf("blacklist:token:%s", token)
 
-	// Parse token để lấy expiration time
 	ttl := tbm.calculateTokenTTL(token)
 	if ttl <= 0 {
-		// Token đã expire hoặc không parse được - không cần blacklist
 		log.Debug().Str("token", token[:10]+"...").Msg("Token already expired, skip blacklist")
 		return true
 	}
 
-	err := tbm.redisClient.Set(ctx, key, "1", ttl).Err()
-	if err != nil {
-		log.Warn().Err(err).Msg("Failed to blacklist token")
+	if err := tbm.redisClient.Set(ctx, key, "1", ttl).Err(); err != nil {
+		log.Error().Err(err).Msg("Failed to blacklist token")
 		return false
 	}
 
-	log.Debug().Str("token_key", key).Dur("ttl", ttl).Msg("Token blacklisted with calculated TTL")
 	return true
 }
 
-// IsTokenBlacklisted - Check token có bị blacklist không
-func (tbm *TokenBlacklistManagerImpl) IsTokenBlacklisted(ctx context.Context, token string) bool {
+func (tbm *TokenBlacklistManagerImpl) IsBlacklisted(ctx context.Context, token string) bool {
 	key := fmt.Sprintf("blacklist:token:%s", token)
 
 	exists, err := tbm.redisClient.Exists(ctx, key).Result()
 	if err != nil {
-		log.Warn().Err(err).Msg("Failed to check token blacklist")
-		return false // Fail-safe: cho phép token nếu không check được
+		log.Error().Err(err).Msg("Failed to check token blacklist")
+		return false
 	}
 
 	return exists > 0

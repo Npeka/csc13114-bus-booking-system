@@ -38,15 +38,15 @@ func (s *UserServiceImpl) CreateUser(ctx context.Context, req *model.UserCreateR
 	if req.Email != "" {
 		if emailExists, err := s.userRepo.EmailExists(ctx, req.Email); err != nil {
 			log.Error().Err(err).Msg("Failed to check email existence")
-			return nil, ginext.NewInternalServerError("Failed to validate email")
+			return nil, ginext.NewInternalServerError("Không thể xác thực email")
 		} else if emailExists {
-			return nil, ginext.NewConflictError("email already exists")
+			return nil, ginext.NewConflictError("email đã tồn tại")
 		}
 	}
 
 	// Check if Firebase UID already exists
 	if existingUser, err := s.userRepo.GetByFirebaseUID(ctx, req.FirebaseUID); err == nil && existingUser != nil {
-		return nil, ginext.NewConflictError("user with this Firebase UID already exists")
+		return nil, ginext.NewConflictError("người dùng với Firebase UID này đã tồn tại")
 	}
 
 	user := &model.User{
@@ -72,7 +72,7 @@ func (s *UserServiceImpl) CreateUser(ctx context.Context, req *model.UserCreateR
 func (s *UserServiceImpl) GetUserByID(ctx context.Context, id uuid.UUID) (*model.UserResponse, error) {
 	user, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
-		return nil, ginext.NewInternalServerError("Failed to get user by ID")
+		return nil, ginext.NewInternalServerError("Không thể lấy người dùng theo ID")
 	}
 	return user.ToResponse(), nil
 }
@@ -81,7 +81,7 @@ func (s *UserServiceImpl) GetUserByID(ctx context.Context, id uuid.UUID) (*model
 func (s *UserServiceImpl) ListUsers(ctx context.Context, req model.UserListQuery) ([]*model.UserResponse, int64, error) {
 	users, total, err := s.userRepo.List(ctx, req)
 	if err != nil {
-		return nil, 0, ginext.NewInternalServerError("Failed to list users")
+		return nil, 0, ginext.NewInternalServerError("Không thể lấy danh sách người dùng")
 	}
 
 	responses := make([]*model.UserResponse, len(users))
@@ -103,9 +103,9 @@ func (s *UserServiceImpl) UpdateUser(ctx context.Context, id uuid.UUID, req *mod
 	if req.Email != nil && *req.Email != user.Email {
 		if emailExists, err := s.userRepo.EmailExists(ctx, *req.Email); err != nil {
 			log.Error().Err(err).Msg("Failed to check email existence during update")
-			return nil, ginext.NewInternalServerError("Failed to validate email")
+			return nil, ginext.NewInternalServerError("Không thể xác thực email")
 		} else if emailExists {
-			return nil, ginext.NewConflictError("email already exists")
+			return nil, ginext.NewConflictError("email đã tồn tại")
 		}
 		user.Email = *req.Email
 	}
@@ -130,7 +130,7 @@ func (s *UserServiceImpl) UpdateUser(ctx context.Context, id uuid.UUID, req *mod
 	// Update user in database
 	if err := s.userRepo.Update(ctx, user); err != nil {
 		log.Error().Err(err).Msg("Failed to update user in database")
-		return nil, ginext.NewInternalServerError("Failed to update user")
+		return nil, ginext.NewInternalServerError("Không thể cập nhật người dùng")
 	}
 
 	return user.ToResponse(), nil
@@ -146,7 +146,7 @@ func (s *UserServiceImpl) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	// Delete user
 	if err := s.userRepo.Delete(ctx, id); err != nil {
 		log.Error().Err(err).Msg("Failed to delete user from database")
-		return ginext.NewInternalServerError("Failed to delete user")
+		return ginext.NewInternalServerError("Không thể xóa người dùng")
 	}
 
 	return nil
@@ -156,7 +156,7 @@ func (s *UserServiceImpl) DeleteUser(ctx context.Context, id uuid.UUID) error {
 func (s *UserServiceImpl) ListUsersByRole(ctx context.Context, role constants.UserRole, limit, offset int) ([]*model.UserResponse, int64, error) {
 	users, total, err := s.userRepo.ListByRole(ctx, role, limit, offset)
 	if err != nil {
-		return nil, 0, ginext.NewInternalServerError("Failed to list users by role")
+		return nil, 0, ginext.NewInternalServerError("Không thể lấy danh sách người dùng theo vai trò")
 	}
 
 	responses := make([]*model.UserResponse, len(users))

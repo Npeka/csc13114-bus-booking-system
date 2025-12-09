@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bus-booking/user-service/internal/client"
 	"bus-booking/user-service/internal/handler"
 	"bus-booking/user-service/internal/repository"
 	"bus-booking/user-service/internal/router"
@@ -16,11 +17,13 @@ func (s *Server) buildHandler() http.Handler {
 
 	userRepo := repository.NewUserRepository(s.db.DB)
 
-	tokenBlacklistMgr := service.NewTokenBlacklistManager(s.rd, jwtManager)
-	passwordResetService := service.NewPasswordResetService(s.rd)
+	tokenManager := service.NewTokenManager(s.rd, jwtManager)
+
+	// Initialize notification client
+	notificationClient := client.NewNotificationClient("notification-service", s.cfg.External.NotificationServiceURL)
 
 	userService := service.NewUserService(userRepo)
-	authService := service.NewAuthService(s.cfg, jwtManager, s.fa, tokenBlacklistMgr, userRepo, passwordResetService)
+	authService := service.NewAuthService(s.cfg, jwtManager, s.fa, tokenManager, userRepo, s.rd, notificationClient)
 
 	userHandler := handler.NewUserHandler(userService)
 	authHandler := handler.NewAuthHandler(authService)

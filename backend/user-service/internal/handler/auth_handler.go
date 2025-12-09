@@ -10,14 +10,20 @@ import (
 )
 
 type AuthHandler interface {
+	// gateway verified endpoints
 	VerifyToken(r *ginext.Request) (*ginext.Response, error)
+
+	// public endpoints
 	FirebaseAuth(r *ginext.Request) (*ginext.Response, error)
 	Register(r *ginext.Request) (*ginext.Response, error)
 	Login(r *ginext.Request) (*ginext.Response, error)
 	Logout(r *ginext.Request) (*ginext.Response, error)
 	ForgotPassword(r *ginext.Request) (*ginext.Response, error)
+	VerifyOTP(r *ginext.Request) (*ginext.Response, error)
 	ResetPassword(r *ginext.Request) (*ginext.Response, error)
 	RefreshToken(r *ginext.Request) (*ginext.Response, error)
+
+	// internal
 	CreateGuestAccount(r *ginext.Request) (*ginext.Response, error)
 }
 
@@ -161,7 +167,7 @@ func (h *AuthHandlerImpl) Logout(r *ginext.Request) (*ginext.Response, error) {
 	req := model.LogoutRequest{AccessToken: accessToken}
 	if err := r.GinCtx.ShouldBind(&req); err != nil {
 		log.Debug().Err(err).Msg("JSON binding failed")
-		return nil, ginext.NewBadRequestError("Invalid request data")
+		return nil, ginext.NewBadRequestError("Dữ liệu yêu cầu không hợp lệ")
 	}
 
 	if err := h.as.Logout(r.Context(), req, userID); err != nil {
@@ -169,7 +175,7 @@ func (h *AuthHandlerImpl) Logout(r *ginext.Request) (*ginext.Response, error) {
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse("User logged out successfully"), nil
+	return ginext.NewSuccessResponse("Đăng xuất thành công"), nil
 }
 
 // ForgotPassword godoc
@@ -195,7 +201,7 @@ func (h *AuthHandlerImpl) ForgotPassword(r *ginext.Request) (*ginext.Response, e
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse("If the email exists, a password reset link has been sent"), nil
+	return ginext.NewSuccessResponse("Nếu email tồn tại, liên kết đặt lại mật khẩu đã được gửi"), nil
 }
 
 // ResetPassword godoc
@@ -221,7 +227,24 @@ func (h *AuthHandlerImpl) ResetPassword(r *ginext.Request) (*ginext.Response, er
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse("Password reset successful"), nil
+	return ginext.NewSuccessResponse("Đặt lại mật khẩu thành công"), nil
+}
+
+func (h *AuthHandlerImpl) VerifyOTP(r *ginext.Request) (*ginext.Response, error) {
+	var req struct {
+		OTP string `json:"otp" binding:"required"`
+	}
+	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
+		log.Debug().Err(err).Msg("JSON binding failed")
+		return nil, ginext.NewBadRequestError("Invalid request data")
+	}
+
+	if err := h.as.VerifyOTP(r.Context(), req.OTP); err != nil {
+		log.Error().Err(err).Msg("OTP verification failed")
+		return nil, err
+	}
+
+	return ginext.NewSuccessResponse("Mã OTP hợp lệ"), nil
 }
 
 // RefreshToken godoc

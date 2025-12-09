@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nhắc Nhở Chuyến Đi</title>
+    <style>
+        body {
+            font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .email-header {
+            background: linear-gradient(135deg, #e1f4ff 0%, #33aaff 50%, #0088ee  100%);
+            color: #ffffff;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .logo {
+            max-width: 80px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+        .email-header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .email-body {
+            padding: 40px 30px;
+        }
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 16px;
+            color: #1e293b;
+            font-weight: 500;
+        }
+        .message {
+            font-size: 15px;
+            margin-bottom: 24px;
+            color: #64748b;
+            line-height: 1.7;
+        }
+        .trip-details {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border: 2px solid #007dd6;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 24px 0;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #cbd5e1;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: #475569;
+        }
+        .detail-value {
+            color: #1e293b;
+            font-weight: 500;
+        }
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #0066b3 0%, #007dd6 100%);
+            color: white;
+            padding: 14px 32px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            margin-top: 20px;
+        }
+        .footer {
+            background-color: #f8fafc;
+            padding: 30px;
+            text-align: center;
+            font-size: 13px;
+            color: #64748b;
+            border-top: 1px solid #e2e8f0;
+        }
+        .footer-link {
+            color: #007dd6;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                margin: 20px;
+            }
+            .email-header, .email-body, .footer {
+                padding: 24px 20px;
+            }
+            .detail-row {
+                flex-direction: column;
+                gap: 4px;
+            }
+            .logo {
+                max-width: 70px;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            {{.LogoHTML}}
+            <h1>Nhắc Nhở Chuyến Đi</h1>
+        </div>
+        
+        <div class="email-body">
+            <p class="greeting">Xin chào {{.Name}},</p>
+            
+            <p class="message">
+                Đây là thư nhắc nhở về chuyến đi sắp tới của bạn. Chuyến xe sẽ khởi hành trong vòng <strong>2 giờ</strong> nữa.
+            </p>
+            
+            <div class="trip-details">
+                <div class="detail-row">
+                    <span class="detail-label">Mã vé:</span>
+                    <span class="detail-value">{{.BookingReference}}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Chuyến đi:</span>
+                    <span class="detail-value">{{.From}} - {{.To}}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Thời gian:</span>
+                    <span class="detail-value">{{.DepartureTime}}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Số ghế:</span>
+                    <span class="detail-value">{{.SeatNumbers}}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Biển số xe:</span>
+                    <span class="detail-value">{{.BusPlate}}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Điểm đón:</span>
+                    <span class="detail-value">{{.PickupPoint}}</span>
+                </div>
+            </div>
+
+            <p class="message">
+                Vui lòng có mặt tại điểm đón trước <strong>15-30 phút</strong> để làm thủ tục lên xe.
+            </p>
+            
+            <div style="text-align: center;">
+                <a href="{{.TicketLink}}" class="btn">Xem Vé Điện Tử</a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Cảm ơn bạn đã sử dụng dịch vụ của Bus Booking System.</p>
+            <p>Nếu bạn cần hỗ trợ, vui lòng liên hệ <a href="mailto:support@busbooking.com" class="footer-link">support@busbooking.com</a></p>
+            <p style="margin-top: 20px; color: #94a3b8; font-size: 12px;">
+                © 2025 Bus Booking System. Tất cả quyền được bảo lưu.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

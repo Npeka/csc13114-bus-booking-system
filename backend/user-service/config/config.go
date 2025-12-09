@@ -11,6 +11,7 @@ type Config struct {
 	JWT      JWTConfig                `envPrefix:"JWT_"`
 	Redis    sharedConfig.RedisConfig `envPrefix:"REDIS_"`
 	Firebase FirebaseConfig           `envPrefix:"FIREBASE_"`
+	External ExternalConfig           `envPrefix:"EXTERNAL_"`
 }
 
 type JWTConfig struct {
@@ -25,6 +26,10 @@ type JWTConfig struct {
 type FirebaseConfig struct {
 	ServiceAccountKeyPath string `env:"SERVICE_ACCOUNT_KEY_PATH" envDefault:"config/fbsvc.json"`
 	ProjectID             string `env:"PROJECT_ID" envDefault:"csc13114-bus-booking-system"`
+}
+
+type ExternalConfig struct {
+	NotificationServiceURL string `env:"NOTIFICATION_SERVICE_URL" envDefault:"http://localhost:8085"`
 }
 
 func LoadConfig(envFilePath ...string) (*Config, error) {

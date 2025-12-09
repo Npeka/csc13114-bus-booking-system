@@ -3,12 +3,13 @@ package handler
 import (
 	"github.com/rs/zerolog/log"
 
+	"bus-booking/notification-service/internal/model"
 	"bus-booking/notification-service/internal/service"
 	"bus-booking/shared/ginext"
 )
 
 type NotificationHandler interface {
-	CreateNotification(r *ginext.Request) (*ginext.Response, error)
+	Send(r *ginext.Request) (*ginext.Response, error)
 }
 
 type NotificationHandlerImpl struct {
@@ -21,21 +22,28 @@ func NewNotificationHandler(service service.NotificationService) NotificationHan
 	}
 }
 
-// CreateNotification godoc
-// @Summary Create a new notification
-// @Description Create a new notification
+// Send godoc
+// @Summary Send a generic notification
+// @Description Send a notification based on type
 // @Tags notifications
 // @Accept json
 // @Produce json
-// @Success 201 {object} map[string]string "Created"
-// @Failure 400 {object} map[string]string "Invalid request"
-// @Failure 500 {object} map[string]string "Internal server error"
+// @Param request body model.GenericNotificationRequest true "Notification request"
+// @Success 200 {object} ginext.Response "Notification sent successfully"
+// @Failure 400 {object} ginext.Response "Invalid request"
+// @Failure 500 {object} ginext.Response "Internal server error"
 // @Router /notifications [post]
-func (h *NotificationHandlerImpl) CreateNotification(r *ginext.Request) (*ginext.Response, error) {
-	if err := h.service.CreateNotification(r.GinCtx.Request.Context()); err != nil {
-		log.Error().Err(err).Msg("Failed to create notification")
-		return nil, ginext.NewInternalServerError("Failed to create notification")
+func (h *NotificationHandlerImpl) Send(r *ginext.Request) (*ginext.Response, error) {
+	var req model.GenericNotificationRequest
+	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
+		log.Debug().Err(err).Msg("JSON binding failed")
+		return nil, ginext.NewBadRequestError("Invalid request data")
 	}
 
-	return ginext.NewSuccessResponse("Notification created successfully"), nil
+	if err := h.service.SendNotification(r.GinCtx.Request.Context(), &req); err != nil {
+		log.Error().Err(err).Msg("Failed to send notification")
+		return nil, ginext.NewInternalServerError(err.Error())
+	}
+
+	return ginext.NewSuccessResponse("Notification sent successfully"), nil
 }

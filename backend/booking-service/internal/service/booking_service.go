@@ -14,8 +14,10 @@ import (
 	"bus-booking/booking-service/internal/model/user"
 	"bus-booking/booking-service/internal/repository"
 	"bus-booking/shared/ginext"
+	"bus-booking/shared/queue"
 
 	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -32,14 +34,16 @@ type BookingService interface {
 	CancelBooking(ctx context.Context, id uuid.UUID, userID uuid.UUID, reason string) error
 
 	GetSeatStatus(ctx context.Context, tripID uuid.UUID, seatIDs []uuid.UUID) ([]model.SeatStatusItem, error)
+	ExpireBooking(ctx context.Context, bookingID uuid.UUID) error
 }
 
 type bookingServiceImpl struct {
-	bookingRepo   repository.BookingRepository
-	paymentClient client.PaymentClient
-	tripClient    client.TripClient
-	userClient    client.UserClient
-	// notificationQueue queue.NotificationQueue // TODO: Uncomment when notification service is ready
+	bookingRepo        repository.BookingRepository
+	paymentClient      client.PaymentClient
+	tripClient         client.TripClient
+	userClient         client.UserClient
+	delayedQueue       queue.DelayedQueueManager
+	notificationClient client.NotificationClient
 }
 
 func NewBookingService(
@@ -47,14 +51,16 @@ func NewBookingService(
 	paymentClient client.PaymentClient,
 	tripClient client.TripClient,
 	userClient client.UserClient,
-	// notificationQueue queue.NotificationQueue, // TODO: Uncomment when notification service is ready
+	notificationClient client.NotificationClient,
+	delayedQueue queue.DelayedQueueManager,
 ) BookingService {
 	return &bookingServiceImpl{
-		bookingRepo:   bookingRepo,
-		paymentClient: paymentClient,
-		tripClient:    tripClient,
-		userClient:    userClient,
-		// notificationQueue: notificationQueue, // TODO: Uncomment when notification service is ready
+		bookingRepo:        bookingRepo,
+		paymentClient:      paymentClient,
+		tripClient:         tripClient,
+		userClient:         userClient,
+		notificationClient: notificationClient,
+		delayedQueue:       delayedQueue,
 	}
 }
 
@@ -151,6 +157,16 @@ func (s *bookingServiceImpl) CreateBooking(ctx context.Context, req *model.Creat
 		return nil, ginext.NewInternalServerError(fmt.Sprintf("failed to update booking with transaction ID: %v", err))
 	}
 
+	// Schedule expiration job (15 minutes from creation) - redundant with ExpiresAt but acts as trigger
+	// 9. Send Pending Email
+	// Fire and forget to avoid blocking response
+	go func() {
+		// Create a detached context with timeout for background task
+		bgCtx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+		defer cancel()
+		s.sendBookingPendingEmail(bgCtx, booking, tripData, transaction.CheckoutURL)
+	}()
+
 	// 9. Push notification to queue (khi có notification service)
 	// TODO: Uncomment khi notification service đã ready
 	/*
@@ -246,6 +262,41 @@ func (s *bookingServiceImpl) UpdateBookingStatus(ctx context.Context, req *model
 	case payment.TransactionStatusPaid:
 		booking.Status = model.BookingStatusConfirmed
 
+		// Send Confirmation Email
+		go func() {
+			bgCtx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+			defer cancel()
+			s.sendBookingConfirmationEmail(bgCtx, bookingID)
+		}()
+
+		// Schedule Trip Reminder (2 hours before departure)
+		// Fetch trip to get departure time
+		trip, err := s.tripClient.GetTripByID(ctx, booking.TripID)
+		if err != nil {
+			// Log error but don't fail booking update? Or fail?
+			// Failing here stops status update which is bad for payment flow.
+			// Just log error.
+			fmt.Printf("Failed to fetch trip for reminder scheduling: %v\n", err)
+		} else {
+			// Schedule for 2 hours before departure
+			// If already past or less than 2 hours?
+			// Calculate executeAt
+			executeAt := trip.DepartureTime.Add(-2 * time.Hour)
+
+			// If executeAt is in past, schedule for now? Or skip?
+			// If now > departure, skip.
+			// If now > executeAt, send immediately (schedule for now).
+			if time.Now().Before(trip.DepartureTime) {
+				reminderPayload := &queue.DelayedItem{
+					Type:    "trip_reminder",
+					Payload: booking.ID,
+				}
+				if err := s.delayedQueue.Schedule(ctx, "trip_reminder", reminderPayload, executeAt); err != nil {
+					fmt.Printf("Failed to schedule trip reminder: %v\n", err)
+				}
+			}
+		}
+
 	case payment.TransactionStatusCancelled:
 		booking.Status = model.BookingStatusCancelled
 		now := time.Now()
@@ -256,9 +307,21 @@ func (s *bookingServiceImpl) UpdateBookingStatus(ctx context.Context, req *model
 
 	case payment.TransactionStatusFailed:
 		booking.Status = model.BookingStatusFailed
+		// Send Failure Email
+		go func() {
+			bgCtx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+			defer cancel()
+			s.sendBookingFailureEmail(bgCtx, bookingID, "Thanh toán thất bại")
+		}()
 
 	default:
 		booking.Status = model.BookingStatusFailed
+		// Send Failure Email
+		go func() {
+			bgCtx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+			defer cancel()
+			s.sendBookingFailureEmail(bgCtx, bookingID, "Lỗi không xác định")
+		}()
 	}
 
 	return s.bookingRepo.UpdateBooking(ctx, booking)
@@ -425,4 +488,165 @@ func (s *bookingServiceImpl) GetSeatStatus(ctx context.Context, tripID uuid.UUID
 	}
 
 	return result, nil
+}
+
+func (s *bookingServiceImpl) ExpireBooking(ctx context.Context, bookingID uuid.UUID) error {
+	// 1. Get booking
+	booking, err := s.bookingRepo.GetBookingByID(ctx, bookingID)
+	if err != nil {
+		return err
+	}
+
+	// 2. Check if eligible for expiration
+	if booking.Status != model.BookingStatusPending {
+		return nil // Already processed (paid, cancelled, or failed)
+	}
+
+	// Double check expiry time (give 1 minute grace period)
+	if booking.ExpiresAt != nil {
+		// Check if still within grace period
+		if time.Now().UTC().Before(booking.ExpiresAt.Add(1 * time.Minute)) {
+			// Still valid - skip expiration for now
+			log.Warn().Str("booking_id", booking.ID.String()).Msg("Booking still within grace period, skipping expiration")
+			return nil
+		}
+	}
+
+	// 3. Update status to Expired
+	booking.Status = model.BookingStatusExpired
+	now := time.Now().UTC()
+	booking.UpdatedAt = now
+
+	// 4. Cancel PayOS link if possible (optional, helps user UX)
+	// if booking.TransactionID != uuid.Nil && booking.TransactionStatus == payment.TransactionStatusPending {
+	// Call payment service to cancel
+	// Note: CreateCancelPaymentLinkRequest might be needed or just let it expire on PayOS side
+	// For now, we just update local status.
+	// If there was a cancel method in paymentClient, call it here.
+	// }
+
+	if err := s.bookingRepo.UpdateBooking(ctx, booking); err != nil {
+		return fmt.Errorf("failed to expire booking: %w", err)
+	}
+
+	// Send Failure Email (Expired)
+	go func() {
+		bgCtx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+		defer cancel()
+		s.sendBookingFailureEmail(bgCtx, bookingID, "Hết hạn thanh toán")
+	}()
+
+	return nil
+}
+
+// Email Helper Methods
+
+func (s *bookingServiceImpl) sendBookingPendingEmail(ctx context.Context, booking *model.Booking, trip *trip.Trip, paymentLink string) {
+	user, err := s.userClient.GetUser(ctx, booking.UserID)
+	if err != nil {
+		fmt.Printf("Failed to get user for pending email: %v\n", err)
+		return
+	}
+
+	// Route might not be populated if just checking tripData unless fetched with preloads?
+	// tripClient.GetTripByID should return full trip details including Route.
+	// Assuming Trip struct has Route populated.
+
+	req := &client.BookingPendingRequest{
+		Email:            user.Email,
+		Name:             user.FullName,
+		BookingReference: booking.BookingReference,
+		From:             trip.Route.Origin,
+		To:               trip.Route.Destination,
+		DepartureTime:    trip.DepartureTime.Format("15:04 02/01/2006"),
+		TotalAmount:      booking.TotalAmount,
+		PaymentLink:      paymentLink,
+	}
+
+	if err := s.notificationClient.SendBookingPending(ctx, req); err != nil {
+		fmt.Printf("Failed to send booking pending email: %v\n", err)
+	}
+}
+
+func (s *bookingServiceImpl) sendBookingConfirmationEmail(ctx context.Context, bookingID uuid.UUID) {
+	// Re-fetch everything to ensure fresh data
+	booking, err := s.bookingRepo.GetBookingByID(ctx, bookingID)
+	if err != nil {
+		fmt.Printf("Failed to get booking for confirmation email: %v\n", err)
+		return
+	}
+
+	user, err := s.userClient.GetUser(ctx, booking.UserID)
+	if err != nil {
+		fmt.Printf("Failed to get user for confirmation email: %v\n", err)
+		return
+	}
+
+	trip, err := s.tripClient.GetTripByID(ctx, booking.TripID)
+	if err != nil {
+		fmt.Printf("Failed to get trip for confirmation email: %v\n", err)
+		return
+	}
+
+	req := &client.BookingConfirmationRequest{
+		Email:            user.Email,
+		Name:             user.FullName,
+		BookingReference: booking.BookingReference,
+		From:             trip.Route.Origin,
+		To:               trip.Route.Destination,
+		DepartureTime:    trip.DepartureTime.Format("15:04 02/01/2006"),
+		SeatNumbers:      s.getSeatNumbersResults(booking.BookingSeats),
+		TotalAmount:      booking.TotalAmount,
+		TicketLink:       fmt.Sprintf("http://localhost:3000/booking/ticket/%s", booking.BookingReference), // Configurable in real app
+	}
+
+	if err := s.notificationClient.SendBookingConfirmation(ctx, req); err != nil {
+		fmt.Printf("Failed to send booking confirmation email: %v\n", err)
+	}
+}
+
+func (s *bookingServiceImpl) sendBookingFailureEmail(ctx context.Context, bookingID uuid.UUID, reason string) {
+	booking, err := s.bookingRepo.GetBookingByID(ctx, bookingID)
+	if err != nil {
+		fmt.Printf("Failed to get booking for failure email: %v\n", err)
+		return
+	}
+
+	user, err := s.userClient.GetUser(ctx, booking.UserID)
+	if err != nil {
+		fmt.Printf("Failed to get user for failure email: %v\n", err)
+		return
+	}
+
+	trip, err := s.tripClient.GetTripByID(ctx, booking.TripID)
+	if err != nil {
+		fmt.Printf("Failed to get trip for failure email: %v\n", err)
+		return
+	}
+
+	req := &client.BookingFailureRequest{
+		Email:            user.Email,
+		Name:             user.FullName,
+		BookingReference: booking.BookingReference,
+		Reason:           reason,
+		From:             trip.Route.Origin,
+		To:               trip.Route.Destination,
+		DepartureTime:    trip.DepartureTime.Format("15:04 02/01/2006"),
+		BookingLink:      "http://localhost:3000", // Home page
+	}
+
+	if err := s.notificationClient.SendBookingFailure(ctx, req); err != nil {
+		fmt.Printf("Failed to send booking failure email: %v\n", err)
+	}
+}
+
+func (s *bookingServiceImpl) getSeatNumbersResults(seats []model.BookingSeat) string {
+	var numbers string
+	for i, seat := range seats {
+		if i > 0 {
+			numbers += ", "
+		}
+		numbers += seat.SeatNumber
+	}
+	return numbers
 }

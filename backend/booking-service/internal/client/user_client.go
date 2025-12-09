@@ -5,11 +5,14 @@ import (
 	"bus-booking/shared/client"
 	"context"
 	"fmt"
+
+	"github.com/google/uuid"
 )
 
 // UserClient interface for user service communication
 type UserClient interface {
 	CreateGuest(ctx context.Context, req *user.CreateGuestRequest) (*user.GuestResponse, error)
+	GetUser(ctx context.Context, userID uuid.UUID) (*user.User, error)
 }
 
 type userClientImpl struct {
@@ -44,4 +47,20 @@ func (c *userClientImpl) CreateGuest(ctx context.Context, req *user.CreateGuestR
 	}
 
 	return guestData, nil
+}
+
+func (c *userClientImpl) GetUser(ctx context.Context, userID uuid.UUID) (*user.User, error) {
+	endpoint := fmt.Sprintf("/api/v1/users/%s", userID.String())
+
+	res, err := c.http.Get(ctx, endpoint, nil, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+
+	userData, err := client.ParseData[user.User](res)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse user response: %w", err)
+	}
+
+	return userData, nil
 }

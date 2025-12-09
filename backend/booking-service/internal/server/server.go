@@ -15,19 +15,28 @@ import (
 )
 
 type Server struct {
-	cfg *config.Config
-	db  *db.DatabaseManager
+	cfg   *config.Config
+	db    *db.DatabaseManager
+	redis *db.RedisManager
 }
 
 func NewServer(
 	cfg *config.Config,
 	db *db.DatabaseManager,
+	redis *db.RedisManager,
 ) *Server {
-	return &Server{cfg: cfg, db: db}
+	return &Server{cfg: cfg, db: db, redis: redis}
 }
 
 func (s *Server) Run() {
-	handler := s.buildHandler()
+	handler, expirationJob, tripReminderJob := s.buildHandler()
+
+	// Start background jobs
+	ctx, cancelJob := context.WithCancel(context.Background())
+	defer cancelJob()
+	go expirationJob.Start(ctx)
+	go tripReminderJob.Start(ctx)
+
 	server := &http.Server{
 		Addr:           s.cfg.GetServerAddr(),
 		Handler:        handler,
@@ -69,5 +78,8 @@ func (s *Server) Run() {
 func (s *Server) Close() {
 	if err := s.db.Close(); err != nil {
 		log.Error().Err(err).Msg("Failed to close database connection")
+	}
+	if err := s.redis.Close(); err != nil {
+		log.Error().Err(err).Msg("Failed to close redis connection")
 	}
 }

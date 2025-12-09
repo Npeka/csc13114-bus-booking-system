@@ -33,14 +33,14 @@ func createTestToken(userID uuid.UUID, expiresIn time.Duration) string {
 	return tokenString
 }
 
-func TestTokenBlacklist_BlacklistToken_Success(t *testing.T) {
+func TestTokenManager_Blacklist_Success(t *testing.T) {
 	// Arrange
 	mockJWT := new(mocks.MockJWTManager)
 	redisManager := &db.RedisManager{
 		Client: redis.NewClient(&redis.Options{}),
 	}
 
-	manager := NewTokenBlacklistManager(redisManager, mockJWT)
+	manager := NewTokenManager(redisManager, mockJWT)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -48,21 +48,21 @@ func TestTokenBlacklist_BlacklistToken_Success(t *testing.T) {
 
 	// Note: This test would require a real Redis instance or more complex mocking
 	// For demonstration, we're testing the logic flow
-	result := manager.BlacklistToken(ctx, token)
+	result := manager.Blacklist(ctx, token)
 
 	// Assert - in a real scenario with Redis, this would be true
 	// For this test without Redis, it might fail but demonstrates the test structure
 	assert.IsType(t, bool(true), result)
 }
 
-func TestTokenBlacklist_BlacklistToken_ExpiredToken(t *testing.T) {
+func TestTokenManager_Blacklist_ExpiredToken(t *testing.T) {
 	// Arrange
 	mockJWT := new(mocks.MockJWTManager)
 	redisManager := &db.RedisManager{
 		Client: redis.NewClient(&redis.Options{}),
 	}
 
-	manager := NewTokenBlacklistManager(redisManager, mockJWT)
+	manager := NewTokenManager(redisManager, mockJWT)
 	ctx := context.Background()
 
 	// Create an already expired token
@@ -70,39 +70,39 @@ func TestTokenBlacklist_BlacklistToken_ExpiredToken(t *testing.T) {
 	token := createTestToken(userID, -1*time.Hour)
 
 	// Act
-	result := manager.BlacklistToken(ctx, token)
+	result := manager.Blacklist(ctx, token)
 
 	// Assert - expired tokens should return true (skip blacklist)
 	assert.True(t, result)
 }
 
-func TestTokenBlacklist_IsTokenBlacklisted_Logic(t *testing.T) {
+func TestTokenManager_IsBlacklisted_Logic(t *testing.T) {
 	// Arrange
 	mockJWT := new(mocks.MockJWTManager)
 	redisManager := &db.RedisManager{
 		Client: redis.NewClient(&redis.Options{}),
 	}
 
-	manager := NewTokenBlacklistManager(redisManager, mockJWT)
+	manager := NewTokenManager(redisManager, mockJWT)
 	ctx := context.Background()
 
 	token := "test.token.string"
 
 	// Act
-	result := manager.IsTokenBlacklisted(ctx, token)
+	result := manager.IsBlacklisted(ctx, token)
 
 	// Assert - demonstrates the method signature
 	assert.IsType(t, bool(true), result)
 }
 
-func TestTokenBlacklist_BlacklistUserTokens_Logic(t *testing.T) {
+func TestTokenManager_BlacklistUserTokens_Logic(t *testing.T) {
 	// Arrange
 	mockJWT := new(mocks.MockJWTManager)
 	redisManager := &db.RedisManager{
 		Client: redis.NewClient(&redis.Options{}),
 	}
 
-	manager := NewTokenBlacklistManager(redisManager, mockJWT)
+	manager := NewTokenManager(redisManager, mockJWT)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -114,14 +114,14 @@ func TestTokenBlacklist_BlacklistUserTokens_Logic(t *testing.T) {
 	assert.IsType(t, bool(true), result)
 }
 
-func TestTokenBlacklist_IsUserTokensBlacklisted_Logic(t *testing.T) {
+func TestTokenManager_IsUserTokensBlacklisted_Logic(t *testing.T) {
 	// Arrange
 	mockJWT := new(mocks.MockJWTManager)
 	redisManager := &db.RedisManager{
 		Client: redis.NewClient(&redis.Options{}),
 	}
 
-	manager := NewTokenBlacklistManager(redisManager, mockJWT)
+	manager := NewTokenManager(redisManager, mockJWT)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -134,7 +134,7 @@ func TestTokenBlacklist_IsUserTokensBlacklisted_Logic(t *testing.T) {
 	assert.IsType(t, bool(true), result)
 }
 
-func TestTokenBlacklist_CalculateTokenTTL_ValidToken(t *testing.T) {
+func TestTokenManager_CalculateTokenTTL_ValidToken(t *testing.T) {
 	// Arrange
 	mockJWT := new(mocks.MockJWTManager)
 	redisManager := &db.RedisManager{
@@ -158,7 +158,7 @@ func TestTokenBlacklist_CalculateTokenTTL_ValidToken(t *testing.T) {
 	assert.LessOrEqual(t, ttl, expiresIn+6*time.Minute)
 }
 
-func TestTokenBlacklist_CalculateTokenTTL_ExpiredToken(t *testing.T) {
+func TestTokenManager_CalculateTokenTTL_ExpiredToken(t *testing.T) {
 	// Arrange
 	mockJWT := new(mocks.MockJWTManager)
 	redisManager := &db.RedisManager{
@@ -180,7 +180,7 @@ func TestTokenBlacklist_CalculateTokenTTL_ExpiredToken(t *testing.T) {
 	assert.Equal(t, time.Duration(0), ttl)
 }
 
-func TestTokenBlacklist_CalculateTokenTTL_InvalidToken(t *testing.T) {
+func TestTokenManager_CalculateTokenTTL_InvalidToken(t *testing.T) {
 	// Arrange
 	mockJWT := new(mocks.MockJWTManager)
 	redisManager := &db.RedisManager{
@@ -202,7 +202,7 @@ func TestTokenBlacklist_CalculateTokenTTL_InvalidToken(t *testing.T) {
 }
 
 // Integration-style test demonstrating the full flow
-func TestTokenBlacklist_FullFlow_Demonstration(t *testing.T) {
+func TestTokenManager_FullFlow_Demonstration(t *testing.T) {
 	// This test demonstrates how the blacklist manager would be used
 	// In a real scenario, you'd use a Redis mock or test container
 
@@ -211,7 +211,7 @@ func TestTokenBlacklist_FullFlow_Demonstration(t *testing.T) {
 		Client: redis.NewClient(&redis.Options{}),
 	}
 
-	manager := NewTokenBlacklistManager(redisManager, mockJWT)
+	manager := NewTokenManager(redisManager, mockJWT)
 	ctx := context.Background()
 
 	userID := uuid.New()
@@ -219,11 +219,11 @@ func TestTokenBlacklist_FullFlow_Demonstration(t *testing.T) {
 
 	// Demonstrate the workflow
 	// 1. Blacklist a token
-	blacklisted := manager.BlacklistToken(ctx, token)
+	blacklisted := manager.Blacklist(ctx, token)
 	assert.IsType(t, bool(true), blacklisted)
 
 	// 2. Check if token is blacklisted
-	isBlacklisted := manager.IsTokenBlacklisted(ctx, token)
+	isBlacklisted := manager.IsBlacklisted(ctx, token)
 	assert.IsType(t, bool(true), isBlacklisted)
 
 	// 3. Blacklist all user tokens

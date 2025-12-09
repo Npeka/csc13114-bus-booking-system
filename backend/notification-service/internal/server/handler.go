@@ -7,10 +7,16 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 )
 
 func (s *Server) buildHandler() http.Handler {
-	notificationService := service.NewNotificationService()
+	emailService, err := service.NewEmailService(s.cfg)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to create email service")
+	}
+
+	notificationService := service.NewNotificationService(emailService)
 	notificationHandler := handler.NewNotificationHandler(notificationService)
 
 	if s.cfg.Server.IsProduction {

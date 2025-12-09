@@ -16,7 +16,7 @@ import { useState } from "react";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { useRole } from "@/lib/auth/useRole";
 import { logout as authLogout } from "@/lib/api/auth-service";
-import { LoginDialog } from "@/components/auth/login-dialog";
+import { AuthDialogs } from "@/components/auth/auth-dialogs";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 export function Header() {
@@ -104,8 +104,8 @@ export function Header() {
         </div>
       </div>
 
-      {/* Login Dialog */}
-      <LoginDialog isOpen={isLoginOpen} onOpenChange={setIsLoginOpen} />
+      {/* Auth Dialogs */}
+      <AuthDialogs loginOpen={isLoginOpen} onLoginOpenChange={setIsLoginOpen} />
     </header>
   );
 }

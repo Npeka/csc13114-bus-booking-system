@@ -26,9 +26,9 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 
 	v1 := router.Group("/api/v1")
 	{
-		transactions := v1.Group("/transactions")
+		notifications := v1.Group("/notifications")
 		{
-			transactions.POST("", ginext.WrapHandler(h.NotificationHandler.CreateNotification))
+			notifications.POST("", ginext.WrapHandler(h.NotificationHandler.Send))
 		}
 	}
 }

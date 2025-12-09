@@ -11,19 +11,16 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"bus-booking/notification-service/config"
-	"bus-booking/shared/db"
 )
 
 type Server struct {
 	cfg *config.Config
-	db  *db.DatabaseManager
 }
 
 func NewServer(
 	cfg *config.Config,
-	db *db.DatabaseManager,
 ) *Server {
-	return &Server{cfg: cfg, db: db}
+	return &Server{cfg: cfg}
 }
 
 func (s *Server) Run() {
@@ -67,7 +64,5 @@ func (s *Server) Run() {
 }
 
 func (s *Server) Close() {
-	if err := s.db.Close(); err != nil {
-		log.Error().Err(err).Msg("Failed to close database connection")
-	}
+	log.Info().Msg("Shutting down HTTP server...")
 }

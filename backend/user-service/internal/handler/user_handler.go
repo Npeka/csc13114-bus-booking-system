@@ -142,7 +142,7 @@ func (h *UserHandlerImpl) ListUsers(r *ginext.Request) (*ginext.Response, error)
 	var req model.UserListQuery
 	if err := r.GinCtx.ShouldBindQuery(&req); err != nil {
 		log.Error().Err(err).Msg("Query binding failed")
-		return nil, ginext.NewBadRequestError(err.Error())
+		return nil, ginext.NewBadRequestError("Dữ liệu truy vấn không hợp lệ")
 	}
 
 	req.Normalize()
@@ -253,18 +253,18 @@ func (h *UserHandlerImpl) DeleteUser(r *ginext.Request) (*ginext.Response, error
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse("User deleted successfully"), nil
+	return ginext.NewSuccessResponse("Xóa người dùng thành công"), nil
 }
 
 func (h *UserHandlerImpl) ListUsersByRole(r *ginext.Request) (*ginext.Response, error) {
 	roleParam := r.Param("role")
 	if roleParam == "" {
-		return nil, ginext.NewBadRequestError("role parameter is required")
+		return nil, ginext.NewBadRequestError("tham số vai trò là bắt buộc")
 	}
 
 	roleInt, err := strconv.Atoi(roleParam)
 	if err != nil {
-		return nil, ginext.NewBadRequestError("invalid role parameter")
+		return nil, ginext.NewBadRequestError("tham số vai trò không hợp lệ")
 	}
 
 	role := constants.UserRole(roleInt)
@@ -274,12 +274,12 @@ func (h *UserHandlerImpl) ListUsersByRole(r *ginext.Request) (*ginext.Response, 
 
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil || limit <= 0 {
-		return nil, ginext.NewBadRequestError("invalid limit parameter")
+		return nil, ginext.NewBadRequestError("tham số limit không hợp lệ")
 	}
 
 	offset, err := strconv.Atoi(offsetStr)
 	if err != nil || offset < 0 {
-		return nil, ginext.NewBadRequestError("invalid offset parameter")
+		return nil, ginext.NewBadRequestError("tham số offset không hợp lệ")
 	}
 
 	users, total, err := h.us.ListUsersByRole(r.Context(), role, limit, offset)

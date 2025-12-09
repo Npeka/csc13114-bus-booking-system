@@ -4,6 +4,7 @@ use (
 	./booking-service
 	./chatbot-service
 	./gateway-service
+	./notification-service
 	./payment-service
 	./shared
 	./trip-service
