@@ -68,18 +68,23 @@ func (h *TransactionHandlerImpl) CreatePaymentLink(r *ginext.Request) (*ginext.R
 // @Failure 500 {object} ginext.Response
 // @Router /api/v1/transactions/webhook [post]
 func (h *TransactionHandlerImpl) HandlePaymentWebhook(r *ginext.Request) (*ginext.Response, error) {
+	log.Info().Msg("Webhook handler started")
+
 	var webhookData map[string]interface{}
-	if err := r.GinCtx.ShouldBindJSON(&webhookData); err != nil {
-		log.Debug().Err(err).Msg("JSON binding failed")
+	if err := r.GinCtx.ShouldBindJSON(webhookData); err != nil {
+		log.Error().Err(err).Msg("JSON binding failed - invalid JSON format")
 		return nil, ginext.NewBadRequestError("Invalid webhook data")
 	}
 
+	log.Info().Interface("webhookData", webhookData).Msg("Successfully parsed webhook data")
+
 	err := h.service.HandlePaymentWebhook(r.GinCtx.Request.Context(), webhookData)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to process webhook")
-		return nil, ginext.NewInternalServerError("Failed to process webhook")
+		log.Error().Err(err).Msg("Failed to process webhook in service layer")
+		return nil, err
 	}
 
+	log.Info().Msg("Webhook processed successfully")
 	return ginext.NewSuccessResponse("Webhook processed successfully"), nil
 }
 

@@ -77,20 +77,28 @@ func (s *TransactionServiceImpl) CreatePaymentLink(ctx context.Context, req *mod
 }
 
 func (s *TransactionServiceImpl) HandlePaymentWebhook(ctx context.Context, webhookData map[string]interface{}) error {
+	log.Info().Msg("Starting webhook verification")
 	if err := s.payOSService.VerifyWebhook(ctx, webhookData); err != nil {
+		log.Error().Err(err).Msg("Webhook signature verification failed")
 		return ginext.NewUnauthorizedError("invalid webhook signature")
 	}
+	log.Info().Msg("Webhook signature verified successfully")
 
 	// Convert map to struct: marshal to JSON bytes, then unmarshal to struct
+	log.Info().Msg("Converting webhook data to struct")
 	webhookBytes, err := json.Marshal(webhookData)
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to marshal webhook data to JSON bytes")
 		return ginext.NewBadRequestError("invalid webhook data format")
 	}
+	log.Info().Str("webhookJSON", string(webhookBytes)).Msg("Webhook data marshaled successfully")
 
 	var webhookDataModel model.PaymentWebhookData
 	if err := json.Unmarshal(webhookBytes, &webhookDataModel); err != nil {
+		log.Error().Err(err).Str("webhookJSON", string(webhookBytes)).Msg("Failed to unmarshal webhook data to struct")
 		return ginext.NewBadRequestError("invalid webhook data")
 	}
+	log.Info().Interface("webhookDataModel", webhookDataModel).Msg("Webhook data unmarshaled successfully")
 
 	var (
 		paymentLink *payos.PaymentLink
