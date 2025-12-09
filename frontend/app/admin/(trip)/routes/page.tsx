@@ -13,13 +13,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { MapPin, Plus, Pencil, Trash2 } from "lucide-react";
-import Link from "next/link";
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { listRoutes, deleteRoute } from "@/lib/api/trip-service";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/shared/pagination";
 import { DeleteDialog } from "@/components/shared/delete-dialog";
 import { PageHeader, PageHeaderLayout } from "@/components/shared/admin";
@@ -68,11 +67,6 @@ export default function AdminRoutesPage() {
     if (routeToDelete) {
       deleteMutation.mutate(routeToDelete);
     }
-  };
-
-  const handleClearFilters = () => {
-    setSearch("");
-    setPage(1);
   };
 
   return (

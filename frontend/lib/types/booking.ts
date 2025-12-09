@@ -220,3 +220,35 @@ export interface LockSeatsRequest {
   seat_ids: string[];
   session_id: string;
 }
+
+/**
+ * Booking statistics response
+ * Matches backend: booking-service/internal/model/statistics.go - BookingStatsResponse
+ */
+export interface BookingStatsResponse {
+  total_bookings: number;
+  total_revenue: number;
+  cancelled_bookings: number;
+  completed_bookings: number;
+  average_rating: number;
+  start_date: string; // ISO datetime
+  end_date: string; // ISO datetime
+}
+
+/**
+ * Trip statistics response (popular trips)
+ * Matches backend: booking-service/internal/model/statistics.go - TripStatsResponse
+ */
+export interface TripStatsResponse {
+  trip_id: string;
+  total_bookings: number;
+  total_revenue: number;
+  average_rating: number;
+  // Additional fields that might be populated by frontend using trip service
+  trip_details?: {
+    origin: string;
+    destination: string;
+    departure_time: string;
+    operator: string;
+  };
+}

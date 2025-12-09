@@ -294,7 +294,6 @@ export default function BusSeatConfigPage() {
               {editingSeat && (
                 <SeatEditDialog
                   seat={editingSeat}
-                  existingSeats={seats}
                   onSave={handleSaveSeat}
                   onClose={() => {
                     setDialogOpen(false);
@@ -468,12 +467,10 @@ export default function BusSeatConfigPage() {
 
 function SeatEditDialog({
   seat,
-  existingSeats,
   onSave,
   onClose,
 }: {
   seat: EditableSeat;
-  existingSeats: EditableSeat[];
   onSave: (data: {
     seat_number: string;
     seat_type: SeatType;

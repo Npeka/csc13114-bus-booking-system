@@ -16,19 +16,21 @@ import {
   LockSeatsRequest,
   CreatePaymentRequest,
   PaymentLinkResponse,
+  BookingStatsResponse,
+  TripStatsResponse,
 } from "@/lib/types/booking";
 
 /**
  * Get all bookings for a specific user with pagination
  * @param userId - User UUID
  * @param page - Page number (default: 1)
- * @param pageSize - Items per page (default: 50)
+ * @param pageSize - Items per page (default: 5)
  * @returns Paginated booking response
  */
 export async function getUserBookings(
   userId: string,
   page: number = 1,
-  pageSize: number = 50,
+  pageSize: number = 5,
 ): Promise<PaginatedBookingResponse> {
   try {
     const response = await apiClient.get<{ data: unknown; meta?: unknown }>(
@@ -121,7 +123,7 @@ export async function cancelBooking(
       reason,
     };
 
-    const response = await apiClient.post<ApiResponse<string>>(
+    await apiClient.post<ApiResponse<string>>(
       `/booking/api/v1/bookings/${bookingId}/cancel`,
       requestBody,
     );
@@ -195,7 +197,7 @@ export async function updateBookingStatus(
       status,
     };
 
-    const response = await apiClient.put<ApiResponse<string>>(
+    await apiClient.put<ApiResponse<string>>(
       `/booking/api/v1/admin/bookings/${bookingId}/status`,
       requestBody,
     );
@@ -210,13 +212,13 @@ export async function updateBookingStatus(
  * Get all bookings for a specific trip (admin only)
  * @param tripId - Trip UUID
  * @param page - Page number (default: 1)
- * @param pageSize - Items per page (default: 50)
+ * @param pageSize - Items per page (default: 5)
  * @returns Paginated booking response
  */
 export async function getTripBookings(
   tripId: string,
   page: number = 1,
-  pageSize: number = 50,
+  pageSize: number = 5,
 ): Promise<PaginatedBookingResponse> {
   try {
     const response = await apiClient.get<ApiResponse<PaginatedBookingResponse>>(
@@ -266,7 +268,7 @@ export async function getSeatAvailability(
  */
 export async function lockSeats(data: LockSeatsRequest): Promise<string> {
   try {
-    const response = await apiClient.post<ApiResponse<string>>(
+    await apiClient.post<ApiResponse<string>>(
       `/booking/api/v1/seat-locks`,
       data,
     );
@@ -284,12 +286,9 @@ export async function lockSeats(data: LockSeatsRequest): Promise<string> {
  */
 export async function unlockSeats(sessionId: string): Promise<string> {
   try {
-    const response = await apiClient.delete<ApiResponse<string>>(
-      `/booking/api/v1/seat-locks`,
-      {
-        data: { session_id: sessionId },
-      },
-    );
+    await apiClient.delete<ApiResponse<string>>(`/booking/api/v1/seat-locks`, {
+      data: { session_id: sessionId },
+    });
 
     return "Seats unlocked successfully";
   } catch (error) {
@@ -338,6 +337,62 @@ export async function downloadETicket(bookingId: string): Promise<Blob> {
     );
 
     return response.data;
+  } catch (error) {
+    throw new Error(handleApiError(error));
+  }
+}
+
+/**
+ * Get booking statistics (admin only)
+ * @param startDate - Start date (YYYY-MM-DD)
+ * @param endDate - End date (YYYY-MM-DD)
+ * @returns Booking statistics
+ */
+export async function getBookingStats(
+  startDate: string,
+  endDate: string,
+): Promise<BookingStatsResponse> {
+  try {
+    const response = await apiClient.get<ApiResponse<BookingStatsResponse>>(
+      `/booking/api/v1/admin/statistics/bookings`,
+      {
+        params: { start_date: startDate, end_date: endDate },
+      },
+    );
+
+    if (!response.data.data) {
+      throw new Error("Failed to fetch booking statistics");
+    }
+
+    return response.data.data;
+  } catch (error) {
+    throw new Error(handleApiError(error));
+  }
+}
+
+/**
+ * Get popular trips (admin only)
+ * @param limit - Number of trips to return (default: 10)
+ * @param days - Number of days to look back (default: 30)
+ * @returns List of popular trips
+ */
+export async function getPopularTrips(
+  limit: number = 10,
+  days: number = 30,
+): Promise<TripStatsResponse[]> {
+  try {
+    const response = await apiClient.get<ApiResponse<TripStatsResponse[]>>(
+      `/booking/api/v1/admin/statistics/popular-trips`,
+      {
+        params: { limit, days },
+      },
+    );
+
+    if (!response.data.data) {
+      throw new Error("Failed to fetch popular trips");
+    }
+
+    return response.data.data;
   } catch (error) {
     throw new Error(handleApiError(error));
   }

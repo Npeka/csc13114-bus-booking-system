@@ -8,8 +8,6 @@ import {
   LayoutDashboard,
   Users,
   Calendar,
-  MapPin,
-  Bus,
   DollarSign,
   BarChart3,
   Settings,
@@ -85,9 +83,9 @@ const menuItems = [
     href: "/admin/payments",
   },
   {
-    title: "Báo cáo",
+    title: "Thống kê",
     icon: BarChart3,
-    href: "/admin/reports",
+    href: "/admin/analytics",
   },
   {
     title: "Cài đặt",

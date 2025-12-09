@@ -38,7 +38,6 @@ import { toast } from "sonner";
 import { getDisplayName } from "@/lib/utils";
 import { PageHeader, PageHeaderLayout } from "@/components/shared/admin";
 import { Pagination } from "@/components/shared/pagination";
-import { Input } from "@/components/ui/input";
 
 export default function AdminBusesPage() {
   const router = useRouter();
@@ -47,7 +46,7 @@ export default function AdminBusesPage() {
   const [busToDelete, setBusToDelete] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
-  const [search, setSearch] = useState("");
+  const [search] = useState("");
 
   const {
     data: busesData,

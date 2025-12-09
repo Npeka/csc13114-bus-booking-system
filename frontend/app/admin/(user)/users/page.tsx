@@ -11,7 +11,6 @@ import {
   deleteUser,
   createUser,
   updateUser,
-  UserStatus,
   type UserCreateRequest,
   type UserUpdateRequest,
 } from "@/lib/api/user-service";

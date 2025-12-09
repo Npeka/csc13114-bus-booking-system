@@ -73,13 +73,13 @@ routes:
       required: true
 
   # Statistics routes - require admin role
-  - path: "/api/v1/statistics/bookings"
+  - path: "/api/v1/admin/statistics/bookings"
     methods: ["GET"]
     auth:
       required: true
       roles: ["admin"]
 
-  - path: "/api/v1/statistics/popular-trips"
+  - path: "/api/v1/admin/statistics/popular-trips"
     methods: ["GET"]
     auth:
       required: true

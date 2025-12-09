@@ -74,10 +74,16 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 		admin.Use(middleware.RequireAuth())
 		admin.Use(middleware.RequireRole(constants.RoleAdmin))
 		{
-			admin.GET("/bookings/trip/:trip_id", ginext.WrapHandler(h.BookingHandler.GetTripBookings))
+			bookings := admin.Group("/bookings")
+			{
+				bookings.GET("/trip/:trip_id", ginext.WrapHandler(h.BookingHandler.GetTripBookings))
+			}
 
-			admin.GET("/statistics/bookings", ginext.WrapHandler(h.StatisticsHandler.GetBookingStats))
-			admin.GET("/statistics/popular-trips", ginext.WrapHandler(h.StatisticsHandler.GetPopularTrips))
+			statistics := admin.Group("/statistics")
+			{
+				statistics.GET("/bookings", ginext.WrapHandler(h.StatisticsHandler.GetBookingStats))
+				statistics.GET("/popular-trips", ginext.WrapHandler(h.StatisticsHandler.GetPopularTrips))
+			}
 		}
 	}
 }

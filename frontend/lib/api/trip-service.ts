@@ -1,5 +1,5 @@
 import apiClient, { ApiResponse, handleApiError } from "./client";
-import { transformApiTripToTripDetail, getValue } from "@/lib/utils";
+import { getValue } from "@/lib/utils";
 import {
   TripSearchParams,
   TripSearchResponse,
@@ -209,7 +209,7 @@ export const listTrips = async (params?: {
     >("/trip/api/v1/trips", {
       params: {
         page: params?.page || 1,
-        page_size: params?.page_size || 20,
+        page_size: params?.page_size || 5,
         search: params?.search,
         status: params?.status,
       },
@@ -221,7 +221,7 @@ export const listTrips = async (params?: {
         trips: [],
         total: 0,
         page: params?.page || 1,
-        page_size: params?.page_size || 20,
+        page_size: params?.page_size || 5,
         total_pages: 0,
       };
     }
@@ -230,7 +230,7 @@ export const listTrips = async (params?: {
       trips: response.data.data,
       total: response.data.meta?.total || 0,
       page: response.data.meta?.page || 1,
-      page_size: response.data.meta?.page_size || 20,
+      page_size: response.data.meta?.page_size || 5,
       total_pages: response.data.meta?.total_pages || 1,
     };
   } catch (error) {
@@ -278,7 +278,7 @@ export const listRoutes = async (params?: {
       routes: response.data.data,
       total: response.data.meta?.total || 0,
       page: response.data.meta?.page || 1,
-      page_size: response.data.meta?.page_size || 20,
+      page_size: response.data.meta?.page_size || 5,
       total_pages: response.data.meta?.total_pages || 0,
     };
   } catch (error) {
@@ -326,7 +326,7 @@ export const listBuses = async (params?: {
       buses: response.data.data,
       total: response.data.meta?.total || 0,
       page: response.data.meta?.page || 1,
-      page_size: response.data.meta?.page_size || 20,
+      page_size: response.data.meta?.page_size || 5,
       total_pages: response.data.meta?.total_pages || 0,
     };
   } catch (error) {

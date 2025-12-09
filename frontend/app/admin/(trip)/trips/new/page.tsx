@@ -9,7 +9,6 @@ import { z } from "zod";
 import {
   ArrowLeft,
   Calendar,
-  Bus as BusIcon,
   Route as RouteIcon,
   DollarSign,
 } from "lucide-react";
