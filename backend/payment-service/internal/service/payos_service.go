@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"math"
 	"time"
 
 	"bus-booking/payment-service/config"
@@ -45,22 +44,31 @@ func NewPayOSService(cfg config.PayOSConfig) PayOSService {
 }
 
 func (c *PayOSServiceImpl) CreatePaymentLink(ctx context.Context, req *model.CreatePayOSPaymentLinkRequest) (*payos.CreatePaymentLinkResponse, error) {
-	ts := req.ExpiredAt.Unix()
-	if ts < 0 {
-		return nil, fmt.Errorf("expiredAt must be in the future")
-	}
-	if ts > math.MaxInt32 {
-		return nil, fmt.Errorf("expiredAt timestamp %d overflows int32", ts)
+	// Convert to UTC to ensure consistent timezone handling
+	expiredAtUTC := req.ExpiredAt.UTC()
+	nowUTC := time.Now().UTC()
+
+	// Validate that expiration is in the future (UTC comparison)
+	if !expiredAtUTC.After(nowUTC) {
+		return nil, fmt.Errorf("expiredAt must be in the future (expired at: %s, now: %s)",
+			expiredAtUTC.Format(time.RFC3339), nowUTC.Format(time.RFC3339))
 	}
 
-	expiredAt := int(int32(ts))
+	// PayOS API requires Int32 Unix Timestamp
+	// Convert to int32 (valid until January 19, 2038)
+	expiredAtUnixInt64 := expiredAtUTC.Unix()
+	if expiredAtUnixInt64 > 2147483647 {
+		return nil, fmt.Errorf("expiredAt is beyond Year 2038 (int32 overflow)")
+	}
+	//nolint:gosec // G115: Overflow is validated above
+	expiredAtUnix := int(int32(expiredAtUnixInt64))
 	paymentLinkRequest := payos.CreatePaymentLinkRequest{
 		OrderCode:   c.generateOrderCode(),
 		Amount:      req.Amount,
 		Description: req.Description,
 		CancelUrl:   c.CancelURL,
 		ReturnUrl:   c.ReturnURL,
-		ExpiredAt:   &expiredAt,
+		ExpiredAt:   &expiredAtUnix,
 	}
 
 	paymentLinkResponse, err := c.payOSClient.PaymentRequests.Create(ctx, paymentLinkRequest)
