@@ -70,8 +70,9 @@ func (h *TransactionHandlerImpl) CreatePaymentLink(r *ginext.Request) (*ginext.R
 func (h *TransactionHandlerImpl) HandlePaymentWebhook(r *ginext.Request) (*ginext.Response, error) {
 	log.Info().Msg("Webhook handler started")
 
+	// Manually decode JSON to avoid Gin validator issues with map types
 	var webhookData map[string]interface{}
-	if err := r.GinCtx.ShouldBindJSON(&webhookData); err != nil {
+	if err := r.GinCtx.BindJSON(&webhookData); err != nil {
 		log.Error().Err(err).Msg("JSON binding failed - invalid JSON format")
 		return nil, ginext.NewBadRequestError("Invalid webhook data")
 	}
