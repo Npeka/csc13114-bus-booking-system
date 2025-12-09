@@ -66,7 +66,7 @@ func TestUserService_CreateUser_EmailExists(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "email already exists")
+	assert.Contains(t, err.Error(), "đã tồn tại")
 	mockRepo.AssertExpectations(t)
 }
 
@@ -97,7 +97,7 @@ func TestUserService_CreateUser_FirebaseUIDExists(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "Firebase UID already exists")
+	assert.Contains(t, err.Error(), "đã tồn tại")
 	mockRepo.AssertExpectations(t)
 }
 
@@ -239,7 +239,7 @@ func TestUserService_UpdateUser_EmailConflict(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "email already exists")
+	assert.Contains(t, err.Error(), "đã tồn tại")
 	mockRepo.AssertExpectations(t)
 }
 

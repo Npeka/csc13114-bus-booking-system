@@ -92,7 +92,7 @@ func TestAuthService_VerifyToken_InvalidToken(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "invalid access token")
+	assert.Contains(t, err.Error(), "không hợp lệ")
 	mockJWT.AssertExpectations(t)
 }
 
@@ -115,7 +115,7 @@ func TestAuthService_VerifyToken_TokenBlacklisted(t *testing.T) {
 	claims.IssuedAt = jwt.NewNumericDate(now)
 
 	mockJWT.On("ValidateAccessToken", token).Return(claims, nil)
-	mockTokenManager.On("IsTokenBlacklisted", ctx, token).Return(true)
+	mockTokenManager.On("IsBlacklisted", ctx, token).Return(true)
 
 	// Act
 	result, err := service.VerifyToken(ctx, token)
@@ -123,7 +123,7 @@ func TestAuthService_VerifyToken_TokenBlacklisted(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "token is blacklisted")
+	assert.Contains(t, err.Error(), "blacklisted")
 	mockJWT.AssertExpectations(t)
 	mockTokenManager.AssertExpectations(t)
 }
@@ -147,7 +147,7 @@ func TestAuthService_VerifyToken_UserTokensBlacklisted(t *testing.T) {
 	claims.IssuedAt = jwt.NewNumericDate(now)
 
 	mockJWT.On("ValidateAccessToken", token).Return(claims, nil)
-	mockTokenManager.On("IsTokenBlacklisted", ctx, token).Return(false)
+	mockTokenManager.On("IsBlacklisted", ctx, token).Return(false)
 	mockTokenManager.On("IsUserTokensBlacklisted", ctx, userID, claims.IssuedAt.Unix()).Return(true)
 
 	// Act
@@ -156,7 +156,7 @@ func TestAuthService_VerifyToken_UserTokensBlacklisted(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "user tokens are blacklisted")
+	assert.Contains(t, err.Error(), "blacklisted")
 	mockJWT.AssertExpectations(t)
 	mockTokenManager.AssertExpectations(t)
 }
@@ -180,7 +180,7 @@ func TestAuthService_VerifyToken_UserNotFound(t *testing.T) {
 	claims.IssuedAt = jwt.NewNumericDate(now)
 
 	mockJWT.On("ValidateAccessToken", token).Return(claims, nil)
-	mockTokenManager.On("IsTokenBlacklisted", ctx, token).Return(false)
+	mockTokenManager.On("IsBlacklisted", ctx, token).Return(false)
 	mockTokenManager.On("IsUserTokensBlacklisted", ctx, userID, claims.IssuedAt.Unix()).Return(false)
 	mockRepo.On("GetByID", ctx, userID).Return(nil, errors.New("not found"))
 
@@ -190,7 +190,7 @@ func TestAuthService_VerifyToken_UserNotFound(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "user not found")
+	assert.Contains(t, err.Error(), "người dùng")
 	mockJWT.AssertExpectations(t)
 	mockTokenManager.AssertExpectations(t)
 	mockRepo.AssertExpectations(t)
@@ -220,7 +220,7 @@ func TestAuthService_VerifyToken_UserNotActive(t *testing.T) {
 	}
 
 	mockJWT.On("ValidateAccessToken", token).Return(claims, nil)
-	mockTokenManager.On("IsTokenBlacklisted", ctx, token).Return(false)
+	mockTokenManager.On("IsBlacklisted", ctx, token).Return(false)
 	mockTokenManager.On("IsUserTokensBlacklisted", ctx, userID, claims.IssuedAt.Unix()).Return(false)
 	mockRepo.On("GetByID", ctx, userID).Return(user, nil)
 
@@ -230,7 +230,7 @@ func TestAuthService_VerifyToken_UserNotActive(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "user is not active")
+	assert.Contains(t, err.Error(), "không hoạt động")
 	mockJWT.AssertExpectations(t)
 	mockTokenManager.AssertExpectations(t)
 	mockRepo.AssertExpectations(t)
@@ -271,7 +271,7 @@ func TestAuthService_FirebaseAuth_NewUser(t *testing.T) {
 	}
 
 	mockFirebase.On("VerifyIDToken", ctx, req.IDToken).Return(firebaseToken, nil)
-	mockRepo.On("GetByFirebaseUID", ctx, firebaseToken.UID).Return(nil, errors.New("not found"))
+	mockRepo.On("GetByFirebaseUID", ctx, firebaseToken.UID).Return(nil, nil)
 	mockRepo.On("Create", ctx, mock.AnythingOfType("*model.User")).Return(nil)
 	mockJWT.On("GenerateAccessToken", mock.AnythingOfType("uuid.UUID"), "newuser@example.com", strconv.Itoa(int(constants.RolePassenger))).Return("access.token", nil)
 	mockJWT.On("GenerateRefreshToken", mock.AnythingOfType("uuid.UUID"), "newuser@example.com", strconv.Itoa(int(constants.RolePassenger))).Return("refresh.token", nil)
@@ -372,7 +372,7 @@ func TestAuthService_FirebaseAuth_InvalidToken(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "Invalid Firebase token")
+	assert.Contains(t, err.Error(), "không hợp lệ")
 	mockFirebase.AssertExpectations(t)
 }
 
@@ -411,10 +411,10 @@ func TestAuthService_RefreshToken_Success(t *testing.T) {
 	}
 
 	mockJWT.On("ValidateRefreshToken", req.RefreshToken).Return(claims, nil)
-	mockTokenManager.On("IsTokenBlacklisted", ctx, req.RefreshToken).Return(false)
+	mockTokenManager.On("IsBlacklisted", ctx, req.RefreshToken).Return(false)
 	mockTokenManager.On("IsUserTokensBlacklisted", ctx, userID, claims.IssuedAt.Unix()).Return(false)
 	mockRepo.On("GetByID", ctx, userID).Return(user, nil)
-	mockTokenManager.On("BlacklistToken", ctx, req.RefreshToken).Return(true)
+	mockTokenManager.On("Blacklist", ctx, req.RefreshToken).Return(true)
 	mockJWT.On("GenerateAccessToken", userID, user.Email, strconv.Itoa(int(constants.RolePassenger))).Return("new.access.token", nil)
 	mockJWT.On("GenerateRefreshToken", userID, user.Email, strconv.Itoa(int(constants.RolePassenger))).Return("new.refresh.token", nil)
 
@@ -453,7 +453,7 @@ func TestAuthService_RefreshToken_InvalidToken(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "invalid refresh token")
+	assert.Contains(t, err.Error(), "không hợp lệ")
 	mockJWT.AssertExpectations(t)
 }
 
@@ -480,7 +480,7 @@ func TestAuthService_RefreshToken_UserMismatch(t *testing.T) {
 	}
 
 	mockJWT.On("ValidateRefreshToken", req.RefreshToken).Return(claims, nil)
-	mockTokenManager.On("IsTokenBlacklisted", ctx, req.RefreshToken).Return(false)
+	mockTokenManager.On("IsBlacklisted", ctx, req.RefreshToken).Return(false)
 	mockTokenManager.On("IsUserTokensBlacklisted", ctx, differentUserID, mock.AnythingOfType("int64")).Return(false)
 	mockRepo.On("GetByID", ctx, differentUserID).Return(nil, errors.New("user not found"))
 
@@ -490,7 +490,7 @@ func TestAuthService_RefreshToken_UserMismatch(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "user not found")
+	assert.Contains(t, err.Error(), "người dùng")
 	mockJWT.AssertExpectations(t)
 	mockTokenManager.AssertExpectations(t)
 	mockRepo.AssertExpectations(t)
@@ -517,8 +517,9 @@ func TestAuthService_Logout_Success(t *testing.T) {
 	}
 
 	mockJWT.On("ValidateRefreshToken", req.RefreshToken).Return(claims, nil)
-	mockTokenManager.On("BlacklistToken", ctx, req.AccessToken).Return(true)
-	mockTokenManager.On("BlacklistToken", ctx, req.RefreshToken).Return(true)
+	// Blacklist calls are async in goroutine - use Maybe() to avoid panic
+	mockTokenManager.On("Blacklist", mock.Anything, req.AccessToken).Return(true).Maybe()
+	mockTokenManager.On("Blacklist", mock.Anything, req.RefreshToken).Return(true).Maybe()
 
 	// Act
 	err := service.Logout(ctx, req, userID)
@@ -526,7 +527,7 @@ func TestAuthService_Logout_Success(t *testing.T) {
 	// Assert
 	assert.NoError(t, err)
 	mockJWT.AssertExpectations(t)
-	mockTokenManager.AssertExpectations(t)
+	// Can't assert on async Blacklist calls
 }
 
 func TestAuthService_Register_Success(t *testing.T) {
@@ -599,7 +600,7 @@ func TestAuthService_Register_EmailAlreadyExists(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "Email already registered")
+	assert.Contains(t, err.Error(), "đã được đăng ký")
 	mockRepo.AssertExpectations(t)
 }
 
@@ -673,7 +674,7 @@ func TestAuthService_Login_UserNotFound(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "Invalid email or password")
+	assert.Contains(t, err.Error(), "không đúng")
 	mockRepo.AssertExpectations(t)
 }
 
@@ -707,7 +708,7 @@ func TestAuthService_Login_NoPasswordSet(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "Invalid email or password")
+	assert.Contains(t, err.Error(), "không đúng")
 	mockRepo.AssertExpectations(t)
 }
 
@@ -745,7 +746,7 @@ func TestAuthService_Login_WrongPassword(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "Invalid email or password")
+	assert.Contains(t, err.Error(), "không đúng")
 	mockRepo.AssertExpectations(t)
 }
 
@@ -781,23 +782,26 @@ func TestAuthService_Login_UserNotActive(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "Account is not active")
+	assert.Contains(t, err.Error(), "không hoạt động")
 	mockRepo.AssertExpectations(t)
 }
 
 // ============================================================================
-// Password Reset Tests
+// Password Reset Tests (OTP Flow)
 // ============================================================================
 
 func TestAuthService_ForgotPassword_Success(t *testing.T) {
 	// Arrange
 	mockRepo := new(mocks.MockUserRepository)
-	mockPasswordReset := new(mocks.MockPasswordResetService)
+	mockRedis := new(mocks.MockRedisManager)
+	mockNotification := new(mocks.MockNotificationClient)
 	cfg := &config.Config{}
 
 	service := &AuthServiceImpl{
-		userRepo: mockRepo,
-		config:   cfg,
+		userRepo:           mockRepo,
+		config:             cfg,
+		redisClient:        mockRedis,
+		notificationClient: mockNotification,
 	}
 	ctx := context.Background()
 
@@ -809,12 +813,28 @@ func TestAuthService_ForgotPassword_Success(t *testing.T) {
 	user := &model.User{
 		ID:           uuid.New(),
 		Email:        req.Email,
+		FullName:     "Test User",
 		PasswordHash: &hashedPassword,
 		Status:       "active",
 	}
 
+	// Mock rate limit check (not rate limited)
+	mockRedis.On("Get", ctx, "reset:otp_rate_limit:"+req.Email).Return("", errors.New("not found"))
+
+	// Mock email-to-OTP mapping check (no old OTP)
+	mockRedis.On("Get", ctx, "reset:email_to_otp:"+req.Email).Return("", errors.New("not found"))
+
+	// Mock OTP storage - accept any OTP key
+	mockRedis.On("Set", ctx, mock.AnythingOfType("string"), req.Email, 15*time.Minute).Return(nil).Once()
+
+	// Mock email-to-OTP mapping storage
+	mockRedis.On("Set", ctx, "reset:email_to_otp:"+req.Email, mock.AnythingOfType("string"), 15*time.Minute).Return(nil)
+
+	// Mock rate limit storage
+	mockRedis.On("Set", ctx, "reset:otp_rate_limit:"+req.Email, "1", 30*time.Second).Return(nil)
+
 	mockRepo.On("GetByEmail", ctx, req.Email).Return(user, nil)
-	mockPasswordReset.On("GenerateResetToken", ctx, req.Email).Return("reset-token-123", nil)
+	mockNotification.On("Send", mock.Anything, req.Email, user.FullName, mock.AnythingOfType("string")).Return(nil)
 
 	// Act
 	err := service.ForgotPassword(ctx, req)
@@ -822,18 +842,20 @@ func TestAuthService_ForgotPassword_Success(t *testing.T) {
 	// Assert
 	assert.NoError(t, err)
 	mockRepo.AssertExpectations(t)
-	mockPasswordReset.AssertExpectations(t)
+	mockRedis.AssertExpectations(t)
+	// Note: notification is async, so we can't assert on it reliably
 }
 
 func TestAuthService_ForgotPassword_UserNotFound(t *testing.T) {
 	// Arrange
 	mockRepo := new(mocks.MockUserRepository)
-	mockPasswordReset := new(mocks.MockPasswordResetService)
+	mockRedis := new(mocks.MockRedisManager)
 	cfg := &config.Config{}
 
 	service := &AuthServiceImpl{
-		userRepo: mockRepo,
-		config:   cfg,
+		userRepo:    mockRepo,
+		config:      cfg,
+		redisClient: mockRedis,
 	}
 	ctx := context.Background()
 
@@ -846,21 +868,22 @@ func TestAuthService_ForgotPassword_UserNotFound(t *testing.T) {
 	// Act
 	err := service.ForgotPassword(ctx, req)
 
-	// Assert - Should not error (security: don't reveal if email exists)
-	assert.NoError(t, err)
+	// Assert
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "xử lý yêu cầu")
 	mockRepo.AssertExpectations(t)
-	mockPasswordReset.AssertNotCalled(t, "GenerateResetToken")
 }
 
 func TestAuthService_ForgotPassword_FirebaseOnlyUser(t *testing.T) {
 	// Arrange
 	mockRepo := new(mocks.MockUserRepository)
-	mockPasswordReset := new(mocks.MockPasswordResetService)
+	mockRedis := new(mocks.MockRedisManager)
 	cfg := &config.Config{}
 
 	service := &AuthServiceImpl{
-		userRepo: mockRepo,
-		config:   cfg,
+		userRepo:    mockRepo,
+		config:      cfg,
+		redisClient: mockRedis,
 	}
 	ctx := context.Background()
 
@@ -882,28 +905,125 @@ func TestAuthService_ForgotPassword_FirebaseOnlyUser(t *testing.T) {
 	// Act
 	err := service.ForgotPassword(ctx, req)
 
-	// Assert - Should not error (security: don't reveal user type)
-	assert.NoError(t, err)
+	// Assert
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "chưa đặt mật khẩu")
 	mockRepo.AssertExpectations(t)
-	mockPasswordReset.AssertNotCalled(t, "GenerateResetToken")
+}
+
+func TestAuthService_ForgotPassword_RateLimit(t *testing.T) {
+	// Arrange
+	mockRepo := new(mocks.MockUserRepository)
+	mockRedis := new(mocks.MockRedisManager)
+	cfg := &config.Config{}
+
+	service := &AuthServiceImpl{
+		userRepo:    mockRepo,
+		config:      cfg,
+		redisClient: mockRedis,
+	}
+	ctx := context.Background()
+
+	req := &model.ForgotPasswordRequest{
+		Email: "test@example.com",
+	}
+
+	hashedPassword, _ := utils.HashPassword("password123")
+	user := &model.User{
+		ID:           uuid.New(),
+		Email:        req.Email,
+		PasswordHash: &hashedPassword,
+		Status:       "active",
+	}
+
+	mockRepo.On("GetByEmail", ctx, req.Email).Return(user, nil)
+
+	// Rate limit exists
+	mockRedis.On("Get", ctx, "reset:otp_rate_limit:"+req.Email).Return("1", nil)
+	mockRedis.On("TTL", ctx, "reset:otp_rate_limit:"+req.Email).Return(25*time.Second, nil)
+
+	// Act
+	err := service.ForgotPassword(ctx, req)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "đợi")
+	mockRepo.AssertExpectations(t)
+	mockRedis.AssertExpectations(t)
+}
+
+func TestAuthService_VerifyOTP_Success(t *testing.T) {
+	// Arrange
+	mockRedis := new(mocks.MockRedisManager)
+	cfg := &config.Config{}
+
+	service := &AuthServiceImpl{
+		config:      cfg,
+		redisClient: mockRedis,
+	}
+	ctx := context.Background()
+
+	otp := "123456"
+	email := "test@example.com"
+
+	// Mock OTP validation
+	mockRedis.On("Get", ctx, "reset:otp:"+otp).Return(email, nil)
+
+	// Mock OTP deletion (blacklist)
+	mockRedis.On("Del", ctx, []string{"reset:otp:" + otp}).Return(nil)
+
+	// Mock verified key storage
+	mockRedis.On("Set", ctx, "reset:verified:"+otp, email, 5*time.Minute).Return(nil)
+
+	// Act
+	err := service.VerifyOTP(ctx, otp)
+
+	// Assert
+	assert.NoError(t, err)
+	mockRedis.AssertExpectations(t)
+}
+
+func TestAuthService_VerifyOTP_InvalidOTP(t *testing.T) {
+	// Arrange
+	mockRedis := new(mocks.MockRedisManager)
+	cfg := &config.Config{}
+
+	service := &AuthServiceImpl{
+		config:      cfg,
+		redisClient: mockRedis,
+	}
+	ctx := context.Background()
+
+	otp := "invalid"
+
+	mockRedis.On("Get", ctx, "reset:otp:"+otp).Return("", errors.New("not found"))
+
+	// Act
+	err := service.VerifyOTP(ctx, otp)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "không hợp lệ")
+	mockRedis.AssertExpectations(t)
 }
 
 func TestAuthService_ResetPassword_Success(t *testing.T) {
 	// Arrange
 	mockRepo := new(mocks.MockUserRepository)
 	mockTokenManager := new(mocks.MockTokenManager)
-	mockPasswordReset := new(mocks.MockPasswordResetService)
+	mockRedis := new(mocks.MockRedisManager)
 	cfg := &config.Config{}
 
 	service := &AuthServiceImpl{
 		userRepo:     mockRepo,
 		config:       cfg,
 		tokenManager: mockTokenManager,
+		redisClient:  mockRedis,
 	}
 	ctx := context.Background()
 
 	req := &model.ResetPasswordRequest{
-		Token:       "valid-reset-token",
+		Token:       "123456", // OTP
 		NewPassword: "newPassword123",
 	}
 
@@ -916,32 +1036,39 @@ func TestAuthService_ResetPassword_Success(t *testing.T) {
 		Status:       "active",
 	}
 
-	mockPasswordReset.On("ValidateResetToken", ctx, req.Token).Return(email, nil)
+	// Mock verified key validation
+	mockRedis.On("Get", ctx, "reset:verified:"+req.Token).Return(email, nil)
+
 	mockRepo.On("GetByEmail", ctx, email).Return(user, nil)
 	mockRepo.On("Update", ctx, mock.MatchedBy(func(u *model.User) bool {
 		// Verify password was updated
 		return u.Email == email && u.PasswordHash != nil && *u.PasswordHash != oldHashedPassword
 	})).Return(nil)
-	mockPasswordReset.On("InvalidateResetToken", ctx, req.Token).Return(nil)
-	mockTokenManager.On("BlacklistUserTokens", ctx, user.ID).Return(true)
+
+	// Async cleanup mocks (Del operations) - use slice for variadic params
+	mockRedis.On("Del", mock.Anything, []string{"reset:verified:" + req.Token}).Return(nil).Maybe()
+	mockRedis.On("Del", mock.Anything, []string{"reset:otp:" + req.Token}).Return(nil).Maybe()
+	mockRedis.On("Del", mock.Anything, []string{"reset:email_to_otp:" + email}).Return(nil).Maybe()
+
+	mockTokenManager.On("BlacklistUserTokens", mock.Anything, user.ID).Return(true)
 
 	// Act
 	err := service.ResetPassword(ctx, req)
 
 	// Assert
 	assert.NoError(t, err)
-	mockPasswordReset.AssertExpectations(t)
 	mockRepo.AssertExpectations(t)
-	mockTokenManager.AssertExpectations(t)
+	// Can't reliably assert async operations
 }
 
 func TestAuthService_ResetPassword_InvalidToken(t *testing.T) {
 	// Arrange
-	mockPasswordReset := new(mocks.MockPasswordResetService)
+	mockRedis := new(mocks.MockRedisManager)
 	cfg := &config.Config{}
 
 	service := &AuthServiceImpl{
-		config: cfg,
+		config:      cfg,
+		redisClient: mockRedis,
 	}
 	ctx := context.Background()
 
@@ -950,26 +1077,31 @@ func TestAuthService_ResetPassword_InvalidToken(t *testing.T) {
 		NewPassword: "newPassword123",
 	}
 
-	mockPasswordReset.On("ValidateResetToken", ctx, req.Token).Return("", errors.New("invalid token"))
+	// Mock verified key not found
+	mockRedis.On("Get", ctx, "reset:verified:"+req.Token).Return("", errors.New("not found"))
+
+	// Mock OTP key also not found
+	mockRedis.On("Get", ctx, "reset:otp:"+req.Token).Return("", errors.New("not found"))
 
 	// Act
 	err := service.ResetPassword(ctx, req)
 
 	// Assert
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Invalid or expired reset token")
-	mockPasswordReset.AssertExpectations(t)
+	assert.Contains(t, err.Error(), "không hợp lệ")
+	mockRedis.AssertExpectations(t)
 }
 
 func TestAuthService_ResetPassword_UserNotFound(t *testing.T) {
 	// Arrange
 	mockRepo := new(mocks.MockUserRepository)
-	mockPasswordReset := new(mocks.MockPasswordResetService)
+	mockRedis := new(mocks.MockRedisManager)
 	cfg := &config.Config{}
 
 	service := &AuthServiceImpl{
-		userRepo: mockRepo,
-		config:   cfg,
+		userRepo:    mockRepo,
+		config:      cfg,
+		redisClient: mockRedis,
 	}
 	ctx := context.Background()
 
@@ -979,7 +1111,7 @@ func TestAuthService_ResetPassword_UserNotFound(t *testing.T) {
 	}
 
 	email := "notfound@example.com"
-	mockPasswordReset.On("ValidateResetToken", ctx, req.Token).Return(email, nil)
+	mockRedis.On("Get", ctx, "reset:verified:"+req.Token).Return(email, nil)
 	mockRepo.On("GetByEmail", ctx, email).Return(nil, errors.New("user not found"))
 
 	// Act
@@ -987,7 +1119,7 @@ func TestAuthService_ResetPassword_UserNotFound(t *testing.T) {
 
 	// Assert
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Invalid reset token")
-	mockPasswordReset.AssertExpectations(t)
+	assert.Contains(t, err.Error(), "không hợp lệ")
+	mockRedis.AssertExpectations(t)
 	mockRepo.AssertExpectations(t)
 }

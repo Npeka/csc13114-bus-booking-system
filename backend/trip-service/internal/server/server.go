@@ -17,13 +17,13 @@ import (
 type Server struct {
 	cfg   *config.Config
 	db    *db.DatabaseManager
-	redis *db.RedisManager
+	redis db.RedisManager
 }
 
 func NewServer(
 	cfg *config.Config,
 	db *db.DatabaseManager,
-	redis *db.RedisManager,
+	redis db.RedisManager,
 ) *Server {
 	return &Server{cfg: cfg, db: db, redis: redis}
 }

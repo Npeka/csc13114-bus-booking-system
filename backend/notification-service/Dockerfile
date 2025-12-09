@@ -28,13 +28,9 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /build/notification-service/app /app
-
-# Copy email templates
 COPY --from=builder /build/notification-service/templates /templates
 
 ENV TZ=Asia/Ho_Chi_Minh
-ENV TEMPLATE_PATH=/templates
-ENV LOGO_URL=https://csc13114-bus-booking-system.vercel.app/_next/image?url=%2Ffavicon.png&w=128&q=75
 
 USER appuser
 

@@ -36,7 +36,7 @@ func createTestToken(userID uuid.UUID, expiresIn time.Duration) string {
 func TestTokenManager_Blacklist_Success(t *testing.T) {
 	// Arrange
 	mockJWT := new(mocks.MockJWTManager)
-	redisManager := &db.RedisManager{
+	redisManager := &db.RedisManagerImpl{
 		Client: redis.NewClient(&redis.Options{}),
 	}
 
@@ -58,7 +58,7 @@ func TestTokenManager_Blacklist_Success(t *testing.T) {
 func TestTokenManager_Blacklist_ExpiredToken(t *testing.T) {
 	// Arrange
 	mockJWT := new(mocks.MockJWTManager)
-	redisManager := &db.RedisManager{
+	redisManager := &db.RedisManagerImpl{
 		Client: redis.NewClient(&redis.Options{}),
 	}
 
@@ -79,7 +79,7 @@ func TestTokenManager_Blacklist_ExpiredToken(t *testing.T) {
 func TestTokenManager_IsBlacklisted_Logic(t *testing.T) {
 	// Arrange
 	mockJWT := new(mocks.MockJWTManager)
-	redisManager := &db.RedisManager{
+	redisManager := &db.RedisManagerImpl{
 		Client: redis.NewClient(&redis.Options{}),
 	}
 
@@ -98,7 +98,7 @@ func TestTokenManager_IsBlacklisted_Logic(t *testing.T) {
 func TestTokenManager_BlacklistUserTokens_Logic(t *testing.T) {
 	// Arrange
 	mockJWT := new(mocks.MockJWTManager)
-	redisManager := &db.RedisManager{
+	redisManager := &db.RedisManagerImpl{
 		Client: redis.NewClient(&redis.Options{}),
 	}
 
@@ -117,7 +117,7 @@ func TestTokenManager_BlacklistUserTokens_Logic(t *testing.T) {
 func TestTokenManager_IsUserTokensBlacklisted_Logic(t *testing.T) {
 	// Arrange
 	mockJWT := new(mocks.MockJWTManager)
-	redisManager := &db.RedisManager{
+	redisManager := &db.RedisManagerImpl{
 		Client: redis.NewClient(&redis.Options{}),
 	}
 
@@ -137,12 +137,12 @@ func TestTokenManager_IsUserTokensBlacklisted_Logic(t *testing.T) {
 func TestTokenManager_CalculateTokenTTL_ValidToken(t *testing.T) {
 	// Arrange
 	mockJWT := new(mocks.MockJWTManager)
-	redisManager := &db.RedisManager{
+	redisManager := &db.RedisManagerImpl{
 		Client: redis.NewClient(&redis.Options{}),
 	}
 
 	manager := &TokenBlacklistManagerImpl{
-		redisClient: redisManager.Client,
+		redisClient: redisManager,
 		jwtManager:  mockJWT,
 	}
 
@@ -161,12 +161,12 @@ func TestTokenManager_CalculateTokenTTL_ValidToken(t *testing.T) {
 func TestTokenManager_CalculateTokenTTL_ExpiredToken(t *testing.T) {
 	// Arrange
 	mockJWT := new(mocks.MockJWTManager)
-	redisManager := &db.RedisManager{
+	redisManager := &db.RedisManagerImpl{
 		Client: redis.NewClient(&redis.Options{}),
 	}
 
 	manager := &TokenBlacklistManagerImpl{
-		redisClient: redisManager.Client,
+		redisClient: redisManager,
 		jwtManager:  mockJWT,
 	}
 
@@ -183,12 +183,12 @@ func TestTokenManager_CalculateTokenTTL_ExpiredToken(t *testing.T) {
 func TestTokenManager_CalculateTokenTTL_InvalidToken(t *testing.T) {
 	// Arrange
 	mockJWT := new(mocks.MockJWTManager)
-	redisManager := &db.RedisManager{
+	redisManager := &db.RedisManagerImpl{
 		Client: redis.NewClient(&redis.Options{}),
 	}
 
 	manager := &TokenBlacklistManagerImpl{
-		redisClient: redisManager.Client,
+		redisClient: redisManager,
 		jwtManager:  mockJWT,
 	}
 
@@ -207,7 +207,7 @@ func TestTokenManager_FullFlow_Demonstration(t *testing.T) {
 	// In a real scenario, you'd use a Redis mock or test container
 
 	mockJWT := new(mocks.MockJWTManager)
-	redisManager := &db.RedisManager{
+	redisManager := &db.RedisManagerImpl{
 		Client: redis.NewClient(&redis.Options{}),
 	}
 

@@ -16,19 +16,19 @@ import (
 )
 
 type Server struct {
-	cfg *config.Config
-	db  *db.DatabaseManager
-	rd  *db.RedisManager
-	fa  *auth.Client
+	cfg          *config.Config
+	db           *db.DatabaseManager
+	redis        db.RedisManager
+	firebaseAuth *auth.Client
 }
 
 func NewServer(
 	cfg *config.Config,
 	db *db.DatabaseManager,
-	rd *db.RedisManager,
-	fa *auth.Client,
+	redis db.RedisManager,
+	firebaseAuth *auth.Client,
 ) *Server {
-	return &Server{cfg: cfg, db: db, rd: rd, fa: fa}
+	return &Server{cfg: cfg, db: db, redis: redis, firebaseAuth: firebaseAuth}
 }
 
 func (s *Server) Run() {
@@ -76,7 +76,7 @@ func (s *Server) Close() {
 		log.Error().Err(err).Msg("Failed to close database connection")
 	}
 
-	if err := s.rd.Close(); err != nil {
+	if err := s.redis.Close(); err != nil {
 		log.Error().Err(err).Msg("Failed to close redis connection")
 	}
 }

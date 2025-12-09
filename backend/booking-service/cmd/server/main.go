@@ -22,6 +22,7 @@ import (
 	"bus-booking/booking-service/internal/server"
 	"bus-booking/shared/db"
 	"bus-booking/shared/logger"
+	"bus-booking/shared/queue"
 	"bus-booking/shared/validator"
 )
 
@@ -32,7 +33,8 @@ func main() {
 
 	pg := db.MustNewPostgresConnection(&cfg.Database)
 	redis := db.MustNewRedisConnection(&cfg.Redis)
-	sv := server.NewServer(cfg, pg, redis)
+	delayedQueue := queue.NewRedisDelayedQueueManager(redis.GetClient())
+	sv := server.NewServer(cfg, pg, redis, delayedQueue)
 	defer sv.Close()
 
 	sv.Run()

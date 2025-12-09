@@ -7,7 +7,6 @@ import (
 	"bus-booking/booking-service/internal/repository"
 	"bus-booking/booking-service/internal/router"
 	"bus-booking/booking-service/internal/service"
-	"bus-booking/shared/queue"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -26,17 +25,16 @@ func (s *Server) buildHandler() (http.Handler, *jobs.BookingExpirationJob, *jobs
 	notificationClient := client.NewNotificationClient(s.cfg.ServiceName, s.cfg.External.NotificationServiceURL)
 
 	// Initialize services
-	delayedQueue := queue.NewRedisDelayedQueueManager(s.redis.Client)
 	seatLockRepo := repository.NewSeatLockRepository(s.db.DB)
 
-	bookingService := service.NewBookingService(bookingRepo, paymentClient, tripClient, userClient, notificationClient, delayedQueue)
+	bookingService := service.NewBookingService(bookingRepo, paymentClient, tripClient, userClient, notificationClient, s.delayedQueue)
 	feedbackService := service.NewFeedbackService(bookingRepo, feedbackRepo)
 	statisticsService := service.NewStatisticsService(bookingStatsRepo)
 	eTicketService := service.NewETicketService(bookingRepo, tripClient)
 
 	// Initialize Jobs
-	bookingExpirationJob := jobs.NewBookingExpirationJob(bookingService, seatLockRepo, delayedQueue)
-	tripReminderJob := jobs.NewTripReminderJob(bookingRepo, delayedQueue, notificationClient, tripClient, userClient)
+	bookingExpirationJob := jobs.NewBookingExpirationJob(bookingService, seatLockRepo, s.delayedQueue)
+	tripReminderJob := jobs.NewTripReminderJob(bookingRepo, s.delayedQueue, notificationClient, tripClient, userClient)
 
 	// Initialize handlers
 	bookingHandler := handler.NewBookingHandler(bookingService, eTicketService)

@@ -17,13 +17,13 @@ func (s *Server) buildHandler() http.Handler {
 
 	userRepo := repository.NewUserRepository(s.db.DB)
 
-	tokenManager := service.NewTokenManager(s.rd, jwtManager)
+	tokenManager := service.NewTokenManager(s.redis, jwtManager)
 
 	// Initialize notification client
 	notificationClient := client.NewNotificationClient("notification-service", s.cfg.External.NotificationServiceURL)
 
 	userService := service.NewUserService(userRepo)
-	authService := service.NewAuthService(s.cfg, jwtManager, s.fa, tokenManager, userRepo, s.rd, notificationClient)
+	authService := service.NewAuthService(s.cfg, jwtManager, s.firebaseAuth, tokenManager, userRepo, s.redis, notificationClient)
 
 	userHandler := handler.NewUserHandler(userService)
 	authHandler := handler.NewAuthHandler(authService)

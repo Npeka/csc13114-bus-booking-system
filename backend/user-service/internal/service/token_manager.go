@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"bus-booking/shared/db"
@@ -25,16 +26,16 @@ type TokenManager interface {
 }
 
 type TokenBlacklistManagerImpl struct {
-	redisClient *redis.Client
+	redisClient db.RedisManager
 	jwtManager  utils.JWTManager
 }
 
 func NewTokenManager(
-	redisManager *db.RedisManager,
+	redisManager db.RedisManager,
 	jwtManager utils.JWTManager,
 ) TokenManager {
 	return &TokenBlacklistManagerImpl{
-		redisClient: redisManager.Client,
+		redisClient: redisManager,
 		jwtManager:  jwtManager,
 	}
 }
@@ -48,7 +49,7 @@ func (tbm *TokenBlacklistManagerImpl) Blacklist(ctx context.Context, token strin
 		return true
 	}
 
-	if err := tbm.redisClient.Set(ctx, key, "1", ttl).Err(); err != nil {
+	if err := tbm.redisClient.Set(ctx, key, "1", ttl); err != nil {
 		log.Error().Err(err).Msg("Failed to blacklist token")
 		return false
 	}
@@ -59,7 +60,7 @@ func (tbm *TokenBlacklistManagerImpl) Blacklist(ctx context.Context, token strin
 func (tbm *TokenBlacklistManagerImpl) IsBlacklisted(ctx context.Context, token string) bool {
 	key := fmt.Sprintf("blacklist:token:%s", token)
 
-	exists, err := tbm.redisClient.Exists(ctx, key).Result()
+	exists, err := tbm.redisClient.Exists(ctx, key)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to check token blacklist")
 		return false
@@ -73,7 +74,7 @@ func (tbm *TokenBlacklistManagerImpl) BlacklistUserTokens(ctx context.Context, u
 	key := fmt.Sprintf("blacklist:user:%s", userID.String())
 
 	// Lưu timestamp hiện tại, TTL 7 ngày
-	err := tbm.redisClient.Set(ctx, key, time.Now().Unix(), 7*24*time.Hour).Err()
+	err := tbm.redisClient.Set(ctx, key, time.Now().Unix(), 7*24*time.Hour)
 	if err != nil {
 		log.Warn().Err(err).Str("user_id", userID.String()).Msg("Failed to blacklist user tokens")
 		return false
@@ -87,7 +88,7 @@ func (tbm *TokenBlacklistManagerImpl) BlacklistUserTokens(ctx context.Context, u
 func (tbm *TokenBlacklistManagerImpl) IsUserTokensBlacklisted(ctx context.Context, userID uuid.UUID, tokenIssuedAt int64) bool {
 	key := fmt.Sprintf("blacklist:user:%s", userID.String())
 
-	blacklistTime, err := tbm.redisClient.Get(ctx, key).Int64()
+	blacklistTime, err := tbm.redisClient.Get(ctx, key)
 	if err == redis.Nil {
 		return false // User không bị blacklist
 	}
@@ -97,7 +98,12 @@ func (tbm *TokenBlacklistManagerImpl) IsUserTokensBlacklisted(ctx context.Contex
 	}
 
 	// Token issued trước thời điểm blacklist = bị blacklist
-	return tokenIssuedAt < blacklistTime
+	blacklistTimeInt, err := strconv.Atoi(blacklistTime)
+	if err != nil {
+		log.Warn().Err(err).Str("user_id", userID.String()).Msg("Failed to convert blacklist time to int")
+		return false // Fail-safe
+	}
+	return tokenIssuedAt < int64(blacklistTimeInt)
 }
 
 // calculateTokenTTL - Parse JWT token và tính TTL còn lại

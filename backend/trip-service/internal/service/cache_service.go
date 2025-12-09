@@ -23,10 +23,10 @@ type CacheService interface {
 }
 
 type CacheServiceImpl struct {
-	redis *db.RedisManager
+	redis db.RedisManager
 }
 
-func NewCacheService(redis *db.RedisManager) CacheService {
+func NewCacheService(redis db.RedisManager) CacheService {
 	return &CacheServiceImpl{redis: redis}
 }
 

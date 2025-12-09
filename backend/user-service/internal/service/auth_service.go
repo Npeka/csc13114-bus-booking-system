@@ -47,7 +47,7 @@ type AuthServiceImpl struct {
 	jwtManager         utils.JWTManager
 	firebaseAuth       FirebaseAuthClient
 	tokenManager       TokenManager
-	redisClient        *db.RedisManager
+	redisClient        db.RedisManager
 	notificationClient client.NotificationClient
 }
 
@@ -57,7 +57,7 @@ func NewAuthService(
 	firebaseAuth FirebaseAuthClient,
 	tokenManager TokenManager,
 	userRepo repository.UserRepository,
-	redisClient *db.RedisManager,
+	redisClient db.RedisManager,
 	notificationClient client.NotificationClient,
 ) AuthService {
 	return &AuthServiceImpl{

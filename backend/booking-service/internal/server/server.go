@@ -12,20 +12,28 @@ import (
 
 	"bus-booking/booking-service/config"
 	"bus-booking/shared/db"
+	"bus-booking/shared/queue"
 )
 
 type Server struct {
-	cfg   *config.Config
-	db    *db.DatabaseManager
-	redis *db.RedisManager
+	cfg          *config.Config
+	db           *db.DatabaseManager
+	redis        db.RedisManager
+	delayedQueue queue.DelayedQueueManager
 }
 
 func NewServer(
 	cfg *config.Config,
 	db *db.DatabaseManager,
-	redis *db.RedisManager,
+	redis db.RedisManager,
+	delayedQueue queue.DelayedQueueManager,
 ) *Server {
-	return &Server{cfg: cfg, db: db, redis: redis}
+	return &Server{
+		cfg:          cfg,
+		db:           db,
+		redis:        redis,
+		delayedQueue: delayedQueue,
+	}
 }
 
 func (s *Server) Run() {
