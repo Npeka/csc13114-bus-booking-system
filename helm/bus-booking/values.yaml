@@ -100,12 +100,9 @@ services:
     env:
       SERVICE_NAME: "notification-service"
       
-      SMTP_HOST: smtp-relay.brevo.com
-      SMTP_PORT: 587
-      SMTP_USERNAME: 9dc10d001@smtp-brevo.com
-      SMTP_PASSWORD: RZpHdSmWaC0czEsJ
-      SMTP_FROM_EMAIL: noreply@busticket.vn
-      SMTP_FROM_NAME: Bus Booking System
+      BREVO_API_KEY: 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
+      FROM_EMAIL: npkhang287@gmail.com
+      FROM_NAME: Bus Booking System
       
       TEMPLATE_PATH: templates
       LOGO_URL: https://csc13114-bus-booking-system.vercel.app/_next/image?url=%2Ffavicon.png&w=128&q=75
