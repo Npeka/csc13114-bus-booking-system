@@ -254,7 +254,11 @@ func (s *EmailServiceImpl) sendBrevoAPI(to []string, subject, htmlBody string) e
 	if err != nil {
 		return fmt.Errorf("failed to send request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if resp != nil {
+			resp.Body.Close()
+		}
+	}()
 
 	// Check response
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
