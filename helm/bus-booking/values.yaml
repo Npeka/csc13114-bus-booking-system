@@ -99,10 +99,14 @@ services:
     port: 8080
     env:
       SERVICE_NAME: "notification-service"
-      SMTP_HOST: smtp.gmail.com
+      
+      SMTP_HOST: smtp-relay.brevo.com
       SMTP_PORT: 587
-      SMTP_EMAIL: npkhang22@clc.fitus.edu.vn
-      SMTP_PASSWORD: clws hlpv qavv vpcc
+      SMTP_USERNAME: 9dc10d001@smtp-brevo.com
+      SMTP_PASSWORD: RZpHdSmWaC0czEsJ
+      SMTP_FROM_EMAIL: noreply@busticket.vn
+      SMTP_FROM_NAME: Bus Booking System
+      
       TEMPLATE_PATH: templates
       LOGO_URL: https://csc13114-bus-booking-system.vercel.app/_next/image?url=%2Ffavicon.png&w=128&q=75
     ingress:
