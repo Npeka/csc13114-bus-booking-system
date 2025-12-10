@@ -255,8 +255,8 @@ func (s *EmailServiceImpl) sendBrevoAPI(to []string, subject, htmlBody string) e
 		return fmt.Errorf("failed to send request: %w", err)
 	}
 	defer func() {
-		if resp != nil {
-			resp.Body.Close()
+		if err := resp.Body.Close(); err != nil {
+			log.Error().Err(err).Msg("Failed to close response body")
 		}
 	}()
 
