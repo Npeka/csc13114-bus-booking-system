@@ -225,6 +225,7 @@ function CheckoutGuestContent() {
                 total={total}
                 seatsCount={seats.length}
                 agreedToTerms={agreedToTerms}
+                onAgreedChange={setAgreedToTerms}
                 isLoading={createBookingMutation.isPending}
               />
 
