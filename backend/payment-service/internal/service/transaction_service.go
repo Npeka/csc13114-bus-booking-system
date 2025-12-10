@@ -19,7 +19,7 @@ import (
 
 type TransactionService interface {
 	CreatePaymentLink(ctx context.Context, req *model.CreatePaymentLinkRequest, userID uuid.UUID) (*model.TransactionResponse, error)
-	HandlePaymentWebhook(ctx context.Context, webhookData map[string]interface{}) error
+	HandlePaymentWebhook(ctx context.Context, webhookData model.PaymentWebhookData) error
 	CancelPayment(ctx context.Context, transactionID uuid.UUID) (*model.TransactionResponse, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*model.TransactionResponse, error)
 	GetByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.TransactionResponse, error)
@@ -77,29 +77,28 @@ func (s *TransactionServiceImpl) CreatePaymentLink(ctx context.Context, req *mod
 	return s.toTransactionResponse(transaction), nil
 }
 
-func (s *TransactionServiceImpl) HandlePaymentWebhook(ctx context.Context, webhookData map[string]interface{}) error {
+func (s *TransactionServiceImpl) HandlePaymentWebhook(ctx context.Context, webhookData model.PaymentWebhookData) error {
 	log.Info().Msg("Starting webhook verification")
-	if err := s.payOSService.VerifyWebhook(ctx, webhookData); err != nil {
-		log.Error().Err(err).Msg("Webhook signature verification failed")
-		return ginext.NewUnauthorizedError("invalid webhook signature")
-	}
-	log.Info().Msg("Webhook signature verified successfully")
 
-	// Convert map to struct: marshal to JSON bytes, then unmarshal to struct
-	log.Info().Msg("Converting webhook data to struct")
+	// Convert struct to map for PayOS verification
 	webhookBytes, err := json.Marshal(webhookData)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to marshal webhook data to JSON bytes")
 		return ginext.NewBadRequestError("invalid webhook data format")
 	}
-	log.Info().Str("webhookJSON", string(webhookBytes)).Msg("Webhook data marshaled successfully")
 
-	var webhookDataModel model.PaymentWebhookData
-	if err := json.Unmarshal(webhookBytes, &webhookDataModel); err != nil {
-		log.Error().Err(err).Str("webhookJSON", string(webhookBytes)).Msg("Failed to unmarshal webhook data to struct")
-		return ginext.NewBadRequestError("invalid webhook data")
+	var webhookMap map[string]interface{}
+	if err := json.Unmarshal(webhookBytes, &webhookMap); err != nil {
+		log.Error().Err(err).Msg("Failed to unmarshal webhook data to map")
+		return ginext.NewBadRequestError("invalid webhook data format")
 	}
-	log.Info().Interface("webhookDataModel", webhookDataModel).Msg("Webhook data unmarshaled successfully")
+
+	// Verify webhook signature with map
+	if err := s.payOSService.VerifyWebhook(ctx, webhookMap); err != nil {
+		log.Error().Err(err).Msg("Webhook signature verification failed")
+		return ginext.NewUnauthorizedError("invalid webhook signature")
+	}
+	log.Info().Msg("Webhook signature verified successfully")
 
 	var (
 		paymentLink *payos.PaymentLink
@@ -110,14 +109,14 @@ func (s *TransactionServiceImpl) HandlePaymentWebhook(ctx context.Context, webho
 
 	g.Go(func() error {
 		var err error
-		paymentLink, err = s.payOSService.GetPaymentLink(gCtx, webhookDataModel.Data.PaymentLinkID)
+		paymentLink, err = s.payOSService.GetPaymentLink(gCtx, webhookData.Data.PaymentLinkID)
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		orderCode := webhookDataModel.Data.OrderCode
-		paymentLinkID := webhookDataModel.Data.PaymentLinkID
+		orderCode := webhookData.Data.OrderCode
+		paymentLinkID := webhookData.Data.PaymentLinkID
 		transaction, err = s.transactionRepo.GetByWebhookData(ctx, orderCode, paymentLinkID)
 		return err
 	})
@@ -128,10 +127,10 @@ func (s *TransactionServiceImpl) HandlePaymentWebhook(ctx context.Context, webho
 
 	// Update transaction status
 	transaction.Status = s.payOSService.ToTransactionStatus(paymentLink.Status)
-	transaction.Reference = webhookDataModel.Data.Reference
+	transaction.Reference = webhookData.Data.Reference
 
 	// Parse transaction datetime
-	if transTime, err := time.Parse("2006-01-02 15:04:05", webhookDataModel.Data.TransactionDateTime); err == nil {
+	if transTime, err := time.Parse("2006-01-02 15:04:05", webhookData.Data.TransactionDateTime); err == nil {
 		transTimeUnix := transTime.Unix()
 		transaction.TransactionTime = &transTimeUnix
 	}
