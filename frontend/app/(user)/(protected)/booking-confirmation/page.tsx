@@ -2,30 +2,28 @@
 
 import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getBookingById, createPayment } from "@/lib/api/booking-service";
+import { getBookingById } from "@/lib/api/booking-service";
 import { getTripById } from "@/lib/api/trip-service";
-import { toast } from "sonner";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { BookingHeader } from "./_components/booking-header";
 import { TripInfoSection } from "./_components/trip-info-section";
 import { PassengerInfoSection } from "./_components/passenger-info-section";
 import { PaymentInfoSection } from "./_components/payment-info-section";
-import { PaymentActionCard } from "./_components/payment-action-card";
 import { PayOSPaymentCard } from "./_components/payos-payment-card";
 import { BookingActions } from "./_components/booking-actions";
 import { ImportantNotes } from "./_components/important-notes";
+import { toast } from "sonner";
 
 function BookingConfirmationContent() {
   const searchParams = useSearchParams();
   const bookingId = searchParams.get("bookingId");
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
-  const user = useAuthStore((state) => state.user);
 
   // Fetch booking details
   const { data: booking, isLoading: bookingLoading } = useQuery({
@@ -39,28 +37,6 @@ function BookingConfirmationContent() {
     queryKey: ["trip", booking?.trip_id],
     queryFn: () => getTripById(booking!.trip_id),
     enabled: !!booking?.trip_id,
-  });
-
-  // Create payment mutation
-  const paymentMutation = useMutation({
-    mutationFn: () => {
-      if (!bookingId || !user) throw new Error("Missing booking or user info");
-
-      return createPayment(bookingId, {
-        buyer_info: {
-          name: user.full_name || user.email || "Guest",
-          email: user.email || "",
-          phone: user.phone || "",
-        },
-      });
-    },
-    onSuccess: (data) => {
-      // Redirect to PayOS checkout
-      window.location.href = data.checkout_url;
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || "Không thể tạo link thanh toán");
-    },
   });
 
   // Countdown timer
@@ -87,10 +63,6 @@ function BookingConfirmationContent() {
       navigator.clipboard.writeText(booking.booking_reference);
       toast.success("Đã sao chép mã đặt vé!");
     }
-  };
-
-  const handlePayment = () => {
-    paymentMutation.mutate();
   };
 
   if (bookingLoading || tripLoading) {
@@ -167,25 +139,12 @@ function BookingConfirmationContent() {
           </CardContent>
         </Card>
 
-        {/* Payment Section - Only show if pending */}
-        {booking.transaction_status === "PENDING" && (
-          <>
-            {/* If transaction already exists, show PayOS payment */}
-            {booking.transaction ? (
-              <PayOSPaymentCard
-                transaction={booking.transaction}
-                timeRemaining={timeRemaining}
-              />
-            ) : (
-              /* If no transaction yet, show button to create payment link */
-              <PaymentActionCard
-                totalAmount={booking.total_amount}
-                timeRemaining={timeRemaining}
-                isPaymentPending={paymentMutation.isPending}
-                onPayment={handlePayment}
-              />
-            )}
-          </>
+        {/* Payment Section - Only show PayOS card if transaction exists and pending */}
+        {booking.transaction_status === "PENDING" && booking.transaction && (
+          <PayOSPaymentCard
+            transaction={booking.transaction}
+            timeRemaining={timeRemaining}
+          />
         )}
 
         {/* Actions */}

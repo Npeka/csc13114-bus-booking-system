@@ -2,15 +2,14 @@ package service
 
 import (
 	"bus-booking/notification-service/config"
-	"bus-booking/notification-service/internal/model"
 	"bytes"
+	"crypto/tls"
 	"fmt"
 	"html/template"
-	"net/smtp"
 	"os"
-	"strings"
 
 	"github.com/rs/zerolog/log"
+	"gopkg.in/gomail.v2"
 )
 
 // EmailService defines the interface for email operations
@@ -25,14 +24,16 @@ type EmailService interface {
 
 type EmailServiceImpl struct {
 	smtpHost     string
-	smtpPort     string
-	smtpEmail    string
+	smtpPort     int
+	smtpUsername string
 	smtpPassword string
+	fromEmail    string
+	fromName     string
 	logoURL      string // Hosted logo URL
 	templatePath string // Path to email templates directory
 }
 
-// NewEmailService creates a new instance of EmailService
+// NewEmailService creates a new instance of EmailService with SMTP (Brevo)
 func NewEmailService(cfg *config.Config) (EmailService, error) {
 	// Use logo URL from config (hosted on Vercel CDN)
 	logoURL := cfg.LogoURL
@@ -42,11 +43,20 @@ func NewEmailService(cfg *config.Config) (EmailService, error) {
 		log.Info().Str("url", logoURL).Msg("Using hosted logo URL for emails")
 	}
 
+	log.Info().
+		Str("smtp_host", cfg.SMTPHost).
+		Int("smtp_port", cfg.SMTPPort).
+		Str("from_email", cfg.FromEmail).
+		Str("from_name", cfg.FromName).
+		Msg("Email service initialized with SMTP (Brevo)")
+
 	return &EmailServiceImpl{
-		smtpHost:     cfg.SMTP.Host,
-		smtpPort:     fmt.Sprintf("%d", cfg.SMTP.Port),
-		smtpEmail:    cfg.SMTP.Email,
-		smtpPassword: cfg.SMTP.Password,
+		smtpHost:     cfg.SMTPHost,
+		smtpPort:     cfg.SMTPPort,
+		smtpUsername: cfg.SMTPUsername,
+		smtpPassword: cfg.SMTPPassword,
+		fromEmail:    cfg.FromEmail,
+		fromName:     cfg.FromName,
 		logoURL:      logoURL,
 		templatePath: cfg.TemplatePath,
 	}, nil
@@ -139,16 +149,16 @@ func (s *EmailServiceImpl) SendTemplateEmail(to []string, subject, templateName 
 		return err
 	}
 
-	err = s.send(to, subject, htmlBody)
+	err = s.sendSMTP(to, subject, htmlBody)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to send email")
+		log.Error().Err(err).Msg("Failed to send email via SMTP")
 		return err
 	}
 
 	log.Info().
 		Strs("to", to).
 		Str("subject", subject).
-		Msg("Email sent successfully")
+		Msg("Email sent successfully via SMTP")
 
 	return nil
 }
@@ -205,31 +215,38 @@ func (s *EmailServiceImpl) getLogoHTML() template.HTML {
 	return template.HTML(imgTag)
 }
 
-// send sends an email via SMTP
-func (s *EmailServiceImpl) send(to []string, subject, htmlBody string) error {
-	contentEmail := model.Email{
-		From:    model.EmailAddress{Address: s.smtpEmail, Name: "Bus Booking System"},
-		To:      to,
-		Subject: subject,
-		Body:    htmlBody,
+// sendSMTP sends an email via SMTP (Brevo)
+func (s *EmailServiceImpl) sendSMTP(to []string, subject, htmlBody string) error {
+	// Create message
+	m := gomail.NewMessage()
+	m.SetHeader("From", m.FormatAddress(s.fromEmail, s.fromName))
+	m.SetHeader("To", to...)
+	m.SetHeader("Subject", subject)
+	m.SetBody("text/html", htmlBody)
+
+	// Create SMTP dialer
+	d := gomail.NewDialer(s.smtpHost, s.smtpPort, s.smtpUsername, s.smtpPassword)
+
+	// Enable TLS for port 587 (STARTTLS)
+	d.TLSConfig = &tls.Config{
+		ServerName: s.smtpHost,
+		MinVersion: tls.VersionTLS12,
 	}
 
-	msg := buildMessage(contentEmail)
-	auth := smtp.PlainAuth("", s.smtpEmail, s.smtpPassword, s.smtpHost)
-
-	err := smtp.SendMail(s.smtpHost+":"+s.smtpPort, auth, s.smtpEmail, to, []byte(msg))
-	if err != nil {
-		return fmt.Errorf("failed to send email: %w", err)
+	// Send email
+	if err := d.DialAndSend(m); err != nil {
+		log.Error().
+			Err(err).
+			Str("smtp_host", s.smtpHost).
+			Int("smtp_port", s.smtpPort).
+			Msg("SMTP send failed")
+		return fmt.Errorf("failed to send email via SMTP: %w", err)
 	}
+
+	log.Info().
+		Strs("to", to).
+		Str("smtp_host", s.smtpHost).
+		Msg("Email sent successfully via SMTP")
+
 	return nil
-}
-
-// buildMessage constructs the email message with proper MIME headers
-func buildMessage(mail model.Email) string {
-	msg := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\r\n"
-	msg += fmt.Sprintf("From: %s\r\n", mail.From.Address)
-	msg += fmt.Sprintf("To: %s\r\n", strings.Join(mail.To, ";"))
-	msg += fmt.Sprintf("Subject: %s\r\n", mail.Subject)
-	msg += fmt.Sprintf("\r\n%s\r\n", mail.Body)
-	return msg
 }

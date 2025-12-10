@@ -168,30 +168,6 @@ func (s *bookingServiceImpl) CreateBooking(ctx context.Context, req *model.Creat
 		s.sendBookingPendingEmail(bgCtx, booking, tripData, transaction.CheckoutURL)
 	}()
 
-	// 9. Push notification to queue (khi có notification service)
-	// TODO: Uncomment khi notification service đã ready
-	/*
-		if s.notificationQueue != nil {
-			emailNotif := &queue.EmailNotification{
-				To:           "user@example.com", // TODO: Get from user service
-				Subject:      "Xác nhận đặt vé",
-				TemplateName: "booking_confirmation",
-				TemplateData: map[string]interface{}{
-					"booking_reference": booking.BookingReference,
-					"total_amount":      booking.TotalAmount,
-					"trip_id":           booking.TripID.String(),
-					"seat_numbers":      s.getSeatNumbers(booking.BookingSeats),
-				},
-				Priority: 1, // High priority
-			}
-
-			// Push to queue (non-blocking, errors logged only)
-			if err := s.notificationQueue.PushEmailNotification(ctx, emailNotif); err != nil {
-				log.Error().Err(err).Msg("Failed to push email notification to queue")
-			}
-		}
-	*/
-
 	// 9. Return response
 	return s.toBookingResponse(booking), nil
 }
@@ -404,9 +380,20 @@ func (s *bookingServiceImpl) CancelBooking(ctx context.Context, id uuid.UUID, re
 			Msg("Failed to cancel payment, but booking is cancelled")
 		// Continue - booking is already cancelled
 	} else {
-		// Update booking's transaction status based on payment response
-		booking.TransactionStatus = transaction.Status
-		if err := s.bookingRepo.UpdateBooking(ctx, booking); err != nil {
+		// Fetch fresh booking data to avoid overwriting the CANCELLED status
+		updatedBooking, err := s.bookingRepo.GetBookingByID(ctx, id)
+		if err != nil {
+			log.Error().
+				Err(err).
+				Str("booking_id", id.String()).
+				Msg("Failed to fetch booking after payment cancellation")
+			// Continue - booking is cancelled, just couldn't update transaction status
+			return nil
+		}
+
+		// Update transaction status only
+		updatedBooking.TransactionStatus = transaction.Status
+		if err := s.bookingRepo.UpdateBooking(ctx, updatedBooking); err != nil {
 			log.Error().
 				Err(err).
 				Str("booking_id", id.String()).

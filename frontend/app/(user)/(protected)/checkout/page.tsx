@@ -11,7 +11,6 @@ import { getProfile } from "@/lib/api/user-service";
 import { toast } from "sonner";
 import { PassengerInfoForm } from "./_components/passenger-info-form";
 import { PaymentMethod } from "./_components/payment-method";
-import { TermsConditions } from "./_components/terms-conditions";
 import { TripSummary } from "./_components/trip-summary";
 import { PaymentSummary } from "./_components/payment-summary";
 import { ImportantNotes } from "./_components/important-notes";
@@ -166,10 +165,6 @@ function CheckoutContent() {
                 passengerInfo={passengerInfo}
               />
               <PaymentMethod />
-              <TermsConditions
-                agreed={agreedToTerms}
-                onAgreedChange={setAgreedToTerms}
-              />
             </div>
 
             {/* Right Column - Order Summary */}
@@ -182,6 +177,7 @@ function CheckoutContent() {
                   total={total}
                   seatsCount={seats.length}
                   agreedToTerms={agreedToTerms}
+                  onAgreedChange={setAgreedToTerms}
                   isLoading={createBookingMutation.isPending}
                 />
                 <ImportantNotes />

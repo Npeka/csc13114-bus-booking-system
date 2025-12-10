@@ -1,20 +1,15 @@
 "use client";
 
-import { useState } from "react";
 import {
   ExternalLink,
-  QrCode,
   CreditCard,
   Smartphone,
-  Lightbulb,
   Shield,
   AlertTriangle,
 } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
 import type { Transaction } from "@/lib/types/booking";
 
 interface PayOSPaymentCardProps {
@@ -26,17 +21,6 @@ export function PayOSPaymentCard({
   transaction,
   timeRemaining,
 }: PayOSPaymentCardProps) {
-  const [showQR, setShowQR] = useState(false);
-
-  const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(transaction.checkout_url);
-      toast.success("Đã sao chép link thanh toán!");
-    } catch {
-      toast.error("Không thể sao chép mã QR");
-    }
-  };
-
   const handleOpenPayOS = () => {
     window.open(transaction.checkout_url, "_blank");
   };
@@ -80,46 +64,15 @@ export function PayOSPaymentCard({
 
         {!isExpired && isPending && (
           <>
-            {/* Payment Buttons */}
-            <div className="space-y-2">
-              <Button
-                className="w-full bg-primary hover:bg-primary/90"
-                size="lg"
-                onClick={handleOpenPayOS}
-              >
-                <ExternalLink className="mr-2 h-5 w-5" />
-                Mở trang thanh toán PayOS
-              </Button>
-
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => setShowQR(!showQR)}
-              >
-                <QrCode className="mr-2 h-4 w-4" />
-                {showQR ? "Ẩn mã QR" : "Hiển thị mã QR"}
-              </Button>
-            </div>
-
-            {/* QR Code Display */}
-            {showQR && (
-              <div className="rounded-lg border-2 border-dashed border-primary/30 bg-card p-6">
-                <div className="mb-3 text-center">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Quét mã QR để thanh toán
-                  </p>
-                </div>
-                <div className="relative mx-auto w-fit">
-                  <div className="flex justify-center rounded-lg bg-white p-4">
-                    <QRCodeSVG value={transaction.qr_code} size={200} />
-                  </div>
-                </div>
-                <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
-                  <Lightbulb className="h-3.5 w-3.5" />
-                  Sử dụng app ngân hàng hỗ trợ VietQR để quét mã
-                </p>
-              </div>
-            )}
+            {/* Payment Button */}
+            <Button
+              className="w-full bg-primary hover:bg-primary/90"
+              size="lg"
+              onClick={handleOpenPayOS}
+            >
+              <ExternalLink className="mr-2 h-5 w-5" />
+              Mở trang thanh toán PayOS
+            </Button>
 
             {/* Instructions */}
             <div className="rounded-lg bg-info/10 p-4 text-sm">
