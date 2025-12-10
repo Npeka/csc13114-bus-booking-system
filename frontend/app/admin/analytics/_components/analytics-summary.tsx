@@ -4,9 +4,13 @@ import { DollarSign, Ticket, XCircle, CheckCircle2 } from "lucide-react";
 
 interface AnalyticsSummaryProps {
   stats: BookingStatsResponse;
+  selectedMonth: string;
 }
 
-export function AnalyticsSummary({ stats }: AnalyticsSummaryProps) {
+export function AnalyticsSummary({
+  stats,
+  selectedMonth,
+}: AnalyticsSummaryProps) {
   const cancellationRate =
     stats.total_bookings > 0
       ? (stats.cancelled_bookings / stats.total_bookings) * 100
@@ -23,7 +27,7 @@ export function AnalyticsSummary({ stats }: AnalyticsSummaryProps) {
           <div className="text-2xl font-bold">
             {stats.total_revenue.toLocaleString()}đ
           </div>
-          <p className="text-xs text-muted-foreground">Trong 30 ngày qua</p>
+          <p className="text-xs text-muted-foreground">{selectedMonth}</p>
         </CardContent>
       </Card>
       <Card>
@@ -33,7 +37,7 @@ export function AnalyticsSummary({ stats }: AnalyticsSummaryProps) {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{stats.total_bookings}</div>
-          <p className="text-xs text-muted-foreground">Trong 30 ngày qua</p>
+          <p className="text-xs text-muted-foreground">{selectedMonth}</p>
         </CardContent>
       </Card>
       <Card>
@@ -43,7 +47,7 @@ export function AnalyticsSummary({ stats }: AnalyticsSummaryProps) {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{stats.completed_bookings}</div>
-          <p className="text-xs text-muted-foreground">Chuyến đi đã kết thúc</p>
+          <p className="text-xs text-muted-foreground">Đã xác nhận</p>
         </CardContent>
       </Card>
       <Card>

@@ -61,5 +61,11 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 				users.DELETE("/:id", ginext.WrapHandler(h.UserHandler.DeleteUser))
 			}
 		}
+
+		// Internal endpoints for service-to-service communication
+		internal := v1.Group("/internal")
+		{
+			internal.GET("/users/:id", ginext.WrapHandler(h.UserHandler.GetUser))
+		}
 	}
 }

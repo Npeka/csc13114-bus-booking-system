@@ -34,10 +34,10 @@ func (r *bookingStatsRepositoryImpl) GetBookingStatsByDateRange(ctx context.Cont
 		return nil, fmt.Errorf("failed to count total bookings: %w", err)
 	}
 
-	// Total revenue (only completed bookings)
+	// Total revenue (only confirmed bookings)
 	if err := r.db.WithContext(ctx).
 		Model(&model.Booking{}).
-		Where("created_at BETWEEN ? AND ? AND status = ?", startDate, endDate, "completed").
+		Where("created_at BETWEEN ? AND ? AND status = ?", startDate, endDate, model.BookingStatusConfirmed).
 		Select("COALESCE(SUM(total_amount), 0)").
 		Scan(&stats.TotalRevenue).Error; err != nil {
 		return nil, fmt.Errorf("failed to calculate total revenue: %w", err)
@@ -46,15 +46,15 @@ func (r *bookingStatsRepositoryImpl) GetBookingStatsByDateRange(ctx context.Cont
 	// Cancelled bookings
 	if err := r.db.WithContext(ctx).
 		Model(&model.Booking{}).
-		Where("created_at BETWEEN ? AND ? AND status = ?", startDate, endDate, "cancelled").
+		Where("created_at BETWEEN ? AND ? AND status = ?", startDate, endDate, model.BookingStatusCancelled).
 		Count(&stats.CancelledBookings).Error; err != nil {
 		return nil, fmt.Errorf("failed to count cancelled bookings: %w", err)
 	}
 
-	// Completed bookings
+	// Completed bookings (confirmed status)
 	if err := r.db.WithContext(ctx).
 		Model(&model.Booking{}).
-		Where("created_at BETWEEN ? AND ? AND status = ?", startDate, endDate, "completed").
+		Where("created_at BETWEEN ? AND ? AND status = ?", startDate, endDate, model.BookingStatusConfirmed).
 		Count(&stats.CompletedBookings).Error; err != nil {
 		return nil, fmt.Errorf("failed to count completed bookings: %w", err)
 	}
@@ -82,7 +82,7 @@ func (r *bookingStatsRepositoryImpl) GetPopularTrips(ctx context.Context, limit 
 		Select(`
 			b.trip_id,
 			COUNT(*) as total_bookings,
-			COALESCE(SUM(CASE WHEN b.status = 'completed' THEN b.total_amount ELSE 0 END), 0) as total_revenue,
+			COALESCE(SUM(CASE WHEN b.status = 'CONFIRMED' THEN b.total_amount ELSE 0 END), 0) as total_revenue,
 			COALESCE(AVG(f.rating), 0) as average_rating
 		`).
 		Joins("LEFT JOIN feedbacks f ON f.booking_id = b.id").

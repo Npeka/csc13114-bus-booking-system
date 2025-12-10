@@ -80,7 +80,14 @@ func (r *SeatLockRepositoryImpl) IsLocked(ctx context.Context, tripID, seatID uu
 }
 
 func (r *SeatLockRepositoryImpl) CleanExpiredLocks(ctx context.Context) error {
-	return r.db.WithContext(ctx).
+	err := r.db.WithContext(ctx).
 		Where("expires_at < ?", time.Now()).
 		Delete(&model.SeatLock{}).Error
+
+	// Skip if table doesn't exist (feature not yet deployed)
+	if err != nil && err.Error() == `ERROR: relation "seat_locks" does not exist (SQLSTATE 42P01)` {
+		return nil
+	}
+
+	return err
 }
