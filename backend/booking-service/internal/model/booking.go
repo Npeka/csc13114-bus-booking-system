@@ -65,7 +65,6 @@ type CreatePaymentRequest struct {
 
 // UpdateBookingStatusRequest updates booking payment status (internal use)
 type UpdateBookingStatusRequest struct {
-	TransactionID     uuid.UUID                 `json:"transaction_id" validate:"required"`
 	TransactionStatus payment.TransactionStatus `json:"transaction_status" validate:"required"`
 }
 
