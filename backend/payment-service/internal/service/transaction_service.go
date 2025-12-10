@@ -7,7 +7,6 @@ import (
 	"bus-booking/payment-service/internal/repository"
 	"bus-booking/shared/ginext"
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -19,7 +18,7 @@ import (
 
 type TransactionService interface {
 	CreatePaymentLink(ctx context.Context, req *model.CreatePaymentLinkRequest, userID uuid.UUID) (*model.TransactionResponse, error)
-	HandlePaymentWebhook(ctx context.Context, webhookData model.PaymentWebhookData) error
+	HandlePaymentWebhook(ctx context.Context, webhookMap map[string]interface{}, webhookData model.PaymentWebhookData) error
 	CancelPayment(ctx context.Context, transactionID uuid.UUID) (*model.TransactionResponse, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*model.TransactionResponse, error)
 	GetByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.TransactionResponse, error)
@@ -77,23 +76,10 @@ func (s *TransactionServiceImpl) CreatePaymentLink(ctx context.Context, req *mod
 	return s.toTransactionResponse(transaction), nil
 }
 
-func (s *TransactionServiceImpl) HandlePaymentWebhook(ctx context.Context, webhookData model.PaymentWebhookData) error {
+func (s *TransactionServiceImpl) HandlePaymentWebhook(ctx context.Context, webhookMap map[string]interface{}, webhookData model.PaymentWebhookData) error {
 	log.Info().Msg("Starting webhook verification")
 
-	// Convert struct to map for PayOS verification
-	webhookBytes, err := json.Marshal(webhookData)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to marshal webhook data to JSON bytes")
-		return ginext.NewBadRequestError("invalid webhook data format")
-	}
-
-	var webhookMap map[string]interface{}
-	if err := json.Unmarshal(webhookBytes, &webhookMap); err != nil {
-		log.Error().Err(err).Msg("Failed to unmarshal webhook data to map")
-		return ginext.NewBadRequestError("invalid webhook data format")
-	}
-
-	// Verify webhook signature with map
+	// Verify webhook signature with original map data
 	if err := s.payOSService.VerifyWebhook(ctx, webhookMap); err != nil {
 		log.Error().Err(err).Msg("Webhook signature verification failed")
 		return ginext.NewUnauthorizedError("invalid webhook signature")

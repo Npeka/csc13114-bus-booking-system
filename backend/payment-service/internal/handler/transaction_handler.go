@@ -1,6 +1,9 @@
 package handler
 
 import (
+	"encoding/json"
+	"io"
+
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 
@@ -70,16 +73,35 @@ func (h *TransactionHandlerImpl) CreatePaymentLink(r *ginext.Request) (*ginext.R
 func (h *TransactionHandlerImpl) HandlePaymentWebhook(r *ginext.Request) (*ginext.Response, error) {
 	log.Info().Msg("Webhook handler started")
 
-	// Manually decode JSON to avoid Gin validator issues with map types
+	// Read the raw body first (needed for signature verification)
+	bodyBytes, err := io.ReadAll(r.GinCtx.Request.Body)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to read request body")
+		return nil, ginext.NewBadRequestError("Invalid request body")
+	}
+	defer func() {
+		if err := r.GinCtx.Request.Body.Close(); err != nil {
+			log.Error().Err(err).Msg("Failed to close request body")
+		}
+	}()
+
+	// Parse to map for verification
+	var webhookMap map[string]interface{}
+	if err := json.Unmarshal(bodyBytes, &webhookMap); err != nil {
+		log.Error().Err(err).Msg("JSON parsing failed - invalid JSON format")
+		return nil, ginext.NewBadRequestError("Invalid webhook data")
+	}
+
+	// Parse to struct for processing
 	var webhookData model.PaymentWebhookData
-	if err := r.GinCtx.ShouldBindJSON(&webhookData); err != nil {
-		log.Error().Err(err).Msg("JSON binding failed - invalid JSON format")
+	if err := json.Unmarshal(bodyBytes, &webhookData); err != nil {
+		log.Error().Err(err).Msg("JSON parsing failed - invalid webhook structure")
 		return nil, ginext.NewBadRequestError("Invalid webhook data")
 	}
 
 	log.Info().Interface("webhookData", webhookData).Msg("Successfully parsed webhook data")
 
-	err := h.service.HandlePaymentWebhook(r.GinCtx.Request.Context(), webhookData)
+	err = h.service.HandlePaymentWebhook(r.GinCtx.Request.Context(), webhookMap, webhookData)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to process webhook in service layer")
 		return nil, err
