@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { searchTrips, deleteTrip } from "@/lib/api/trip-service";
 import { TripFilters } from "./_components/trip-filters";
+import type { TripFilters as TripFiltersType } from "./_components/trip-filters";
 import { TripTable } from "./_components/trip-table";
 import { Pagination } from "@/components/shared/pagination";
 import { DeleteDialog } from "@/components/shared/delete-dialog";
@@ -19,8 +20,7 @@ export default function AdminTripsPage() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [filters, setFilters] = useState<TripFiltersType>({});
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [tripToDelete, setTripToDelete] = useState<string | null>(null);
 
@@ -29,12 +29,21 @@ export default function AdminTripsPage() {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["admin-trips", page, pageSize, search, statusFilter],
+    queryKey: ["admin-trips", page, pageSize, filters],
     queryFn: () =>
       searchTrips({
-        origin: search || undefined,
-        destination: search || undefined,
-        status: statusFilter || undefined,
+        origin: filters.origin,
+        destination: filters.destination,
+        status: filters.status,
+        departure_time_start: filters.departureTimeStart,
+        departure_time_end: filters.departureTimeEnd,
+        arrival_time_start: filters.arrivalTimeStart,
+        arrival_time_end: filters.arrivalTimeEnd,
+        min_price: filters.minPrice,
+        max_price: filters.maxPrice,
+        amenities: filters.amenities,
+        sort_by: filters.sortBy as "price" | "departure_time" | "duration",
+        sort_order: filters.sortOrder as "asc" | "desc",
         page,
         page_size: pageSize,
       }),
@@ -61,8 +70,7 @@ export default function AdminTripsPage() {
   };
 
   const handleClearFilters = () => {
-    setSearch("");
-    setStatusFilter("");
+    setFilters({});
     setPage(1);
   };
 
@@ -84,10 +92,8 @@ export default function AdminTripsPage() {
       </PageHeaderLayout>
 
       <TripFilters
-        search={search}
-        statusFilter={statusFilter}
-        onSearchChange={setSearch}
-        onStatusChange={setStatusFilter}
+        filters={filters}
+        onFiltersChange={setFilters}
         onClearFilters={handleClearFilters}
       />
 

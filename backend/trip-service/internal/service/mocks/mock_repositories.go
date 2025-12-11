@@ -154,8 +154,8 @@ func (m *MockRouteRepository) GetRoutesWithRouteStops(ctx context.Context, id uu
 	return args.Get(0).(*model.Route), args.Error(1)
 }
 
-func (m *MockRouteRepository) ListRoutes(ctx context.Context, page, pageSize int) ([]model.Route, int64, error) {
-	args := m.Called(ctx, page, pageSize)
+func (m *MockRouteRepository) ListRoutes(ctx context.Context, req *model.ListRoutesRequest) ([]model.Route, int64, error) {
+	args := m.Called(ctx, req)
 	return args.Get(0).([]model.Route), args.Get(1).(int64), args.Error(2)
 }
 

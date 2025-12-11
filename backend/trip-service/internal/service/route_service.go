@@ -14,7 +14,7 @@ import (
 
 type RouteService interface {
 	GetRouteByID(ctx context.Context, id uuid.UUID) (*model.Route, error)
-	ListRoutes(ctx context.Context, page, pageSize int) ([]model.Route, int64, error)
+	ListRoutes(ctx context.Context, req *model.ListRoutesRequest) ([]model.Route, int64, error)
 	GetRoutesByOriginDestination(ctx context.Context, origin, destination string) ([]model.Route, error)
 
 	CreateRoute(ctx context.Context, req *model.CreateRouteRequest) (*model.Route, error)
@@ -41,8 +41,8 @@ func (s *RouteServiceImpl) GetRouteByID(ctx context.Context, id uuid.UUID) (*mod
 	return route, nil
 }
 
-func (s *RouteServiceImpl) ListRoutes(ctx context.Context, page, pageSize int) ([]model.Route, int64, error) {
-	routes, total, err := s.routeRepo.ListRoutes(ctx, page, pageSize)
+func (s *RouteServiceImpl) ListRoutes(ctx context.Context, req *model.ListRoutesRequest) ([]model.Route, int64, error) {
+	routes, total, err := s.routeRepo.ListRoutes(ctx, req)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to list routes")
 		return nil, 0, ginext.NewInternalServerError("failed to list routes")

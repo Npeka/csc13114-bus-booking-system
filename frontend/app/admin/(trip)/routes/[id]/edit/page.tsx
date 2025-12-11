@@ -8,6 +8,7 @@ import {
   updateRoute,
   createRouteStop,
   updateRouteStop,
+  moveRouteStop,
   deleteRouteStop,
 } from "@/lib/api/trip-service";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,9 @@ export default function EditRoutePage() {
   // Route stop management state
   const [stopDialogOpen, setStopDialogOpen] = useState(false);
   const [editingStop, setEditingStop] = useState<RouteStop | null>(null);
+  const [optimisticStops, setOptimisticStops] = useState<RouteStop[] | null>(
+    null,
+  );
 
   // Fetch route data
   const {
@@ -188,6 +192,50 @@ export default function EditRoutePage() {
     }
   };
 
+  const handleReorder = async (reorderedStops: RouteStop[]) => {
+    // Optimistic update - show new order immediately
+    setOptimisticStops(reorderedStops);
+
+    // Use simple position-based move logic
+    if (!route?.route_stops) return;
+
+    const oldStops = route.route_stops;
+
+    // Find which stop moved by comparing
+    for (let newIndex = 0; newIndex < reorderedStops.length; newIndex++) {
+      const stop = reorderedStops[newIndex];
+      const oldIndex = oldStops.findIndex((s) => s.id === stop.id);
+
+      if (oldIndex !== newIndex) {
+        // This stop moved!
+        try {
+          let position: "before" | "after" | "first" | "last";
+          let referenceStopId: string | undefined;
+
+          if (newIndex === 0) {
+            position = "first";
+          } else if (newIndex === reorderedStops.length - 1) {
+            position = "last";
+          } else {
+            // Moved to middle - place after previous stop
+            position = "after";
+            referenceStopId = reorderedStops[newIndex - 1].id;
+          }
+
+          await moveRouteStop(stop.id, position, referenceStopId);
+          await queryClient.invalidateQueries({ queryKey: ["route", routeId] });
+          setOptimisticStops(null); // Clear optimistic after sync
+          toast.success("Đã cập nhật thứ tự điểm dừng");
+        } catch {
+          setOptimisticStops(null); // Revert on error
+          toast.error("Không thể cập nhật thứ tự điểm dừng");
+          queryClient.invalidateQueries({ queryKey: ["route", routeId] });
+        }
+        break; // Only one stop moves at a time with drag-drop
+      }
+    }
+  };
+
   if (isLoading) {
     return (
       <>
@@ -243,9 +291,9 @@ export default function EditRoutePage() {
         <RouteBasicInfo formData={formData} setFormData={setFormData} />
 
         {/* Route Stops */}
-        {route.route_stops && (
+        {(optimisticStops || route.route_stops) && (
           <RouteStopsList
-            stops={route.route_stops}
+            stops={optimisticStops || route.route_stops || []}
             onAdd={() => {
               setEditingStop(null);
               setStopDialogOpen(true);
@@ -255,30 +303,35 @@ export default function EditRoutePage() {
               setStopDialogOpen(true);
             }}
             onDelete={handleDeleteStop}
+            onReorder={handleReorder}
             isDeleting={deleteStopMutation.isPending}
           />
         )}
-
-        {/* Action Buttons */}
-        <div className="flex justify-end gap-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleCancel}
-            disabled={updateMutation.isPending}
-          >
-            Hủy
-          </Button>
-          <Button
-            type="submit"
-            disabled={updateMutation.isPending}
-            className="bg-primary text-white hover:bg-primary/90"
-          >
-            <Save className="mr-2 h-4 w-4" />
-            {updateMutation.isPending ? "Đang lưu..." : "Lưu thay đổi"}
-          </Button>
-        </div>
       </form>
+
+      {/* Sticky Action Buttons - Scoped to this page */}
+      <div className="sticky bottom-0 z-10 mt-6 border-t bg-background shadow-lg">
+        <div className="container mx-auto max-w-7xl px-4 py-4">
+          <div className="flex justify-end gap-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCancel}
+              disabled={updateMutation.isPending}
+            >
+              Hủy
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={updateMutation.isPending}
+              className="bg-primary text-white hover:bg-primary/90"
+            >
+              <Save className="mr-2 h-4 w-4" />
+              {updateMutation.isPending ? "Đang lưu..." : "Lưu thay đổi"}
+            </Button>
+          </div>
+        </div>
+      </div>
 
       <RouteStopDialog
         open={stopDialogOpen}

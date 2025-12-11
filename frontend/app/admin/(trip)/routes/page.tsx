@@ -19,6 +19,8 @@ import { listRoutes, deleteRoute } from "@/lib/api/trip-service";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { RouteFilters } from "./_components/route-filters";
+import type { RouteFilters as RouteFiltersType } from "./_components/route-filters";
 import { Pagination } from "@/components/shared/pagination";
 import { DeleteDialog } from "@/components/shared/delete-dialog";
 import { PageHeader, PageHeaderLayout } from "@/components/shared/admin";
@@ -29,7 +31,7 @@ export default function AdminRoutesPage() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
-  const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState<RouteFiltersType>({});
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [routeToDelete, setRouteToDelete] = useState<string | null>(null);
 
@@ -38,8 +40,25 @@ export default function AdminRoutesPage() {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["admin-routes", page, pageSize, search],
-    queryFn: () => listRoutes({ page, page_size: pageSize }),
+    queryKey: ["admin-routes", page, pageSize, filters],
+    queryFn: () =>
+      listRoutes({
+        page,
+        page_size: pageSize,
+        origin: filters.origin,
+        destination: filters.destination,
+        min_distance: filters.minDistance,
+        max_distance: filters.maxDistance,
+        min_duration: filters.minDuration,
+        max_duration: filters.maxDuration,
+        is_active: filters.isActive,
+        sort_by: filters.sortBy as
+          | "distance"
+          | "duration"
+          | "origin"
+          | "destination",
+        sort_order: filters.sortOrder as "asc" | "desc",
+      }),
   });
 
   const deleteMutation = useMutation({
@@ -69,6 +88,13 @@ export default function AdminRoutesPage() {
     }
   };
 
+  const handleClearFilters = () => {
+    setFilters({});
+    setPage(1);
+  };
+
+  const hasActiveFilters = Object.keys(filters).length > 0;
+
   return (
     <>
       <PageHeaderLayout>
@@ -85,29 +111,11 @@ export default function AdminRoutesPage() {
         </Button>
       </PageHeaderLayout>
 
-      {/* Filters */}
-      {/* <Card className="mb-6">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <Input
-                placeholder="Tìm kiếm điểm đi hoặc điểm đến..."
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                }}
-                className="max-w-sm"
-              />
-            </div>
-            {search && (
-              <Button variant="outline" onClick={handleClearFilters}>
-                Xóa bộ lọc
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card> */}
+      <RouteFilters
+        filters={filters}
+        onFiltersChange={setFilters}
+        onClearFilters={handleClearFilters}
+      />
 
       {isLoading ? (
         <Card>
@@ -131,16 +139,16 @@ export default function AdminRoutesPage() {
           <CardContent className="p-12 text-center">
             <MapPin className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
             <p className="text-lg font-semibold">
-              {search
+              {hasActiveFilters
                 ? "Không tìm thấy tuyến đường nào"
                 : "Chưa có tuyến đường nào"}
             </p>
             <p className="mb-4 text-muted-foreground">
-              {search
-                ? "Thử tìm kiếm với từ khóa khác"
+              {hasActiveFilters
+                ? "Thử tìm kiếm với bộ lọc khác"
                 : "Tạo tuyến đường đầu tiên để bắt đầu"}
             </p>
-            {!search && (
+            {!hasActiveFilters && (
               <Button
                 onClick={() => router.push("/admin/routes/new")}
                 className="bg-primary text-white hover:bg-primary/90"

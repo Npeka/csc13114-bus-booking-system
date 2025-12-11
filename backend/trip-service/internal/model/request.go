@@ -12,6 +12,19 @@ type ListBusesRequest struct {
 // ListRoutesRequest represents query parameters for listing routes
 type ListRoutesRequest struct {
 	PaginationRequest
+
+	// Filter parameters
+	Origin      *string `form:"origin" json:"origin,omitempty"`
+	Destination *string `form:"destination" json:"destination,omitempty"`
+	MinDistance *int    `form:"min_distance" json:"min_distance,omitempty" validate:"omitempty,min=0"`
+	MaxDistance *int    `form:"max_distance" json:"max_distance,omitempty" validate:"omitempty,min=0"`
+	MinDuration *int    `form:"min_duration" json:"min_duration,omitempty" validate:"omitempty,min=0"`
+	MaxDuration *int    `form:"max_duration" json:"max_duration,omitempty" validate:"omitempty,min=0"`
+	IsActive    *bool   `form:"is_active" json:"is_active,omitempty"`
+
+	// Sort parameters
+	SortBy    *string `form:"sort_by" json:"sort_by,omitempty"`       // distance, duration, origin, destination
+	SortOrder *string `form:"sort_order" json:"sort_order,omitempty"` // asc, desc
 }
 
 // SearchRoutesQueryRequest represents query parameters for searching routes

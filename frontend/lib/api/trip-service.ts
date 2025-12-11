@@ -248,6 +248,15 @@ export const listTrips = async (params?: {
 export const listRoutes = async (params?: {
   page?: number;
   page_size?: number;
+  origin?: string;
+  destination?: string;
+  min_distance?: number;
+  max_distance?: number;
+  min_duration?: number;
+  max_duration?: number;
+  is_active?: boolean;
+  sort_by?: "distance" | "duration" | "origin" | "destination";
+  sort_order?: "asc" | "desc";
 }): Promise<{
   routes: Route[];
   total: number;
@@ -386,6 +395,15 @@ export const createRoute = async (routeData: {
   destination: string;
   distance_km: number;
   estimated_minutes: number;
+  route_stops?: Array<{
+    stop_order: number;
+    stop_type: string;
+    location: string;
+    address: string;
+    latitude?: number | null;
+    longitude?: number | null;
+    offset_minutes: number;
+  }>;
 }): Promise<Route> => {
   try {
     const response = await apiClient.post<ApiResponse<Route>>(
@@ -485,6 +503,34 @@ export const updateRouteStop = async (
 
     if (!response.data.data) {
       throw new Error("Failed to update route stop");
+    }
+
+    return response.data.data;
+  } catch (error) {
+    const errorMessage = handleApiError(error);
+    throw new Error(errorMessage);
+  }
+};
+
+/**
+ * Move a route stop to a new position (admin only)
+ */
+export const moveRouteStop = async (
+  stopId: string,
+  position: "before" | "after" | "first" | "last",
+  referenceStopId?: string,
+): Promise<RouteStop> => {
+  try {
+    const response = await apiClient.post<ApiResponse<RouteStop>>(
+      `/trip/api/v1/routes/stops/${stopId}/move`,
+      {
+        position,
+        reference_stop_id: referenceStopId,
+      },
+    );
+
+    if (!response.data.data) {
+      throw new Error("Failed to move route stop");
     }
 
     return response.data.data;

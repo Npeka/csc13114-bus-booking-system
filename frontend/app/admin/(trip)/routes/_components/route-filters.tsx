@@ -1,20 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import {
-  SlidersHorizontal,
-  X,
-  Clock,
-  DollarSign,
-  CheckSquare,
-  ArrowUpDown,
-} from "lucide-react";
+import { SlidersHorizontal, X, Ruler, Clock, ToggleLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -24,24 +15,21 @@ import {
 } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 
-export interface TripFilters {
+export interface RouteFilters {
   origin?: string;
   destination?: string;
-  status?: string;
-  departureTimeStart?: string;
-  departureTimeEnd?: string;
-  arrivalTimeStart?: string;
-  arrivalTimeEnd?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  amenities?: string[];
+  minDistance?: number;
+  maxDistance?: number;
+  minDuration?: number;
+  maxDuration?: number;
+  isActive?: boolean;
   sortBy?: string;
   sortOrder?: string;
 }
 
-interface TripFiltersProps {
-  filters: TripFilters;
-  onFiltersChange: (filters: TripFilters) => void;
+interface RouteFiltersProps {
+  filters: RouteFilters;
+  onFiltersChange: (filters: RouteFilters) => void;
   onClearFilters: () => void;
 }
 
@@ -59,60 +47,58 @@ const CITIES = [
   "Quy Nhơn",
   "Buôn Ma Thuột",
   "Tây Ninh",
+  "Bình Phước",
+  "Nghệ An",
+  "Thanh Hóa",
+  "Quảng Ninh",
+  "Bắc Ninh",
+  "Nam Định",
 ];
 
-const TRIP_STATUSES = [
-  { value: "scheduled", label: "Đã lên lịch" },
-  { value: "in_progress", label: "Đang di chuyển" },
-  { value: "completed", label: "Hoàn thành" },
-  { value: "cancelled", label: "Đã hủy" },
-];
-
-const AMENITIES = [
-  { value: "wifi", label: "WiFi" },
-  { value: "ac", label: "AC" },
-  { value: "toilet", label: "Toilet" },
-  { value: "charging", label: "Sạc" },
-  { value: "blanket", label: "Chăn" },
-  { value: "water", label: "Nước" },
+const STATUS_OPTIONS = [
+  { value: "true", label: "Hoạt động" },
+  { value: "false", label: "Tạm dừng" },
 ];
 
 const SORT_OPTIONS = [
-  { value: "price", label: "Giá" },
-  { value: "departure_time", label: "Giờ đi" },
+  { value: "distance", label: "Khoảng cách" },
   { value: "duration", label: "Thời gian" },
+  { value: "origin", label: "Điểm đi" },
+  { value: "destination", label: "Điểm đến" },
 ];
 
-export function TripFilters({
+export function RouteFilters({
   filters,
   onFiltersChange,
   onClearFilters,
-}: TripFiltersProps) {
+}: RouteFiltersProps) {
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
-  const [priceRange, setPriceRange] = useState<[number, number]>([
-    filters.minPrice || 0,
-    filters.maxPrice || 1000000,
+  const [distanceRange, setDistanceRange] = useState<[number, number]>([
+    filters.minDistance || 0,
+    filters.maxDistance || 500,
+  ]);
+  const [durationRange, setDurationRange] = useState<[number, number]>([
+    filters.minDuration || 0,
+    filters.maxDuration || 600,
   ]);
 
   const updateFilter = (
-    key: keyof TripFilters,
-    value: string | number | string[] | undefined,
+    key: keyof RouteFilters,
+    value: string | number | boolean | undefined,
   ) => {
     onFiltersChange({ ...filters, [key]: value });
   };
 
-  const toggleAmenity = (amenity: string) => {
-    const current = filters.amenities || [];
-    const updated = current.includes(amenity)
-      ? current.filter((a) => a !== amenity)
-      : [...current, amenity];
-    updateFilter("amenities", updated);
+  const handleDistanceChange = (values: number[]) => {
+    setDistanceRange([values[0], values[1]]);
+    updateFilter("minDistance", values[0]);
+    updateFilter("maxDistance", values[1]);
   };
 
-  const handlePriceChange = (values: number[]) => {
-    setPriceRange([values[0], values[1]]);
-    updateFilter("minPrice", values[0]);
-    updateFilter("maxPrice", values[1]);
+  const handleDurationChange = (values: number[]) => {
+    setDurationRange([values[0], values[1]]);
+    updateFilter("minDuration", values[0]);
+    updateFilter("maxDuration", values[1]);
   };
 
   const activeFilterCount = Object.entries(filters).filter(
@@ -162,14 +148,16 @@ export function TripFilters({
           </Select>
 
           <Select
-            value={filters.status || ""}
-            onValueChange={(value) => updateFilter("status", value)}
+            value={filters.isActive?.toString() || ""}
+            onValueChange={(value) =>
+              updateFilter("isActive", value === "true")
+            }
           >
-            <SelectTrigger className="h-9 w-[140px] text-sm">
+            <SelectTrigger className="h-9 w-[130px] text-sm">
               <SelectValue placeholder="Trạng thái" />
             </SelectTrigger>
             <SelectContent>
-              {TRIP_STATUSES.map((status) => (
+              {STATUS_OPTIONS.map((status) => (
                 <SelectItem key={status.value} value={status.value}>
                   {status.label}
                 </SelectItem>
@@ -209,86 +197,50 @@ export function TripFilters({
         <Collapsible open={isAdvancedOpen}>
           <CollapsibleContent className="mt-0">
             <div className="flex flex-wrap items-center gap-4 border-t pt-3">
-              {/* Time Range */}
+              {/* Distance Range */}
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1">
-                  <Clock className="h-3 w-3 text-muted-foreground" />
+                  <Ruler className="h-3 w-3 text-muted-foreground" />
                   <span className="text-xs font-medium text-muted-foreground">
-                    Giờ:
-                  </span>
-                </div>
-                <Input
-                  type="time"
-                  className="h-8 w-24 text-xs"
-                  placeholder="Từ"
-                  value={filters.departureTimeStart || ""}
-                  onChange={(e) =>
-                    updateFilter("departureTimeStart", e.target.value)
-                  }
-                />
-                <span className="text-xs text-muted-foreground">-</span>
-                <Input
-                  type="time"
-                  className="h-8 w-24 text-xs"
-                  placeholder="Đến"
-                  value={filters.departureTimeEnd || ""}
-                  onChange={(e) =>
-                    updateFilter("departureTimeEnd", e.target.value)
-                  }
-                />
-              </div>
-
-              {/* Separator */}
-              <div className="h-6 w-px bg-border" />
-
-              {/* Price Range */}
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1">
-                  <DollarSign className="h-3 w-3 text-muted-foreground" />
-                  <span className="text-xs font-medium text-muted-foreground">
-                    Giá:
+                    Khoảng cách:
                   </span>
                 </div>
                 <Slider
-                  value={priceRange}
-                  onValueChange={handlePriceChange}
+                  value={distanceRange}
+                  onValueChange={handleDistanceChange}
                   min={0}
-                  max={1000000}
-                  step={10000}
+                  max={500}
+                  step={10}
                   className="w-32"
                 />
                 <span className="text-xs whitespace-nowrap text-muted-foreground">
-                  {(priceRange[0] / 1000).toFixed(0)}-
-                  {(priceRange[1] / 1000).toFixed(0)}k
+                  {distanceRange[0]}-{distanceRange[1]}km
                 </span>
               </div>
 
               {/* Separator */}
               <div className="h-6 w-px bg-border" />
 
-              {/* Amenities */}
+              {/* Duration Range */}
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1">
-                  <CheckSquare className="h-3 w-3 text-muted-foreground" />
+                  <Clock className="h-3 w-3 text-muted-foreground" />
                   <span className="text-xs font-medium text-muted-foreground">
-                    Tiện nghi:
+                    Thời gian:
                   </span>
                 </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {AMENITIES.map((amenity) => (
-                    <label
-                      key={amenity.value}
-                      className="flex cursor-pointer items-center gap-1"
-                    >
-                      <Checkbox
-                        checked={filters.amenities?.includes(amenity.value)}
-                        onCheckedChange={() => toggleAmenity(amenity.value)}
-                        className="h-3.5 w-3.5"
-                      />
-                      <span className="text-xs">{amenity.label}</span>
-                    </label>
-                  ))}
-                </div>
+                <Slider
+                  value={durationRange}
+                  onValueChange={handleDurationChange}
+                  min={0}
+                  max={600}
+                  step={15}
+                  className="w-32"
+                />
+                <span className="text-xs whitespace-nowrap text-muted-foreground">
+                  {Math.floor(durationRange[0] / 60)}h{durationRange[0] % 60}m -{" "}
+                  {Math.floor(durationRange[1] / 60)}h{durationRange[1] % 60}m
+                </span>
               </div>
 
               {/* Separator */}
@@ -297,7 +249,7 @@ export function TripFilters({
               {/* Sort */}
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1">
-                  <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+                  <ToggleLeft className="h-3 w-3 text-muted-foreground" />
                   <span className="text-xs font-medium text-muted-foreground">
                     Sắp xếp:
                   </span>
@@ -306,7 +258,7 @@ export function TripFilters({
                   value={filters.sortBy || ""}
                   onValueChange={(value) => updateFilter("sortBy", value)}
                 >
-                  <SelectTrigger className="h-8 w-24 text-xs">
+                  <SelectTrigger className="h-8 w-32 text-xs">
                     <SelectValue placeholder="Theo" />
                   </SelectTrigger>
                   <SelectContent>

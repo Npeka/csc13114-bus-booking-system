@@ -13,14 +13,14 @@ export interface TripSearchParams {
   // Other filters
   passengers?: number; // Client-side only, for seat availability
   seat_type?: "standard" | "vip" | "sleeper";
-  price_min?: number;
-  price_max?: number;
+  min_price?: number;
+  max_price?: number;
   departure_time_min?: string; // Deprecated, use departure_time_start
   departure_time_max?: string; // Deprecated, use departure_time_end
   amenities?: string[]; // Filter by bus amenities
   bus_type?: string; // Filter by bus type/model
   operator_id?: string;
-  sort_by?: "price" | "departure_time" | "arrival_time";
+  sort_by?: "price" | "departure_time" | "duration";
   sort_order?: "asc" | "desc";
 
   // Admin filters

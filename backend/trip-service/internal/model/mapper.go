@@ -71,7 +71,7 @@ func ToRouteStopResponse(stop *RouteStop) *RouteStopResponse {
 		ID:            stop.ID,
 		RouteID:       stop.RouteID,
 		StopOrder:     stop.StopOrder,
-		StopType:      stop.StopType.String(), // Raw string value
+		StopType:      stop.StopType,
 		Location:      stop.Location,
 		Address:       stop.Address,
 		Latitude:      stop.Latitude,

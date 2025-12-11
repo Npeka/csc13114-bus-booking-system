@@ -1,35 +1,36 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, MapPin, Navigation, Clock } from "lucide-react";
+import { ArrowLeft, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { Form } from "@/components/ui/form";
 import { createRoute } from "@/lib/api/trip-service";
+import { getCities } from "@/lib/api/constants-service";
 import { toast } from "sonner";
 import { PageHeader, PageHeaderLayout } from "@/components/shared/admin";
+import { RouteStopDialog } from "@/components/admin/route-stop-dialog";
+import { RouteStopsList } from "../[id]/edit/_components/route-stops-list";
+import { RouteBasicInfo } from "./_components/route-basic-info";
+import type {
+  RouteStop,
+  CreateRouteStopRequest,
+  UpdateRouteStopRequest,
+} from "@/lib/types/trip";
 
 const routeFormSchema = z.object({
   origin: z
     .string()
-    .min(1, "Vui lòng nhập điểm đi")
+    .min(1, "Vui lòng chọn điểm đi")
     .max(100, "Tên điểm đi quá dài"),
   destination: z
     .string()
-    .min(1, "Vui lòng nhập điểm đến")
+    .min(1, "Vui lòng chọn điểm đến")
     .max(100, "Tên điểm đến quá dài"),
   distance_km: z
     .number()
@@ -47,6 +48,17 @@ export default function NewRoutePage() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
+  // Route stops state
+  const [routeStops, setRouteStops] = useState<RouteStop[]>([]);
+  const [stopDialogOpen, setStopDialogOpen] = useState(false);
+  const [editingStop, setEditingStop] = useState<RouteStop | null>(null);
+
+  // Fetch cities
+  const { data: cities = [] } = useQuery({
+    queryKey: ["cities"],
+    queryFn: getCities,
+  });
+
   const form = useForm<RouteFormValues>({
     resolver: zodResolver(routeFormSchema),
     defaultValues: {
@@ -59,17 +71,32 @@ export default function NewRoutePage() {
 
   const createMutation = useMutation({
     mutationFn: (data: RouteFormValues) => {
+      // Convert route stops to API format
+      const route_stops = routeStops.map((stop) => ({
+        stop_order: stop.stop_order,
+        stop_type:
+          typeof stop.stop_type === "string"
+            ? stop.stop_type
+            : stop.stop_type.value,
+        location: stop.location,
+        address: stop.address || "",
+        latitude: stop.latitude ?? null,
+        longitude: stop.longitude ?? null,
+        offset_minutes: stop.offset_minutes,
+      }));
+
       return createRoute({
         origin: data.origin,
         destination: data.destination,
         distance_km: data.distance_km,
         estimated_minutes: data.estimated_minutes,
+        route_stops,
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-routes"] });
       queryClient.invalidateQueries({ queryKey: ["routes"] });
-      toast.success("Đã tạo tuyến đường thành công");
+      toast.success("Đã tạo tuyến đường thành công!");
       router.push("/admin/routes");
     },
     onError: (error: Error) => {
@@ -78,7 +105,58 @@ export default function NewRoutePage() {
   });
 
   const onSubmit = (data: RouteFormValues) => {
+    // Validate route stops
+    if (routeStops.length < 2) {
+      toast.error("Tuyến đường phải có ít nhất 2 điểm dừng");
+      return;
+    }
+
     createMutation.mutate(data);
+  };
+
+  const handleAddStop = (
+    data: CreateRouteStopRequest | UpdateRouteStopRequest,
+  ) => {
+    if (editingStop) {
+      // Edit existing stop - convert stop_type to ConstantDisplay if it's a string
+      const updatedData = {
+        ...data,
+        stop_type:
+          typeof data.stop_type === "string"
+            ? { value: data.stop_type, display_name: data.stop_type }
+            : data.stop_type,
+      };
+      setRouteStops(
+        routeStops.map((s) =>
+          s.id === editingStop.id ? ({ ...s, ...updatedData } as RouteStop) : s,
+        ),
+      );
+    } else {
+      // Add new stop - convert stop_type to ConstantDisplay format
+      const newStop: RouteStop = {
+        ...data,
+        id: `temp-${Date.now()}`,
+        route_id: "",
+        stop_type:
+          typeof data.stop_type === "string"
+            ? { value: data.stop_type, display_name: data.stop_type }
+            : data.stop_type || { value: "both", display_name: "both" },
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as RouteStop;
+      setRouteStops([...routeStops, newStop]);
+    }
+    setStopDialogOpen(false);
+    setEditingStop(null);
+  };
+
+  const handleDeleteStop = (stopId: string) => {
+    setRouteStops(routeStops.filter((s) => s.id !== stopId));
+  };
+
+  const handleReorder = (reorderedStops: RouteStop[]) => {
+    setRouteStops(reorderedStops);
   };
 
   return (
@@ -86,7 +164,7 @@ export default function NewRoutePage() {
       <PageHeaderLayout>
         <PageHeader
           title="Thêm tuyến đường mới"
-          description="Tạo tuyến đường mới cho hệ thống"
+          description="Tạo tuyến đường mới với các điểm dừng"
         />
         <Button variant="ghost" onClick={() => router.back()} className="mb-4">
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -94,145 +172,74 @@ export default function NewRoutePage() {
         </Button>
       </PageHeaderLayout>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Thông tin tuyến đường</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* Origin */}
-              <FormField
-                control={form.control}
-                name="origin"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      <MapPin className="mr-2 inline h-4 w-4" />
-                      Điểm đi
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder="VD: TP. Hồ Chí Minh" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Nhập tên thành phố hoặc địa điểm xuất phát
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {/* Basic Route Info */}
+          <RouteBasicInfo form={form} cities={cities} />
 
-              {/* Destination */}
-              <FormField
-                control={form.control}
-                name="destination"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      <Navigation className="mr-2 inline h-4 w-4" />
-                      Điểm đến
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder="VD: Đà Lạt" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Nhập tên thành phố hoặc địa điểm đích
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
+          {/* Route Stops */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Điểm dừng ({routeStops.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RouteStopsList
+                stops={routeStops}
+                onAdd={() => {
+                  setEditingStop(null);
+                  setStopDialogOpen(true);
+                }}
+                onEdit={(stop) => {
+                  setEditingStop(stop);
+                  setStopDialogOpen(true);
+                }}
+                onDelete={handleDeleteStop}
+                onReorder={handleReorder}
+                isDeleting={false}
               />
+              {routeStops.length < 2 && (
+                <p className="mt-4 text-sm text-muted-foreground">
+                  ℹ️ Tuyến đường cần có ít nhất 2 điểm dừng
+                </p>
+              )}
+            </CardContent>
+          </Card>
 
-              {/* Distance */}
-              <FormField
-                control={form.control}
-                name="distance_km"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      <Navigation className="mr-2 inline h-4 w-4" />
-                      Khoảng cách (km)
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.1"
-                        min="0.1"
-                        placeholder="VD: 308"
-                        {...field}
-                        onChange={(e) =>
-                          field.onChange(parseFloat(e.target.value) || 0)
-                        }
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Khoảng cách thực tế giữa điểm đi và điểm đến (đơn vị: km)
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Estimated Duration */}
-              <FormField
-                control={form.control}
-                name="estimated_minutes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      <Clock className="mr-2 inline h-4 w-4" />
-                      Thời gian ước tính (phút)
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min="1"
-                        placeholder="VD: 420 (7 giờ)"
-                        {...field}
-                        onChange={(e) =>
-                          field.onChange(parseInt(e.target.value) || 0)
-                        }
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Thời gian di chuyển ước tính (đơn vị: phút). VD: 420 phút
-                      = 7 giờ
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Submit Buttons */}
-              <div className="flex gap-4 pt-4">
+          {/* Submit Buttons */}
+          <div className="sticky bottom-0 z-10 mt-6 border-t bg-background shadow-lg">
+            <div className="container mx-auto max-w-7xl px-4 py-4">
+              <div className="flex justify-end gap-4">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => router.back()}
-                  className="flex-1"
+                  disabled={createMutation.isPending}
                 >
                   Hủy
                 </Button>
                 <Button
                   type="submit"
-                  className="flex-1 bg-primary text-white hover:bg-primary/90"
-                  disabled={createMutation.isPending}
+                  disabled={createMutation.isPending || routeStops.length < 2}
+                  className="bg-primary text-white hover:bg-primary/90"
                 >
+                  <Save className="mr-2 h-4 w-4" />
                   {createMutation.isPending ? "Đang tạo..." : "Tạo tuyến đường"}
                 </Button>
               </div>
+            </div>
+          </div>
+        </form>
+      </Form>
 
-              {createMutation.error && (
-                <div className="rounded-lg border border-destructive bg-destructive/10 p-4 text-sm text-destructive">
-                  {createMutation.error instanceof Error
-                    ? createMutation.error.message
-                    : "Đã xảy ra lỗi khi tạo tuyến đường"}
-                </div>
-              )}
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+      {/* Route Stop Dialog */}
+      <RouteStopDialog
+        open={stopDialogOpen}
+        onOpenChange={setStopDialogOpen}
+        stop={editingStop || undefined}
+        defaultOrder={(routeStops.length + 1) * 100}
+        onSave={handleAddStop}
+        isPending={false}
+      />
     </>
   );
 }

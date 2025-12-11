@@ -109,10 +109,10 @@ function TripsContent() {
 
     // Add price filter
     if (filters.priceRange[0] > 0) {
-      params.price_min = filters.priceRange[0];
+      params.min_price = filters.priceRange[0];
     }
     if (filters.priceRange[1] < 1000000) {
-      params.price_max = filters.priceRange[1];
+      params.max_price = filters.priceRange[1];
     }
 
     // Add time range filter

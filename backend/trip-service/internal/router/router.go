@@ -92,6 +92,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 		{
 			routeStops.POST("", ginext.WrapHandler(h.RouteStopHandler.CreateRouteStop))
 			routeStops.PUT("/:id", ginext.WrapHandler(h.RouteStopHandler.UpdateRouteStop))
+			routeStops.POST("/:id/move", ginext.WrapHandler(h.RouteStopHandler.MoveRouteStop))
 			routeStops.DELETE("/:id", ginext.WrapHandler(h.RouteStopHandler.DeleteRouteStop))
 		}
 	}

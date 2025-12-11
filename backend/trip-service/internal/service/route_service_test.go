@@ -83,10 +83,17 @@ func TestRouteService_ListRoutes_Success(t *testing.T) {
 	route2.ID = uuid.New()
 	routes := []model.Route{route1, route2}
 
-	mockRouteRepo.On("ListRoutes", ctx, 1, 20).Return(routes, int64(2), nil)
+	req := &model.ListRoutesRequest{
+		PaginationRequest: model.PaginationRequest{
+			Page:     1,
+			PageSize: 20,
+		},
+	}
+
+	mockRouteRepo.On("ListRoutes", ctx, req).Return(routes, int64(2), nil)
 
 	// Act
-	result, total, err := service.ListRoutes(ctx, 1, 20)
+	result, total, err := service.ListRoutes(ctx, req)
 
 	// Assert
 	assert.NoError(t, err)

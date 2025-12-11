@@ -15,6 +15,7 @@ import (
 type RouteStopService interface {
 	CreateRouteStop(ctx context.Context, req *model.CreateRouteStopRequest) (*model.RouteStop, error)
 	UpdateRouteStop(ctx context.Context, id uuid.UUID, req *model.UpdateRouteStopRequest) (*model.RouteStop, error)
+	MoveRouteStop(ctx context.Context, id uuid.UUID, req *model.MoveRouteStopRequest) (*model.RouteStop, error)
 	DeleteRouteStop(ctx context.Context, id uuid.UUID) error
 	ListRouteStops(ctx context.Context, routeID uuid.UUID) ([]model.RouteStop, error)
 	ReorderStops(ctx context.Context, routeID uuid.UUID, stopOrders []StopOrder) error
@@ -116,66 +117,7 @@ func (s *RouteStopServiceImpl) UpdateRouteStop(ctx context.Context, id uuid.UUID
 		return nil, ginext.NewBadRequestError("route stop not found")
 	}
 
-	oldStopOrder := stop.StopOrder
-
-	if req.StopOrder != nil && *req.StopOrder != oldStopOrder {
-		// Get route with stops sorted by order ASC
-		route, err := s.routeRepo.GetRoutesWithRouteStops(ctx, stop.RouteID)
-		if err != nil {
-			log.Error().Err(err).Str("route_id", stop.RouteID.String()).Msg("Route not found")
-			return nil, ginext.NewBadRequestError("route not found")
-		}
-
-		existingStops := route.RouteStops
-		newStopOrder := *req.StopOrder
-
-		// Get min/max from sorted array - first and last elements
-		minOrder := existingStops[0].StopOrder
-		maxOrder := existingStops[len(existingStops)-1].StopOrder
-
-		// Clamp to bounds
-		if newStopOrder < minOrder {
-			newStopOrder = minOrder
-		}
-		if newStopOrder > maxOrder {
-			newStopOrder = maxOrder
-		}
-
-		// Build order map for affected stops
-		orderMap := make(map[uuid.UUID]int)
-
-		// Moving forward: shift intermediate stops down by -1
-		if newStopOrder > oldStopOrder {
-			for _, existingStop := range existingStops {
-				if existingStop.ID != id && existingStop.StopOrder > oldStopOrder && existingStop.StopOrder <= newStopOrder {
-					orderMap[existingStop.ID] = existingStop.StopOrder - 1
-				}
-			}
-		} else if newStopOrder < oldStopOrder {
-			// Moving backward: shift intermediate stops up by +1
-			for _, existingStop := range existingStops {
-				if existingStop.ID != id && existingStop.StopOrder >= newStopOrder && existingStop.StopOrder < oldStopOrder {
-					orderMap[existingStop.ID] = existingStop.StopOrder + 1
-				}
-			}
-		}
-
-		// Add current stop with new order
-		orderMap[id] = newStopOrder
-
-		// Apply reorder
-		if len(orderMap) > 0 {
-			if err := s.stopRepo.ReorderStops(ctx, stop.RouteID, orderMap); err != nil {
-				log.Error().Err(err).Msg("Failed to reorder stops")
-				return nil, ginext.NewInternalServerError("failed to reorder stops")
-			}
-			log.Info().Int("affected_count", len(orderMap)).Int("old_order", oldStopOrder).Int("new_order", newStopOrder).Msg("Reordered stops")
-		}
-
-		stop.StopOrder = newStopOrder
-	}
-
-	// Update other fields
+	// Update fields (stop_order is ignored - use MoveRouteStop instead)
 	if req.StopType != nil {
 		stop.StopType = *req.StopType
 	}
@@ -207,6 +149,99 @@ func (s *RouteStopServiceImpl) UpdateRouteStop(ctx context.Context, id uuid.UUID
 		Str("stop_id", id.String()).
 		Int("stop_order", stop.StopOrder).
 		Msg("Route stop updated successfully")
+
+	return stop, nil
+}
+
+func (s *RouteStopServiceImpl) MoveRouteStop(ctx context.Context, id uuid.UUID, req *model.MoveRouteStopRequest) (*model.RouteStop, error) {
+	// Get the stop to move
+	stop, err := s.stopRepo.GetByID(ctx, id)
+	if err != nil {
+		log.Error().Err(err).Str("stop_id", id.String()).Msg("Route stop not found")
+		return nil, ginext.NewBadRequestError("route stop not found")
+	}
+
+	// Get all stops for the route sorted by order
+	route, err := s.routeRepo.GetRoutesWithRouteStops(ctx, stop.RouteID)
+	if err != nil {
+		log.Error().Err(err).Str("route_id", stop.RouteID.String()).Msg("Route not found")
+		return nil, ginext.NewBadRequestError("route not found")
+	}
+
+	allStops := route.RouteStops
+	if len(allStops) <= 1 {
+		// Only one stop, nothing to reorder
+		return stop, nil
+	}
+
+	var newOrder int
+
+	switch req.Position {
+	case "first":
+		// Move to first position (before current first stop)
+		newOrder = allStops[0].StopOrder - 1
+
+	case "last":
+		// Move to last position (after current last stop)
+		newOrder = allStops[len(allStops)-1].StopOrder + 1
+
+	case "before":
+		if req.ReferenceStopID == nil {
+			return nil, ginext.NewBadRequestError("reference_stop_id required for 'before' position")
+		}
+		// Find reference stop
+		var refIndex int = -1
+		for i, s := range allStops {
+			if s.ID == *req.ReferenceStopID {
+				refIndex = i
+				break
+			}
+		}
+		if refIndex == -1 {
+			return nil, ginext.NewBadRequestError("reference stop not found")
+		}
+		// Place before reference (order - 1)
+		newOrder = allStops[refIndex].StopOrder - 1
+
+	case "after":
+		if req.ReferenceStopID == nil {
+			return nil, ginext.NewBadRequestError("reference_stop_id required for 'after' position")
+		}
+		// Find reference stop
+		var refIndex int = -1
+		for i, s := range allStops {
+			if s.ID == *req.ReferenceStopID {
+				refIndex = i
+				break
+			}
+		}
+		if refIndex == -1 {
+			return nil, ginext.NewBadRequestError("reference stop not found")
+		}
+		// Place after reference (order + 1)
+		newOrder = allStops[refIndex].StopOrder + 1
+
+	default:
+		return nil, ginext.NewBadRequestError("invalid position")
+	}
+
+	// Update only the moved stop's order
+	orderMap := map[uuid.UUID]int{
+		id: newOrder,
+	}
+
+	if err := s.stopRepo.ReorderStops(ctx, stop.RouteID, orderMap); err != nil {
+		log.Error().Err(err).Msg("Failed to move route stop")
+		return nil, ginext.NewInternalServerError("failed to move route stop")
+	}
+
+	stop.StopOrder = newOrder
+
+	log.Info().
+		Str("stop_id", id.String()).
+		Int("new_order", newOrder).
+		Str("position", req.Position).
+		Msg("Route stop moved successfully")
 
 	return stop, nil
 }

@@ -66,6 +66,12 @@ routes:
       required: true
       roles: ["admin"]
 
+  - path: "/api/v1/routes/stops/:id/move"
+    methods: ["POST"]
+    auth:
+      required: true
+      roles: ["admin"]
+
   - path: "/api/v1/routes/stops/:id"
     methods: ["PUT", "DELETE"]
     auth:

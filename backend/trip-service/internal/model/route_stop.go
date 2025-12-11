@@ -9,17 +9,16 @@ import (
 
 type RouteStop struct {
 	BaseModel
-	RouteID       uuid.UUID          `gorm:"type:uuid;not null;index:idx_route_stops_route" json:"route_id" validate:"required"`
-	StopOrder     int                `gorm:"type:integer;not null" json:"stop_order" validate:"required,min=1"`
-	StopType      constants.StopType `gorm:"type:varchar(20);not null" json:"stop_type" validate:"required"`
-	Location      string             `gorm:"type:varchar(255);not null;index:idx_route_stops_location" json:"location" validate:"required"`
-	Address       string             `gorm:"type:text" json:"address"`
+	RouteID       uuid.UUID          `gorm:"type:uuid;not null;index" json:"route_id"`
+	StopOrder     int                `gorm:"type:integer;not null" json:"stop_order"`
+	StopType      constants.StopType `gorm:"type:varchar(50);not null" json:"stop_type"` // pickup, dropoff, both
+	Location      string             `gorm:"type:varchar(255);not null" json:"location"`
+	Address       string             `gorm:"type:text;not null" json:"address"`
 	Latitude      *float64           `gorm:"type:decimal(10,8)" json:"latitude,omitempty"`
 	Longitude     *float64           `gorm:"type:decimal(11,8)" json:"longitude,omitempty"`
-	OffsetMinutes int                `gorm:"type:integer;not null" json:"offset_minutes" validate:"min=0"`
+	OffsetMinutes int                `gorm:"type:integer;not null" json:"offset_minutes"`
 	IsActive      bool               `gorm:"type:boolean;not null;default:true" json:"is_active"`
-
-	Route *Route `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"route,omitempty"`
+	Route         Route              `gorm:"foreignKey:RouteID" json:"route,omitempty"`
 }
 
 func (RouteStop) TableName() string {
@@ -33,37 +32,44 @@ func (rs *RouteStop) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-type RouteStopResponse struct {
-	ID            uuid.UUID `json:"id"`
-	RouteID       uuid.UUID `json:"route_id"`
-	StopOrder     int       `json:"stop_order"`
-	StopType      string    `json:"stop_type"` // Raw string value
-	Location      string    `json:"location"`
-	Address       string    `json:"address"`
-	Latitude      *float64  `json:"latitude,omitempty"`
-	Longitude     *float64  `json:"longitude,omitempty"`
-	OffsetMinutes int       `json:"offset_minutes"`
-	IsActive      bool      `json:"is_active"`
-}
-
+// Request models
 type CreateRouteStopRequest struct {
-	RouteID       uuid.UUID          `json:"route_id"`
-	StopOrder     int                `json:"stop_order" validate:"required,min=1"`
-	StopType      constants.StopType `json:"stop_type" validate:"required"`
-	Location      string             `json:"location" validate:"required"`
-	Address       string             `json:"address"`
-	Latitude      *float64           `json:"latitude,omitempty"`
-	Longitude     *float64           `json:"longitude,omitempty"`
+	RouteID       uuid.UUID          `json:"route_id" validate:"required"`
+	StopOrder     int                `json:"stop_order" validate:"min=1"`
+	StopType      constants.StopType `json:"stop_type" validate:"required,oneof=pickup dropoff both"`
+	Location      string             `json:"location" validate:"required,min=2,max=255"`
+	Address       string             `json:"address" validate:"required"`
+	Latitude      *float64           `json:"latitude,omitempty" validate:"omitempty,min=-90,max=90"`
+	Longitude     *float64           `json:"longitude,omitempty" validate:"omitempty,min=-180,max=180"`
 	OffsetMinutes int                `json:"offset_minutes" validate:"min=0"`
 }
 
 type UpdateRouteStopRequest struct {
 	StopOrder     *int                `json:"stop_order,omitempty" validate:"omitempty,min=1"`
-	StopType      *constants.StopType `json:"stop_type,omitempty"`
-	Location      *string             `json:"location,omitempty"`
+	StopType      *constants.StopType `json:"stop_type,omitempty" validate:"omitempty,oneof=pickup dropoff both"`
+	Location      *string             `json:"location,omitempty" validate:"omitempty,min=2,max=255"`
 	Address       *string             `json:"address,omitempty"`
-	Latitude      *float64            `json:"latitude,omitempty"`
-	Longitude     *float64            `json:"longitude,omitempty"`
+	Latitude      *float64            `json:"latitude,omitempty" validate:"omitempty,min=-90,max=90"`
+	Longitude     *float64            `json:"longitude,omitempty" validate:"omitempty,min=-180,max=180"`
 	OffsetMinutes *int                `json:"offset_minutes,omitempty" validate:"omitempty,min=0"`
 	IsActive      *bool               `json:"is_active,omitempty"`
+}
+
+// MoveRouteStopRequest allows frontend to specify position relative to another stop
+type MoveRouteStopRequest struct {
+	Position        string     `json:"position" validate:"required,oneof=before after first last"` // before, after, first, last
+	ReferenceStopID *uuid.UUID `json:"reference_stop_id,omitempty"`                                // Required for before/after
+}
+
+type RouteStopResponse struct {
+	ID            uuid.UUID          `json:"id"`
+	RouteID       uuid.UUID          `json:"route_id"`
+	StopOrder     int                `json:"stop_order"`
+	StopType      constants.StopType `json:"stop_type"` // Raw string value
+	Location      string             `json:"location"`
+	Address       string             `json:"address"`
+	Latitude      *float64           `json:"latitude,omitempty"`
+	Longitude     *float64           `json:"longitude,omitempty"`
+	OffsetMinutes int                `json:"offset_minutes"`
+	IsActive      bool               `json:"is_active"`
 }
