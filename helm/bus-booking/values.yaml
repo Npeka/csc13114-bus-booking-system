@@ -50,7 +50,7 @@ services:
   trip-service:
     containerName: trip-service
     image: npkhang22/bb-trip-service
-    tag: trip-service-4d79f9f
+    tag: trip-service-d29b282
     port: 8080
     env:
       SERVICE_NAME: "trip-service"
