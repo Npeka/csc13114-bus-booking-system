@@ -190,7 +190,7 @@ func (s *RouteStopServiceImpl) MoveRouteStop(ctx context.Context, id uuid.UUID, 
 			return nil, ginext.NewBadRequestError("reference_stop_id required for 'before' position")
 		}
 		// Find reference stop
-		var refIndex int = -1
+		var refIndex = -1
 		for i, s := range allStops {
 			if s.ID == *req.ReferenceStopID {
 				refIndex = i
@@ -208,7 +208,7 @@ func (s *RouteStopServiceImpl) MoveRouteStop(ctx context.Context, id uuid.UUID, 
 			return nil, ginext.NewBadRequestError("reference_stop_id required for 'after' position")
 		}
 		// Find reference stop
-		var refIndex int = -1
+		var refIndex = -1
 		for i, s := range allStops {
 			if s.ID == *req.ReferenceStopID {
 				refIndex = i
