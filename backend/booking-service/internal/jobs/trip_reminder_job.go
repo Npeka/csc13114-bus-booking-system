@@ -102,12 +102,15 @@ func (j *TripReminderJob) sendReminder(ctx context.Context, bookingID uuid.UUID)
 		return fmt.Errorf("failed to get booking: %w", err)
 	}
 
-	user, err := j.userClient.GetUser(ctx, booking.UserID)
+	user, err := j.userClient.GetUserByID(ctx, booking.UserID)
 	if err != nil {
 		return fmt.Errorf("failed to get user: %w", err)
 	}
 
-	trip, err := j.tripClient.GetTripByID(ctx, booking.TripID)
+	tripData, err := j.tripClient.GetTripByID(ctx, trip.GetTripByIDRequest{
+		PreLoadRoute: true,
+		PreloadBus:   true,
+	}, booking.TripID)
 	if err != nil {
 		return fmt.Errorf("failed to get trip: %w", err)
 	}
@@ -124,22 +127,22 @@ func (j *TripReminderJob) sendReminder(ctx context.Context, bookingID uuid.UUID)
 	}
 
 	pickupPoint := "N/A"
-	if trip.Route != nil {
-		pickupPoint = trip.Route.Origin
+	if tripData.Route != nil {
+		pickupPoint = tripData.Route.Origin
 	}
 
 	busPlate := "Pending"
-	if trip.Bus != nil {
-		busPlate = trip.Bus.PlateNumber
+	if tripData.Bus != nil {
+		busPlate = tripData.Bus.PlateNumber
 	}
 
 	req := &client.TripReminderRequest{
 		Email:             user.Email,
 		PassengerName:     user.FullName,
 		BookingReference:  booking.BookingReference,
-		DepartureLocation: getOrigin(trip),
-		Destination:       getDestination(trip),
-		DepartureTime:     trip.DepartureTime.Format("15:04 02/01/2006"),
+		DepartureLocation: getOrigin(tripData),
+		Destination:       getDestination(tripData),
+		DepartureTime:     tripData.DepartureTime.Format("15:04 02/01/2006"),
 		SeatNumbers:       strings.Join(seatNumbers, ", "),
 		BusPlate:          busPlate,
 		PickupPoint:       pickupPoint,

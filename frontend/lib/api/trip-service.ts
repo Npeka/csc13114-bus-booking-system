@@ -55,13 +55,38 @@ export const searchTrips = async (
 /**
  * Get trip by ID
  */
-export const getTripById = async (id: string): Promise<Trip> => {
+export const getTripById = async (
+  id: string,
+  preload_route = true,
+  preload_route_stop = false,
+  preload_bus = true,
+  preload_seat = false,
+  seat_booking_status = false,
+): Promise<Trip> => {
   try {
-    // Based on searchTrips and user input, the API returns data directly
-    const query =
-      "preload_route=true&preload_route_stop=true&preload_bus=true&preload_seat=true&seat_booking_status=true";
+    // Build query params
+    const params = new URLSearchParams();
+
+    if (preload_route) {
+      params.append("preload_route", "true");
+    }
+    if (preload_route_stop) {
+      params.append("preload_route_stop", "true");
+    }
+    if (preload_bus) {
+      params.append("preload_bus", "true");
+    }
+    if (preload_seat) {
+      params.append("preload_seat", "true");
+    }
+    if (seat_booking_status) {
+      params.append("seat_booking_status", "true");
+    }
+
+    const queryString = params.toString();
+
     const response = await apiClient.get<{ data: Trip }>(
-      `/trip/api/v1/trips/${id}?${query}`,
+      `/trip/api/v1/trips/${id}${queryString ? `?${queryString}` : ""}`,
     );
 
     if (!response.data.data) {

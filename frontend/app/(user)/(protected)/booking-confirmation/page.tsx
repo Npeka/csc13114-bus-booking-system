@@ -91,6 +91,26 @@ function BookingConfirmationContent() {
     );
   }
 
+  const isPaymentFailed = booking.transaction_status === "FAILED";
+  const canRetryPayment =
+    (booking.status === "FAILED" || booking.status === "EXPIRED") &&
+    booking.transaction_status !== "PAID";
+
+  const handleRetryPayment = async () => {
+    try {
+      const { retryPayment } = await import("@/lib/api/booking-service");
+      const updatedBooking = await retryPayment(booking.id);
+
+      toast.success("Đã tạo link thanh toán mới!");
+
+      // Refresh the page to show new payment link
+      window.location.reload();
+    } catch (error) {
+      toast.error("Không thể tạo link thanh toán mới");
+      console.error(error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background py-12">
       <div className="container max-w-3xl">
@@ -101,6 +121,48 @@ function BookingConfirmationContent() {
           timeRemaining={timeRemaining}
           onCopy={copyBookingReference}
         />
+
+        {/* Payment Failed Alert */}
+        {isPaymentFailed && (
+          <Card className="mb-6 border-destructive bg-destructive/10">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-4">
+                <div className="rounded-full bg-destructive/20 p-2">
+                  <svg
+                    className="h-5 w-5 text-destructive"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-destructive">
+                    Thanh toán thất bại
+                  </h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Không thể tạo link thanh toán. Vui lòng thử lại.
+                  </p>
+                  {canRetryPayment && (
+                    <Button
+                      onClick={handleRetryPayment}
+                      className="mt-3"
+                      variant="destructive"
+                    >
+                      Thử lại thanh toán
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Booking Details */}
         <Card className="mb-6">

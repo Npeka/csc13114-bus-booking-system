@@ -11,7 +11,8 @@ import (
 )
 
 type TripClient interface {
-	GetTripByID(ctx context.Context, tripID uuid.UUID) (*trip.Trip, error)
+	GetTripByID(ctx context.Context, req trip.GetTripByIDRequest, ripID uuid.UUID) (*trip.Trip, error)
+	GetTripsByIDs(ctx context.Context, req trip.GetTripByIDRequest, tripIDs []uuid.UUID) ([]trip.Trip, error)
 	ListSeatsByIDs(ctx context.Context, seatIDs []uuid.UUID) ([]trip.Seat, error)
 }
 
@@ -30,10 +31,27 @@ func NewTripClient(serviceName, baseURL string) TripClient {
 	}
 }
 
-func (c *TripClientImpl) GetTripByID(ctx context.Context, tripID uuid.UUID) (*trip.Trip, error) {
+func (c *TripClientImpl) GetTripByID(ctx context.Context, req trip.GetTripByIDRequest, tripID uuid.UUID) (*trip.Trip, error) {
 	endpoint := fmt.Sprintf("/api/v1/trips/%s", tripID.String())
 
-	res, err := c.http.Get(ctx, endpoint, nil, nil)
+	params := make(map[string][]string)
+	if req.SeatBookingStatus {
+		params["seat_booking_status"] = []string{"true"}
+	}
+	if req.PreLoadRoute {
+		params["preload_route"] = []string{"true"}
+	}
+	if req.PreLoadRouteStop {
+		params["preload_route_stop"] = []string{"true"}
+	}
+	if req.PreloadBus {
+		params["preload_bus"] = []string{"true"}
+	}
+	if req.PreloadSeat {
+		params["preload_seat"] = []string{"true"}
+	}
+
+	res, err := c.http.Get(ctx, endpoint, params, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get trip: %w", err)
 	}
@@ -67,4 +85,37 @@ func (c *TripClientImpl) ListSeatsByIDs(ctx context.Context, seatIDs []uuid.UUID
 	}
 
 	return seats, nil
+}
+
+// GetTripsByIDs fetches multiple trips by IDs in a single batch request
+func (c *TripClientImpl) GetTripsByIDs(ctx context.Context, req trip.GetTripByIDRequest, tripIDs []uuid.UUID) ([]trip.Trip, error) {
+	endpoint := "/api/v1/trips"
+
+	params := make(map[string][]string)
+	// Add trip IDs
+	tripIDStrings := make([]string, len(tripIDs))
+	for i, id := range tripIDs {
+		tripIDStrings[i] = id.String()
+	}
+	params["ids[]"] = tripIDStrings
+
+	// Add preload options
+	if req.PreLoadRoute {
+		params["preload_route"] = []string{"true"}
+	}
+	if req.PreloadBus {
+		params["preload_bus"] = []string{"true"}
+	}
+
+	res, err := c.http.Get(ctx, endpoint, params, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get trips: %w", err)
+	}
+
+	trips, err := client.ParseListData[trip.Trip](res)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse trips response: %w", err)
+	}
+
+	return trips, nil
 }

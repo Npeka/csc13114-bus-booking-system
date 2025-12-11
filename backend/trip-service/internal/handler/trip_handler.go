@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"time"
 
 	"bus-booking/shared/ginext"
@@ -13,7 +14,7 @@ import (
 
 type TripHandler interface {
 	SearchTrips(r *ginext.Request) (*ginext.Response, error)
-	GetTrip(r *ginext.Request) (*ginext.Response, error)
+	GetByID(r *ginext.Request) (*ginext.Response, error)
 	ListTrips(r *ginext.Request) (*ginext.Response, error)
 	ListTripsByRoute(r *ginext.Request) (*ginext.Response, error)
 
@@ -74,7 +75,7 @@ func (h *TripHandlerImpl) SearchTrips(r *ginext.Request) (*ginext.Response, erro
 	return ginext.NewPaginatedResponse(trips, req.Page, req.PageSize, total), nil
 }
 
-// GetTrip godoc
+// GetByID godoc
 // @Summary Get trip by ID
 // @Description Get detailed information about a specific trip
 // @Tags trips
@@ -85,7 +86,7 @@ func (h *TripHandlerImpl) SearchTrips(r *ginext.Request) (*ginext.Response, erro
 // @Failure 400 {object} ginext.Response "Invalid trip ID"
 // @Failure 404 {object} ginext.Response "Trip not found"
 // @Router /api/v1/trips/{id} [get]
-func (h *TripHandlerImpl) GetTrip(r *ginext.Request) (*ginext.Response, error) {
+func (h *TripHandlerImpl) GetByID(r *ginext.Request) (*ginext.Response, error) {
 	idStr := r.GinCtx.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -93,7 +94,7 @@ func (h *TripHandlerImpl) GetTrip(r *ginext.Request) (*ginext.Response, error) {
 		return nil, ginext.NewBadRequestError("invalid trip ID")
 	}
 
-	var req model.GetTripByIDRequuest
+	var req model.GetTripByIDRequest
 	if err := r.GinCtx.ShouldBindQuery(&req); err != nil {
 		log.Error().Err(err).Msg("Query binding failed")
 		return nil, ginext.NewBadRequestError(err.Error())
@@ -110,13 +111,14 @@ func (h *TripHandlerImpl) GetTrip(r *ginext.Request) (*ginext.Response, error) {
 
 // ListTrips godoc
 // @Summary List trips
-// @Description Get a paginated list of trips
+// @Description Get a paginated list of trips or fetch specific trips by IDs
 // @Tags trips
 // @Accept json
 // @Produce json
 // @Param page query int false "Page number" default(1)
 // @Param page_size query int false "Items per page" default(20)
-// @Success 200 {object} ginext.Response "Paginated trip list"
+// @Param ids[] query []string false "Trip IDs to fetch (bypasses pagination)"
+// @Success 200 {object} ginext.Response "Paginated trip list or list of specific trips"
 // @Failure 400 {object} ginext.Response "Invalid request"
 // @Failure 500 {object} ginext.Response "Internal server error"
 // @Router /api/v1/trips [get]
@@ -127,10 +129,28 @@ func (h *TripHandlerImpl) ListTrips(r *ginext.Request) (*ginext.Response, error)
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
-	trips, total, err := h.tripService.ListTrips(r.Context(), req.Page, req.PageSize)
+	// Convert IDStrs to UUIDs if provided
+	if len(req.IDStrs) > 0 {
+		req.IDs = make([]uuid.UUID, 0, len(req.IDStrs))
+		for _, idStr := range req.IDStrs {
+			id, err := uuid.Parse(idStr)
+			if err != nil {
+				log.Error().Err(err).Str("id", idStr).Msg("Invalid trip ID in batch request")
+				return nil, ginext.NewBadRequestError(fmt.Sprintf("invalid trip ID: %s", idStr))
+			}
+			req.IDs = append(req.IDs, id)
+		}
+	}
+
+	trips, total, err := h.tripService.ListTrips(r.Context(), &req)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to list trips")
 		return nil, err
+	}
+
+	// If batch request (IDs provided), return simple list without pagination
+	if len(req.IDs) > 0 {
+		return ginext.NewSuccessResponse(model.ToTripResponseList(trips)), nil
 	}
 
 	return ginext.NewPaginatedResponse(model.ToTripResponseList(trips), req.Page, req.PageSize, total), nil

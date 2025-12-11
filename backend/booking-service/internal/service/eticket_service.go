@@ -9,6 +9,7 @@ import (
 	"bus-booking/booking-service/internal/client"
 	"bus-booking/booking-service/internal/model"
 	"bus-booking/booking-service/internal/model/payment"
+	"bus-booking/booking-service/internal/model/trip"
 	"bus-booking/booking-service/internal/repository"
 	"bus-booking/shared/ginext"
 
@@ -78,7 +79,7 @@ func (s *eTicketServiceImpl) GenerateETicket(ctx context.Context, bookingID uuid
 	pdf.Ln(5)
 
 	// Lấy thông tin chuyến đi từ trip service
-	tripData, err := s.tripClient.GetTripByID(ctx, booking.TripID)
+	tripData, err := s.tripClient.GetTripByID(ctx, trip.GetTripByIDRequest{}, booking.TripID)
 	if err != nil {
 		log.Warn().Err(err).Msg("Failed to get trip data, using basic info")
 	}

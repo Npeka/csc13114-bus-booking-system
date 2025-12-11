@@ -17,11 +17,11 @@ import (
 )
 
 type TransactionService interface {
-	CreatePaymentLink(ctx context.Context, req *model.CreatePaymentLinkRequest, userID uuid.UUID) (*model.TransactionResponse, error)
-	HandlePaymentWebhook(ctx context.Context, webhookMap map[string]interface{}, webhookData model.PaymentWebhookData) error
-	CancelPayment(ctx context.Context, transactionID uuid.UUID) (*model.TransactionResponse, error)
+	Create(ctx context.Context, req *model.CreateTransactionRequest, userID uuid.UUID) (*model.TransactionResponse, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*model.TransactionResponse, error)
 	GetByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.TransactionResponse, error)
+	Cancel(ctx context.Context, transactionID uuid.UUID) (*model.TransactionResponse, error)
+	HandleWebhook(ctx context.Context, webhookMap map[string]interface{}, webhookData model.PaymentWebhookData) error
 }
 
 type TransactionServiceImpl struct {
@@ -42,8 +42,8 @@ func NewTransactionService(
 	}
 }
 
-func (s *TransactionServiceImpl) CreatePaymentLink(ctx context.Context, req *model.CreatePaymentLinkRequest, userID uuid.UUID) (*model.TransactionResponse, error) {
-	payosResp, err := s.payOSService.CreatePaymentLink(ctx, &model.CreatePayOSPaymentLinkRequest{
+func (s *TransactionServiceImpl) Create(ctx context.Context, req *model.CreateTransactionRequest, userID uuid.UUID) (*model.TransactionResponse, error) {
+	payosResp, err := s.payOSService.CreatePaymentLink(ctx, &model.CreatePaymentLinkRequest{
 		Amount:      req.Amount,
 		Description: req.Description,
 		ExpiresAt:   req.ExpiresAt,
@@ -52,9 +52,14 @@ func (s *TransactionServiceImpl) CreatePaymentLink(ctx context.Context, req *mod
 		return nil, ginext.NewInternalServerError(fmt.Sprintf("failed to create payment link: %v", err))
 	}
 
+	id := req.ID
+	if id == uuid.Nil {
+		id = uuid.New()
+	}
+
 	transaction := &model.Transaction{
 		BaseModel: model.BaseModel{
-			ID: uuid.New(),
+			ID: id,
 		},
 		BookingID:     req.BookingID,
 		UserID:        userID,
@@ -76,7 +81,7 @@ func (s *TransactionServiceImpl) CreatePaymentLink(ctx context.Context, req *mod
 	return s.toTransactionResponse(transaction), nil
 }
 
-func (s *TransactionServiceImpl) HandlePaymentWebhook(ctx context.Context, webhookMap map[string]interface{}, webhookData model.PaymentWebhookData) error {
+func (s *TransactionServiceImpl) HandleWebhook(ctx context.Context, webhookMap map[string]interface{}, webhookData model.PaymentWebhookData) error {
 	log.Info().Msg("Starting webhook verification")
 
 	// Verify webhook signature with original map data
@@ -156,8 +161,8 @@ func (s *TransactionServiceImpl) GetByBookingID(ctx context.Context, bookingID u
 	return s.toTransactionResponse(transaction), nil
 }
 
-// CancelPayment cancels a payment and updates transaction status
-func (s *TransactionServiceImpl) CancelPayment(ctx context.Context, transactionID uuid.UUID) (*model.TransactionResponse, error) {
+// Cancel cancels a payment and updates transaction status
+func (s *TransactionServiceImpl) Cancel(ctx context.Context, transactionID uuid.UUID) (*model.TransactionResponse, error) {
 	// Get transaction from DB
 	transaction, err := s.transactionRepo.GetByID(ctx, transactionID)
 	if err != nil {

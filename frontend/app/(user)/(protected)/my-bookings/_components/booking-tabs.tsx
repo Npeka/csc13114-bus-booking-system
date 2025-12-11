@@ -188,6 +188,9 @@ export function BookingTabs({ userId, transformBooking }: BookingTabsProps) {
 
   const renderBookingActions = (booking: UIBooking, showCancel = true) => (
     <>
+      <Button variant="outline" size="sm" asChild>
+        <Link href={`/my-bookings/${booking.id}`}>Xem chi tiết</Link>
+      </Button>
       {booking.status === "CONFIRMED" && (
         <Button
           variant="outline"

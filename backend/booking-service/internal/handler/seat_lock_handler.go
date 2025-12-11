@@ -25,7 +25,7 @@ func NewSeatLockHandler(lockService service.SeatLockService) SeatLockHandler {
 
 // LockSeats godoc
 // @Summary Lock seats temporarily
-// @Description Lock selected seats for 15 minutes during booking process
+// @Description Lock selected seats for 5 minutes during booking process
 // @Tags seat-locks
 // @Accept json
 // @Produce json
@@ -42,12 +42,19 @@ func (h *SeatLockHandlerImpl) LockSeats(r *ginext.Request) (*ginext.Response, er
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
-	if err := h.lockService.LockSeats(r.Context(), req.TripID, req.SeatIDs, req.SessionID); err != nil {
+	expiresAt, err := h.lockService.LockSeats(r.Context(), req.TripID, req.SeatIDs, req.SessionID)
+	if err != nil {
 		log.Error().Err(err).Msg("failed to lock seats")
 		return nil, err
 	}
 
-	return ginext.NewSuccessResponse("seats locked successfully"), nil
+	response := model.LockSeatsResponse{
+		SessionID: req.SessionID,
+		ExpiresAt: expiresAt,
+		Message:   "Seats locked successfully for 5 minutes",
+	}
+
+	return ginext.NewSuccessResponse(response), nil
 }
 
 // UnlockSeats godoc

@@ -166,12 +166,14 @@ interface SeatSelectionSummaryProps {
   selectedSeats: Seat[];
   onRemoveSeat: (seatId: string) => void;
   onProceed: () => void;
+  isLoading?: boolean;
 }
 
 export function SeatSelectionSummary({
   selectedSeats,
   onRemoveSeat,
   onProceed,
+  isLoading = false,
 }: SeatSelectionSummaryProps) {
   const totalPrice = selectedSeats.reduce((sum, seat) => sum + seat.price, 0);
 
@@ -239,8 +241,9 @@ export function SeatSelectionSummary({
               className="mt-4 w-full bg-primary text-white hover:bg-primary/90"
               size="lg"
               onClick={onProceed}
+              disabled={isLoading}
             >
-              Tiếp tục
+              {isLoading ? "Đang giữ chỗ..." : "Tiếp tục"}
             </Button>
           </>
         )}

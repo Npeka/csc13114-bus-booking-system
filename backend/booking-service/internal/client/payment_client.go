@@ -10,9 +10,9 @@ import (
 )
 
 type PaymentClient interface {
-	CreatePaymentLink(ctx context.Context, req *payment.CreatePaymentLinkRequest) (*payment.TransactionResponse, error)
+	CreateTransaction(ctx context.Context, req *payment.CreateTransactionRequest) (*payment.TransactionResponse, error)
 	GetTransactionByID(ctx context.Context, id uuid.UUID) (*payment.TransactionResponse, error)
-	CancelPayment(ctx context.Context, transactionID uuid.UUID) (*payment.TransactionResponse, error)
+	CancelTransaction(ctx context.Context, transactionID uuid.UUID) (*payment.TransactionResponse, error)
 }
 
 type PaymentClientImpl struct {
@@ -30,8 +30,8 @@ func NewPaymentClient(serviceName, baseURL string) PaymentClient {
 	}
 }
 
-func (c *PaymentClientImpl) CreatePaymentLink(ctx context.Context, req *payment.CreatePaymentLinkRequest) (*payment.TransactionResponse, error) {
-	resp, err := c.http.Post(ctx, "/api/v1/transactions/payment-link", req, nil)
+func (c *PaymentClientImpl) CreateTransaction(ctx context.Context, req *payment.CreateTransactionRequest) (*payment.TransactionResponse, error) {
+	resp, err := c.http.Post(ctx, "/api/v1/transactions", req, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create payment link: %w", err)
 	}
@@ -58,7 +58,7 @@ func (c *PaymentClientImpl) GetTransactionByID(ctx context.Context, id uuid.UUID
 	return transactionResp, nil
 }
 
-func (c *PaymentClientImpl) CancelPayment(ctx context.Context, transactionID uuid.UUID) (*payment.TransactionResponse, error) {
+func (c *PaymentClientImpl) CancelTransaction(ctx context.Context, transactionID uuid.UUID) (*payment.TransactionResponse, error) {
 	resp, err := c.http.Post(ctx, fmt.Sprintf("/api/v1/transactions/%s/cancel", transactionID), nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to cancel payment: %w", err)

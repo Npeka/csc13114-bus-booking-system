@@ -13,7 +13,7 @@ import (
 )
 
 type SeatLockService interface {
-	LockSeats(ctx context.Context, tripID uuid.UUID, seatIDs []uuid.UUID, sessionID string) error
+	LockSeats(ctx context.Context, tripID uuid.UUID, seatIDs []uuid.UUID, sessionID string) (time.Time, error)
 	UnlockSeats(ctx context.Context, sessionID string) error
 	GetLockedSeats(ctx context.Context, tripID uuid.UUID) ([]uuid.UUID, error)
 	ValidateSeatAvailability(ctx context.Context, tripID uuid.UUID, seatIDs []uuid.UUID) error
@@ -28,20 +28,20 @@ type SeatLockServiceImpl struct {
 func NewSeatLockService(lockRepo repository.SeatLockRepository) SeatLockService {
 	return &SeatLockServiceImpl{
 		lockRepo:     lockRepo,
-		lockDuration: 15 * time.Minute,
+		lockDuration: 5 * time.Minute, // 5 minutes lock duration
 	}
 }
 
-func (s *SeatLockServiceImpl) LockSeats(ctx context.Context, tripID uuid.UUID, seatIDs []uuid.UUID, sessionID string) error {
+func (s *SeatLockServiceImpl) LockSeats(ctx context.Context, tripID uuid.UUID, seatIDs []uuid.UUID, sessionID string) (time.Time, error) {
 	// Check if any seats are already locked
 	for _, seatID := range seatIDs {
 		locked, err := s.lockRepo.IsLocked(ctx, tripID, seatID)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to check seat lock status")
-			return err
+			return time.Time{}, err
 		}
 		if locked {
-			return ginext.NewConflictError("one or more seats are already locked")
+			return time.Time{}, ginext.NewConflictError("one or more seats are already locked")
 		}
 	}
 
@@ -51,7 +51,14 @@ func (s *SeatLockServiceImpl) LockSeats(ctx context.Context, tripID uuid.UUID, s
 		Int("seat_count", len(seatIDs)).
 		Msg("Locking seats")
 
-	return s.lockRepo.LockSeats(ctx, tripID, seatIDs, sessionID, s.lockDuration)
+	err := s.lockRepo.LockSeats(ctx, tripID, seatIDs, sessionID, s.lockDuration)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	// Return expiration time for frontend countdown
+	expiresAt := time.Now().UTC().Add(s.lockDuration)
+	return expiresAt, nil
 }
 
 func (s *SeatLockServiceImpl) UnlockSeats(ctx context.Context, sessionID string) error {

@@ -21,6 +21,7 @@ type BookingHandler interface {
 	GetTripBookings(r *ginext.Request) (*ginext.Response, error)
 
 	CancelBooking(r *ginext.Request) (*ginext.Response, error)
+	RetryPayment(r *ginext.Request) (*ginext.Response, error)
 
 	UpdateBookingStatus(r *ginext.Request) (*ginext.Response, error)
 	GetSeatStatus(r *ginext.Request) (*ginext.Response, error)
@@ -258,6 +259,35 @@ func (h *BookingHandlerImpl) CancelBooking(r *ginext.Request) (*ginext.Response,
 	}
 
 	return ginext.NewSuccessResponse("booking cancelled successfully"), nil
+}
+
+// RetryPayment godoc
+// @Summary Retry payment for a booking
+// @Description Create a new payment link for a failed or expired booking
+// @Tags bookings
+// @Accept json
+// @Produce json
+// @Param id path string true \"Booking ID\" format(uuid)
+// @Success 200 {object} ginext.Response{data=model.BookingResponse}
+// @Failure 400 {object} ginext.Response
+// @Failure 404 {object} ginext.Response
+// @Failure 500 {object} ginext.Response
+// @Router /api/v1/bookings/{id}/retry-payment [post]
+func (h *BookingHandlerImpl) RetryPayment(r *ginext.Request) (*ginext.Response, error) {
+	idStr := r.GinCtx.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		log.Error().Err(err).Str("id", idStr).Msg("invalid booking id")
+		return nil, ginext.NewBadRequestError("invalid booking id")
+	}
+
+	booking, err := h.bookingService.RetryPayment(r.Context(), id)
+	if err != nil {
+		log.Error().Err(err).Str("booking_id", idStr).Msg("failed to retry payment")
+		return nil, err
+	}
+
+	return ginext.NewSuccessResponse(booking), nil
 }
 
 // UpdateBookingStatus godoc

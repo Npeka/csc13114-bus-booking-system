@@ -52,7 +52,8 @@ func (t *Transaction) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-type CreatePaymentLinkRequest struct {
+type CreateTransactionRequest struct {
+	ID            uuid.UUID     `json:"id"`
 	BookingID     uuid.UUID     `json:"booking_id" binding:"required"`
 	Amount        int           `json:"amount" binding:"required,gt=0"`
 	Currency      Currency      `json:"currency" binding:"required"`

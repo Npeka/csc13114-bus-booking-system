@@ -12,7 +12,7 @@ import (
 )
 
 type PayOSService interface {
-	CreatePaymentLink(ctx context.Context, req *model.CreatePayOSPaymentLinkRequest) (*payos.CreatePaymentLinkResponse, error)
+	CreatePaymentLink(ctx context.Context, req *model.CreatePaymentLinkRequest) (*payos.CreatePaymentLinkResponse, error)
 	GetPaymentLink(ctx context.Context, paymentLinkID string) (*payos.PaymentLink, error)
 	VerifyWebhook(ctx context.Context, webhookData map[string]interface{}) error
 	CancelPaymentLink(ctx context.Context, paymentLinkID string, cancellationReason *string) (*payos.PaymentLink, error)
@@ -43,7 +43,7 @@ func NewPayOSService(cfg config.PayOSConfig) PayOSService {
 	}
 }
 
-func (c *PayOSServiceImpl) CreatePaymentLink(ctx context.Context, req *model.CreatePayOSPaymentLinkRequest) (*payos.CreatePaymentLinkResponse, error) {
+func (c *PayOSServiceImpl) CreatePaymentLink(ctx context.Context, req *model.CreatePaymentLinkRequest) (*payos.CreatePaymentLinkResponse, error) {
 	// Convert to UTC to ensure consistent timezone handling
 	expiredAtUTC := req.ExpiresAt.UTC()
 	nowUTC := time.Now().UTC()

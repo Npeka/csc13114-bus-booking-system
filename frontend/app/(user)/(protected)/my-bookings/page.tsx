@@ -70,11 +70,15 @@ function transformBooking(apiBooking: BookingResponse): UIBooking {
     bookingReference: apiBooking.booking_reference,
     status: apiBooking.status,
     trip: {
-      operator: "Nhà xe",
-      origin: "Điểm đi",
-      destination: "Điểm đến",
-      date: formatVietnameseDate(apiBooking.created_at),
-      departureTime: formatTime(apiBooking.created_at),
+      operator: apiBooking.trip?.bus_name || "Nhà xe",
+      origin: apiBooking.trip?.origin || "Điểm đi",
+      destination: apiBooking.trip?.destination || "Điểm đến",
+      date: formatVietnameseDate(
+        apiBooking.trip?.departure_time || apiBooking.created_at,
+      ),
+      departureTime: formatTime(
+        apiBooking.trip?.departure_time || apiBooking.created_at,
+      ),
     },
     seats: seatNumbers,
     price: apiBooking.total_amount,

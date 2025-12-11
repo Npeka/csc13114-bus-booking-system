@@ -6,7 +6,8 @@ import (
 	"github.com/google/uuid"
 )
 
-type CreatePaymentLinkRequest struct {
+type CreateTransactionRequest struct {
+	ID            uuid.UUID     `json:"id"`
 	BookingID     uuid.UUID     `json:"booking_id"`
 	Amount        int           `json:"amount"`
 	Currency      Currency      `json:"currency"`

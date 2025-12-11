@@ -94,7 +94,7 @@ func TestTripService_GetTripByID_Success(t *testing.T) {
 	mockTripRepo.On("GetTripByID", ctx, mock.AnythingOfType("*model.GetTripByIDRequuest"), tripID).Return(expectedTrip, nil)
 
 	// Act
-	result, err := service.GetTripByID(ctx, &model.GetTripByIDRequuest{}, tripID)
+	result, err := service.GetTripByID(ctx, &model.GetTripByIDRequest{}, tripID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -123,7 +123,12 @@ func TestTripService_ListTrips_Success(t *testing.T) {
 	mockTripRepo.On("ListTrips", ctx, 1, 20).Return(trips, int64(2), nil)
 
 	// Act
-	result, total, err := service.ListTrips(ctx, 1, 20)
+	result, total, err := service.ListTrips(ctx, &model.ListTripsRequest{
+		PaginationRequest: model.PaginationRequest{
+			Page:     1,
+			PageSize: 20,
+		},
+	})
 
 	// Assert
 	assert.NoError(t, err)

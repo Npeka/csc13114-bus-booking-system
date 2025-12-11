@@ -12,7 +12,7 @@ import (
 // UserClient interface for user service communication
 type UserClient interface {
 	CreateGuest(ctx context.Context, req *user.CreateGuestRequest) (*user.GuestResponse, error)
-	GetUser(ctx context.Context, userID uuid.UUID) (*user.User, error)
+	GetUserByID(ctx context.Context, userID uuid.UUID) (*user.User, error)
 }
 
 type userClientImpl struct {
@@ -49,7 +49,7 @@ func (c *userClientImpl) CreateGuest(ctx context.Context, req *user.CreateGuestR
 	return guestData, nil
 }
 
-func (c *userClientImpl) GetUser(ctx context.Context, userID uuid.UUID) (*user.User, error) {
+func (c *userClientImpl) GetUserByID(ctx context.Context, userID uuid.UUID) (*user.User, error) {
 	// Use internal endpoint for service-to-service calls
 	endpoint := fmt.Sprintf("/api/v1/internal/users/%s", userID.String())
 

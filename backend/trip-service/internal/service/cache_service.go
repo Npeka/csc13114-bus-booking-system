@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"bus-booking/shared/db"
@@ -15,8 +14,6 @@ import (
 type CacheService interface {
 	GetSearchResults(ctx context.Context, key string) ([]model.TripDetail, int64, error)
 	SetSearchResults(ctx context.Context, key string, trips []model.TripDetail, total int64, ttl time.Duration) error
-	GetConstants(ctx context.Context, key string) (interface{}, error)
-	SetConstants(ctx context.Context, key string, data interface{}, ttl time.Duration) error
 	InvalidateTripCache(ctx context.Context, tripID string) error
 	InvalidateRouteCache(ctx context.Context, routeID string) error
 	InvalidateSearchCache(ctx context.Context, pattern string) error
@@ -31,13 +28,11 @@ func NewCacheService(redis db.RedisManager) CacheService {
 }
 
 const (
-	searchCachePrefix    = "trip:search:"
-	tripCachePrefix      = "trip:detail:"
-	routeCachePrefix     = "route:detail:"
-	constantsCachePrefix = "constants:"
-	searchCacheTTL       = 5 * time.Minute
-	detailCacheTTL       = 1 * time.Hour
-	constantsCacheTTL    = 24 * time.Hour // Constants rarely change
+	searchCachePrefix = "trip:search:"
+	tripCachePrefix   = "trip:detail:"
+	routeCachePrefix  = "route:detail:"
+	searchCacheTTL    = 5 * time.Minute
+	detailCacheTTL    = 1 * time.Hour
 )
 
 type cachedSearchResult struct {
@@ -110,72 +105,4 @@ func (s *CacheServiceImpl) InvalidateSearchCache(ctx context.Context, pattern st
 	// For now, we'll just log it as a TODO
 	log.Warn().Str("pattern", pattern).Msg("Search cache invalidation by pattern not fully implemented")
 	return nil
-}
-
-func (s *CacheServiceImpl) GetConstants(ctx context.Context, key string) (interface{}, error) {
-	cacheKey := constantsCachePrefix + key
-	data, err := s.redis.Get(ctx, cacheKey)
-	if err != nil {
-		return nil, err
-	}
-
-	var result interface{}
-	if err := json.Unmarshal([]byte(data), &result); err != nil {
-		log.Error().Err(err).Msg("Failed to unmarshal cached constants")
-		return nil, err
-	}
-
-	log.Debug().Str("key", key).Msg("Cache hit for constants")
-	return result, nil
-}
-
-func (s *CacheServiceImpl) SetConstants(ctx context.Context, key string, data interface{}, ttl time.Duration) error {
-	cacheKey := constantsCachePrefix + key
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to marshal constants")
-		return err
-	}
-
-	if err := s.redis.Set(ctx, cacheKey, string(jsonData), ttl); err != nil {
-		log.Error().Err(err).Msg("Failed to cache constants")
-		return err
-	}
-
-	log.Debug().Str("key", key).Dur("ttl", ttl).Msg("Cached constants")
-	return nil
-}
-
-// GenerateSearchCacheKey creates a cache key from search parameters
-func GenerateSearchCacheKey(req *model.TripSearchRequest) string {
-	origin := ""
-	if req.Origin != nil {
-		origin = *req.Origin
-	}
-	destination := ""
-	if req.Destination != nil {
-		destination = *req.Destination
-	}
-	departureStart := ""
-	if req.DepartureTimeStart != nil {
-		departureStart = *req.DepartureTimeStart
-	}
-	departureEnd := ""
-	if req.DepartureTimeEnd != nil {
-		departureEnd = *req.DepartureTimeEnd
-	}
-	status := ""
-	if req.Status != nil {
-		status = *req.Status
-	}
-
-	return fmt.Sprintf("%s:%s:%s:%s:%s:%d:%d",
-		origin,
-		destination,
-		departureStart,
-		departureEnd,
-		status,
-		req.Page,
-		req.PageSize,
-	)
 }

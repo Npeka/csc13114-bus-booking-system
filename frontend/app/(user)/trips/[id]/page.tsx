@@ -14,11 +14,16 @@ import { TripHeader } from "./_components/trip-header";
 import { RouteStops } from "./_components/route-stops";
 import { BookingSidebar } from "./_components/booking-sidebar";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import { useSeatLock } from "@/lib/hooks/use-seat-lock";
+import { toast } from "sonner";
 
 function TripDetailsContent({ tripId }: { tripId: string }) {
   const router = useRouter();
   const { user } = useAuthStore();
   const [selectedSeatIds, setSelectedSeatIds] = useState<string[]>([]);
+
+  // Don't cleanup on unmount - we're navigating to checkout with the session
+  const { lockSeatsAsync, isLocking } = useSeatLock(null, false);
 
   // Fetch trip details with seat status
   const {
@@ -27,7 +32,7 @@ function TripDetailsContent({ tripId }: { tripId: string }) {
     error: tripError,
   } = useQuery<Trip>({
     queryKey: ["trip", tripId],
-    queryFn: () => getTripById(tripId),
+    queryFn: () => getTripById(tripId, true, true, true, true, true),
   });
 
   // Convert bus seats to component format
@@ -78,17 +83,32 @@ function TripDetailsContent({ tripId }: { tripId: string }) {
     setSelectedSeatIds((prev) => prev.filter((id) => id !== seatId));
   };
 
-  const handleProceedToBooking = () => {
+  const handleProceedToBooking = async () => {
     if (selectedSeatIds.length === 0) return;
-    const seatParams = selectedSeatIds.join(",");
 
-    // Check if user is logged in
-    if (user) {
-      // Authenticated user -> go to protected checkout
-      router.push(`/checkout?tripId=${tripId}&seats=${seatParams}`);
-    } else {
-      // Guest user -> go to guest checkout
-      router.push(`/checkout-guest?tripId=${tripId}&seats=${seatParams}`);
+    try {
+      // Lock seats before proceeding
+      const sessionId = await lockSeatsAsync(tripId, selectedSeatIds);
+
+      const seatParams = selectedSeatIds.join(",");
+
+      // Check if user is logged in
+      if (user) {
+        // Authenticated user -> go to protected checkout
+        router.push(
+          `/checkout?tripId=${tripId}&seats=${seatParams}&sessionId=${sessionId}`,
+        );
+      } else {
+        // Guest user -> go to guest checkout
+        router.push(
+          `/checkout-guest?tripId=${tripId}&seats=${seatParams}&sessionId=${sessionId}`,
+        );
+      }
+    } catch (error) {
+      console.error("Failed to lock seats:", error);
+      toast.error(
+        "Không thể giữ chỗ ngồi. Ghế có thể đã được người khác chọn. Vui lòng thử lại.",
+      );
     }
   };
 
@@ -201,6 +221,7 @@ function TripDetailsContent({ tripId }: { tripId: string }) {
               totalSeats={seatStats.total}
               onRemoveSeat={handleRemoveSeat}
               onProceed={handleProceedToBooking}
+              isLoading={isLocking}
             />
           </div>
         </div>

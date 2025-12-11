@@ -19,6 +19,7 @@ type Handlers struct {
 	BookingHandler    handler.BookingHandler
 	FeedbackHandler   handler.FeedbackHandler
 	StatisticsHandler handler.StatisticsHandler
+	SeatLockHandler   handler.SeatLockHandler
 }
 
 func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
@@ -52,9 +53,20 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 			bookings.Use(middleware.RequireAuth())
 			bookings.POST("", ginext.WrapHandler(h.BookingHandler.CreateBooking))
 			bookings.POST("/:id/cancel", ginext.WrapHandler(h.BookingHandler.CancelBooking))
+			bookings.POST("/:id/retry-payment", ginext.WrapHandler(h.BookingHandler.RetryPayment))
 			bookings.GET("/user/:user_id", ginext.WrapHandler(h.BookingHandler.GetUserBookings))
 
 		}
+
+		// Seat locks - public route (no auth required for initial lock)
+		seatLocks := v1.Group("/seat-locks")
+		{
+			seatLocks.POST("", ginext.WrapHandler(h.SeatLockHandler.LockSeats))
+			seatLocks.DELETE("", ginext.WrapHandler(h.SeatLockHandler.UnlockSeats))
+		}
+
+		// Trip seat locks - public route
+		v1.GET("/trips/:trip_id/locked-seats", ginext.WrapHandler(h.SeatLockHandler.GetLockedSeats))
 
 		internal := v1.Group("/bookings")
 		{

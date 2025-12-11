@@ -26,8 +26,9 @@ func (s *Server) buildHandler() (http.Handler, *jobs.BookingExpirationJob, *jobs
 
 	// Initialize services
 	seatLockRepo := repository.NewSeatLockRepository(s.db.DB)
+	seatLockService := service.NewSeatLockService(seatLockRepo)
 
-	bookingService := service.NewBookingService(bookingRepo, paymentClient, tripClient, userClient, notificationClient, s.delayedQueue)
+	bookingService := service.NewBookingService(bookingRepo, paymentClient, tripClient, userClient, notificationClient, s.delayedQueue, seatLockService)
 	feedbackService := service.NewFeedbackService(bookingRepo, feedbackRepo)
 	statisticsService := service.NewStatisticsService(bookingStatsRepo)
 	eTicketService := service.NewETicketService(bookingRepo, tripClient)
@@ -40,6 +41,7 @@ func (s *Server) buildHandler() (http.Handler, *jobs.BookingExpirationJob, *jobs
 	bookingHandler := handler.NewBookingHandler(bookingService, eTicketService)
 	feedbackHandler := handler.NewFeedbackHandler(feedbackService)
 	statisticsHandler := handler.NewStatisticsHandler(statisticsService)
+	seatLockHandler := handler.NewSeatLockHandler(seatLockService)
 
 	if s.cfg.Server.IsProduction {
 		gin.SetMode(gin.ReleaseMode)
@@ -52,6 +54,7 @@ func (s *Server) buildHandler() (http.Handler, *jobs.BookingExpirationJob, *jobs
 		BookingHandler:    bookingHandler,
 		FeedbackHandler:   feedbackHandler,
 		StatisticsHandler: statisticsHandler,
+		SeatLockHandler:   seatLockHandler,
 	})
 	return engine, bookingExpirationJob, tripReminderJob
 }

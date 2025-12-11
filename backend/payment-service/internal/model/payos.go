@@ -2,7 +2,7 @@ package model
 
 import "time"
 
-type CreatePayOSPaymentLinkRequest struct {
+type CreatePaymentLinkRequest struct {
 	Amount      int       `json:"amount"`
 	Description string    `json:"description"`
 	ExpiresAt   time.Time `json:"expires_at"`

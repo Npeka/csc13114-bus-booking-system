@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"time"
-
 	"bus-booking/shared/ginext"
 	"bus-booking/trip-service/internal/constants"
 	"bus-booking/trip-service/internal/service"
@@ -16,13 +14,11 @@ type ConstantsHandler interface {
 
 type ConstantsHandlerImpl struct {
 	constantsService service.ConstantsService
-	cacheService     service.CacheService
 }
 
-func NewConstantsHandler(constantsService service.ConstantsService, cacheService service.CacheService) ConstantsHandler {
+func NewConstantsHandler(constantsService service.ConstantsService) ConstantsHandler {
 	return &ConstantsHandlerImpl{
 		constantsService: constantsService,
-		cacheService:     cacheService,
 	}
 }
 
@@ -46,21 +42,10 @@ func (h *ConstantsHandlerImpl) GetConstants(r *ginext.Request) (*ginext.Response
 		return nil, ginext.NewBadRequestError("invalid type parameter. Valid values: bus, route, trip, search_filters, cities")
 	}
 
-	// Determine cache key
-	cacheKey := "all"
-	if constTypeStr != "" {
-		cacheKey = string(constType)
-	}
-
-	// Try to get from cache first
-	cachedData, err := h.cacheService.GetConstants(r.Context(), cacheKey)
-	if err == nil && cachedData != nil {
-		log.Debug().Str("cache_key", cacheKey).Msg("Cache hit for constants")
-		return ginext.NewSuccessResponse(cachedData), nil
-	}
-
-	// Cache miss, fetch from service
+	// Fetch constants directly (no cache needed - constants are fast)
 	var data interface{}
+	var err error
+
 	switch constType {
 	case constants.ConstantTypeBus:
 		data, err = h.constantsService.GetBusConstants(r.Context())
@@ -104,12 +89,6 @@ func (h *ConstantsHandlerImpl) GetConstants(r *ginext.Request) (*ginext.Response
 			log.Error().Err(err).Msg("Failed to get all constants")
 			return nil, err
 		}
-	}
-
-	// Cache the result with 24-hour TTL
-	if err := h.cacheService.SetConstants(r.Context(), cacheKey, data, 24*time.Hour); err != nil {
-		log.Warn().Err(err).Str("cache_key", cacheKey).Msg("Failed to cache constants")
-		// Continue even if caching fails
 	}
 
 	return ginext.NewSuccessResponse(data), nil

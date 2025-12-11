@@ -45,13 +45,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi" suppressHydrationWarning>
-      <body className="flex min-h-screen flex-col antialiased">
+      <body
+        className="flex min-h-screen flex-col antialiased"
+        suppressHydrationWarning
+      >
         <QueryProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <AuthProvider>{children}</AuthProvider>
-            <Toaster position="top-center" />
           </ThemeProvider>
         </QueryProvider>
+        <Toaster position="top-center" />
       </body>
     </html>
   );

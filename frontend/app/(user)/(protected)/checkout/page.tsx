@@ -14,15 +14,22 @@ import { PaymentMethod } from "./_components/payment-method";
 import { TripSummary } from "./_components/trip-summary";
 import { PaymentSummary } from "./_components/payment-summary";
 import { ImportantNotes } from "./_components/important-notes";
+import { useSeatLock } from "@/lib/hooks/use-seat-lock";
+import { CountdownTimer } from "./_components/countdown-timer";
 
 function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tripId = searchParams.get("tripId");
+  const sessionId = searchParams.get("sessionId");
   const seatIds = searchParams.get("seats")?.split(",") || [];
 
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [notes, setNotes] = useState("");
+
+  // Initialize seat lock with session ID from URL
+  // Enable cleanup on unmount since checkout is the final page
+  const { timeRemaining, unlockSeats } = useSeatLock(sessionId, true);
 
   // Fetch user profile
   const { data: userProfile } = useQuery({
@@ -90,7 +97,10 @@ function CheckoutContent() {
   // Create booking mutation
   const createBookingMutation = useMutation({
     mutationFn: createBooking,
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      // Unlock seats after successful booking
+      await unlockSeats();
+
       toast.success("Đặt vé thành công!");
       router.push(`/booking-confirmation?bookingId=${data.id}`);
     },
@@ -154,6 +164,13 @@ function CheckoutContent() {
             Hoàn tất thông tin để xác nhận đặt vé
           </p>
         </div>
+
+        {/* Countdown Timer - Full Width */}
+        {timeRemaining !== null && (
+          <div className="mb-4">
+            <CountdownTimer seconds={timeRemaining} />
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 lg:grid-cols-[1fr_400px]">

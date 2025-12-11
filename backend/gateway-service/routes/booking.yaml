@@ -12,6 +12,12 @@ routes:
   - path: "/api/v1/bookings/:id/eticket"
     methods: ["GET"]
 
+  - path: "/api/v1/seat-locks"
+    methods: ["POST", "DELETE"]
+  
+  - path: "/api/v1/trips/:trip_id/locked-seats"
+    methods: ["GET"]
+
   # User booking routes - require authentication
   - path: "/api/v1/bookings"
     methods: ["POST"]

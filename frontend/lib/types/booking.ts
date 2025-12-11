@@ -125,6 +125,16 @@ export interface PaymentMethod {
 }
 
 /**
+ * Trip basic info included in booking list responses
+ */
+export interface TripBasicInfo {
+  origin: string;
+  destination: string;
+  departure_time: string;
+  bus_name: string;
+}
+
+/**
  * Booking response from API
  * Matches backend: booking-service/internal/model/request.go - BookingResponse
  */
@@ -146,6 +156,7 @@ export interface BookingResponse {
   updated_at: string;
   seats: BookingSeat[];
   transaction?: Transaction;
+  trip?: TripBasicInfo; // Populated for list views
 }
 
 /**
@@ -219,6 +230,16 @@ export interface LockSeatsRequest {
   trip_id: string;
   seat_ids: string[];
   session_id: string;
+}
+
+/**
+ * Seat lock response with expiration timestamp
+ * Matches backend: booking-service/internal/model/request.go - LockSeatsResponse
+ */
+export interface LockSeatsResponse {
+  session_id: string;
+  expires_at: string; // ISO datetime
+  message: string;
 }
 
 /**

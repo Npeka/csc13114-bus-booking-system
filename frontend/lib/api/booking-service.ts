@@ -14,6 +14,7 @@ import {
   UpdateBookingStatusRequest,
   SeatAvailabilityResponse,
   LockSeatsRequest,
+  LockSeatsResponse,
   CreatePaymentRequest,
   PaymentLinkResponse,
   BookingStatsResponse,
@@ -138,6 +139,29 @@ export async function cancelBooking(
     );
 
     return "Booking cancelled successfully";
+  } catch (error) {
+    throw new Error(handleApiError(error));
+  }
+}
+
+/**
+ * Retry payment for a failed or expired booking
+ * @param bookingId - Booking UUID
+ * @returns Updated booking with new payment link
+ */
+export async function retryPayment(
+  bookingId: string,
+): Promise<BookingResponse> {
+  try {
+    const response = await apiClient.post<ApiResponse<BookingResponse>>(
+      `/booking/api/v1/bookings/${bookingId}/retry-payment`,
+    );
+
+    if (!response.data.data) {
+      throw new Error("Failed to retry payment");
+    }
+
+    return response.data.data;
   } catch (error) {
     throw new Error(handleApiError(error));
   }
@@ -273,16 +297,22 @@ export async function getSeatAvailability(
 /**
  * Lock seats temporarily during booking process
  * @param data - Lock seats request data
- * @returns Success message
+ * @returns Lock response with expiration timestamp
  */
-export async function lockSeats(data: LockSeatsRequest): Promise<string> {
+export async function lockSeats(
+  data: LockSeatsRequest,
+): Promise<LockSeatsResponse> {
   try {
-    await apiClient.post<ApiResponse<string>>(
+    const response = await apiClient.post<ApiResponse<LockSeatsResponse>>(
       `/booking/api/v1/seat-locks`,
       data,
     );
 
-    return "Seats locked successfully";
+    if (!response.data.data) {
+      throw new Error("Failed to lock seats");
+    }
+
+    return response.data.data;
   } catch (error) {
     throw new Error(handleApiError(error));
   }

@@ -14,9 +14,9 @@ import (
 )
 
 type TransactionHandler interface {
-	CreatePaymentLink(r *ginext.Request) (*ginext.Response, error)
-	HandlePaymentWebhook(r *ginext.Request) (*ginext.Response, error)
-	CancelPayment(r *ginext.Request) (*ginext.Response, error)
+	Create(r *ginext.Request) (*ginext.Response, error)
+	HandleWebhook(r *ginext.Request) (*ginext.Response, error)
+	Cancel(r *ginext.Request) (*ginext.Response, error)
 	GetByID(r *ginext.Request) (*ginext.Response, error)
 }
 
@@ -30,85 +30,33 @@ func NewTransactionHandler(service service.TransactionService) TransactionHandle
 	}
 }
 
-// CreatePaymentLink godoc
+// Create godoc
 // @Summary Create a payment link
 // @Description Create a payment link via PayOS for a booking
 // @Tags transactions
 // @Accept json
 // @Produce json
-// @Param transaction body model.CreatePaymentLinkRequest true "Payment creation request"
+// @Param transaction body model.CreateTransactionRequest true "Payment creation request"
 // @Success 201 {object} ginext.Response{data=model.TransactionResponse}
 // @Failure 400 {object} ginext.Response
 // @Failure 500 {object} ginext.Response
-// @Router /api/v1/transactions/payment-link [post]
-func (h *TransactionHandlerImpl) CreatePaymentLink(r *ginext.Request) (*ginext.Response, error) {
+// @Router /api/v1/transactions [post]
+func (h *TransactionHandlerImpl) Create(r *ginext.Request) (*ginext.Response, error) {
 	userID := sharedcontext.GetUserID(r.GinCtx)
 
-	var req model.CreatePaymentLinkRequest
+	var req model.CreateTransactionRequest
 	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
 		log.Debug().Err(err).Msg("JSON binding failed")
 		return nil, ginext.NewBadRequestError("Invalid request data")
 	}
 
-	resp, err := h.service.CreatePaymentLink(r.GinCtx.Request.Context(), &req, userID)
+	resp, err := h.service.Create(r.GinCtx.Request.Context(), &req, userID)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create payment link")
 		return nil, ginext.NewInternalServerError("Failed to create payment link")
 	}
 
 	return ginext.NewSuccessResponse(resp), nil
-}
-
-// HandlePaymentWebhook godoc
-// @Summary Handle PayOS webhook
-// @Description Handle payment webhook notification from PayOS
-// @Tags transactions
-// @Accept json
-// @Produce json
-// @Param webhook body model.PaymentWebhookData true "Webhook payload"
-// @Success 200 {object} ginext.Response
-// @Failure 400 {object} ginext.Response
-// @Failure 500 {object} ginext.Response
-// @Router /api/v1/transactions/webhook [post]
-func (h *TransactionHandlerImpl) HandlePaymentWebhook(r *ginext.Request) (*ginext.Response, error) {
-	log.Info().Msg("Webhook handler started")
-
-	// Read the raw body first (needed for signature verification)
-	bodyBytes, err := io.ReadAll(r.GinCtx.Request.Body)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to read request body")
-		return nil, ginext.NewBadRequestError("Invalid request body")
-	}
-	defer func() {
-		if err := r.GinCtx.Request.Body.Close(); err != nil {
-			log.Error().Err(err).Msg("Failed to close request body")
-		}
-	}()
-
-	// Parse to map for verification
-	var webhookMap map[string]interface{}
-	if err := json.Unmarshal(bodyBytes, &webhookMap); err != nil {
-		log.Error().Err(err).Msg("JSON parsing failed - invalid JSON format")
-		return nil, ginext.NewBadRequestError("Invalid webhook data")
-	}
-
-	// Parse to struct for processing
-	var webhookData model.PaymentWebhookData
-	if err := json.Unmarshal(bodyBytes, &webhookData); err != nil {
-		log.Error().Err(err).Msg("JSON parsing failed - invalid webhook structure")
-		return nil, ginext.NewBadRequestError("Invalid webhook data")
-	}
-
-	log.Info().Interface("webhookData", webhookData).Msg("Successfully parsed webhook data")
-
-	err = h.service.HandlePaymentWebhook(r.GinCtx.Request.Context(), webhookMap, webhookData)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to process webhook in service layer")
-		return nil, err
-	}
-
-	log.Info().Msg("Webhook processed successfully")
-	return ginext.NewSuccessResponse("Webhook processed successfully"), nil
 }
 
 // GetByID godoc
@@ -139,7 +87,7 @@ func (h *TransactionHandlerImpl) GetByID(r *ginext.Request) (*ginext.Response, e
 	return ginext.NewSuccessResponse(transaction), nil
 }
 
-// CancelPayment godoc
+// Cancel godoc
 // @Summary Cancel a payment
 // @Description Cancel a payment transaction and PayOS payment link
 // @Tags transactions
@@ -151,18 +99,70 @@ func (h *TransactionHandlerImpl) GetByID(r *ginext.Request) (*ginext.Response, e
 // @Failure 404 {object} ginext.Response
 // @Failure 500 {object} ginext.Response
 // @Router /api/v1/transactions/{id}/cancel [post]
-func (h *TransactionHandlerImpl) CancelPayment(r *ginext.Request) (*ginext.Response, error) {
+func (h *TransactionHandlerImpl) Cancel(r *ginext.Request) (*ginext.Response, error) {
 	idStr := r.GinCtx.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		return nil, ginext.NewBadRequestError("Invalid transaction ID")
 	}
 
-	transaction, err := h.service.CancelPayment(r.GinCtx.Request.Context(), id)
+	transaction, err := h.service.Cancel(r.GinCtx.Request.Context(), id)
 	if err != nil {
 		log.Error().Err(err).Str("id", idStr).Msg("Failed to cancel payment")
 		return nil, err
 	}
 
 	return ginext.NewSuccessResponse(transaction), nil
+}
+
+// HandleWebhook godoc
+// @Summary Handle PayOS webhook
+// @Description Handle payment webhook notification from PayOS
+// @Tags transactions
+// @Accept json
+// @Produce json
+// @Param webhook body model.PaymentWebhookData true "Webhook payload"
+// @Success 200 {object} ginext.Response
+// @Failure 400 {object} ginext.Response
+// @Failure 500 {object} ginext.Response
+// @Router /api/v1/transactions/webhook [post]
+func (h *TransactionHandlerImpl) HandleWebhook(r *ginext.Request) (*ginext.Response, error) {
+	log.Info().Msg("Webhook handler started")
+
+	// Read the raw body first (needed for signature verification)
+	bodyBytes, err := io.ReadAll(r.GinCtx.Request.Body)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to read request body")
+		return nil, ginext.NewBadRequestError("Invalid request body")
+	}
+	defer func() {
+		if err := r.GinCtx.Request.Body.Close(); err != nil {
+			log.Error().Err(err).Msg("Failed to close request body")
+		}
+	}()
+
+	// Parse to map for verification
+	var webhookMap map[string]interface{}
+	if err := json.Unmarshal(bodyBytes, &webhookMap); err != nil {
+		log.Error().Err(err).Msg("JSON parsing failed - invalid JSON format")
+		return nil, ginext.NewBadRequestError("Invalid webhook data")
+	}
+
+	// Parse to struct for processing
+	var webhookData model.PaymentWebhookData
+	if err := json.Unmarshal(bodyBytes, &webhookData); err != nil {
+		log.Error().Err(err).Msg("JSON parsing failed - invalid webhook structure")
+		return nil, ginext.NewBadRequestError("Invalid webhook data")
+	}
+
+	log.Info().Interface("webhookData", webhookData).Msg("Successfully parsed webhook data")
+
+	err = h.service.HandleWebhook(r.GinCtx.Request.Context(), webhookMap, webhookData)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to process webhook in service layer")
+		return nil, err
+	}
+
+	log.Info().Msg("Webhook processed successfully")
+	return ginext.NewSuccessResponse("Webhook processed successfully"), nil
 }

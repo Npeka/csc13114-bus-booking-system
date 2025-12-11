@@ -60,7 +60,7 @@ type TripSearchRequest struct {
 	PageSize int `form:"page_size,default=20" json:"page_size" validate:"min=1,max=100"`
 }
 
-type GetTripByIDRequuest struct {
+type GetTripByIDRequest struct {
 	SeatBookingStatus bool `form:"seat_booking_status" json:"seat_booking_status"`
 	PreLoadRoute      bool `form:"preload_route" json:"preload_route"`
 	PreLoadRouteStop  bool `form:"preload_route_stop" json:"preload_route_stop"`
@@ -110,6 +110,8 @@ type PriceTier struct {
 
 type ListTripsRequest struct {
 	PaginationRequest
+	IDStrs []string    `form:"ids[]" json:"ids"`
+	IDs    []uuid.UUID `form:"-" json:"-"`
 }
 
 type TripResponse struct {

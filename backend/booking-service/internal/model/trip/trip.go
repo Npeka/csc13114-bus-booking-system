@@ -35,3 +35,11 @@ const (
 func (t *Trip) IsBookable() bool {
 	return t.IsActive && t.Status == "scheduled"
 }
+
+type GetTripByIDRequest struct {
+	SeatBookingStatus bool `form:"seat_booking_status" json:"seat_booking_status"`
+	PreLoadRoute      bool `form:"preload_route" json:"preload_route"`
+	PreLoadRouteStop  bool `form:"preload_route_stop" json:"preload_route_stop"`
+	PreloadBus        bool `form:"preload_bus" json:"preload_bus"`
+	PreloadSeat       bool `form:"preload_seat" json:"preload_seat"`
+}

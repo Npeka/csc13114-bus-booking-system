@@ -11,6 +11,7 @@ interface BookingSidebarProps {
   totalSeats?: number;
   onRemoveSeat: (seatId: string) => void;
   onProceed: () => void;
+  isLoading?: boolean;
 }
 
 export function BookingSidebar({
@@ -20,6 +21,7 @@ export function BookingSidebar({
   totalSeats,
   onRemoveSeat,
   onProceed,
+  isLoading = false,
 }: BookingSidebarProps) {
   const departureDate = new Date(trip.departure_time);
   const arrivalDate = new Date(trip.arrival_time);
@@ -39,6 +41,7 @@ export function BookingSidebar({
             selectedSeats={selectedSeats}
             onRemoveSeat={onRemoveSeat}
             onProceed={onProceed}
+            isLoading={isLoading}
           />
         ) : (
           <div className="space-y-3">

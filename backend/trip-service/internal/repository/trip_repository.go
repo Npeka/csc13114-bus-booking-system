@@ -12,8 +12,9 @@ import (
 
 type TripRepository interface {
 	SearchTrips(ctx context.Context, req *model.TripSearchRequest) ([]model.TripDetail, int64, error)
-	GetTripByID(ctx context.Context, req *model.GetTripByIDRequuest, id uuid.UUID) (*model.Trip, error)
+	GetTripByID(ctx context.Context, req *model.GetTripByIDRequest, id uuid.UUID) (*model.Trip, error)
 	ListTrips(ctx context.Context, page, pageSize int) ([]model.Trip, int64, error)
+	GetTripsByIDs(ctx context.Context, ids []uuid.UUID) ([]model.Trip, error)
 	GetTripsByRouteAndDate(ctx context.Context, routeID uuid.UUID, date time.Time) ([]model.Trip, error)
 	GetTripsByBusAndDateRange(ctx context.Context, busID uuid.UUID, startDate, endDate time.Time) ([]model.Trip, error)
 
@@ -204,7 +205,7 @@ func (r *TripRepositoryImpl) SearchTrips(ctx context.Context, req *model.TripSea
 	return results, total, nil
 }
 
-func (r *TripRepositoryImpl) GetTripByID(ctx context.Context, req *model.GetTripByIDRequuest, id uuid.UUID) (*model.Trip, error) {
+func (r *TripRepositoryImpl) GetTripByID(ctx context.Context, req *model.GetTripByIDRequest, id uuid.UUID) (*model.Trip, error) {
 	var trip model.Trip
 	query := r.db.WithContext(ctx)
 
@@ -259,6 +260,17 @@ func (r *TripRepositoryImpl) ListTrips(ctx context.Context, page, pageSize int) 
 	err := query.Offset(offset).Limit(pageSize).Order("departure_time DESC").Find(&trips).Error
 
 	return trips, total, err
+}
+
+// GetTripsByIDs fetches trips by a list of IDs (for batch requests)
+func (r *TripRepositoryImpl) GetTripsByIDs(ctx context.Context, ids []uuid.UUID) ([]model.Trip, error) {
+	var trips []model.Trip
+	err := r.db.WithContext(ctx).
+		Preload("Route").
+		Preload("Bus").
+		Where("id IN ?", ids).
+		Find(&trips).Error
+	return trips, err
 }
 
 func (r *TripRepositoryImpl) GetTripsByRouteAndDate(ctx context.Context, routeID uuid.UUID, date time.Time) ([]model.Trip, error) {

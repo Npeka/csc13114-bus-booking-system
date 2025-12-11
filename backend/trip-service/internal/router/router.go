@@ -37,7 +37,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 		trips := v1.Group("/trips")
 		{
 			trips.GET("/search", ginext.WrapHandler(h.TripHandler.SearchTrips))
-			trips.GET("/:id", ginext.WrapHandler(h.TripHandler.GetTrip))
+			trips.GET("/:id", ginext.WrapHandler(h.TripHandler.GetByID))
 		}
 
 		buses := v1.Group("/buses")

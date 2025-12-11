@@ -73,6 +73,17 @@ type BookingResponse struct {
 	// Seats info
 	Seats       []BookingSeatResponse        `json:"seats"`
 	Transaction *payment.TransactionResponse `json:"transaction,omitempty"`
+
+	// Trip info (populated for list views)
+	Trip *TripBasicInfo `json:"trip,omitempty"`
+}
+
+// TripBasicInfo contains basic trip information for booking list display
+type TripBasicInfo struct {
+	Origin        string    `json:"origin"`
+	Destination   string    `json:"destination"`
+	DepartureTime time.Time `json:"departure_time"`
+	BusName       string    `json:"bus_name"`
 }
 
 // BookingSeatResponse represents booking seat in response
@@ -159,6 +170,13 @@ type LockSeatsRequest struct {
 
 type UnlockSeatsRequest struct {
 	SessionID string `json:"session_id" binding:"required"`
+}
+
+// LockSeatsResponse represents response after successfully locking seats
+type LockSeatsResponse struct {
+	SessionID string    `json:"session_id"`
+	ExpiresAt time.Time `json:"expires_at"`
+	Message   string    `json:"message"`
 }
 
 // GetSeatStatusRequest represents request to check seat status for a trip
