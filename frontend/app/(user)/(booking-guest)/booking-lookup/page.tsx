@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useMutation } from "@tanstack/react-query";
 import {
   Card,
@@ -180,12 +181,12 @@ export default function BookingLookupPage() {
                   <div>
                     <p className="font-medium">Đã có tài khoản?</p>
                     <p className="text-muted-foreground">
-                      <a
+                      <Link
                         href="/my-bookings"
                         className="text-primary hover:underline"
                       >
                         Đăng nhập
-                      </a>{" "}
+                      </Link>{" "}
                       để xem tất cả vé của bạn
                     </p>
                   </div>

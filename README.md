@@ -6,68 +6,82 @@ A comprehensive microservices-based bus booking platform built with modern techn
 
 This project implements a distributed microservices architecture with the following components:
 
-## ✅ Week 3 Completion Status
+## ✅ Week 4 Completion Status
 
-**Booking System and Seat Selection - Completed**
+**Payment Integration and Notifications - Completed**
 
-The following features have been successfully implemented as part of Week 3:
+The following features have been successfully implemented as part of Week 4:
 
 ### User Portal Features
 
-- ✅ **Interactive Seat Selection**
+- ✅ **Payment Integration**
+  - PayOS payment gateway integration with QR code and checkout URL
+  - Payment webhook handling for transaction status updates
+  - Payment confirmation and failure flows
+  - Automatic booking confirmation on successful payment
+  - Payment cancellation handling
 
-  - Visual seat map component with clickable seats
-  - Different seat types and status indicators
-  - Real-time availability updates
-  - Seat locking mechanism to prevent double bookings
+- ✅ **Notifications**
+  - Email service configuration (future: SendGrid/AWS SES)
+  - Email template structure for booking confirmations
+  - Trip reminder notification system
+  - Automatic email delivery after booking confirmation
 
-- ✅ **Booking Flow**
+- ✅ **Booking Management**
+  - Booking cancellation with payment refund processing
+  - Automated booking expiration (unpaid bookings timeout)
+  - Delayed queue system using Redis for scheduled tasks
+  - Booking status synchronization across services
 
-  - Passenger information collection forms
-  - Booking creation and management APIs
-  - Booking summary and review interface
-  - Booking history and management dashboard
-  - Booking modification and cancellation
+- ✅ **Seat Locking System** (Enhanced)
+  - Temporary seat reservation with 5-minute lock duration
+  - Session-based seat locking with UUID tracking
+  - Accurate countdown timer based on server timestamp
+  - Color-coded urgency indicators (blue/orange/red)
+  - Automatic seat unlocking on expiration or booking completion
+  - Conflict detection (409 error for already-locked seats)
+  - Smart cleanup (preserves session during navigation)
 
-- ✅ **Guest Services**
+### Admin Portal Features
 
-  - Guest checkout without registration
-  - Guest booking lookup by reference/email/phone
-  - Unique booking reference generation
+- ✅ **Analytics Dashboard**
+  - Revenue metrics and financial reports
+  - Booking analytics and trends
+  - Popular routes and conversion rates
+  - Real-time monitoring
 
-- ✅ **Ticketing**
-  - E-ticket download functionality
-  - Automatic email delivery of e-tickets
-  - Professional e-ticket template with branding
+### Backend Implementation
 
-### Frontend Implementation
+- Complete **Payment Service** with PostgreSQL
+- PayOS SDK integration for payment processing
+- Transaction management with status tracking
+- Webhook signature verification
+- Booking expiration job with delayed queue
+- Trip reminder job for pre-departure notifications
+- Seat lock repository with Redis TTL
+- Enhanced booking service with payment client
 
-- Profile management page with view/edit modes
-- Real-time trip search with filters
-- Booking management dashboard
-- Responsive UI components
+### Week 3 Features (Still Available)
 
-### Backend APIs
+- Interactive seat selection with visual seat map
+- Guest checkout and booking lookup
+- E-ticket generation with QR codes
+- Booking history and management dashboard
+- Real-time seat availability updates
 
-- Complete booking service with PostgreSQL
-- Seat reservation and locking system
-- Trip and route management
-- User profile management
-- Gateway authentication and routing
+**Next Up:** Week 5 focuses on AI chatbot integration (OpenAI), user feedback system, microservices optimization, and final testing/deployment.
 
-**Next Up:** Week 4 focuses on payment integration (PayOS), notifications (email/SMS), and admin analytics.
-
-See [NEXT_STEPS.md](./NEXT_STEPS.md) for detailed Week 4 planning.
+See [NEXT_STEPS.md](./NEXT_STEPS.md) for detailed Week 5 planning.
 
 ### Backend Services (Go)
 
 - **User Service** - Authentication, user management, and Firebase integration ✅ **Fully Implemented (Week 1-2)**
 - **Trip Service** - Bus trip management and scheduling ✅ **Fully Implemented (Week 2)**
-- **Booking Service** - Reservation and booking management ✅ **Fully Implemented (Week 3)**
-- **Payment Service** - Payment processing and transaction handling 🚧 **Week 4 - In Progress**
+- **Booking Service** - Reservation and booking management ✅ **Fully Implemented (Week 3-4)**
+- **Payment Service** - Payment processing and transaction handling ✅ **Fully Implemented (Week 4)**
 - **Gateway Service** - API Gateway for routing and request aggregation ✅ **Operational**
 
-> **Note:** The project is currently at **Week 3 completion**. User Service, Trip Service, and Booking Service are fully implemented. Payment integration is planned for Week 4.
+> **Note:** The project is currently at **Week 4 completion**. All core booking, payment, and notification features are fully implemented. AI chatbot and advanced microservices features are planned for Week 5.
 
 ### Frontend (Next.js)
 
