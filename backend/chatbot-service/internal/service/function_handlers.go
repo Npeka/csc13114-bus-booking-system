@@ -11,8 +11,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// Handler methods for function calling
-
 // handleSearchTrips processes searchTrips function call
 func (s *ChatbotServiceImpl) handleSearchTrips(ctx context.Context, args map[string]any) map[string]any {
 	argsJSON, _ := json.Marshal(args)
