@@ -112,11 +112,11 @@ services:
   chatbot-service:
     containerName: chatbot-service
     image: npkhang22/bb-chatbot-service
-    tag: chatbot-service-latest
+    tag: chatbot-service-40f12ea
     port: 8086
     env:
       SERVICE_NAME: 'chatbot-service'
-      SERVER_PORT: '8086'
+      SERVER_PORT: '8080'
       REDIS_DB: '5'
 
       # Gemini Config
