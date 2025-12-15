@@ -22,10 +22,28 @@ type ChatRequest struct {
 
 // ChatContext holds conversation context
 type ChatContext struct {
-	UserID       *uuid.UUID `json:"user_id,omitempty"`
-	CurrentStep  string     `json:"current_step,omitempty"` // "search", "select_trip", "booking", etc.
-	TripSearchID *uuid.UUID `json:"trip_search_id,omitempty"`
-	SelectedTrip *TripInfo  `json:"selected_trip,omitempty"`
+	UserID           *uuid.UUID        `json:"user_id,omitempty"`
+	CurrentStep      string            `json:"current_step,omitempty"` // "search", "select_trip", "select_seats", "collect_info", "booking", "payment"
+	TripSearchID     *uuid.UUID        `json:"trip_search_id,omitempty"`
+	SelectedTrip     *TripInfo         `json:"selected_trip,omitempty"`
+	SelectedSeats    []SelectedSeat    `json:"selected_seats,omitempty"`    // NEW: Seats user wants to book
+	PassengerDetails []PassengerDetail `json:"passenger_details,omitempty"` // NEW: Collected passenger info
+	BookingID        *uuid.UUID        `json:"booking_id,omitempty"`        // NEW: Created booking ID
+	BookingReference string            `json:"booking_reference,omitempty"` // NEW: Booking reference code
+}
+
+// SelectedSeat represents a seat selected by the user
+type SelectedSeat struct {
+	SeatNumber string    `json:"seat_number"` // e.g., "A1"
+	SeatID     uuid.UUID `json:"seat_id"`     // UUID from trip service
+}
+
+// PassengerDetail represents collected passenger information
+type PassengerDetail struct {
+	Name       string `json:"name"`
+	Phone      string `json:"phone"`
+	Email      string `json:"email"`
+	SeatNumber string `json:"seat_number"` // Which seat this passenger is assigned to
 }
 
 // TripInfo holds basic trip information for context

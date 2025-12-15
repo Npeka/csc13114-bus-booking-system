@@ -6,16 +6,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"bus-booking/chatbot-service/internal/model"
 
+	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
 
 // TripServiceClient interfaces with trip-service
 type TripServiceClient interface {
 	SearchTrips(ctx context.Context, params *model.TripSearchParams) (interface{}, error)
+	GetTripByID(ctx context.Context, tripID string) (*model.TripDetailResponse, error)
 }
 
 type tripServiceClientImpl struct {
@@ -33,33 +36,42 @@ func NewTripServiceClient(baseURL string) TripServiceClient {
 }
 
 func (c *tripServiceClientImpl) SearchTrips(ctx context.Context, params *model.TripSearchParams) (interface{}, error) {
-	url := fmt.Sprintf("%s/api/v1/trips/search", c.baseURL)
+	baseURL := fmt.Sprintf("%s/api/v1/trips/search", c.baseURL)
 
-	// Build query params
-	reqBody := map[string]interface{}{
-		"origin":      params.Origin,
-		"destination": params.Destination,
+	// Build query parameters (trip-service expects GET with query params)
+	queryParams := make(map[string]string)
+
+	if params.Origin != "" {
+		queryParams["origin"] = params.Origin
+	}
+
+	if params.Destination != "" {
+		queryParams["destination"] = params.Destination
 	}
 
 	if !params.DepartureDate.IsZero() {
-		reqBody["departure_date"] = params.DepartureDate.Format("2006-01-02")
+		// Format as ISO date string for the trip-service API
+		queryParams["departure_time_start"] = params.DepartureDate.Format("2006-01-02T00:00:00Z")
+		queryParams["departure_time_end"] = params.DepartureDate.Add(24 * time.Hour).Format("2006-01-02T00:00:00Z")
 	}
 
-	if params.Passengers > 0 {
-		reqBody["passengers"] = params.Passengers
+	// Construct URL with query parameters
+	url := baseURL
+	if len(queryParams) > 0 {
+		query := ""
+		for key, value := range queryParams {
+			if query != "" {
+				query += "&"
+			}
+			query += fmt.Sprintf("%s=%s", key, value)
+		}
+		url = fmt.Sprintf("%s?%s", baseURL, query)
 	}
 
-	jsonData, err := json.Marshal(reqBody)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-
-	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -72,6 +84,11 @@ func (c *tripServiceClientImpl) SearchTrips(ctx context.Context, params *model.T
 		}
 	}()
 
+	if resp.StatusCode != http.StatusOK {
+		log.Error().Int("status_code", resp.StatusCode).Msg("Trip service returned non-200 status")
+		return nil, fmt.Errorf("trip service returned status %d", resp.StatusCode)
+	}
+
 	var result interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
@@ -80,10 +97,43 @@ func (c *tripServiceClientImpl) SearchTrips(ctx context.Context, params *model.T
 	return result, nil
 }
 
+func (c *tripServiceClientImpl) GetTripByID(ctx context.Context, tripID string) (*model.TripDetailResponse, error) {
+	// Build URL with query parameters to preload bus, seats, and booking status
+	reqURL := fmt.Sprintf("%s/api/v1/trips/%s?preload_bus=true&preload_seat=true&seat_booking_status=true&preload_route=true&preload_route_stop=true", c.baseURL, tripID)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to call trip service")
+		return nil, fmt.Errorf("failed to call trip service: %w", err)
+	}
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			log.Error().Err(closeErr).Msg("Failed to close response body")
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		log.Error().Int("status_code", resp.StatusCode).Msg("Trip service returned non-200 status")
+		return nil, fmt.Errorf("trip service returned status %d", resp.StatusCode)
+	}
+
+	var apiResp model.APIResponse[model.TripDetailResponse]
+	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &apiResp.Data, nil
+}
+
 // BookingServiceClient interfaces with booking-service
 type BookingServiceClient interface {
-	CreateBooking(ctx context.Context, bookingData interface{}) (interface{}, error)
-	GetBooking(ctx context.Context, bookingID string) (interface{}, error)
+	CreateGuestBooking(ctx context.Context, req *model.CreateGuestBookingRequest) (*model.BookingResponse, error)
+	GetBookingByReference(ctx context.Context, reference string, email string) (*model.BookingResponse, error)
 }
 
 type bookingServiceClientImpl struct {
@@ -95,28 +145,29 @@ func NewBookingServiceClient(baseURL string) BookingServiceClient {
 	return &bookingServiceClientImpl{
 		baseURL: baseURL,
 		httpClient: &http.Client{
-			Timeout: 10 * time.Second,
+			Timeout: 15 * time.Second, // Longer timeout for booking operations
 		},
 	}
 }
 
-func (c *bookingServiceClientImpl) CreateBooking(ctx context.Context, bookingData interface{}) (interface{}, error) {
-	url := fmt.Sprintf("%s/api/v1/bookings", c.baseURL)
+func (c *bookingServiceClientImpl) CreateGuestBooking(ctx context.Context, req *model.CreateGuestBookingRequest) (*model.BookingResponse, error) {
+	url := fmt.Sprintf("%s/api/v1/bookings/guest", c.baseURL)
 
-	jsonData, err := json.Marshal(bookingData)
+	jsonData, err := json.Marshal(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Content-Type", "application/json")
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to call booking service")
 		return nil, fmt.Errorf("failed to call booking service: %w", err)
 	}
 	defer func() {
@@ -125,24 +176,42 @@ func (c *bookingServiceClientImpl) CreateBooking(ctx context.Context, bookingDat
 		}
 	}()
 
-	var result interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		log.Error().Int("status_code", resp.StatusCode).Msg("Booking service returned error status")
+
+		// Try to decode error response
+		var errorResp model.APIResponse[interface{}]
+		if err := json.NewDecoder(resp.Body).Decode(&errorResp); err == nil && errorResp.Error != nil {
+			return nil, fmt.Errorf("booking failed: %s", errorResp.Error.Message)
+		}
+
+		return nil, fmt.Errorf("booking service returned status %d", resp.StatusCode)
+	}
+
+	var apiResp model.APIResponse[model.BookingResponse]
+	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	return result, nil
+	return &apiResp.Data, nil
 }
 
-func (c *bookingServiceClientImpl) GetBooking(ctx context.Context, bookingID string) (interface{}, error) {
-	url := fmt.Sprintf("%s/api/v1/bookings/%s", c.baseURL, bookingID)
+func (c *bookingServiceClientImpl) GetBookingByReference(ctx context.Context, reference string, email string) (*model.BookingResponse, error) {
+	// Build URL with query parameters
+	baseURL := fmt.Sprintf("%s/api/v1/bookings/lookup", c.baseURL)
+	params := url.Values{}
+	params.Add("reference", reference)
+	params.Add("email", email)
+	reqURL := fmt.Sprintf("%s?%s", baseURL, params.Encode())
 
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to call booking service")
 		return nil, fmt.Errorf("failed to call booking service: %w", err)
 	}
 	defer func() {
@@ -151,10 +220,85 @@ func (c *bookingServiceClientImpl) GetBooking(ctx context.Context, bookingID str
 		}
 	}()
 
-	var result interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if resp.StatusCode != http.StatusOK {
+		log.Error().Int("status_code", resp.StatusCode).Msg("Booking service returned non-200 status")
+		return nil, fmt.Errorf("booking not found or service error: status %d", resp.StatusCode)
+	}
+
+	var apiResp model.APIResponse[model.BookingResponse]
+	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	return result, nil
+	return &apiResp.Data, nil
+}
+
+// PaymentServiceClient interfaces with payment-service
+type PaymentServiceClient interface {
+	CreateTransaction(ctx context.Context, req *model.CreateTransactionRequest) (*model.TransactionResponse, error)
+}
+
+type paymentServiceClientImpl struct {
+	baseURL    string
+	httpClient *http.Client
+}
+
+func NewPaymentServiceClient(baseURL string) PaymentServiceClient {
+	return &paymentServiceClientImpl{
+		baseURL: baseURL,
+		httpClient: &http.Client{
+			Timeout: 15 * time.Second,
+		},
+	}
+}
+
+func (c *paymentServiceClientImpl) CreateTransaction(ctx context.Context, req *model.CreateTransactionRequest) (*model.TransactionResponse, error) {
+	url := fmt.Sprintf("%s/api/v1/transactions", c.baseURL)
+
+	jsonData, err := json.Marshal(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to call payment service")
+		return nil, fmt.Errorf("failed to call payment service: %w", err)
+	}
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			log.Error().Err(closeErr).Msg("Failed to close response body")
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		log.Error().Int("status_code", resp.StatusCode).Msg("Payment service returned error status")
+
+		// Try to decode error response
+		var errorResp model.APIResponse[interface{}]
+		if err := json.NewDecoder(resp.Body).Decode(&errorResp); err == nil && errorResp.Error != nil {
+			return nil, fmt.Errorf("payment failed: %s", errorResp.Error.Message)
+		}
+
+		return nil, fmt.Errorf("payment service returned status %d", resp.StatusCode)
+	}
+
+	var apiResp model.APIResponse[model.TransactionResponse]
+	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &apiResp.Data, nil
+}
+
+// Helper function to get UUID from string
+func parseUUID(s string) (uuid.UUID, error) {
+	return uuid.Parse(s)
 }

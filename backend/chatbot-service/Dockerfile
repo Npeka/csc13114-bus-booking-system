@@ -1,32 +1,43 @@
-# Build stage
-FROM golang:1.24.0-alpine AS builder
+# Chatbot Service Dockerfile
+FROM golang:1.24-alpine AS builder
 
-WORKDIR /app
+RUN apk add --no-cache git ca-certificates tzdata wget
+RUN adduser -D -g '' appuser
 
-# Copy go mod files
-COPY go.mod go.sum ./
-COPY ../shared /app/shared
+WORKDIR /build
+
+# Copy only required modules (matching payment-service pattern)
+COPY shared/ ./shared/
+COPY chatbot-service/ ./chatbot-service/
+
+WORKDIR /build/chatbot-service
 
 # Download dependencies
 RUN go mod download
 
-# Copy source code
-COPY . .
+# Build the binary with optimized flags
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -a -installsuffix cgo \
+    -ldflags='-w -s -extldflags "-static"' \alpine
+    -o app ./cmd/server
 
-# Build
-RUN CGO_ENABLED=0 GOOS=linux go build -o /app/bin/chatbot-service cmd/server/main.go
-
-# Run stage
+# Final stage - use scratch for minimal image size
 FROM alpine:latest
 
-RUN apk --no-cache add ca-certificates
+# Install wget for healthcheck
+RUN apk add --no-cache ca-certificates wget
 
-WORKDIR /root/
+COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
+COPY --from=builder /etc/passwd /etc/passwd
+COPY --from=builder /build/chatbot-service/app /app
 
-# Copy binary from builder
-COPY --from=builder /app/bin/chatbot-service .
+ENV TZ=Asia/Ho_Chi_Minh
 
-# Expose port
+USER appuser
+
 EXPOSE 8086
 
-CMD ["./chatbot-service"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8086/health || exit 1
+
+ENTRYPOINT ["/app"]

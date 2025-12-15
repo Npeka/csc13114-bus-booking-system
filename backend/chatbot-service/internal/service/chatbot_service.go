@@ -10,7 +10,7 @@ import (
 	"bus-booking/chatbot-service/internal/model"
 
 	"github.com/rs/zerolog/log"
-	"github.com/sashabaranov/go-openai"
+	"google.golang.org/genai"
 )
 
 type ChatbotService interface {
@@ -20,87 +20,339 @@ type ChatbotService interface {
 }
 
 type ChatbotServiceImpl struct {
-	openaiClient   *openai.Client
-	config         *config.OpenAIConfig
+	genaiClient    *genai.Client
+	config         *config.GeminiConfig
 	faqKnowledge   []model.FAQ
 	tripService    TripServiceClient
 	bookingService BookingServiceClient
+	paymentService PaymentServiceClient // NEW: Payment service client
 }
 
 func NewChatbotService(
-	cfg *config.OpenAIConfig,
-	externalCfg *config.ExternalConfig,
+	cfg *config.GeminiConfig,
+	external *config.ExternalConfig,
 ) ChatbotService {
-	client := openai.NewClient(cfg.APIKey)
+	ctx := context.Background()
+	client, err := genai.NewClient(ctx, &genai.ClientConfig{
+		APIKey:  cfg.APIKey,
+		Backend: genai.BackendGeminiAPI,
+	})
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to create Gemini client")
+	}
 
 	return &ChatbotServiceImpl{
-		openaiClient:   client,
+		genaiClient:    client,
 		config:         cfg,
 		faqKnowledge:   loadFAQs(),
-		tripService:    NewTripServiceClient(externalCfg.TripServiceURL),
-		bookingService: NewBookingServiceClient(externalCfg.BookingServiceURL),
+		tripService:    NewTripServiceClient(external.TripServiceURL),
+		bookingService: NewBookingServiceClient(external.BookingServiceURL),
+		paymentService: NewPaymentServiceClient(external.PaymentServiceURL), // NEW
 	}
 }
 
-// ProcessMessage handles incoming chat messages
+// ProcessMessage handles incoming chat messages with Gemini Function Calling
 func (s *ChatbotServiceImpl) ProcessMessage(ctx context.Context, req *model.ChatRequest) (*model.ChatResponse, error) {
-	// Build conversation history
-	messages := s.buildMessages(req)
-
-	// Call OpenAI API
-	resp, err := s.openaiClient.CreateChatCompletion(
-		ctx,
-		openai.ChatCompletionRequest{
-			Model:       s.config.Model,
-			Messages:    messages,
-			Temperature: s.config.Temperature,
-			MaxTokens:   s.config.MaxTokens,
+	// Define function declarations
+	searchTripsFunc := &genai.FunctionDeclaration{
+		Name:        "searchTrips",
+		Description: "Search for bus trips between cities. Use this to find available trips when the user asks about routes, schedules, or availability.",
+		Parameters: &genai.Schema{
+			Type: genai.TypeObject,
+			Properties: map[string]*genai.Schema{
+				"origin": {
+					Type:        genai.TypeString,
+					Description: "Origin city name (e.g., 'Sài Gòn', 'Hà Nội', 'Đà Nẵng')",
+				},
+				"destination": {
+					Type:        genai.TypeString,
+					Description: "Destination city name (e.g., 'Sài Gòn', 'Hà Nội', 'Đà Lạt')",
+				},
+				"departure_date": {
+					Type:        genai.TypeString,
+					Description: "Departure date in YYYY-MM-DD format. Leave empty if not specified.",
+				},
+				"passengers": {
+					Type:        genai.TypeInteger,
+					Description: "Number of passengers. Default is 1.",
+				},
+			},
+			Required: []string{"origin", "destination"},
 		},
-	)
+	}
 
+	getTripDetailsFunc := &genai.FunctionDeclaration{
+		Name:        "getTripDetails",
+		Description: "Get detailed information about a specific trip including seat map and availability. Use when user wants to see trip details or select seats.",
+		Parameters: &genai.Schema{
+			Type: genai.TypeObject,
+			Properties: map[string]*genai.Schema{
+				"trip_id": {
+					Type:        genai.TypeString,
+					Description: "The UUID of the trip to get details for",
+				},
+			},
+			Required: []string{"trip_id"},
+		},
+	}
+
+	createGuestBookingFunc := &genai.FunctionDeclaration{
+		Name:        "createGuestBooking",
+		Description: "Create a booking for a guest user with passenger details and seat selection. Use ONLY when you have trip_id, seat numbers, and complete passenger information (name, phone, email).",
+		Parameters: &genai.Schema{
+			Type: genai.TypeObject,
+			Properties: map[string]*genai.Schema{
+				"trip_id": {
+					Type:        genai.TypeString,
+					Description: "The UUID of the trip",
+				},
+				"seat_numbers": {
+					Type:        genai.TypeArray,
+					Description: "Array of seat numbers (e.g., ['A1', 'A2'])",
+					Items:       &genai.Schema{Type: genai.TypeString},
+				},
+				"full_name": {
+					Type:        genai.TypeString,
+					Description: "Full name of the primary passenger",
+				},
+				"email": {
+					Type:        genai.TypeString,
+					Description: "Email address for booking confirmation",
+				},
+				"phone": {
+					Type:        genai.TypeString,
+					Description: "Phone number for contact",
+				},
+				"passengers": {
+					Type:        genai.TypeArray,
+					Description: "Array of passenger details matching the number of seats",
+					Items: &genai.Schema{
+						Type: genai.TypeObject,
+						Properties: map[string]*genai.Schema{
+							"name":        {Type: genai.TypeString, Description: "Passenger name"},
+							"phone":       {Type: genai.TypeString, Description: "Passenger phone"},
+							"email":       {Type: genai.TypeString, Description: "Passenger email"},
+							"seat_number": {Type: genai.TypeString, Description: "Assigned seat number"},
+						},
+					},
+				},
+			},
+			Required: []string{"trip_id", "seat_numbers", "full_name", "email", "phone", "passengers"},
+		},
+	}
+
+	getAvailableSeatsFunc := &genai.FunctionDeclaration{
+		Name:        "getAvailableSeats",
+		Description: "Get only the available (not booked or locked) seats for a trip. Use when user wants to see which seats they can choose.",
+		Parameters: &genai.Schema{
+			Type: genai.TypeObject,
+			Properties: map[string]*genai.Schema{
+				"trip_id": {
+					Type:        genai.TypeString,
+					Description: "The UUID of the trip to check seat availability",
+				},
+			},
+			Required: []string{"trip_id"},
+		},
+	}
+
+	createPaymentLinkFunc := &genai.FunctionDeclaration{
+		Name:        "createPaymentLink",
+		Description: "Generate a payment link for a booking. Use when user wants to pay or after booking is created. Requires booking_id from a previously created booking.",
+		Parameters: &genai.Schema{
+			Type: genai.TypeObject,
+			Properties: map[string]*genai.Schema{
+				"booking_id": {
+					Type:        genai.TypeString,
+					Description: "The UUID of the booking to create payment for",
+				},
+			},
+			Required: []string{"booking_id"},
+		},
+	}
+
+	checkBookingStatusFunc := &genai.FunctionDeclaration{
+		Name:        "checkBookingStatus",
+		Description: "Check the status of a booking using the booking reference code and email. Use when user asks to check their booking or payment status.",
+		Parameters: &genai.Schema{
+			Type: genai.TypeObject,
+			Properties: map[string]*genai.Schema{
+				"reference": {
+					Type:        genai.TypeString,
+					Description: "The booking reference code (e.g., 'ABC123XYZ')",
+				},
+				"email": {
+					Type:        genai.TypeString,
+					Description: "Email address used for the booking",
+				},
+			},
+			Required: []string{"reference", "email"},
+		},
+	}
+
+	// Create system instruction with booking flow rules
+	systemInstruction := &genai.Content{
+		Parts: []*genai.Part{
+			{Text: `You are a helpful assistant for BusTicket.vn, a bus booking platform in Vietnam. You can help users search trips AND complete bookings.
+
+CRITICAL RULES:
+1. ALWAYS use the searchTrips function to retrieve real trip data when users ask about routes, schedules, or availability
+2. NEVER make up or hallucinate trip information (times, prices, routes, seat numbers) - always call functions to get real data
+3. When user selects a trip, call getTripDetails to show seat map and availability
+4. When user provides seat selection and passenger info, call createGuestBooking to complete the booking
+5. For general questions (policies, FAQs, contact info), you can answer directly using your knowledge
+
+BOOKING FLOW:
+1. User searches trips → call searchTrips
+2. User selects a trip → call getTripDetails to show seat map
+3. User chooses seats and provides passenger info → call createGuestBooking
+4. After booking created → inform user of reference code and total price
+
+Your responsibilities:
+- Search for bus trips (searchTrips)
+- Show trip details with seat maps (getTripDetails)
+- Collect passenger information step-by-step if incomplete
+- Create bookings (createGuestBooking)
+- Answer questions about policies, cancellation, refunds
+
+DATA COLLECTION RULES:
+- For createGuestBooking, you MUST have: trip_id, seat_numbers, full_name, email, phone, and passengers array
+- If user hasn't provided all info, ASK for missing details one by one
+- Passengers array must match the number of seats selected
+- Each passenger needs: name, phone, email, seat_number
+
+Always respond in Vietnamese when the user speaks Vietnamese. Be friendly, clear, and helpful.`},
+		},
+	}
+
+	// Build conversation history
+	history := []*genai.Content{}
+	for _, msg := range req.History {
+		role := msg.Role
+		if role == "assistant" {
+			role = "model" // Gemini uses "model" instead of "assistant"
+		}
+		history = append(history, &genai.Content{
+			Role:  role,
+			Parts: []*genai.Part{{Text: msg.Content}},
+		})
+	}
+
+	// Add user message
+	history = append(history, &genai.Content{
+		Role:  "user",
+		Parts: []*genai.Part{{Text: req.Message}},
+	})
+
+	// Configure generation with tools (now includes 6 functions)
+	genConfig := &genai.GenerateContentConfig{
+		Temperature:       &s.config.Temperature,
+		MaxOutputTokens:   int32(s.config.MaxTokens),
+		SystemInstruction: systemInstruction,
+		Tools:             []*genai.Tool{{FunctionDeclarations: []*genai.FunctionDeclaration{searchTripsFunc, getTripDetailsFunc, getAvailableSeatsFunc, createGuestBookingFunc, createPaymentLinkFunc, checkBookingStatusFunc}}},
+	}
+
+	// Call Gemini API
+	resp, err := s.genaiClient.Models.GenerateContent(ctx, s.config.Model, history, genConfig)
 	if err != nil {
-		log.Error().Err(err).Msg("OpenAI API call failed")
+		log.Error().Err(err).Msg("Gemini API call failed")
 		return nil, fmt.Errorf("failed to get AI response: %w", err)
 	}
 
-	if len(resp.Choices) == 0 {
-		return nil, fmt.Errorf("no response from AI")
+	if len(resp.Candidates) == 0 {
+		return nil, fmt.Errorf("no response from Gemini")
 	}
 
-	aiMessage := resp.Choices[0].Message.Content
+	candidate := resp.Candidates[0]
 
-	// Determine intent and action
+	// Check if Gemini wants to call a function
+	for _, part := range candidate.Content.Parts {
+		if part.FunctionCall != nil {
+			fc := part.FunctionCall
+			log.Info().Str("function", fc.Name).Msg("Gemini requested function call")
+
+			// Execute function call and get response
+			var funcResp map[string]any
+			switch fc.Name {
+			case "searchTrips":
+				funcResp = s.handleSearchTrips(ctx, fc.Args)
+			case "getTripDetails":
+				funcResp = s.handleGetTripDetails(ctx, fc.Args)
+			case "getAvailableSeats":
+				funcResp = s.handleGetAvailableSeats(ctx, fc.Args)
+			case "createGuestBooking":
+				funcResp = s.handleCreateGuestBooking(ctx, fc.Args, req.Context)
+			case "createPaymentLink":
+				funcResp = s.handleCreatePaymentLink(ctx, fc.Args)
+			case "checkBookingStatus":
+				funcResp = s.handleCheckBookingStatus(ctx, fc.Args)
+			default:
+				log.Warn().Str("function", fc.Name).Msg("Unknown function call")
+				funcResp = map[string]any{"error": "Unknown function"}
+			}
+
+			// Add function response to history and call again
+			history = append(history, candidate.Content)
+			history = append(history, &genai.Content{
+				Role: "function",
+				Parts: []*genai.Part{
+					{
+						FunctionResponse: &genai.FunctionResponse{
+							Name:     fc.Name,
+							Response: funcResp,
+						},
+					},
+				},
+			})
+
+			// Call Gemini again with function response
+			resp, err = s.genaiClient.Models.GenerateContent(ctx, s.config.Model, history, genConfig)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to get final response from Gemini")
+				return nil, fmt.Errorf("failed to get final AI response: %w", err)
+			}
+
+			if len(resp.Candidates) > 0 {
+				candidate = resp.Candidates[0]
+			}
+		}
+	}
+
+	// Extract text response
+	var aiMessage string
+	for _, part := range candidate.Content.Parts {
+		if part.Text != "" {
+			aiMessage += part.Text
+		}
+	}
+
+	if aiMessage == "" {
+		aiMessage = "Xin lỗi, tôi không thể xử lý yêu cầu của bạn lúc này."
+	}
+
+	// Determine intent and action for frontend
 	intent := s.detectIntent(aiMessage, req.Message)
 	action := s.determineAction(intent, req.Context)
 
-	// Handle different intents
-	var responseData interface{}
+	// Prepare suggestions based on intent
 	var suggestions []string
-
 	switch intent {
 	case "search_trip":
-		params, err := s.ExtractTripSearchParams(ctx, req.Message)
-		if err == nil {
-			trips, err := s.tripService.SearchTrips(ctx, params)
-			if err == nil {
-				responseData = trips
-				suggestions = []string{"Xem chi tiết", "Tìm chuyến khác", "Đặt vé"}
-			}
-		}
+		suggestions = []string{"Xem chi tiết", "Tìm chuyến khác", "Chính sách hoàn vé"}
 	case "faq":
-		// Already handled by AI, no additional data needed
-		suggestions = []string{"Tìm chuyến xe", "Xem chính sách", "Liên hệ hỗ trợ"}
+		suggestions = []string{"Tìm chuyến xe", "Xem giá vé", "Liên hệ hỗ trợ"}
 	case "book_trip":
 		if req.Context != nil && req.Context.SelectedTrip != nil {
 			suggestions = []string{"Xác nhận đặt vé", "Chọn chuyến khác", "Hủy"}
 		}
+	default:
+		suggestions = []string{"Tìm chuyến xe", "Xem giá vé", "Chính sách hoàn vé"}
 	}
 
 	return &model.ChatResponse{
 		Message:     aiMessage,
 		Intent:      intent,
 		Action:      action,
-		Data:        responseData,
 		Context:     req.Context,
 		Suggestions: suggestions,
 	}, nil
@@ -122,36 +374,35 @@ Examples:
 - "Tôi muốn đi Sài Gòn từ Huế" -> {"origin": "Huế", "destination": "Sài Gòn", "departure_date": "", "passengers": 1}
 `
 
-	resp, err := s.openaiClient.CreateChatCompletion(
-		ctx,
-		openai.ChatCompletionRequest{
-			Model: s.config.Model,
-			Messages: []openai.ChatCompletionMessage{
-				{
-					Role:    openai.ChatMessageRoleSystem,
-					Content: systemPrompt,
-				},
-				{
-					Role:    openai.ChatMessageRoleUser,
-					Content: message,
-				},
-			},
-			Temperature: 0.3,
-			MaxTokens:   200,
+	temp := float32(0.3)
+	config := &genai.GenerateContentConfig{
+		Temperature:     &temp,
+		MaxOutputTokens: int32(200),
+		SystemInstruction: &genai.Content{
+			Parts: []*genai.Part{{Text: systemPrompt}},
 		},
-	)
+	}
 
+	resp, err := s.genaiClient.Models.GenerateContent(ctx, s.config.Model, []*genai.Content{
+		{Role: "user", Parts: []*genai.Part{{Text: message}}},
+	}, config)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(resp.Choices) == 0 {
-		return nil, fmt.Errorf("no response from AI")
+	if len(resp.Candidates) == 0 {
+		return nil, fmt.Errorf("no response from Gemini")
 	}
 
-	// Parse JSON response
-	var params model.TripSearchParams
-	content := strings.TrimSpace(resp.Choices[0].Message.Content)
+	// Extract text from response
+	var content string
+	for _, part := range resp.Candidates[0].Content.Parts {
+		if part.Text != "" {
+			content += part.Text
+		}
+	}
+
+	content = strings.TrimSpace(content)
 
 	// Remove markdown code blocks if present
 	content = strings.TrimPrefix(content, "```json")
@@ -159,6 +410,8 @@ Examples:
 	content = strings.TrimSuffix(content, "```")
 	content = strings.TrimSpace(content)
 
+	// Parse JSON response
+	var params model.TripSearchParams
 	if err := json.Unmarshal([]byte(content), &params); err != nil {
 		log.Error().Err(err).Str("content", content).Msg("Failed to parse search params")
 		return nil, fmt.Errorf("failed to parse search parameters: %w", err)
@@ -180,7 +433,7 @@ func (s *ChatbotServiceImpl) GetFAQAnswer(ctx context.Context, question string) 
 		}
 	}
 
-	// If no exact match, use OpenAI with FAQ context
+	// If no exact match, use Gemini with FAQ context
 	systemPrompt := fmt.Sprintf(`You are a customer service assistant for a bus booking system.
 Answer the user's question based on this FAQ knowledge:
 
@@ -188,76 +441,41 @@ Answer the user's question based on this FAQ knowledge:
 
 If the question is not covered in the FAQ, provide a helpful general answer.`, s.formatFAQs())
 
-	resp, err := s.openaiClient.CreateChatCompletion(
-		ctx,
-		openai.ChatCompletionRequest{
-			Model: s.config.Model,
-			Messages: []openai.ChatCompletionMessage{
-				{
-					Role:    openai.ChatMessageRoleSystem,
-					Content: systemPrompt,
-				},
-				{
-					Role:    openai.ChatMessageRoleUser,
-					Content: question,
-				},
-			},
-			Temperature: 0.7,
-			MaxTokens:   300,
+	temp := float32(0.7)
+	config := &genai.GenerateContentConfig{
+		Temperature:     &temp,
+		MaxOutputTokens: int32(300),
+		SystemInstruction: &genai.Content{
+			Parts: []*genai.Part{{Text: systemPrompt}},
 		},
-	)
+	}
 
+	resp, err := s.genaiClient.Models.GenerateContent(ctx, s.config.Model, []*genai.Content{
+		{Role: "user", Parts: []*genai.Part{{Text: question}}},
+	}, config)
 	if err != nil {
 		return "", err
 	}
 
-	if len(resp.Choices) == 0 {
-		return "", fmt.Errorf("no response from AI")
+	if len(resp.Candidates) == 0 {
+		return "", fmt.Errorf("no response from Gemini")
 	}
 
-	return resp.Choices[0].Message.Content, nil
+	// Extract text from response
+	var answer string
+	for _, part := range resp.Candidates[0].Content.Parts {
+		if part.Text != "" {
+			answer += part.Text
+		}
+	}
+
+	return answer, nil
 }
 
 // Helper methods
 
-func (s *ChatbotServiceImpl) buildMessages(req *model.ChatRequest) []openai.ChatCompletionMessage {
-	messages := []openai.ChatCompletionMessage{
-		{
-			Role: openai.ChatMessageRoleSystem,
-			Content: `You are a helpful travel assistant for a bus booking system in Vietnam.
-Help users:
-1. Search for bus trips between cities
-2. Book tickets
-3. Answer questions about policies, schedules, and services
-
-Be friendly, concise, and helpful. Respond in Vietnamese when the user speaks Vietnamese.`,
-		},
-	}
-
-	// Add conversation history
-	for _, msg := range req.History {
-		role := openai.ChatMessageRoleUser
-		if msg.Role == "assistant" {
-			role = openai.ChatMessageRoleAssistant
-		}
-		messages = append(messages, openai.ChatCompletionMessage{
-			Role:    role,
-			Content: msg.Content,
-		})
-	}
-
-	// Add current message
-	messages = append(messages, openai.ChatCompletionMessage{
-		Role:    openai.ChatMessageRoleUser,
-		Content: req.Message,
-	})
-
-	return messages
-}
-
 func (s *ChatbotServiceImpl) detectIntent(aiResponse, userMessage string) string {
 	messageLower := strings.ToLower(userMessage)
-	responseLower := strings.ToLower(aiResponse)
 
 	// Check for trip search intent
 	searchKeywords := []string{"tìm", "search", "chuyến", "trip", "xe", "bus", "từ", "đến", "đi"}
@@ -271,7 +489,7 @@ func (s *ChatbotServiceImpl) detectIntent(aiResponse, userMessage string) string
 	// Check for booking intent
 	bookingKeywords := []string{"đặt", "book", "mua vé", "ticket"}
 	for _, keyword := range bookingKeywords {
-		if strings.Contains(messageLower, keyword) || strings.Contains(responseLower, keyword) {
+		if strings.Contains(messageLower, keyword) {
 			return "book_trip"
 		}
 	}

@@ -69,7 +69,7 @@ func (s *Server) buildHandler() http.Handler {
 	r := gin.New()
 
 	// Initialize services
-	chatbotService := service.NewChatbotService(&s.cfg.OpenAI, &s.cfg.External)
+	chatbotService := service.NewChatbotService(&s.cfg.Gemini, &s.cfg.External)
 
 	// Initialize handlers
 	chatHandler := handler.NewChatHandler(chatbotService)

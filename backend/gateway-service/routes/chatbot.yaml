@@ -1,0 +1,10 @@
+service: 'chatbot'
+routes:
+  - path: '/api/v1/chat'
+    methods: ['POST']
+
+  - path: '/api/v1/chat/extract-search'
+    methods: ['GET']
+
+  - path: '/api/v1/chat/faq'
+    methods: ['GET']

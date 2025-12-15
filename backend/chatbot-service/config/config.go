@@ -6,20 +6,21 @@ import (
 
 type Config struct {
 	*sharedConfig.BaseConfig
-	OpenAI   OpenAIConfig   `envPrefix:"OPENAI_"`
+	Gemini   GeminiConfig   `envPrefix:"GEMINI_"`
 	External ExternalConfig `envPrefix:"EXTERNAL_"`
 }
 
-type OpenAIConfig struct {
+type GeminiConfig struct {
 	APIKey      string  `env:"API_KEY" envDefault:""`
-	Model       string  `env:"MODEL" envDefault:"gpt-4-turbo-preview"`
+	Model       string  `env:"MODEL" envDefault:"models/gemini-1.5-flash"`
 	Temperature float32 `env:"TEMPERATURE" envDefault:"0.7"`
-	MaxTokens   int     `env:"MAX_TOKENS" envDefault:"500"`
+	MaxTokens   int     `env:"MAX_TOKENS" envDefault:"2048"`
 }
 
 type ExternalConfig struct {
 	TripServiceURL    string `env:"TRIP_SERVICE_URL" envDefault:"http://localhost:8083"`
 	BookingServiceURL string `env:"BOOKING_SERVICE_URL" envDefault:"http://localhost:8082"`
+	PaymentServiceURL string `env:"PAYMENT_SERVICE_URL" envDefault:"http://localhost:8084"` // NEW
 }
 
 func LoadConfig(envFilePath ...string) (*Config, error) {

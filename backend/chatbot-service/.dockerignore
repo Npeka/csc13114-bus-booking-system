@@ -1,0 +1,6 @@
+.env
+.env.*
+!.env.dev
+*.md
+.git
+.gitignore
