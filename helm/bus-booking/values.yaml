@@ -7,32 +7,32 @@ services:
     tag: gateway-service-32df6f1
     port: 8080
     env:
-      SERVICE_NAME: "gateway-service"
-      SERVER_PORT: "8080"
-      REDIS_DB: "4"
+      SERVICE_NAME: 'gateway-service'
+      SERVER_PORT: '8080'
+      REDIS_DB: '4'
 
-      AUTH_USER_SERVICE_URL: "http://user-service"
-      AUTH_VERIFY_ENDPOINT: "/api/v1/auth/verify-token"
+      AUTH_USER_SERVICE_URL: 'http://user-service'
+      AUTH_VERIFY_ENDPOINT: '/api/v1/auth/verify-token'
 
-      SERVICES_USER_URL: "http://user-service"
-      SERVICES_USER_TIMEOUT: "60"
-      SERVICES_USER_RETRIES: "3"
+      SERVICES_USER_URL: 'http://user-service'
+      SERVICES_USER_TIMEOUT: '60'
+      SERVICES_USER_RETRIES: '3'
 
-      SERVICES_TRIP_URL: "http://trip-service"
-      SERVICES_TRIP_TIMEOUT: "60"
-      SERVICES_TRIP_RETRIES: "3"
+      SERVICES_TRIP_URL: 'http://trip-service'
+      SERVICES_TRIP_TIMEOUT: '60'
+      SERVICES_TRIP_RETRIES: '3'
 
-      SERVICES_BOOKING_URL: "http://booking-service"
-      SERVICES_BOOKING_TIMEOUT: "60"
-      SERVICES_BOOKING_RETRIES: "3"
+      SERVICES_BOOKING_URL: 'http://booking-service'
+      SERVICES_BOOKING_TIMEOUT: '60'
+      SERVICES_BOOKING_RETRIES: '3'
 
-      SERVICES_PAYMENT_URL: "http://payment-service"
-      SERVICES_PAYMENT_TIMEOUT: "60"
-      SERVICES_PAYMENT_RETRIES: "3"
+      SERVICES_PAYMENT_URL: 'http://payment-service'
+      SERVICES_PAYMENT_TIMEOUT: '60'
+      SERVICES_PAYMENT_RETRIES: '3'
     ingress:
       enabled: true
       host: bus-booking.site
-      path: "/"
+      path: '/'
 
   user-service:
     containerName: user-service
@@ -40,10 +40,10 @@ services:
     tag: user-service-4620c92
     port: 8080
     env:
-      SERVICE_NAME: "user-service"
-      DATABASE_NAME: "bus_booking_user"
-      SERVER_PORT: "8080"
-      REDIS_DB: "0"
+      SERVICE_NAME: 'user-service'
+      DATABASE_NAME: 'bus_booking_user'
+      SERVER_PORT: '8080'
+      REDIS_DB: '0'
     ingress:
       enabled: false
 
@@ -53,10 +53,10 @@ services:
     tag: trip-service-0dd49d5
     port: 8080
     env:
-      SERVICE_NAME: "trip-service"
-      DATABASE_NAME: "bus_booking_trip"
-      SERVER_PORT: "8080"
-      REDIS_DB: "1"
+      SERVICE_NAME: 'trip-service'
+      DATABASE_NAME: 'bus_booking_trip'
+      SERVER_PORT: '8080'
+      REDIS_DB: '1'
     ingress:
       enabled: false # Traffic goes through gateway now
 
@@ -66,10 +66,10 @@ services:
     tag: booking-service-c0940a5
     port: 8080
     env:
-      SERVICE_NAME: "booking-service"
-      DATABASE_NAME: "bus_booking_booking"
-      SERVER_PORT: "8080"
-      REDIS_DB: "2"
+      SERVICE_NAME: 'booking-service'
+      DATABASE_NAME: 'bus_booking_booking'
+      SERVER_PORT: '8080'
+      REDIS_DB: '2'
     ingress:
       enabled: false # Traffic goes through gateway now
 
@@ -79,10 +79,10 @@ services:
     tag: payment-service-c0940a5
     port: 8080
     env:
-      SERVICE_NAME: "payment-service"
-      DATABASE_NAME: "bus_booking_payment"
-      SERVER_PORT: "8080"
-      REDIS_DB: "3"
+      SERVICE_NAME: 'payment-service'
+      DATABASE_NAME: 'bus_booking_payment'
+      SERVER_PORT: '8080'
+      REDIS_DB: '3'
 
       PAYOS_CLIENT_ID: ce924919-6874-43ce-88fb-068b5e73988a
       PAYOS_API_KEY: 8d37f38e-f028-47c4-aa41-12674bf16328
@@ -91,28 +91,46 @@ services:
       PAYOS_CANCEL_URL: https://csc13114-bus-booking-system.vercel.app/payment/cancel
     ingress:
       enabled: false # Traffic goes through gateway now
-  
+
   notification-service:
     containerName: notification-service
     image: npkhang22/bb-notification-service
     tag: notification-service-40f12ea
     port: 8080
     env:
-      SERVICE_NAME: "notification-service"
-      
+      SERVICE_NAME: 'notification-service'
+
       BREVO_API_KEY: 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
       FROM_EMAIL: npkhang287@gmail.com
       FROM_NAME: Bus Booking System
-      
+
       TEMPLATE_PATH: templates
       LOGO_URL: https://csc13114-bus-booking-system.vercel.app/_next/image?url=%2Ffavicon.png&w=128&q=75
     ingress:
       enabled: false # Traffic goes through gateway now
 
+  chatbot-service:
+    containerName: chatbot-service
+    image: npkhang22/bb-chatbot-service
+    tag: chatbot-service-latest
+    port: 8086
+    env:
+      SERVICE_NAME: 'chatbot-service'
+      SERVER_PORT: '8086'
+      REDIS_DB: '5'
+
+      # Gemini Configuration
+      GEMINI_API_KEY: 'AIzaSyBV4q_feaSxmup1ar8xn87WWNgKFd5BbQM'
+      GEMINI_MODEL: 'gemini-2.5-flash'
+      GEMINI_TEMPERATURE: '0.7'
+      GEMINI_MAX_TOKENS: '2048'
+    ingress:
+      enabled: false
+
 # Environment Variables
 env:
   # Server
-  GIN_MODE: "release"
+  GIN_MODE: 'release'
   LOG_LEVEL: info
   LOG_FORMAT: console
   LOG_OUTPUT: stdout
@@ -122,13 +140,13 @@ env:
   LOG_MAX_AGE: 30
   LOG_COMPRESS: true
 
-  SERVER_HOST: "0.0.0.0"
-  SERVER_READ_TIMEOUT: "60s"
-  SERVER_WRITE_TIMEOUT: "60s"
-  SERVER_IDLE_TIMEOUT: "120s"
-  SERVER_SHUTDOWN_TIMEOUT: "30s"
-  SERVER_MAX_HEADER_BYTES: "1048576"
-  SERVER_ENVIRONMENT: "production"
+  SERVER_HOST: '0.0.0.0'
+  SERVER_READ_TIMEOUT: '60s'
+  SERVER_WRITE_TIMEOUT: '60s'
+  SERVER_IDLE_TIMEOUT: '120s'
+  SERVER_SHUTDOWN_TIMEOUT: '30s'
+  SERVER_MAX_HEADER_BYTES: '1048576'
+  SERVER_ENVIRONMENT: 'production'
 
   # Rate Limiting Configuration
   RATE_LIMIT_RPS: 100
@@ -137,11 +155,11 @@ env:
   RATE_LIMIT_CLEANUP_AFTER: 10m
 
   # CORS
-  CORS_ALLOWED_ORIGINS: "https://csc13114-bus-booking-system.vercel.app,http://localhost:3000,https://api-merchant.payos.vn"
-  CORS_ALLOWED_METHODS: "GET,POST,PUT,PATCH,DELETE,OPTIONS"
-  CORS_ALLOWED_HEADERS: "Origin,Content-Type,Accept,Authorization,X-Requested-With,X-User-ID,X-User-Role,X-Access-Token"
-  CORS_ALLOW_CREDENTIALS: "true"
-  CORS_MAX_AGE: "86400"
+  CORS_ALLOWED_ORIGINS: 'https://csc13114-bus-booking-system.vercel.app,http://localhost:3000,https://api-merchant.payos.vn'
+  CORS_ALLOWED_METHODS: 'GET,POST,PUT,PATCH,DELETE,OPTIONS'
+  CORS_ALLOWED_HEADERS: 'Origin,Content-Type,Accept,Authorization,X-Requested-With,X-User-ID,X-User-Role,X-Access-Token'
+  CORS_ALLOW_CREDENTIALS: 'true'
+  CORS_MAX_AGE: '86400'
 
   # Database
   DATABASE_HOST: bus-booking-database-do-user-29228381-0.d.db.ondigitalocean.com
