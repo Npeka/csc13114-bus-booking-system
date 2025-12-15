@@ -18,7 +18,7 @@ RUN go mod download
 # Build the binary with optimized flags
 RUN CGO_ENABLED=0 GOOS=linux go build \
     -a -installsuffix cgo \
-    -ldflags='-w -s -extldflags "-static"' \alpine
+    -ldflags='-w -s -extldflags "-static"' \
     -o app ./cmd/server
 
 # Final stage - use scratch for minimal image size
