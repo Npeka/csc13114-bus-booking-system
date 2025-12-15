@@ -1,15 +1,12 @@
-.PHONY: run build test clean fmt fmt-check vet lint quality-check swagger install-swag
+.PHONY: run migrate fmt fmt-check fmt-fix lint test vet quality-check install-swag swagger swagger-gen
 
-run: ## Run the chatbot service
-	go run cmd/server/main.go
+run:
+	go run ./cmd/server/main.go
 
-build: ## Build the chatbot service
-	go build -o bin/chatbot-service cmd/server/main.go
-
-fmt: ## Format code
+fmt:
 	go fmt ./...
 
-fmt-check: ## Check if code is formatted
+fmt-check:
 	@files=$$(gofmt -l .); \
 	if [ -n "$$files" ]; then \
 		echo "Code is not formatted. Run 'make fmt' to format."; \
@@ -17,29 +14,24 @@ fmt-check: ## Check if code is formatted
 		exit 1; \
 	fi
 
-vet: ## Run go vet
-	go vet ./...
-
-lint: ## Run linter
+lint:
 	golangci-lint run --config=../.golangci.yml ./...
 
-test: ## Run tests
-	go test -v -cover ./...
+test:
+	go test ./...
 
-quality-check: fmt-check vet lint test ## Run all quality checks
+vet:
+	go vet ./...
 
-clean: ## Clean build files
-	rm -rf bin/
-	rm -rf docs/
+quality-check:
+	fmt-check vet lint test
 
 # Swagger
-install-swag: ## Install swag tool
+install-swag:
 	go install github.com/swaggo/swag/cmd/swag@v1.16.3
 
-swagger: ## Generate swagger documentation
+swagger:
 	swag init -g cmd/server/main.go -o docs --parseDependency --parseInternal
 
-swagger-gen: fmt swagger ## Format and generate swagger
-
-help: ## Display this help screen
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+swagger-gen:
+	fmt swagger
