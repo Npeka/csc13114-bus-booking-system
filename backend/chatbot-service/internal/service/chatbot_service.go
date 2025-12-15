@@ -245,12 +245,13 @@ Always respond in Vietnamese when the user speaks Vietnamese. Be friendly, clear
 	})
 
 	// Configure generation with tools (now includes 6 functions)
-	// Check bounds before conversion to avoid gosec G115
+	// Check bounds before conversion to avoid overflow
 	var maxTokens int32
 	if s.config.MaxTokens > 2147483647 {
 		maxTokens = 2147483647 // Max int32 value
 	} else {
-		maxTokens = int32(s.config.MaxTokens) // Safe conversion
+		//nolint:gosec // G115: Conversion is safe, value already checked to be <= 2147483647
+		maxTokens = int32(s.config.MaxTokens)
 	}
 	genConfig := &genai.GenerateContentConfig{
 		Temperature:       &s.config.Temperature,
