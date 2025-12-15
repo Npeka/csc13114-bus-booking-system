@@ -11,7 +11,6 @@ import (
 
 	"bus-booking/chatbot-service/internal/model"
 
-	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -296,9 +295,4 @@ func (c *paymentServiceClientImpl) CreateTransaction(ctx context.Context, req *m
 	}
 
 	return &apiResp.Data, nil
-}
-
-// Helper function to get UUID from string
-func parseUUID(s string) (uuid.UUID, error) {
-	return uuid.Parse(s)
 }

@@ -13,7 +13,12 @@ import (
 
 // handleSearchTrips processes searchTrips function call
 func (s *ChatbotServiceImpl) handleSearchTrips(ctx context.Context, args map[string]any) map[string]any {
-	argsJSON, _ := json.Marshal(args)
+	argsJSON, err := json.Marshal(args)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to marshal arguments")
+		return map[string]any{"error": "Invalid arguments"}
+	}
+
 	var params model.TripSearchParams
 	if err := json.Unmarshal(argsJSON, &params); err != nil {
 		log.Error().Err(err).Msg("Failed to parse searchTrips arguments")
@@ -29,9 +34,17 @@ func (s *ChatbotServiceImpl) handleSearchTrips(ctx context.Context, args map[str
 	}
 
 	// Convert trips to map for Gemini
-	tripsJSON, _ := json.Marshal(trips)
+	tripsJSON, err := json.Marshal(trips)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to marshal trips")
+		return map[string]any{"error": "Failed to process trips"}
+	}
+
 	var tripsData any
-	json.Unmarshal(tripsJSON, &tripsData)
+	if err := json.Unmarshal(tripsJSON, &tripsData); err != nil {
+		log.Error().Err(err).Msg("Failed to unmarshal trips data")
+		return map[string]any{"error": "Failed to process trips"}
+	}
 	return map[string]any{"trips": tripsData}
 }
 
@@ -52,9 +65,17 @@ func (s *ChatbotServiceImpl) handleGetTripDetails(ctx context.Context, args map[
 	}
 
 	// Convert to map for Gemini, include full seat map
-	detailsJSON, _ := json.Marshal(tripDetails)
+	detailsJSON, err := json.Marshal(tripDetails)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to marshal trip details")
+		return map[string]any{"error": "Failed to process trip details"}
+	}
+
 	var detailsData any
-	json.Unmarshal(detailsJSON, &detailsData)
+	if err := json.Unmarshal(detailsJSON, &detailsData); err != nil {
+		log.Error().Err(err).Msg("Failed to unmarshal trip details")
+		return map[string]any{"error": "Failed to process trip details"}
+	}
 
 	return map[string]any{
 		"trip": detailsData,
@@ -66,7 +87,11 @@ func (s *ChatbotServiceImpl) handleGetTripDetails(ctx context.Context, args map[
 // handleCreateGuestBooking processes createGuestBooking function call
 func (s *ChatbotServiceImpl) handleCreateGuestBooking(ctx context.Context, args map[string]any, chatContext *model.ChatContext) map[string]any {
 	// Parse arguments
-	argsJSON, _ := json.Marshal(args)
+	argsJSON, err := json.Marshal(args)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to marshal booking arguments")
+		return map[string]any{"error": "Invalid booking arguments"}
+	}
 
 	type BookingArgs struct {
 		TripID      string                `json:"trip_id"`

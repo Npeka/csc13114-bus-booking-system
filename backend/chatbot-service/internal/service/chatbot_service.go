@@ -245,9 +245,13 @@ Always respond in Vietnamese when the user speaks Vietnamese. Be friendly, clear
 	})
 
 	// Configure generation with tools (now includes 6 functions)
+	maxTokens := int32(s.config.MaxTokens)
+	if s.config.MaxTokens > 2147483647 {
+		maxTokens = 2147483647 // Max int32 value
+	}
 	genConfig := &genai.GenerateContentConfig{
 		Temperature:       &s.config.Temperature,
-		MaxOutputTokens:   int32(s.config.MaxTokens),
+		MaxOutputTokens:   maxTokens,
 		SystemInstruction: systemInstruction,
 		Tools:             []*genai.Tool{{FunctionDeclarations: []*genai.FunctionDeclaration{searchTripsFunc, getTripDetailsFunc, getAvailableSeatsFunc, createGuestBookingFunc, createPaymentLinkFunc, checkBookingStatusFunc}}},
 	}

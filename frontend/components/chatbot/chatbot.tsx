@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle, X, Send, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { sendChatMessage } from "@/lib/api/chatbot-service";
 
 interface Message {
   id: string;
@@ -59,19 +60,43 @@ export function ChatBot() {
     setInputValue("");
     setIsTyping(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const response = generateResponse(message);
+    try {
+      // Call real chatbot API
+      const response = await sendChatMessage({
+        message,
+        history: messages
+          .filter((m) => m.id !== "1") // Exclude initial greeting
+          .map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+      });
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
         content: response.message,
         timestamp: new Date(),
-        suggestions: response.suggestions,
+        suggestions: response.suggestions || [],
       };
+
       setMessages((prev) => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error("Chatbot error:", error);
+
+      // Show error message to user
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content:
+          "Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau hoặc liên hệ hỗ trợ.",
+        timestamp: new Date(),
+        suggestions: ["Tìm chuyến xe", "Liên hệ hỗ trợ"],
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-    }, 1000);
+    }
   };
 
   const handleSuggestionClick = (suggestion: string) => {
@@ -241,68 +266,4 @@ export function ChatBot() {
       )}
     </>
   );
-}
-
-// Simple response generator (in real app, this would call an AI API)
-function generateResponse(message: string): {
-  message: string;
-  suggestions?: string[];
-} {
-  const lowerMessage = message.toLowerCase();
-
-  if (
-    lowerMessage.includes("tìm") ||
-    lowerMessage.includes("chuyến") ||
-    lowerMessage.includes("hà nội") ||
-    lowerMessage.includes("đà nẵng")
-  ) {
-    return {
-      message:
-        "Để tìm chuyến xe, bạn có thể sử dụng form tìm kiếm trên trang chủ. Hoặc cho tôi biết:\n• Điểm đi\n• Điểm đến\n• Ngày khởi hành\n• Số hành khách\n\nTôi sẽ giúp bạn tìm chuyến xe phù hợp!",
-      suggestions: ["Tìm xe từ HCM đi Đà Lạt", "Xe đi Sa Pa", "Xe giường nằm"],
-    };
-  }
-
-  if (lowerMessage.includes("giá") || lowerMessage.includes("bao nhiêu")) {
-    return {
-      message:
-        "Giá vé phụ thuộc vào:\n• Tuyến đường\n• Loại xe (ghế ngồi, giường nằm, limousine)\n• Nhà xe\n• Thời gian đặt vé\n\nGiá dao động từ 120.000đ - 500.000đ cho các tuyến phổ biến. Bạn muốn xem giá cụ thể cho tuyến nào?",
-      suggestions: ["HCM - Đà Lạt", "Hà Nội - Đà Nẵng", "HCM - Nha Trang"],
-    };
-  }
-
-  if (
-    lowerMessage.includes("hoàn") ||
-    lowerMessage.includes("hủy") ||
-    lowerMessage.includes("chính sách")
-  ) {
-    return {
-      message:
-        "Chính sách hoàn/hủy vé:\n• Hủy trước 24h: hoàn 70% giá vé\n• Hủy từ 12-24h: hoàn 50%\n• Hủy dưới 12h: không hoàn\n\nLưu ý: Mỗi nhà xe có thể có chính sách khác nhau. Vui lòng kiểm tra kỹ khi đặt vé.",
-      suggestions: ["Cách hủy vé", "Đổi chuyến", "Thời gian hoàn tiền"],
-    };
-  }
-
-  if (
-    lowerMessage.includes("liên hệ") ||
-    lowerMessage.includes("hotline") ||
-    lowerMessage.includes("hỗ trợ")
-  ) {
-    return {
-      message:
-        "Bạn có thể liên hệ với chúng tôi qua:\n📞 Hotline: 1900 989 901\n📧 Email: support@busticket.vn\n⏰ Thời gian: 24/7\n\nĐội ngũ của chúng tôi luôn sẵn sàng hỗ trợ bạn!",
-      suggestions: ["Gửi email", "Gọi hotline", "FAQ"],
-    };
-  }
-
-  return {
-    message:
-      "Cảm ơn bạn đã nhắn tin! Tôi có thể giúp bạn:\n• Tìm và đặt vé xe\n• Kiểm tra giá vé\n• Thông tin chính sách\n• Hỗ trợ và liên hệ\n\nBạn cần giúp gì?",
-    suggestions: [
-      "Tìm chuyến xe",
-      "Xem giá vé",
-      "Chính sách hoàn vé",
-      "Liên hệ hỗ trợ",
-    ],
-  };
 }
