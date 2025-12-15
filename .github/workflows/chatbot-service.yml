@@ -1,4 +1,4 @@
-name: Chatbot Service CI/CD
+name: chatbot Service CI/CD
 
 on:
   workflow_call:
@@ -79,17 +79,17 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           platforms: linux/amd64
-          build-args: SERVICE_PORT=8086
+          build-args: SERVICE_PORT=8080
       - name: Update Infrastructure
         run: |
           SERVICE_TAG="${{ steps.meta.outputs.tag }}"
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          git remote set-url origin https://x-access-token:$\{\{ secrets.INFRA_DEPLOY_TOKEN }}@github.com/${{ github.repository }}.git
+          git remote set-url origin https://x-access-token:${{ secrets.INFRA_DEPLOY_TOKEN }}@github.com/${{ github.repository }}.git
           git fetch origin infra
           git checkout infra
-          if [ -f "helm/bus-booking/values.yaml" ]; then
-            sed -i "/^  chatbot-service:/,/^  [a-zA-Z]/ s|tag: .*|tag: ${SERVICE_TAG}|" helm/bus-booking/values.yaml
+          if [ -f "helm/bus-chatbot/values.yaml" ]; then
+            sed -i "/^  chatbot-service:/,/^  [a-zA-Z]/ s|tag: .*|tag: ${SERVICE_TAG}|" helm/bus-chatbot/values.yaml
             git add .
             git diff --staged --quiet || git commit -m "Update chatbot-service to ${SERVICE_TAG}" && git push origin infra
           fi
