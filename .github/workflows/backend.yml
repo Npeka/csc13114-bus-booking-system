@@ -4,13 +4,13 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - "backend/**"
-      - ".github/workflows/**"
+      - 'backend/**'
+      - '.github/workflows/**'
   pull_request:
     branches: [main, develop]
     paths:
-      - "backend/**"
-      - ".github/workflows/**"
+      - 'backend/**'
+      - '.github/workflows/**'
 
 permissions:
   contents: write
@@ -28,6 +28,7 @@ jobs:
       payment-service: ${{ steps.changes.outputs.payment-service }}
       trip-service: ${{ steps.changes.outputs.trip-service }}
       user-service: ${{ steps.changes.outputs.user-service }}
+      chatbot-service: ${{ steps.changes.outputs.chatbot-service }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -53,6 +54,9 @@ jobs:
               - 'backend/shared/**'
             user-service:
               - 'backend/user-service/**'
+              - 'backend/shared/**'
+            chatbot-service:
+              - 'backend/chatbot-service/**'
               - 'backend/shared/**'
 
   booking-service:
@@ -110,6 +114,16 @@ jobs:
     uses: ./.github/workflows/notification-service.yml
     with:
       service-changed: ${{ needs.detect-changes.outputs.notification-service }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      INFRA_DEPLOY_TOKEN: ${{ secrets.INFRA_DEPLOY_TOKEN }}
+
+  chatbot-service:
+    needs: detect-changes
+    uses: ./.github/workflows/chatbot-service.yml
+    with:
+      service-changed: ${{ needs.detect-changes.outputs.chatbot-service }}
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
