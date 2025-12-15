@@ -89,7 +89,7 @@ jobs:
           git fetch origin infra
           git checkout infra
           if [ -f "helm/bus-chatbot/values.yaml" ]; then
-            sed -i "/^  chatbot-service:/,/^  [a-zA-Z]/ s|tag: .*|tag: ${SERVICE_TAG}|" helm/bus-chatbot/values.yaml
+            sed -i "/^  chatbot-service:/,/^  [a-zA-Z]/ s|tag: .*|tag: ${SERVICE_TAG}|" helm/bus-booking/values.yaml
             git add .
             git diff --staged --quiet || git commit -m "Update chatbot-service to ${SERVICE_TAG}" && git push origin infra
           fi

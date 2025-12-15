@@ -138,6 +138,7 @@ jobs:
       - payment-service
       - trip-service
       - user-service
+      - chatbot-service
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -153,6 +154,7 @@ jobs:
             echo "- **payment-service**: ${{ needs.detect-changes.outputs.payment-service }}"
             echo "- **trip-service**: ${{ needs.detect-changes.outputs.trip-service }}"
             echo "- **user-service**: ${{ needs.detect-changes.outputs.user-service }}"
+            echo "- **chatbot-service**: ${{ needs.detect-changes.outputs.chatbot-service }}"
             echo
             echo "### Workflow Results:"
             echo "- **booking-service**: ${{ needs.booking-service.result }}"
@@ -161,6 +163,7 @@ jobs:
             echo "- **payment-service**: ${{ needs.payment-service.result }}"
             echo "- **trip-service**: ${{ needs.trip-service.result }}"
             echo "- **user-service**: ${{ needs.user-service.result }}"
+            echo "- **chatbot-service**: ${{ needs.chatbot-service.result }}"
             echo
             echo "### Notes:"
             echo "- Each service runs in its own workflow file"
