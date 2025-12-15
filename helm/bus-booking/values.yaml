@@ -119,7 +119,7 @@ services:
       SERVER_PORT: '8086'
       REDIS_DB: '5'
 
-      # Gemini Configuration
+      # Gemini Config
       GEMINI_API_KEY: 'AIzaSyBV4q_feaSxmup1ar8xn87WWNgKFd5BbQM'
       GEMINI_MODEL: 'gemini-2.5-flash'
       GEMINI_TEMPERATURE: '0.7'
