@@ -29,6 +29,10 @@ services:
       SERVICES_PAYMENT_URL: 'http://payment-service'
       SERVICES_PAYMENT_TIMEOUT: '60'
       SERVICES_PAYMENT_RETRIES: '3'
+
+      SERVICES_CHATBOT_URL: 'http://chatbot-service'
+      SERVICES_CHATBOT_TIMEOUT: '60'
+      SERVICES_CHATBOT_RETRIES: '3'
     ingress:
       enabled: true
       host: bus-booking.site
@@ -113,7 +117,7 @@ services:
     containerName: chatbot-service
     image: npkhang22/bb-chatbot-service
     tag: chatbot-service-01b876f
-    port: 8086
+    port: 8080
     env:
       SERVICE_NAME: 'chatbot-service'
       SERVER_PORT: '8080'
