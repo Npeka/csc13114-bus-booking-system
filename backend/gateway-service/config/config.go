@@ -23,6 +23,7 @@ type ServicesConfig struct {
 	Trip    ServiceConfig `envPrefix:"TRIP_"`
 	Booking ServiceConfig `envPrefix:"BOOKING_"`
 	Payment ServiceConfig `envPrefix:"PAYMENT_"`
+	Chatbot ServiceConfig `envPrefix:"CHATBOT_"`
 }
 
 type ServiceConfig struct {
@@ -68,6 +69,7 @@ func (c *Config) BuildServiceMap() map[string]ServiceConfig {
 		"trip":    c.Services.Trip,
 		"booking": c.Services.Booking,
 		"payment": c.Services.Payment,
+		"chatbot": c.Services.Chatbot,
 	}
 }
 
