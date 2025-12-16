@@ -48,7 +48,7 @@ func (s *Server) Run() {
 		}
 	}()
 
-	// Chờ tín hiệu stop
+	// wait for stop signal
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
