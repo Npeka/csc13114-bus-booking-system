@@ -2,335 +2,466 @@ package service
 
 import (
 	"context"
-	"errors"
 	"testing"
 
-	"bus-booking/trip-service/internal/constants"
 	"bus-booking/trip-service/internal/model"
-	"bus-booking/trip-service/internal/service/mocks"
+	"bus-booking/trip-service/internal/repository/mocks"
 
+	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
-func TestBusService_CreateBus_Success(t *testing.T) {
-	// Arrange
-	mockBusRepo := new(mocks.MockBusRepository)
-	mockSeatRepo := new(mocks.MockSeatRepository)
+func TestNewBusService(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBusRepo := mocks.NewMockBusRepository(ctrl)
+	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
+
 	service := NewBusService(mockBusRepo, mockSeatRepo)
-	ctx := context.Background()
 
-	req := &model.CreateBusRequest{
-		PlateNumber: "ABC-123",
-		Model:       "Mercedes Sprinter",
-		Floors: []model.FloorConfig{
-			{Floor: 1, SeatCapacity: 20},
-		},
-		Amenities: []string{"WiFi", "AC"},
-	}
-
-	mockBusRepo.On("GetBusByPlateNumber", ctx, req.PlateNumber).Return(nil, errors.New("not found"))
-	mockBusRepo.On("CreateBus", ctx, mock.AnythingOfType("*model.Bus")).Return(nil)
-
-	// Act
-	result, err := service.CreateBus(ctx, req)
-
-	// Assert
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, req.PlateNumber, result.PlateNumber)
-	assert.Equal(t, req.Model, result.Model)
-	assert.Equal(t, 20, result.SeatCapacity)
-	assert.Equal(t, 20, len(result.Seats))
-	assert.True(t, result.IsActive)
-	mockBusRepo.AssertExpectations(t)
+	assert.NotNil(t, service)
+	assert.IsType(t, &BusServiceImpl{}, service)
 }
 
-func TestBusService_CreateBus_MultipleFloors(t *testing.T) {
-	// Arrange
-	mockBusRepo := new(mocks.MockBusRepository)
-	mockSeatRepo := new(mocks.MockSeatRepository)
-	service := NewBusService(mockBusRepo, mockSeatRepo)
-	ctx := context.Background()
+func TestGetBusByID_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-	req := &model.CreateBusRequest{
-		PlateNumber: "ABC-123",
-		Model:       "Double Decker",
-		Floors: []model.FloorConfig{
-			{Floor: 1, SeatCapacity: 20},
-			{Floor: 2, SeatCapacity: 24},
-		},
-		Amenities: []string{"WiFi"},
+	mockBusRepo := mocks.NewMockBusRepository(ctrl)
+	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
+	service := NewBusService(mockBusRepo, mockSeatRepo)
+
+	ctx := context.Background()
+	busID := uuid.New()
+
+	expectedBus := &model.Bus{
+		BaseModel:    model.BaseModel{ID: busID},
+		PlateNumber:  "29A-12345",
+		Model:        "Hyundai",
+		SeatCapacity: 40,
 	}
 
-	mockBusRepo.On("GetBusByPlateNumber", ctx, req.PlateNumber).Return(nil, errors.New("not found"))
-	mockBusRepo.On("CreateBus", ctx, mock.AnythingOfType("*model.Bus")).Return(nil)
+	mockBusRepo.EXPECT().
+		GetBusWithSeatsByID(ctx, busID).
+		Return(expectedBus, nil).
+		Times(1)
 
-	// Act
-	result, err := service.CreateBus(ctx, req)
+	result, err := service.GetBusByID(ctx, busID)
 
-	// Assert
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
-	assert.Equal(t, 44, result.SeatCapacity)
-	assert.Equal(t, 44, len(result.Seats))
-
-	// Check that multi-floor buses have floor prefix in seat numbers
-	hasFloorPrefix := false
-	for _, seat := range result.Seats {
-		if len(seat.SeatNumber) > 2 && seat.SeatNumber[0] == 'F' {
-			hasFloorPrefix = true
-			break
-		}
-	}
-	assert.True(t, hasFloorPrefix, "Multi-floor bus should have floor prefix in seat numbers")
-	mockBusRepo.AssertExpectations(t)
+	assert.Equal(t, "29A-12345", result.PlateNumber)
 }
 
-func TestBusService_CreateBus_PlateNumberExists(t *testing.T) {
-	// Arrange
-	mockBusRepo := new(mocks.MockBusRepository)
-	mockSeatRepo := new(mocks.MockSeatRepository)
-	service := NewBusService(mockBusRepo, mockSeatRepo)
-	ctx := context.Background()
+func TestGetBusByID_Error(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-	req := &model.CreateBusRequest{
-		PlateNumber: "ABC-123",
-		Model:       "Mercedes",
-		Floors:      []model.FloorConfig{{Floor: 1, SeatCapacity: 20}},
+	mockBusRepo := mocks.NewMockBusRepository(ctrl)
+	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
+	service := NewBusService(mockBusRepo, mockSeatRepo)
+
+	ctx := context.Background()
+	busID := uuid.New()
+
+	mockBusRepo.EXPECT().
+		GetBusWithSeatsByID(ctx, busID).
+		Return(nil, assert.AnError).
+		Times(1)
+
+	result, err := service.GetBusByID(ctx, busID)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Contains(t, err.Error(), "failed to get bus")
+}
+
+func TestListBuses_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBusRepo := mocks.NewMockBusRepository(ctrl)
+	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
+	service := NewBusService(mockBusRepo, mockSeatRepo)
+
+	ctx := context.Background()
+	req := model.ListBusesRequest{
+		PaginationRequest: model.PaginationRequest{
+			Page:     1,
+			PageSize: 10,
+		},
 	}
 
-	existingBus := &model.Bus{PlateNumber: "ABC-123"}
-	existingBus.ID = uuid.New()
-	mockBusRepo.On("GetBusByPlateNumber", ctx, req.PlateNumber).Return(existingBus, nil)
+	expectedBuses := []model.Bus{
+		{PlateNumber: "29A-11111"},
+		{PlateNumber: "29A-22222"},
+	}
 
-	// Act
+	mockBusRepo.EXPECT().
+		ListBuses(ctx, 1, 10).
+		Return(expectedBuses, int64(2), nil).
+		Times(1)
+
+	buses, total, err := service.ListBuses(ctx, req)
+
+	assert.NoError(t, err)
+	assert.Len(t, buses, 2)
+	assert.Equal(t, int64(2), total)
+}
+
+func TestCreateBus_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBusRepo := mocks.NewMockBusRepository(ctrl)
+	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
+	service := NewBusService(mockBusRepo, mockSeatRepo)
+
+	ctx := context.Background()
+	req := &model.CreateBusRequest{
+		PlateNumber: "29A-12345",
+		Model:       "Hyundai",
+		BusType:     "luxury",
+		IsActive:    true,
+		Floors: []model.FloorConfig{
+			{
+				Floor:   1,
+				Rows:    5,
+				Columns: 4,
+				Seats: []model.SeatConfig{
+					{Row: 1, Column: 1, SeatType: "standard"},
+					{Row: 1, Column: 2, SeatType: "standard"},
+				},
+			},
+		},
+	}
+
+	// No existing bus
+	mockBusRepo.EXPECT().
+		GetBusByPlateNumber(ctx, "29A-12345").
+		Return(nil, assert.AnError).
+		Times(1)
+
+	mockBusRepo.EXPECT().
+		CreateBus(ctx, gomock.Any()).
+		Do(func(_ context.Context, bus *model.Bus) {
+			assert.Equal(t, "29A-12345", bus.PlateNumber)
+			assert.Equal(t, 2, bus.SeatCapacity)
+			assert.Len(t, bus.Seats, 2)
+		}).
+		Return(nil).
+		Times(1)
+
 	result, err := service.CreateBus(ctx, req)
 
-	// Assert
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+}
+
+func TestCreateBus_DuplicatePlateNumber(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBusRepo := mocks.NewMockBusRepository(ctrl)
+	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
+	service := NewBusService(mockBusRepo, mockSeatRepo)
+
+	ctx := context.Background()
+	req := &model.CreateBusRequest{
+		PlateNumber: "29A-12345",
+		Floors:      []model.FloorConfig{},
+	}
+
+	existingBus := &model.Bus{PlateNumber: "29A-12345"}
+
+	mockBusRepo.EXPECT().
+		GetBusByPlateNumber(ctx, "29A-12345").
+		Return(existingBus, nil).
+		Times(1)
+
+	result, err := service.CreateBus(ctx, req)
+
 	assert.Error(t, err)
 	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), "plate number already exists")
-	mockBusRepo.AssertExpectations(t)
 }
 
-func TestBusService_CreateBus_ExceedCapacity(t *testing.T) {
-	// Arrange
-	mockBusRepo := new(mocks.MockBusRepository)
-	mockSeatRepo := new(mocks.MockSeatRepository)
+func TestCreateBus_ExceedCapacity(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBusRepo := mocks.NewMockBusRepository(ctrl)
+	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
 	service := NewBusService(mockBusRepo, mockSeatRepo)
+
 	ctx := context.Background()
 
+	// Create 101 seats
+	seats := make([]model.SeatConfig, 101)
+	for i := 0; i < 101; i++ {
+		seats[i] = model.SeatConfig{Row: 1, Column: i + 1, SeatType: "standard"}
+	}
+
 	req := &model.CreateBusRequest{
-		PlateNumber: "ABC-123",
-		Model:       "Large Bus",
+		PlateNumber: "29A-12345",
 		Floors: []model.FloorConfig{
-			{Floor: 1, SeatCapacity: 60},
-			{Floor: 2, SeatCapacity: 50},
+			{Floor: 1, Rows: 1, Columns: 101, Seats: seats},
 		},
 	}
 
-	mockBusRepo.On("GetBusByPlateNumber", ctx, req.PlateNumber).Return(nil, errors.New("not found"))
+	mockBusRepo.EXPECT().
+		GetBusByPlateNumber(ctx, "29A-12345").
+		Return(nil, assert.AnError).
+		Times(1)
 
-	// Act
 	result, err := service.CreateBus(ctx, req)
 
-	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), "cannot exceed 100")
-	mockBusRepo.AssertExpectations(t)
 }
 
-func TestBusService_GetBusByID_Success(t *testing.T) {
-	// Arrange
-	mockBusRepo := new(mocks.MockBusRepository)
-	mockSeatRepo := new(mocks.MockSeatRepository)
-	service := NewBusService(mockBusRepo, mockSeatRepo)
-	ctx := context.Background()
+// Test the important helper function
+func TestGenerateSeatsFromFloorConfig_SingleFloor(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-	busID := uuid.New()
-	expectedBus := &model.Bus{
-		PlateNumber:  "ABC-123",
-		Model:        "Mercedes",
-		SeatCapacity: 45,
-		IsActive:     true,
-		Seats: []model.Seat{
-			{SeatNumber: "A1", SeatType: constants.SeatTypeVIP},
+	mockBusRepo := mocks.NewMockBusRepository(ctrl)
+	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
+	service := NewBusService(mockBusRepo, mockSeatRepo).(*BusServiceImpl)
+
+	floors := []model.FloorConfig{
+		{
+			Floor:   1,
+			Rows:    2,
+			Columns: 2,
+			Seats: []model.SeatConfig{
+				{Row: 1, Column: 1, SeatType: "standard"},
+				{Row: 1, Column: 2, SeatType: "vip"},
+				{Row: 2, Column: 1, SeatType: "standard"},
+			},
 		},
 	}
-	expectedBus.ID = busID
 
-	mockBusRepo.On("GetBusWithSeatsByID", ctx, busID).Return(expectedBus, nil)
+	seats := service.generateSeatsFromFloorConfig(floors)
 
-	// Act
-	result, err := service.GetBusByID(ctx, busID)
-
-	// Assert
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, busID, result.ID)
-	assert.Equal(t, 1, len(result.Seats))
-	mockBusRepo.AssertExpectations(t)
+	assert.Len(t, seats, 3)
+	assert.Equal(t, "A1", seats[0].SeatNumber) // Single floor no prefix
+	assert.Equal(t, "A2", seats[1].SeatNumber)
+	assert.Equal(t, "B1", seats[2].SeatNumber)
 }
 
-func TestBusService_ListBuses_Success(t *testing.T) {
-	// Arrange
-	mockBusRepo := new(mocks.MockBusRepository)
-	mockSeatRepo := new(mocks.MockSeatRepository)
-	service := NewBusService(mockBusRepo, mockSeatRepo)
-	ctx := context.Background()
+func TestGenerateSeatsFromFloorConfig_MultiFloor(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-	bus1 := model.Bus{PlateNumber: "ABC-123"}
-	bus1.ID = uuid.New()
-	bus2 := model.Bus{PlateNumber: "XYZ-789"}
-	bus2.ID = uuid.New()
-	buses := []model.Bus{bus1, bus2}
+	mockBusRepo := mocks.NewMockBusRepository(ctrl)
+	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
+	service := NewBusService(mockBusRepo, mockSeatRepo).(*BusServiceImpl)
 
-	req := model.ListBusesRequest{PaginationRequest: model.PaginationRequest{Page: 1, PageSize: 20}}
-	mockBusRepo.On("ListBuses", ctx, 1, 20).Return(buses, int64(2), nil)
-
-	// Act
-	result, total, err := service.ListBuses(ctx, req)
-
-	// Assert
-	assert.NoError(t, err)
-	assert.Equal(t, 2, len(result))
-	assert.Equal(t, int64(2), total)
-	mockBusRepo.AssertExpectations(t)
-}
-
-func TestBusService_UpdateBus_Success(t *testing.T) {
-	// Arrange
-	mockBusRepo := new(mocks.MockBusRepository)
-	mockSeatRepo := new(mocks.MockSeatRepository)
-	service := NewBusService(mockBusRepo, mockSeatRepo)
-	ctx := context.Background()
-
-	busID := uuid.New()
-	existingBus := &model.Bus{
-		PlateNumber:  "ABC-123",
-		Model:        "Mercedes",
-		SeatCapacity: 45,
+	floors := []model.FloorConfig{
+		{
+			Floor:   1,
+			Rows:    1,
+			Columns: 2,
+			Seats: []model.SeatConfig{
+				{Row: 1, Column: 1, SeatType: "standard"},
+			},
+		},
+		{
+			Floor:   2,
+			Rows:    1,
+			Columns: 2,
+			Seats: []model.SeatConfig{
+				{Row: 1, Column: 1, SeatType: "vip"},
+			},
+		},
 	}
-	existingBus.ID = busID
+
+	seats := service.generateSeatsFromFloorConfig(floors)
+
+	assert.Len(t, seats, 2)
+	assert.Equal(t, "F1-A1", seats[0].SeatNumber) // Multi floor has prefix
+	assert.Equal(t, "F2-A1", seats[1].SeatNumber)
+}
+
+func TestGenerateSeatsFromFloorConfig_DuplicatePositions(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBusRepo := mocks.NewMockBusRepository(ctrl)
+	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
+	service := NewBusService(mockBusRepo, mockSeatRepo).(*BusServiceImpl)
+
+	floors := []model.FloorConfig{
+		{
+			Floor:   1,
+			Rows:    2,
+			Columns: 2,
+			Seats: []model.SeatConfig{
+				{Row: 1, Column: 1, SeatType: "standard"},
+				{Row: 1, Column: 1, SeatType: "vip"}, // Duplicate!
+			},
+		},
+	}
+
+	seats := service.generateSeatsFromFloorConfig(floors)
+
+	assert.Len(t, seats, 1) // Duplicate skipped
+}
+
+func TestGenerateSeatsFromFloorConfig_CustomPriceMultiplier(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBusRepo := mocks.NewMockBusRepository(ctrl)
+	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
+	service := NewBusService(mockBusRepo, mockSeatRepo).(*BusServiceImpl)
+
+	customMultiplier := 1.5
+	floors := []model.FloorConfig{
+		{
+			Floor:   1,
+			Rows:    1,
+			Columns: 1,
+			Seats: []model.SeatConfig{
+				{Row: 1, Column: 1, SeatType: "standard", PriceMultiplier: &customMultiplier},
+			},
+		},
+	}
+
+	seats := service.generateSeatsFromFloorConfig(floors)
+
+	assert.Len(t, seats, 1)
+	assert.Equal(t, 1.5, seats[0].PriceMultiplier)
+}
+
+func TestUpdateBus_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBusRepo := mocks.NewMockBusRepository(ctrl)
+	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
+	service := NewBusService(mockBusRepo, mockSeatRepo)
+
+	ctx := context.Background()
+	busID := uuid.New()
+
+	existingBus := &model.Bus{
+		BaseModel:   model.BaseModel{ID: busID},
+		PlateNumber: "29A-12345",
+		Model:       "Old Model",
+	}
 
 	newModel := "New Model"
-	newPlate := "NEW-456"
 	req := &model.UpdateBusRequest{
-		PlateNumber: &newPlate,
-		Model:       &newModel,
+		Model: &newModel,
 	}
 
-	mockBusRepo.On("GetBusByID", ctx, busID).Return(existingBus, nil)
-	mockBusRepo.On("GetBusByPlateNumber", ctx, newPlate).Return(nil, errors.New("not found"))
-	mockBusRepo.On("UpdateBus", ctx, mock.AnythingOfType("*model.Bus")).Return(nil)
+	mockBusRepo.EXPECT().
+		GetBusByID(ctx, busID).
+		Return(existingBus, nil).
+		Times(1)
 
-	// Act
+	mockBusRepo.EXPECT().
+		UpdateBus(ctx, gomock.Any()).
+		Do(func(_ context.Context, bus *model.Bus) {
+			assert.Equal(t, "New Model", bus.Model)
+		}).
+		Return(nil).
+		Times(1)
+
 	result, err := service.UpdateBus(ctx, busID, req)
 
-	// Assert
 	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, newPlate, result.PlateNumber)
-	assert.Equal(t, newModel, result.Model)
-	mockBusRepo.AssertExpectations(t)
+	assert.Equal(t, "New Model", result.Model)
 }
 
-func TestBusService_UpdateBus_PlateNumberConflict(t *testing.T) {
-	// Arrange
-	mockBusRepo := new(mocks.MockBusRepository)
-	mockSeatRepo := new(mocks.MockSeatRepository)
+func TestUpdateBus_DuplicatePlateNumber(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBusRepo := mocks.NewMockBusRepository(ctrl)
+	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
 	service := NewBusService(mockBusRepo, mockSeatRepo)
+
 	ctx := context.Background()
-
 	busID := uuid.New()
-	existingBus := &model.Bus{PlateNumber: "ABC-123"}
-	existingBus.ID = busID
-	conflictBus := &model.Bus{PlateNumber: "NEW-456"}
-	conflictBus.ID = uuid.New()
+	otherBusID := uuid.New()
 
-	newPlate := "NEW-456"
-	req := &model.UpdateBusRequest{PlateNumber: &newPlate}
+	existingBus := &model.Bus{
+		BaseModel:   model.BaseModel{ID: busID},
+		PlateNumber: "29A-12345",
+	}
 
-	mockBusRepo.On("GetBusByID", ctx, busID).Return(existingBus, nil)
-	mockBusRepo.On("GetBusByPlateNumber", ctx, newPlate).Return(conflictBus, nil)
+	otherBus := &model.Bus{
+		BaseModel:   model.BaseModel{ID: otherBusID},
+		PlateNumber: "29A-99999",
+	}
 
-	// Act
+	newPlate := "29A-99999"
+	req := &model.UpdateBusRequest{
+		PlateNumber: &newPlate,
+	}
+
+	mockBusRepo.EXPECT().
+		GetBusByID(ctx, busID).
+		Return(existingBus, nil).
+		Times(1)
+
+	mockBusRepo.EXPECT().
+		GetBusByPlateNumber(ctx, "29A-99999").
+		Return(otherBus, nil).
+		Times(1)
+
 	result, err := service.UpdateBus(ctx, busID, req)
 
-	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), "plate number already exists")
-	mockBusRepo.AssertExpectations(t)
 }
 
-func TestBusService_DeleteBus_Success(t *testing.T) {
-	// Arrange
-	mockBusRepo := new(mocks.MockBusRepository)
-	mockSeatRepo := new(mocks.MockSeatRepository)
+func TestDeleteBus_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBusRepo := mocks.NewMockBusRepository(ctrl)
+	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
 	service := NewBusService(mockBusRepo, mockSeatRepo)
+
 	ctx := context.Background()
-
 	busID := uuid.New()
-	mockBusRepo.On("DeleteBus", ctx, busID).Return(nil)
 
-	// Act
+	mockBusRepo.EXPECT().
+		DeleteBus(ctx, busID).
+		Return(nil).
+		Times(1)
+
 	err := service.DeleteBus(ctx, busID)
 
-	// Assert
 	assert.NoError(t, err)
-	mockBusRepo.AssertExpectations(t)
 }
 
-func TestBusService_GetBusSeats_Success(t *testing.T) {
-	// Arrange
-	mockBusRepo := new(mocks.MockBusRepository)
-	mockSeatRepo := new(mocks.MockSeatRepository)
+func TestDeleteBus_Error(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBusRepo := mocks.NewMockBusRepository(ctrl)
+	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
 	service := NewBusService(mockBusRepo, mockSeatRepo)
+
 	ctx := context.Background()
-
 	busID := uuid.New()
-	seat1 := model.Seat{SeatNumber: "A1", BusID: busID}
-	seat1.ID = uuid.New()
-	seat2 := model.Seat{SeatNumber: "A2", BusID: busID}
-	seat2.ID = uuid.New()
-	seats := []model.Seat{seat1, seat2}
 
-	mockSeatRepo.On("ListByBusID", ctx, busID).Return(seats, nil)
+	mockBusRepo.EXPECT().
+		DeleteBus(ctx, busID).
+		Return(assert.AnError).
+		Times(1)
 
-	// Act
-	result, err := service.GetBusSeats(ctx, busID)
+	err := service.DeleteBus(ctx, busID)
 
-	// Assert
-	assert.NoError(t, err)
-	assert.Equal(t, 2, len(result))
-	mockSeatRepo.AssertExpectations(t)
-}
-
-func TestBusService_GenerateSeats_VIPSeats(t *testing.T) {
-	// Arrange
-	mockBusRepo := new(mocks.MockBusRepository)
-	mockSeatRepo := new(mocks.MockSeatRepository)
-	service := NewBusService(mockBusRepo, mockSeatRepo).(*BusServiceImpl)
-
-	floors := []model.FloorConfig{{Floor: 1, SeatCapacity: 20}}
-
-	// Act
-	seats := service.generateSeatsForBus(floors)
-
-	// Assert
-	assert.Equal(t, 20, len(seats))
-
-	// First row should be VIP
-	firstRowSeats := 0
-	for _, seat := range seats {
-		if seat.Row == 1 {
-			assert.Equal(t, constants.SeatTypeVIP, seat.SeatType)
-			firstRowSeats++
-		}
-	}
-	assert.Greater(t, firstRowSeats, 0)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to delete bus")
 }
