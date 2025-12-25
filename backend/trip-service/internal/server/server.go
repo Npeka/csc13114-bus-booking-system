@@ -12,12 +12,14 @@ import (
 
 	"bus-booking/shared/db"
 	"bus-booking/trip-service/config"
+	"bus-booking/trip-service/internal/cronjob"
 )
 
 type Server struct {
-	cfg   *config.Config
-	db    *db.DatabaseManager
-	redis db.RedisManager
+	cfg     *config.Config
+	db      *db.DatabaseManager
+	redis   db.RedisManager
+	cronjob *cronjob.TripRescheduleCronJob
 }
 
 func NewServer(
@@ -29,7 +31,9 @@ func NewServer(
 }
 
 func (s *Server) Run() {
-	handler := s.buildHandler()
+	handler, cronJob := s.buildHandler()
+	s.cronjob = cronJob
+
 	server := &http.Server{
 		Addr:           s.cfg.GetServerAddr(),
 		Handler:        handler,
@@ -39,7 +43,16 @@ func (s *Server) Run() {
 		MaxHeaderBytes: s.cfg.Server.MaxHeaderBytes,
 	}
 
-	// Start server
+	// Start cronjob in background
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go func() {
+		log.Info().Msg("Starting trip schedule cronjob")
+		s.cronjob.Start(ctx)
+	}()
+
+	// Start HTTP server
 	go func() {
 		log.Info().
 			Str("service", s.cfg.ServiceName).
@@ -56,12 +69,18 @@ func (s *Server) Run() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	log.Info().Msg("Shutdown signal received, shutting down HTTP server...")
+	log.Info().Msg("Shutdown signal received, shutting down services...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
+	// Stop cronjob first
+	log.Info().Msg("Stopping cronjob...")
+	s.cronjob.Stop()
+	cancel()
 
-	if err := server.Shutdown(ctx); err != nil {
+	// Then stop HTTP server
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer shutdownCancel()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
 		log.Error().Err(err).Msg("HTTP server forced to shutdown")
 	} else {
 		log.Info().Msg("HTTP server stopped gracefully")

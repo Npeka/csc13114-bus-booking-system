@@ -2,6 +2,7 @@ package server
 
 import (
 	"bus-booking/trip-service/internal/client"
+	"bus-booking/trip-service/internal/cronjob"
 	"bus-booking/trip-service/internal/handler"
 	"bus-booking/trip-service/internal/repository"
 	"bus-booking/trip-service/internal/router"
@@ -11,22 +12,28 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (s *Server) buildHandler() http.Handler {
+func (s *Server) buildHandler() (http.Handler, *cronjob.TripRescheduleCronJob) {
 	bookingClient := client.NewBookingClient(s.cfg.ServiceName, s.cfg.External.BookingServiceURL)
 
+	// Initialize repositories
 	tripRepo := repository.NewTripRepository(s.db.DB)
 	routeRepo := repository.NewRouteRepository(s.db.DB)
 	routeStopRepo := repository.NewRouteStopRepository(s.db.DB)
 	busRepo := repository.NewBusRepository(s.db.DB)
 	seatRepo := repository.NewSeatRepository(s.db.DB)
 
+	// Initialize services
 	tripService := service.NewTripService(tripRepo, routeRepo, routeStopRepo, busRepo, seatRepo, bookingClient)
 	routeService := service.NewRouteService(routeRepo)
 	busService := service.NewBusService(busRepo, seatRepo)
 	routeStopService := service.NewRouteStopService(routeStopRepo, routeRepo)
-	seatService := service.NewSeatService(seatRepo, busRepo)
+	seatService := service.NewSeatService(seatRepo)
 	constantsService := service.NewConstantsService()
 
+	// Initialize trip reschedule cronjob
+	cronJob := cronjob.NewTripRescheduleCronJob(tripService)
+
+	// Initialize handlers
 	tripHandler := handler.NewTripHandler(tripService)
 	routeHandler := handler.NewRouteHandler(routeService)
 	busHandler := handler.NewBusHandler(busService)
@@ -49,5 +56,5 @@ func (s *Server) buildHandler() http.Handler {
 		SeatHandler:      seatHandler,
 		ConstantsHandler: constantsHandler,
 	})
-	return engine
+	return engine, cronJob
 }
