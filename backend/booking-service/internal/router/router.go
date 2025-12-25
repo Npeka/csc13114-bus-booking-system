@@ -17,9 +17,9 @@ import (
 
 type Handlers struct {
 	BookingHandler    handler.BookingHandler
-	FeedbackHandler   handler.FeedbackHandler
 	StatisticsHandler handler.StatisticsHandler
 	SeatLockHandler   handler.SeatLockHandler
+	ReviewHandler     handler.ReviewHandler
 }
 
 func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
@@ -33,13 +33,10 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 	{
 		bookings := v1.Group("/bookings")
 		{
-
-			// create booking
 			bookings.POST("/guest", ginext.WrapHandler(h.BookingHandler.CreateGuestBooking))
 			bookings.GET("/lookup", ginext.WrapHandler(h.BookingHandler.GetByReference))
 			bookings.GET("/:id", ginext.WrapHandler(h.BookingHandler.GetByID))
 
-			// E-ticket download - public route (accessible by booking ID)
 			bookings.GET("/:id/eticket", func(c *gin.Context) {
 				r := ginext.NewRequest(c)
 				if err := h.BookingHandler.DownloadETicket(r); err != nil {
@@ -48,54 +45,74 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 					})
 				}
 			})
-
-			// Authenticated routes
-			bookings.Use(middleware.RequireAuth())
-			bookings.POST("", ginext.WrapHandler(h.BookingHandler.CreateBooking))
-			bookings.POST("/:id/cancel", ginext.WrapHandler(h.BookingHandler.CancelBooking))
-			bookings.POST("/:id/retry-payment", ginext.WrapHandler(h.BookingHandler.RetryPayment))
-			bookings.GET("/user/:user_id", ginext.WrapHandler(h.BookingHandler.GetUserBookings))
-
 		}
 
-		// Seat locks - public route (no auth required for initial lock)
 		seatLocks := v1.Group("/seat-locks")
 		{
 			seatLocks.POST("", ginext.WrapHandler(h.SeatLockHandler.LockSeats))
 			seatLocks.DELETE("", ginext.WrapHandler(h.SeatLockHandler.UnlockSeats))
 		}
 
-		// Trip seat locks - public route
-		v1.GET("/trips/:trip_id/locked-seats", ginext.WrapHandler(h.SeatLockHandler.GetLockedSeats))
-
-		internal := v1.Group("/bookings")
+		trips := v1.Group("/trips")
 		{
-			internal.PUT("/:id/status", ginext.WrapHandler(h.BookingHandler.UpdateBookingStatus))
-			internal.GET("/trips/:trip_id/seats/status", ginext.WrapHandler(h.BookingHandler.GetSeatStatus))
+			trips.GET("/:trip_id/locked-seats", ginext.WrapHandler(h.SeatLockHandler.GetLockedSeats))
+			trips.GET("/:trip_id/reviews", ginext.WrapHandler(h.ReviewHandler.GetTripReviews))
+			trips.GET("/:trip_id/reviews/summary", ginext.WrapHandler(h.ReviewHandler.GetTripReviewSummary))
+		}
+	}
+
+	userV1 := router.Group("/api/v1")
+	userV1.Use(middleware.RequireAuth())
+	{
+		bookings := userV1.Group("/bookings")
+		{
+			bookings.POST("", ginext.WrapHandler(h.BookingHandler.CreateBooking))
+			bookings.POST("/:id/cancel", ginext.WrapHandler(h.BookingHandler.CancelBooking))
+			bookings.POST("/:id/retry-payment", ginext.WrapHandler(h.BookingHandler.RetryPayment))
+			bookings.GET("/user/:user_id", ginext.WrapHandler(h.BookingHandler.GetUserBookings))
+			bookings.POST("/:id/review", ginext.WrapHandler(h.ReviewHandler.CreateReview))
+			bookings.GET("/:id/review", ginext.WrapHandler(h.ReviewHandler.GetReviewByBooking))
 		}
 
-		feedback := v1.Group("/feedback")
-		feedback.Use(middleware.RequireAuth())
+		reviews := userV1.Group("/reviews")
 		{
-			feedback.POST("", ginext.WrapHandler(h.FeedbackHandler.CreateFeedback))
-			feedback.GET("/booking/:booking_id", ginext.WrapHandler(h.FeedbackHandler.GetBookingFeedback))
-			feedback.GET("/trip/:trip_id", ginext.WrapHandler(h.FeedbackHandler.GetTripFeedbacks))
+			reviews.PUT("/:id", ginext.WrapHandler(h.ReviewHandler.UpdateReview))
+			reviews.DELETE("/:id", ginext.WrapHandler(h.ReviewHandler.DeleteReview))
 		}
 
-		admin := v1.Group("/admin")
-		admin.Use(middleware.RequireAuth())
-		admin.Use(middleware.RequireRole(constants.RoleAdmin))
+		users := userV1.Group("/users")
 		{
-			bookings := admin.Group("/bookings")
-			{
-				bookings.GET("/trip/:trip_id", ginext.WrapHandler(h.BookingHandler.GetTripBookings))
-			}
+			users.GET("/:user_id/reviews", ginext.WrapHandler(h.ReviewHandler.GetUserReviews))
+		}
+	}
 
-			statistics := admin.Group("/statistics")
-			{
-				statistics.GET("/bookings", ginext.WrapHandler(h.StatisticsHandler.GetBookingStats))
-				statistics.GET("/popular-trips", ginext.WrapHandler(h.StatisticsHandler.GetPopularTrips))
-			}
+	adminV1 := router.Group("/api/v1")
+	adminV1.Use(middleware.RequireAuth())
+	adminV1.Use(middleware.RequireRole(constants.RoleAdmin))
+	{
+		bookings := adminV1.Group("/bookings")
+		{
+			bookings.GET("/trip/:trip_id", ginext.WrapHandler(h.BookingHandler.GetTripBookings))
+		}
+
+		statistics := adminV1.Group("/statistics")
+		{
+			statistics.GET("/bookings", ginext.WrapHandler(h.StatisticsHandler.GetBookingStats))
+			statistics.GET("/popular-trips", ginext.WrapHandler(h.StatisticsHandler.GetPopularTrips))
+		}
+
+		reviews := adminV1.Group("/reviews")
+		{
+			reviews.PUT("/:id/moderate", ginext.WrapHandler(h.ReviewHandler.ModerateReview))
+		}
+	}
+
+	internalV1 := router.Group("/api/v1")
+	{
+		bookings := internalV1.Group("/bookings")
+		{
+			bookings.PUT("/:id/status", ginext.WrapHandler(h.BookingHandler.UpdateBookingStatus))
+			bookings.GET("/trips/:trip_id/seats/status", ginext.WrapHandler(h.BookingHandler.GetSeatStatus))
 		}
 	}
 }
