@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bus-booking/shared/ginext"
+	"bus-booking/shared/utils"
 	"bus-booking/trip-service/internal/model"
 	"bus-booking/trip-service/internal/service"
 
@@ -10,40 +11,43 @@ import (
 )
 
 type SeatHandler interface {
-	ListByIDs(r *ginext.Request) (*ginext.Response, error)
-	CreateSeat(r *ginext.Request) (*ginext.Response, error)
-	CreateSeatsFromTemplate(r *ginext.Request) (*ginext.Response, error)
-	UpdateSeat(r *ginext.Request) (*ginext.Response, error)
-	DeleteSeat(r *ginext.Request) (*ginext.Response, error)
-	GetSeatMap(r *ginext.Request) (*ginext.Response, error)
+	GetListByIDs(r *ginext.Request) (*ginext.Response, error)
+	Update(r *ginext.Request) (*ginext.Response, error)
 }
 
 type SeatHandlerImpl struct {
-	seatService service.SeatService
+	service service.SeatService
 }
 
-func NewSeatHandler(seatService service.SeatService) SeatHandler {
-	return &SeatHandlerImpl{seatService: seatService}
+func NewSeatHandler(service service.SeatService) SeatHandler {
+	return &SeatHandlerImpl{service: service}
 }
 
-func (h *SeatHandlerImpl) ListByIDs(r *ginext.Request) (*ginext.Response, error) {
+// GetListByIDs godoc
+// @Summary Get seats by IDs
+// @Description Get multiple seats by their IDs (internal use)
+// @Tags seats
+// @Accept json
+// @Produce json
+// @Param seat_ids query []string true "Seat IDs" collectionFormat(multi)
+// @Success 200 {object} ginext.Response{data=[]model.Seat} "List of seats"
+// @Failure 400 {object} ginext.Response "Invalid seat IDs"
+// @Failure 500 {object} ginext.Response "Internal server error"
+// @Router /api/v1/buses/seats/ids [get]
+func (h *SeatHandlerImpl) GetListByIDs(r *ginext.Request) (*ginext.Response, error) {
 	var req model.ListSeatsByIDsRequest
 	if err := r.GinCtx.ShouldBindQuery(&req); err != nil {
 		log.Debug().Err(err).Msg("Invalid query parameters")
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
-	var seatIDs []uuid.UUID
-	for _, idStr := range req.SeatIDs {
-		id, err := uuid.Parse(idStr)
-		if err != nil {
-			log.Debug().Err(err).Str("seat_id", idStr).Msg("Invalid seat ID")
-			return nil, ginext.NewBadRequestError("invalid seat ID: " + idStr)
-		}
-		seatIDs = append(seatIDs, id)
+	seatIDs, err := utils.ParseUUIDs(req.SeatIDs)
+	if err != nil {
+		log.Debug().Err(err).Msg("Invalid seat IDs")
+		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
-	seats, err := h.seatService.ListByIDs(r.Context(), seatIDs)
+	seats, err := h.service.GetListByIDs(r.Context(), seatIDs)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to list seats")
 		return nil, err
@@ -52,74 +56,20 @@ func (h *SeatHandlerImpl) ListByIDs(r *ginext.Request) (*ginext.Response, error)
 	return ginext.NewSuccessResponse(seats), nil
 }
 
-// CreateSeat godoc
-// @Summary Create seat
-// @Description Add a new seat to a bus
-// @Tags seats
-// @Accept json
-// @Produce json
-// @Param request body model.CreateSeatRequest true "Seat data"
-// @Success 201 {object} ginext.Response{data=model.Seat} "Created seat"
-// @Failure 400 {object} ginext.Response "Invalid request"
-// @Failure 500 {object} ginext.Response "Internal server error"
-// @Router /api/v1/buses/seats [post]
-func (h *SeatHandlerImpl) CreateSeat(r *ginext.Request) (*ginext.Response, error) {
-	var req model.CreateSeatRequest
-	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
-		log.Debug().Err(err).Msg("Invalid request body")
-		return nil, ginext.NewBadRequestError(err.Error())
-	}
-
-	seat, err := h.seatService.CreateSeat(r.Context(), &req)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to create seat")
-		return nil, err
-	}
-
-	return ginext.NewCreatedResponse(model.ToSeatResponse(seat)), nil
-}
-
-// CreateSeatsFromTemplate godoc
-// @Summary Bulk create seats
-// @Description Create multiple seats for a bus from a template
-// @Tags seats
-// @Accept json
-// @Produce json
-// @Param request body model.BulkCreateSeatsRequest true "Bulk seat data"
-// @Success 201 {object} ginext.Response{data=[]model.Seat} "Created seats"
-// @Failure 400 {object} ginext.Response "Invalid request"
-// @Failure 500 {object} ginext.Response "Internal server error"
-// @Router /api/v1/buses/seats/bulk [post]
-func (h *SeatHandlerImpl) CreateSeatsFromTemplate(r *ginext.Request) (*ginext.Response, error) {
-	var req model.BulkCreateSeatsRequest
-	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
-		log.Debug().Err(err).Msg("Invalid request body")
-		return nil, ginext.NewBadRequestError(err.Error())
-	}
-
-	seats, err := h.seatService.CreateSeatsFromTemplate(r.Context(), &req)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to create seats")
-		return nil, err
-	}
-
-	return ginext.NewCreatedResponse(model.ToSeatResponseList(seats)), nil
-}
-
-// UpdateSeat godoc
-// @Summary Update seat
-// @Description Update an existing seat
+// Update godoc
+// @Summary Update seat availability
+// @Description Update seat availability status (admin only)
 // @Tags seats
 // @Accept json
 // @Produce json
 // @Param id path string true "Seat ID" format(uuid)
 // @Param request body model.UpdateSeatRequest true "Update data"
-// @Success 200 {object} ginext.Response{data=model.Seat} "Updated seat"
+// @Success 200 {object} ginext.Response{data=model.SeatResponse} "Updated seat"
 // @Failure 400 {object} ginext.Response "Invalid request"
 // @Failure 404 {object} ginext.Response "Seat not found"
 // @Failure 500 {object} ginext.Response "Internal server error"
 // @Router /api/v1/buses/seats/{id} [put]
-func (h *SeatHandlerImpl) UpdateSeat(r *ginext.Request) (*ginext.Response, error) {
+func (h *SeatHandlerImpl) Update(r *ginext.Request) (*ginext.Response, error) {
 	idStr := r.GinCtx.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -132,62 +82,11 @@ func (h *SeatHandlerImpl) UpdateSeat(r *ginext.Request) (*ginext.Response, error
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
-	seat, err := h.seatService.UpdateSeat(r.Context(), id, &req)
+	seat, err := h.service.Update(r.Context(), &req, id)
 	if err != nil {
 		log.Error().Err(err).Str("seat_id", idStr).Msg("Failed to update seat")
 		return nil, err
 	}
 
 	return ginext.NewSuccessResponse(model.ToSeatResponse(seat)), nil
-}
-
-// DeleteSeat godoc
-// @Summary Delete seat
-// @Description Remove a seat from a bus
-// @Tags seats
-// @Accept json
-// @Produce json
-// @Param id path string true "Seat ID" format(uuid)
-// @Success 200 {object} ginext.Response "Success message"
-// @Failure 400 {object} ginext.Response "Invalid seat ID"
-// @Failure 500 {object} ginext.Response "Internal server error"
-// @Router /api/v1/buses/seats/{id} [delete]
-func (h *SeatHandlerImpl) DeleteSeat(r *ginext.Request) (*ginext.Response, error) {
-	id, err := uuid.Parse(r.GinCtx.Param("id"))
-	if err != nil {
-		return nil, ginext.NewBadRequestError("invalid seat ID")
-	}
-
-	if err := h.seatService.DeleteSeat(r.Context(), id); err != nil {
-		log.Error().Err(err).Msg("Failed to delete seat")
-		return nil, err
-	}
-
-	return ginext.NewSuccessResponse("Seat deleted successfully"), nil
-}
-
-// GetSeatMap godoc
-// @Summary Get seat map
-// @Description Get the complete seat map for a bus
-// @Tags seats
-// @Accept json
-// @Produce json
-// @Param id path string true "Bus ID" format(uuid)
-// @Success 200 {object} ginext.Response{data=model.SeatMapResponse} "Seat map"
-// @Failure 400 {object} ginext.Response "Invalid bus ID"
-// @Failure 500 {object} ginext.Response "Internal server error"
-// @Router /api/v1/buses/{id}/seat-map [get]
-func (h *SeatHandlerImpl) GetSeatMap(r *ginext.Request) (*ginext.Response, error) {
-	busID, err := uuid.Parse(r.GinCtx.Param("id"))
-	if err != nil {
-		return nil, ginext.NewBadRequestError("invalid bus ID")
-	}
-
-	seatMap, err := h.seatService.GetSeatMap(r.Context(), busID)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to get seat map")
-		return nil, err
-	}
-
-	return ginext.NewSuccessResponse(seatMap), nil
 }
