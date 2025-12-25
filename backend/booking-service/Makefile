@@ -17,8 +17,21 @@ fmt-check:
 lint:
 	golangci-lint run --config=../.golangci.yml ./...
 
+# test
 test:
 	go test ./...
+
+test-coverage:
+	go test ./... -coverprofile=coverage.out
+	go tool cover -func=coverage.out
+
+coverage-html:
+	go test ./... -coverprofile=coverage.out
+	go tool cover -html=coverage.out -o coverage.html
+
+test-service:
+	go test ./internal/service -coverprofile=cover.out
+	go tool cover -func=cover.out
 
 vet:
 	go vet ./...
