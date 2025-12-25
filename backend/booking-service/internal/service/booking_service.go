@@ -724,30 +724,65 @@ func (s *bookingServiceImpl) ExpireBooking(ctx context.Context, bookingID uuid.U
 
 	// Double check expiry time (give 1 minute grace period)
 	if booking.ExpiresAt != nil {
+		graceDeadline := booking.ExpiresAt.Add(constants.BookingExpirationGracePeriod)
+		now := time.Now().UTC()
+
 		// Check if still within grace period
-		if time.Now().UTC().Before(booking.ExpiresAt.Add(constants.BookingExpirationGracePeriod)) {
-			// Still valid - skip expiration for now
-			log.Warn().Str("booking_id", booking.ID.String()).Msg("Booking still within grace period, skipping expiration")
+		if now.Before(graceDeadline) {
+			// Re-schedule for after grace period ends
+			log.Info().
+				Str("booking_id", booking.ID.String()).
+				Time("expires_at", *booking.ExpiresAt).
+				Time("grace_deadline", graceDeadline).
+				Msg("Booking still within grace period, re-scheduling expiration")
+
+			// Schedule to execute right after grace period
+			item := &queue.DelayedItem{
+				Payload: booking.ID,
+			}
+			if err := s.delayedQueue.Schedule(ctx, constants.QueueNameBookingExpiry, item, graceDeadline); err != nil {
+				log.Error().Err(err).
+					Str("booking_id", booking.ID.String()).
+					Time("grace_deadline", graceDeadline).
+					Msg("Failed to re-schedule booking expiration after grace period")
+				return err
+			}
+
 			return nil
 		}
 	}
 
-	// 3. Update status to Expired
+	// 3. Grace period has passed - Update status to Expired
 	booking.Status = model.BookingStatusExpired
+	booking.TransactionStatus = payment.TransactionStatusExpired
 	now := time.Now().UTC()
 	booking.UpdatedAt = now
 
-	// 4. Cancel PayOS link if possible (optional, helps user UX)
-	// if booking.TransactionID != uuid.Nil && booking.TransactionStatus == payment.TransactionStatusPending {
-	// Call payment service to cancel
-	// Note: CreateCancelPaymentLinkRequest might be needed or just let it expire on PayOS side
-	// For now, we just update local status.
-	// If there was a cancel method in paymentClient, call it here.
-	// }
+	// 4. Try to cancel payment transaction
+	if booking.TransactionID != uuid.Nil {
+		_, err := s.paymentClient.CancelTransaction(ctx, booking.TransactionID)
+		if err != nil {
+			// Log error but don't fail expiration - transaction will expire on PayOS side
+			log.Warn().Err(err).
+				Str("booking_id", booking.ID.String()).
+				Str("transaction_id", booking.TransactionID.String()).
+				Msg("Failed to cancel transaction, but booking will still expire")
+		} else {
+			log.Info().
+				Str("booking_id", booking.ID.String()).
+				Str("transaction_id", booking.TransactionID.String()).
+				Msg("Successfully cancelled transaction")
+		}
+	}
 
 	if err := s.bookingRepo.UpdateBooking(ctx, booking); err != nil {
 		return fmt.Errorf("failed to expire booking: %w", err)
 	}
+
+	log.Info().
+		Str("booking_id", booking.ID.String()).
+		Time("expires_at", *booking.ExpiresAt).
+		Msg("Successfully expired booking after grace period")
 
 	// Send Failure Email (Expired)
 	go func() {

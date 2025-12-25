@@ -107,17 +107,6 @@ type PaymentResponse struct {
 	ProcessedAt     time.Time `json:"processed_at"`
 }
 
-// FeedbackResponse represents feedback response
-type FeedbackResponse struct {
-	ID        uuid.UUID `json:"id"`
-	UserID    uuid.UUID `json:"user_id"`
-	BookingID uuid.UUID `json:"booking_id"`
-	TripID    uuid.UUID `json:"trip_id"`
-	Rating    int       `json:"rating"`
-	Comment   string    `json:"comment"`
-	CreatedAt time.Time `json:"created_at"`
-}
-
 // SeatAvailabilityResponse represents seat availability response
 type SeatAvailabilityResponse struct {
 	TripID         uuid.UUID                 `json:"trip_id"`
@@ -134,14 +123,6 @@ type PaginatedBookingResponse struct {
 	Page       int                `json:"page"`
 	PageSize   int                `json:"page_size"`
 	TotalPages int64              `json:"total_pages"`
-}
-
-type PaginatedFeedbackResponse struct {
-	Data       []*FeedbackResponse `json:"data"`
-	Total      int64               `json:"total"`
-	Page       int                 `json:"page"`
-	PageSize   int                 `json:"page_size"`
-	TotalPages int64               `json:"total_pages"`
 }
 
 // Standard API responses

@@ -61,7 +61,7 @@ func (r *bookingStatsRepositoryImpl) GetBookingStatsByDateRange(ctx context.Cont
 
 	// Average rating
 	if err := r.db.WithContext(ctx).
-		Table("feedbacks f").
+		Table("reviews f").
 		Joins("JOIN bookings b ON f.booking_id = b.id").
 		Where("b.created_at BETWEEN ? AND ?", startDate, endDate).
 		Select("COALESCE(AVG(f.rating), 0)").
@@ -85,7 +85,7 @@ func (r *bookingStatsRepositoryImpl) GetPopularTrips(ctx context.Context, limit 
 			COALESCE(SUM(CASE WHEN b.status = 'CONFIRMED' THEN b.total_amount ELSE 0 END), 0) as total_revenue,
 			COALESCE(AVG(f.rating), 0) as average_rating
 		`).
-		Joins("LEFT JOIN feedbacks f ON f.booking_id = b.id").
+		Joins("LEFT JOIN reviews f ON f.booking_id = b.id").
 		Where("b.created_at >= ?", startDate).
 		Group("b.trip_id").
 		Order("total_bookings DESC").

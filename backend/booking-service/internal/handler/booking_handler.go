@@ -267,7 +267,7 @@ func (h *BookingHandlerImpl) CancelBooking(r *ginext.Request) (*ginext.Response,
 // @Tags bookings
 // @Accept json
 // @Produce json
-// @Param id path string true \"Booking ID\" format(uuid)
+// @Param id path string true "Booking ID" format(uuid)
 // @Success 200 {object} ginext.Response{data=model.BookingResponse}
 // @Failure 400 {object} ginext.Response
 // @Failure 404 {object} ginext.Response
@@ -297,7 +297,7 @@ func (h *BookingHandlerImpl) RetryPayment(r *ginext.Request) (*ginext.Response, 
 // @Accept json
 // @Produce json
 // @Param id path string true "Booking ID" format(uuid)
-// @Param request body model.UpdatePaymentStatusRequest true "Payment status update"
+// @Param request body model.UpdateBookingStatusRequest true "Payment status update"
 // @Success 200 {object} ginext.Response
 // @Failure 400 {object} ginext.Response
 // @Failure 404 {object} ginext.Response

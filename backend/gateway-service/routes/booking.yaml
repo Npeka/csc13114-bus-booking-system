@@ -1,33 +1,42 @@
 service: "booking"
 routes:
-  # Public guest booking route - no authentication required
+  # Public routes (no auth)
   - path: "/api/v1/bookings/guest"
     methods: ["POST"]
 
-  # Public booking lookup route - no authentication required
   - path: "/api/v1/bookings/lookup"
     methods: ["GET"]
 
-  # Public e-ticket download - no authentication required (secured by booking ID)
+  - path: "/api/v1/bookings/:id"
+    methods: ["GET"]
+
   - path: "/api/v1/bookings/:id/eticket"
     methods: ["GET"]
 
   - path: "/api/v1/seat-locks"
     methods: ["POST", "DELETE"]
-  
+
   - path: "/api/v1/trips/:trip_id/locked-seats"
     methods: ["GET"]
 
-  # User booking routes - require authentication
+  - path: "/api/v1/trips/:trip_id/reviews"
+    methods: ["GET"]
+
+  - path: "/api/v1/trips/:trip_id/reviews/summary"
+    methods: ["GET"]
+
+  # User routes (auth required)
   - path: "/api/v1/bookings"
     methods: ["POST"]
     auth:
       required: true
 
-  - path: "/api/v1/bookings/:id"
-    methods: ["GET"]
-
   - path: "/api/v1/bookings/:id/cancel"
+    methods: ["POST"]
+    auth:
+      required: true
+
+  - path: "/api/v1/bookings/:id/retry-payment"
     methods: ["POST"]
     auth:
       required: true
@@ -37,56 +46,42 @@ routes:
     auth:
       required: true
 
-  # Admin booking routes - require admin role
-  - path: "/api/v1/admin/bookings"
+  - path: "/api/v1/bookings/:id/review"
+    methods: ["GET", "POST"]
+    auth:
+      required: true
+
+  - path: "/api/v1/reviews/:id"
+    methods: ["PUT", "DELETE"]
+    auth:
+      required: true
+
+  - path: "/api/v1/users/:user_id/reviews"
+    methods: ["GET"]
+    auth:
+      required: true
+
+  # Admin routes (auth + role required)
+  - path: "/api/v1/bookings/trip/:trip_id"
     methods: ["GET"]
     auth:
       required: true
       roles: ["admin"]
 
-  - path: "/api/v1/admin/bookings/:id"
+  - path: "/api/v1/statistics/bookings"
     methods: ["GET"]
     auth:
       required: true
       roles: ["admin"]
 
-  - path: "/api/v1/admin/bookings/:id/status"
+  - path: "/api/v1/statistics/popular-trips"
+    methods: ["GET"]
+    auth:
+      required: true
+      roles: ["admin"]
+
+  - path: "/api/v1/reviews/:id/moderate"
     methods: ["PUT"]
-    auth:
-      required: true
-      roles: ["admin"]
-
-  - path: "/api/v1/admin/bookings/trip/:trip_id"
-    methods: ["GET"]
-    auth:
-      required: true
-      roles: ["admin"]
-
-  # Feedback routes - require authentication
-  - path: "/api/v1/feedback"
-    methods: ["POST"]
-    auth:
-      required: true
-
-  - path: "/api/v1/feedback/booking/:booking_id"
-    methods: ["GET"]
-    auth:
-      required: true
-
-  - path: "/api/v1/feedback/trip/:trip_id"
-    methods: ["GET"]
-    auth:
-      required: true
-
-  # Statistics routes - require admin role
-  - path: "/api/v1/admin/statistics/bookings"
-    methods: ["GET"]
-    auth:
-      required: true
-      roles: ["admin"]
-
-  - path: "/api/v1/admin/statistics/popular-trips"
-    methods: ["GET"]
     auth:
       required: true
       roles: ["admin"]

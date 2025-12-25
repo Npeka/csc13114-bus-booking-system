@@ -15,8 +15,8 @@ import (
 func (s *Server) buildHandler() (http.Handler, *jobs.BookingExpirationJob, *jobs.TripReminderJob) {
 	// Initialize repositories
 	bookingRepo := repository.NewBookingRepository(s.db.DB)
-	feedbackRepo := repository.NewFeedbackRepository(s.db.DB)
 	bookingStatsRepo := repository.NewBookingStatsRepository(s.db.DB)
+	reviewRepo := repository.NewReviewRepository(s.db.DB)
 
 	// Initialize HTTP clients for other services
 	tripClient := client.NewTripClient(s.cfg.ServiceName, s.cfg.External.TripServiceURL)
@@ -29,9 +29,9 @@ func (s *Server) buildHandler() (http.Handler, *jobs.BookingExpirationJob, *jobs
 	seatLockService := service.NewSeatLockService(seatLockRepo)
 
 	bookingService := service.NewBookingService(bookingRepo, paymentClient, tripClient, userClient, notificationClient, s.delayedQueue, seatLockService)
-	feedbackService := service.NewFeedbackService(bookingRepo, feedbackRepo)
 	statisticsService := service.NewStatisticsService(bookingStatsRepo)
 	eTicketService := service.NewETicketService(bookingRepo, tripClient)
+	reviewService := service.NewReviewService(reviewRepo, bookingRepo)
 
 	// Initialize Jobs
 	bookingExpirationJob := jobs.NewBookingExpirationJob(bookingService, seatLockRepo, s.delayedQueue)
@@ -39,9 +39,9 @@ func (s *Server) buildHandler() (http.Handler, *jobs.BookingExpirationJob, *jobs
 
 	// Initialize handlers
 	bookingHandler := handler.NewBookingHandler(bookingService, eTicketService)
-	feedbackHandler := handler.NewFeedbackHandler(feedbackService)
 	statisticsHandler := handler.NewStatisticsHandler(statisticsService)
 	seatLockHandler := handler.NewSeatLockHandler(seatLockService)
+	reviewHandler := handler.NewReviewHandler(reviewService)
 
 	if s.cfg.Server.IsProduction {
 		gin.SetMode(gin.ReleaseMode)
@@ -52,9 +52,9 @@ func (s *Server) buildHandler() (http.Handler, *jobs.BookingExpirationJob, *jobs
 	engine := gin.New()
 	router.SetupRoutes(engine, s.cfg, &router.Handlers{
 		BookingHandler:    bookingHandler,
-		FeedbackHandler:   feedbackHandler,
 		StatisticsHandler: statisticsHandler,
 		SeatLockHandler:   seatLockHandler,
+		ReviewHandler:     reviewHandler,
 	})
 	return engine, bookingExpirationJob, tripReminderJob
 }
