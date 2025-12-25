@@ -15,9 +15,9 @@ type RouteRepository interface {
 	ListRoutes(ctx context.Context, req *model.ListRoutesRequest) ([]model.Route, int64, error)
 	GetRoutesByOriginDestination(ctx context.Context, origin, destination string) ([]model.Route, error)
 
-	CreateRoute(ctx context.Context, route *model.Route) error
-	UpdateRoute(ctx context.Context, route *model.Route) error
-	DeleteRoute(ctx context.Context, id uuid.UUID) error
+	Create(ctx context.Context, route *model.Route) error
+	Update(ctx context.Context, route *model.Route) error
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
 type RouteRepositoryImpl struct {
@@ -118,15 +118,15 @@ func (r *RouteRepositoryImpl) GetRoutesByOriginDestination(ctx context.Context, 
 	return routes, err
 }
 
-func (r *RouteRepositoryImpl) CreateRoute(ctx context.Context, route *model.Route) error {
+func (r *RouteRepositoryImpl) Create(ctx context.Context, route *model.Route) error {
 	return r.db.WithContext(ctx).Create(route).Error
 }
 
-func (r *RouteRepositoryImpl) UpdateRoute(ctx context.Context, route *model.Route) error {
+func (r *RouteRepositoryImpl) Update(ctx context.Context, route *model.Route) error {
 	return r.db.WithContext(ctx).Model(route).Updates(route).Error
 }
 
-func (r *RouteRepositoryImpl) DeleteRoute(ctx context.Context, id uuid.UUID) error {
+func (r *RouteRepositoryImpl) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Delete(&model.Route{}, "id = ?", id).Error; err != nil {
 			return err

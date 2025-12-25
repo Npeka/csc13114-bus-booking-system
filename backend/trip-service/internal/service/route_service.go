@@ -17,9 +17,9 @@ type RouteService interface {
 	ListRoutes(ctx context.Context, req *model.ListRoutesRequest) ([]model.Route, int64, error)
 	GetRoutesByOriginDestination(ctx context.Context, origin, destination string) ([]model.Route, error)
 
-	CreateRoute(ctx context.Context, req *model.CreateRouteRequest) (*model.Route, error)
-	UpdateRoute(ctx context.Context, id uuid.UUID, req *model.UpdateRouteRequest) (*model.Route, error)
-	DeleteRoute(ctx context.Context, id uuid.UUID) error
+	Create(ctx context.Context, req *model.CreateRouteRequest) (*model.Route, error)
+	Update(ctx context.Context, id uuid.UUID, req *model.UpdateRouteRequest) (*model.Route, error)
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
 type RouteServiceImpl struct {
@@ -59,7 +59,7 @@ func (s *RouteServiceImpl) GetRoutesByOriginDestination(ctx context.Context, ori
 	return routes, nil
 }
 
-func (s *RouteServiceImpl) CreateRoute(ctx context.Context, req *model.CreateRouteRequest) (*model.Route, error) {
+func (s *RouteServiceImpl) Create(ctx context.Context, req *model.CreateRouteRequest) (*model.Route, error) {
 	// Create route
 	route := &model.Route{
 		Origin:           req.Origin,
@@ -91,7 +91,7 @@ func (s *RouteServiceImpl) CreateRoute(ctx context.Context, req *model.CreateRou
 	route.RouteStops = routeStops
 
 	// Create route with stops in single transaction
-	if err := s.routeRepo.CreateRoute(ctx, route); err != nil {
+	if err := s.routeRepo.Create(ctx, route); err != nil {
 		log.Error().Err(err).Msg("Failed to create route")
 		return nil, ginext.NewInternalServerError("failed to create route")
 	}
@@ -99,7 +99,7 @@ func (s *RouteServiceImpl) CreateRoute(ctx context.Context, req *model.CreateRou
 	return route, nil
 }
 
-func (s *RouteServiceImpl) UpdateRoute(ctx context.Context, id uuid.UUID, req *model.UpdateRouteRequest) (*model.Route, error) {
+func (s *RouteServiceImpl) Update(ctx context.Context, id uuid.UUID, req *model.UpdateRouteRequest) (*model.Route, error) {
 	route, err := s.routeRepo.GetRouteByID(ctx, id)
 	if err != nil {
 		return nil, ginext.NewInternalServerError("failed to get route")
@@ -131,7 +131,7 @@ func (s *RouteServiceImpl) UpdateRoute(ctx context.Context, id uuid.UUID, req *m
 		route.IsActive = *req.IsActive
 	}
 
-	if err := s.routeRepo.UpdateRoute(ctx, route); err != nil {
+	if err := s.routeRepo.Update(ctx, route); err != nil {
 		log.Error().Err(err).Str("route_id", id.String()).Msg("Failed to update route")
 		return nil, ginext.NewInternalServerError("failed to update route")
 	}
@@ -139,8 +139,8 @@ func (s *RouteServiceImpl) UpdateRoute(ctx context.Context, id uuid.UUID, req *m
 	return route, nil
 }
 
-func (s *RouteServiceImpl) DeleteRoute(ctx context.Context, id uuid.UUID) error {
-	if err := s.routeRepo.DeleteRoute(ctx, id); err != nil {
+func (s *RouteServiceImpl) Delete(ctx context.Context, id uuid.UUID) error {
+	if err := s.routeRepo.Delete(ctx, id); err != nil {
 		log.Error().Err(err).Str("route_id", id.String()).Msg("Failed to delete route")
 		return ginext.NewInternalServerError("failed to delete route")
 	}
