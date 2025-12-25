@@ -21,10 +21,12 @@ type TripService interface {
 	ListTrips(ctx context.Context, req *model.ListTripsRequest) ([]model.Trip, int64, error)
 	GetSeatAvailability(ctx context.Context, tripID uuid.UUID) (*model.SeatAvailabilityResponse, error)
 	GetTripsByRouteAndDate(ctx context.Context, routeID uuid.UUID, departureDate time.Time) ([]model.Trip, error)
+	GetCompletedTripsForReschedule(ctx context.Context) ([]model.Trip, error)
 
 	CreateTrip(ctx context.Context, req *model.CreateTripRequest) (*model.Trip, error)
 	UpdateTrip(ctx context.Context, id uuid.UUID, req *model.UpdateTripRequest) (*model.Trip, error)
 	DeleteTrip(ctx context.Context, id uuid.UUID) error
+	RescheduleTrip(ctx context.Context, id uuid.UUID, newDeparture, newArrival time.Time) error
 }
 
 type TripServiceImpl struct {
@@ -131,7 +133,7 @@ func (s *TripServiceImpl) GetSeatAvailability(ctx context.Context, tripID uuid.U
 		return nil, ginext.NewInternalServerError("trip not found")
 	}
 
-	seats, err := s.seatRepo.ListByBusID(ctx, trip.BusID)
+	seats, err := s.seatRepo.GetListByBusID(ctx, trip.BusID)
 	if err != nil {
 		return nil, ginext.NewInternalServerError("failed to get seats")
 	}
@@ -305,6 +307,34 @@ func (s *TripServiceImpl) DeleteTrip(ctx context.Context, id uuid.UUID) error {
 
 	if err := s.tripRepo.DeleteTrip(ctx, id); err != nil {
 		return ginext.NewInternalServerError("failed to delete trip")
+	}
+
+	return nil
+}
+
+// GetCompletedTripsForReschedule gets completed trips from last 24h that need rescheduling
+func (s *TripServiceImpl) GetCompletedTripsForReschedule(ctx context.Context) ([]model.Trip, error) {
+	return s.tripRepo.GetCompletedTripsForReschedule(ctx)
+}
+
+// RescheduleTrip updates trip with new departure/arrival times (maintains same bus, route, price)
+func (s *TripServiceImpl) RescheduleTrip(ctx context.Context, id uuid.UUID, newDeparture, newArrival time.Time) error {
+	trip, err := s.tripRepo.GetTripByID(ctx, &model.GetTripByIDRequest{}, id)
+	if err != nil {
+		return fmt.Errorf("trip not found: %w", err)
+	}
+
+	if newArrival.Before(newDeparture) {
+		return ginext.NewBadRequestError("arrival time must be after departure time")
+	}
+
+	// Update times and reset status to scheduled
+	trip.DepartureTime = newDeparture
+	trip.ArrivalTime = newArrival
+	trip.Status = "scheduled"
+
+	if err := s.tripRepo.UpdateTrip(ctx, trip); err != nil {
+		return fmt.Errorf("failed to reschedule trip: %w", err)
 	}
 
 	return nil

@@ -21,6 +21,8 @@ type TripRepository interface {
 	CreateTrip(ctx context.Context, trip *model.Trip) error
 	UpdateTrip(ctx context.Context, trip *model.Trip) error
 	DeleteTrip(ctx context.Context, id uuid.UUID) error
+
+	GetCompletedTripsForReschedule(ctx context.Context) ([]model.Trip, error)
 }
 
 type TripRepositoryImpl struct {
@@ -303,4 +305,18 @@ func (r *TripRepositoryImpl) UpdateTrip(ctx context.Context, trip *model.Trip) e
 
 func (r *TripRepositoryImpl) DeleteTrip(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&model.Trip{}, "id = ?", id).Error
+}
+
+func (r *TripRepositoryImpl) GetCompletedTripsForReschedule(ctx context.Context) ([]model.Trip, error) {
+	var trips []model.Trip
+	yesterday := time.Now().Add(-24 * time.Hour)
+
+	err := r.db.WithContext(ctx).
+		Where("status = ?", "completed").
+		Where("arrival_time >= ? AND arrival_time <= ?", yesterday, time.Now()).
+		Where("is_active = ?", true).
+		Preload("Route").
+		Find(&trips).Error
+
+	return trips, err
 }
