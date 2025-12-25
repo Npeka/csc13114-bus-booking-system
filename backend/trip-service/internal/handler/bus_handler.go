@@ -10,37 +10,36 @@ import (
 )
 
 type BusHandler interface {
-	GetBus(r *ginext.Request) (*ginext.Response, error)
-	ListBuses(r *ginext.Request) (*ginext.Response, error)
-	GetBusSeats(r *ginext.Request) (*ginext.Response, error)
+	Get(r *ginext.Request) (*ginext.Response, error)
+	GetList(r *ginext.Request) (*ginext.Response, error)
 
-	CreateBus(r *ginext.Request) (*ginext.Response, error)
-	UpdateBus(r *ginext.Request) (*ginext.Response, error)
-	DeleteBus(r *ginext.Request) (*ginext.Response, error)
+	Create(r *ginext.Request) (*ginext.Response, error)
+	Update(r *ginext.Request) (*ginext.Response, error)
+	Delete(r *ginext.Request) (*ginext.Response, error)
 }
 
 type BusHandlerImpl struct {
-	busService service.BusService
+	service service.BusService
 }
 
-func NewBusHandler(busService service.BusService) BusHandler {
+func NewBusHandler(service service.BusService) BusHandler {
 	return &BusHandlerImpl{
-		busService: busService,
+		service: service,
 	}
 }
 
-// GetBus godoc
+// Get godoc
 // @Summary Get bus by ID
-// @Description Get detailed information about a specific bus
+// @Description Get detailed information about a specific bus including seats
 // @Tags buses
 // @Accept json
 // @Produce json
 // @Param id path string true "Bus ID" format(uuid)
-// @Success 200 {object} ginext.Response{data=model.Bus} "Bus details"
+// @Success 200 {object} ginext.Response{data=model.BusResponse} "Bus details"
 // @Failure 400 {object} ginext.Response "Invalid bus ID"
 // @Failure 404 {object} ginext.Response "Bus not found"
 // @Router /api/v1/buses/{id} [get]
-func (h *BusHandlerImpl) GetBus(r *ginext.Request) (*ginext.Response, error) {
+func (h *BusHandlerImpl) Get(r *ginext.Request) (*ginext.Response, error) {
 	idStr := r.GinCtx.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -48,7 +47,7 @@ func (h *BusHandlerImpl) GetBus(r *ginext.Request) (*ginext.Response, error) {
 		return nil, ginext.NewBadRequestError("invalid bus ID")
 	}
 
-	bus, err := h.busService.GetBusByID(r.Context(), id)
+	bus, err := h.service.GetBusByID(r.Context(), id)
 	if err != nil {
 		log.Error().Err(err).Str("bus_id", idStr).Msg("Failed to get bus")
 		return nil, err
@@ -57,7 +56,7 @@ func (h *BusHandlerImpl) GetBus(r *ginext.Request) (*ginext.Response, error) {
 	return ginext.NewSuccessResponse(model.ToBusResponse(bus)), nil
 }
 
-// ListBuses godoc
+// GetList godoc
 // @Summary List buses
 // @Description Get a paginated list of buses, optionally filtered by operator
 // @Tags buses
@@ -70,14 +69,14 @@ func (h *BusHandlerImpl) GetBus(r *ginext.Request) (*ginext.Response, error) {
 // @Failure 400 {object} ginext.Response "Invalid request"
 // @Failure 500 {object} ginext.Response "Internal server error"
 // @Router /api/v1/buses [get]
-func (h *BusHandlerImpl) ListBuses(r *ginext.Request) (*ginext.Response, error) {
+func (h *BusHandlerImpl) GetList(r *ginext.Request) (*ginext.Response, error) {
 	var req model.ListBusesRequest
 	if err := r.GinCtx.ShouldBindQuery(&req); err != nil {
 		log.Error().Err(err).Msg("Query binding failed")
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
-	buses, total, err := h.busService.ListBuses(r.Context(), req)
+	buses, total, err := h.service.ListBuses(r.Context(), req)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to list buses")
 		return nil, err
@@ -86,53 +85,25 @@ func (h *BusHandlerImpl) ListBuses(r *ginext.Request) (*ginext.Response, error) 
 	return ginext.NewPaginatedResponse(model.ToBusResponseList(buses), req.Page, req.PageSize, total), nil
 }
 
-// GetBusSeats godoc
-// @Summary Get bus seats
-// @Description Get all seats for a specific bus
-// @Tags buses
-// @Accept json
-// @Produce json
-// @Param id path string true "Bus ID" format(uuid)
-// @Success 200 {object} ginext.Response{data=[]model.Seat} "List of bus seats"
-// @Failure 400 {object} ginext.Response "Invalid bus ID"
-// @Failure 500 {object} ginext.Response "Internal server error"
-// @Router /api/v1/buses/{id}/seats [get]
-func (h *BusHandlerImpl) GetBusSeats(r *ginext.Request) (*ginext.Response, error) {
-	idStr := r.GinCtx.Param("id")
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		log.Error().Err(err).Msg("Invalid bus ID")
-		return nil, ginext.NewBadRequestError("invalid bus ID")
-	}
-
-	seats, err := h.busService.GetBusSeats(r.Context(), id)
-	if err != nil {
-		log.Error().Err(err).Str("bus_id", idStr).Msg("Failed to get bus seats")
-		return nil, err
-	}
-
-	return ginext.NewSuccessResponse(model.ToSeatResponseList(seats)), nil
-}
-
-// CreateBus godoc
+// Create godoc
 // @Summary Create a new bus
-// @Description Create a new bus with operator, model, and seat capacity information
+// @Description Create a new bus with model, plate number, seat configuration, and amenities (admin only)
 // @Tags buses
 // @Accept json
 // @Produce json
 // @Param request body model.CreateBusRequest true "Bus creation data"
-// @Success 201 {object} ginext.Response{data=model.Bus} "Created bus"
+// @Success 201 {object} ginext.Response{data=model.BusResponse} "Created bus"
 // @Failure 400 {object} ginext.Response "Invalid request"
 // @Failure 500 {object} ginext.Response "Internal server error"
 // @Router /api/v1/buses [post]
-func (h *BusHandlerImpl) CreateBus(r *ginext.Request) (*ginext.Response, error) {
+func (h *BusHandlerImpl) Create(r *ginext.Request) (*ginext.Response, error) {
 	var req model.CreateBusRequest
 	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
 		log.Error().Err(err).Msg("JSON binding failed")
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
-	bus, err := h.busService.CreateBus(r.Context(), &req)
+	bus, err := h.service.CreateBus(r.Context(), &req)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create bus")
 		return nil, err
@@ -141,19 +112,20 @@ func (h *BusHandlerImpl) CreateBus(r *ginext.Request) (*ginext.Response, error) 
 	return ginext.NewCreatedResponse(model.ToBusResponse(bus)), nil
 }
 
-// UpdateBus godoc
-// @Summary Update bus
-// @Description Update bus information such as model, plate number, or amenities
+// Update godoc
+// @Summary Update bus information
+// @Description Update bus details such as model, plate number, bus type, amenities, or active status (admin only)
 // @Tags buses
 // @Accept json
 // @Produce json
 // @Param id path string true "Bus ID" format(uuid)
 // @Param request body model.UpdateBusRequest true "Bus update data"
-// @Success 200 {object} ginext.Response{data=model.Bus} "Updated bus"
+// @Success 200 {object} ginext.Response{data=model.BusResponse} "Updated bus"
 // @Failure 400 {object} ginext.Response "Invalid request"
+// @Failure 404 {object} ginext.Response "Bus not found"
 // @Failure 500 {object} ginext.Response "Internal server error"
 // @Router /api/v1/buses/{id} [put]
-func (h *BusHandlerImpl) UpdateBus(r *ginext.Request) (*ginext.Response, error) {
+func (h *BusHandlerImpl) Update(r *ginext.Request) (*ginext.Response, error) {
 	idStr := r.GinCtx.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -167,7 +139,7 @@ func (h *BusHandlerImpl) UpdateBus(r *ginext.Request) (*ginext.Response, error) 
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
-	bus, err := h.busService.UpdateBus(r.Context(), id, &req)
+	bus, err := h.service.UpdateBus(r.Context(), id, &req)
 	if err != nil {
 		log.Error().Err(err).Str("bus_id", idStr).Msg("Failed to update bus")
 		return nil, err
@@ -176,18 +148,19 @@ func (h *BusHandlerImpl) UpdateBus(r *ginext.Request) (*ginext.Response, error) 
 	return ginext.NewSuccessResponse(model.ToBusResponse(bus)), nil
 }
 
-// DeleteBus godoc
-// @Summary Delete bus
-// @Description Delete a bus by ID
+// Delete godoc
+// @Summary Delete a bus
+// @Description Soft delete a bus by ID (admin only)
 // @Tags buses
 // @Accept json
 // @Produce json
 // @Param id path string true "Bus ID" format(uuid)
-// @Success 200 {object} ginext.Response "Success message"
+// @Success 200 {object} ginext.Response{data=string} "Success message"
 // @Failure 400 {object} ginext.Response "Invalid bus ID"
+// @Failure 404 {object} ginext.Response "Bus not found"
 // @Failure 500 {object} ginext.Response "Internal server error"
 // @Router /api/v1/buses/{id} [delete]
-func (h *BusHandlerImpl) DeleteBus(r *ginext.Request) (*ginext.Response, error) {
+func (h *BusHandlerImpl) Delete(r *ginext.Request) (*ginext.Response, error) {
 	idStr := r.GinCtx.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -195,7 +168,7 @@ func (h *BusHandlerImpl) DeleteBus(r *ginext.Request) (*ginext.Response, error) 
 		return nil, ginext.NewBadRequestError("invalid bus ID")
 	}
 
-	if err = h.busService.DeleteBus(r.Context(), id); err != nil {
+	if err = h.service.DeleteBus(r.Context(), id); err != nil {
 		log.Error().Err(err).Str("bus_id", idStr).Msg("Failed to delete bus")
 		return nil, err
 	}
