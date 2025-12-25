@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 
+	"bus-booking/trip-service/internal/constants"
 	"bus-booking/trip-service/internal/model"
 
 	"github.com/google/uuid"
@@ -12,6 +13,7 @@ import (
 type BusRepository interface {
 	GetBusByID(ctx context.Context, id uuid.UUID) (*model.Bus, error)
 	GetBusWithSeatsByID(ctx context.Context, id uuid.UUID) (*model.Bus, error)
+	GetByBusType(ctx context.Context, busType constants.BusType) ([]*model.Bus, error)
 	ListBuses(ctx context.Context, page, pageSize int) ([]model.Bus, int64, error)
 	GetBusByPlateNumber(ctx context.Context, plateNumber string) (*model.Bus, error)
 	CreateBus(ctx context.Context, bus *model.Bus) error
@@ -43,6 +45,18 @@ func (r *BusRepositoryImpl) GetBusWithSeatsByID(ctx context.Context, id uuid.UUI
 		return nil, err
 	}
 	return &bus, nil
+}
+
+func (r *BusRepositoryImpl) GetByBusType(ctx context.Context, busType constants.BusType) ([]*model.Bus, error) {
+	var buses []*model.Bus
+	if err := r.db.WithContext(ctx).
+		Where("bus_type = ?", busType).
+		Where("is_active = ?", true).
+		Order("created_at ASC").
+		Find(&buses).Error; err != nil {
+		return nil, err
+	}
+	return buses, nil
 }
 
 func (r *BusRepositoryImpl) ListBuses(ctx context.Context, page, pageSize int) ([]model.Bus, int64, error) {
