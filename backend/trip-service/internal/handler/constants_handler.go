@@ -9,20 +9,22 @@ import (
 )
 
 type ConstantsHandler interface {
-	GetConstants(r *ginext.Request) (*ginext.Response, error)
+	GetList(r *ginext.Request) (*ginext.Response, error)
 }
 
 type ConstantsHandlerImpl struct {
-	constantsService service.ConstantsService
+	service service.ConstantsService
 }
 
-func NewConstantsHandler(constantsService service.ConstantsService) ConstantsHandler {
+func NewConstantsHandler(
+	constantsService service.ConstantsService,
+) ConstantsHandler {
 	return &ConstantsHandlerImpl{
-		constantsService: constantsService,
+		service: constantsService,
 	}
 }
 
-// GetConstants godoc
+// GetList godoc
 // @Summary Get constants
 // @Description Get constants by type (bus, route, trip, search_filters, cities). Returns all types if type parameter is not specified.
 // @Tags constants
@@ -33,7 +35,7 @@ func NewConstantsHandler(constantsService service.ConstantsService) ConstantsHan
 // @Failure 400 {object} ginext.Response "Invalid type parameter"
 // @Failure 500 {object} ginext.Response "Internal server error"
 // @Router /api/v1/constants [get]
-func (h *ConstantsHandlerImpl) GetConstants(r *ginext.Request) (*ginext.Response, error) {
+func (h *ConstantsHandlerImpl) GetList(r *ginext.Request) (*ginext.Response, error) {
 	constTypeStr := r.GinCtx.Query("type")
 	constType := constants.ConstantType(constTypeStr)
 
@@ -48,35 +50,35 @@ func (h *ConstantsHandlerImpl) GetConstants(r *ginext.Request) (*ginext.Response
 
 	switch constType {
 	case constants.ConstantTypeBus:
-		data, err = h.constantsService.GetBusConstants(r.Context())
+		data, err = h.service.GetBusConstants(r.Context())
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to get bus constants")
 			return nil, err
 		}
 
 	case constants.ConstantTypeRoute:
-		data, err = h.constantsService.GetRouteConstants(r.Context())
+		data, err = h.service.GetRouteConstants(r.Context())
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to get route constants")
 			return nil, err
 		}
 
 	case constants.ConstantTypeTrip:
-		data, err = h.constantsService.GetTripConstants(r.Context())
+		data, err = h.service.GetTripConstants(r.Context())
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to get trip constants")
 			return nil, err
 		}
 
 	case constants.ConstantTypeSearchFilters:
-		data, err = h.constantsService.GetSearchFilterConstants(r.Context())
+		data, err = h.service.GetSearchFilterConstants(r.Context())
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to get search filter constants")
 			return nil, err
 		}
 
 	case constants.ConstantTypeCities:
-		data, err = h.constantsService.GetCities(r.Context())
+		data, err = h.service.GetCities(r.Context())
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to get cities")
 			return nil, err
@@ -84,7 +86,7 @@ func (h *ConstantsHandlerImpl) GetConstants(r *ginext.Request) (*ginext.Response
 
 	default:
 		// Return all constants if type is not specified
-		data, err = h.constantsService.GetAllConstants(r.Context())
+		data, err = h.service.GetAllConstants(r.Context())
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to get all constants")
 			return nil, err
