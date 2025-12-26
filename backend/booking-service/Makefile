@@ -33,6 +33,9 @@ test-service:
 	go test ./internal/service -coverprofile=cover.out
 	go tool cover -func=cover.out
 
+test-ci:
+	go test ./internal/service -cover
+
 vet:
 	go vet ./...
 
