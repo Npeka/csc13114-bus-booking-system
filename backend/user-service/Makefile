@@ -17,8 +17,20 @@ fmt-check:
 lint:
 	golangci-lint run --config=../.golangci.yml ./...
 
-test:
-	go test ./...
+test-coverage:
+	go test ./... -coverprofile=coverage.out
+	go tool cover -func=coverage.out
+
+coverage-html:
+	go test ./... -coverprofile=coverage.out
+	go tool cover -html=coverage.out -o coverage.html
+
+test-service:
+	go test ./internal/service -coverprofile=cover.out
+	go tool cover -func=cover.out
+
+test-ci:
+	go test ./internal/service -cover
 
 vet:
 	go vet ./...
@@ -54,3 +66,8 @@ migrate-reset:
 
 migrate-version:
 	migrate -path migrations -database "$(DB_URL)" version
+
+# mock
+# make mock-file dir=internal/repository name=bus_repository
+mock-file:
+	mockgen -source=$(dir)/$(name).go -package=mocks -destination=$(dir)/mocks/mock_$(name).go

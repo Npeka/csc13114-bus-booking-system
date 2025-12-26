@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"bus-booking/shared/db"
-	"bus-booking/user-service/internal/utils"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -27,12 +26,12 @@ type TokenManager interface {
 
 type TokenBlacklistManagerImpl struct {
 	redisClient db.RedisManager
-	jwtManager  utils.JWTManager
+	jwtManager  JWTManager
 }
 
 func NewTokenManager(
 	redisManager db.RedisManager,
-	jwtManager utils.JWTManager,
+	jwtManager JWTManager,
 ) TokenManager {
 	return &TokenBlacklistManagerImpl{
 		redisClient: redisManager,

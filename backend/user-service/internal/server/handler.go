@@ -6,24 +6,22 @@ import (
 	"bus-booking/user-service/internal/repository"
 	"bus-booking/user-service/internal/router"
 	"bus-booking/user-service/internal/service"
-	"bus-booking/user-service/internal/utils"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 func (s *Server) buildHandler() http.Handler {
-	jwtManager := utils.NewJWTManager(&s.cfg.JWT)
+	notificationClient := client.NewNotificationClient("notification-service", s.cfg.External.NotificationServiceURL)
 
 	userRepo := repository.NewUserRepository(s.db.DB)
 
+	jwtManager := service.NewJWTManager(&s.cfg.JWT)
 	tokenManager := service.NewTokenManager(s.redis, jwtManager)
-
-	// Initialize notification client
-	notificationClient := client.NewNotificationClient("notification-service", s.cfg.External.NotificationServiceURL)
+	firebaseAuth := service.NewFirebaseAuth(s.firebaseAuth)
 
 	userService := service.NewUserService(userRepo)
-	authService := service.NewAuthService(s.cfg, jwtManager, s.firebaseAuth, tokenManager, userRepo, s.redis, notificationClient)
+	authService := service.NewAuthService(s.cfg, jwtManager, firebaseAuth, tokenManager, userRepo, s.redis, notificationClient)
 
 	userHandler := handler.NewUserHandler(userService)
 	authHandler := handler.NewAuthHandler(authService)

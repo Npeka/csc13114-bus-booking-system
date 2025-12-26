@@ -10,7 +10,7 @@ import (
 )
 
 type User struct {
-	ID            uuid.UUID            `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
+	BaseModel
 	Email         string               `json:"email" gorm:"index;uniqueIndex:,type:NULLS NOT DISTINCT"`
 	Phone         string               `json:"phone" gorm:"index"`
 	FullName      string               `json:"full_name" gorm:"not null"`
@@ -21,9 +21,6 @@ type User struct {
 	PasswordHash  *string              `json:"-" gorm:"type:text"`
 	EmailVerified bool                 `json:"email_verified" gorm:"default:false"`
 	PhoneVerified bool                 `json:"phone_verified" gorm:"default:false"`
-	CreatedAt     time.Time            `json:"created_at"`
-	UpdatedAt     time.Time            `json:"updated_at"`
-	DeletedAt     gorm.DeletedAt       `json:"-" gorm:"index"`
 }
 
 type UserCreateRequest struct {
