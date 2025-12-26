@@ -55,3 +55,8 @@ migrate-reset:
 
 migrate-version:
 	migrate -path migrations -database "$(DB_URL)" version
+
+# mock
+# make mock-file dir=internal/repository name=bus_repository
+mock-file:
+	mockgen -source=$(dir)/$(name).go -package=mocks -destination=$(dir)/mocks/mock_$(name).go
