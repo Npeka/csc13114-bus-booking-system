@@ -1,24 +1,43 @@
 service: "trip"
 routes:
-  # Public routes - Constants
+  # ============================================
+  # PUBLIC ROUTES
+  # ============================================
+
+  # Constants
   - path: "/api/v1/constants"
     methods: ["GET"]
 
-  # Public routes - Trips
+  # Trips - Public Search
   - path: "/api/v1/trips/search"
+    methods: ["GET"]
+
+  - path: "/api/v1/trips/:id/schedules"
     methods: ["GET"]
 
   - path: "/api/v1/trips/:id"
     methods: ["GET"]
 
-  # Admin-only routes - Trips
-  - path: "/api/v1/trips"
+  # Search - Public Trip Instances
+  - path: "/api/v1/search/instances"
     methods: ["GET"]
+
+  # Buses - Public
+  - path: "/api/v1/buses/:id"
+    methods: ["GET"]
+
+  # ============================================
+  # ADMIN ROUTES
+  # ============================================
+
+  # Trips - Admin
+  - path: "/api/v1/trips"
+    methods: ["GET", "POST"]
     auth:
       required: true
       roles: ["admin"]
 
-  - path: "/api/v1/trips"
+  - path: "/api/v1/trips/:id/schedules"
     methods: ["POST"]
     auth:
       required: true
@@ -30,10 +49,7 @@ routes:
       required: true
       roles: ["admin"]
 
-  - path: "/api/v1/buses/:id"
-    methods: ["GET"]
-
-  # Admin-only routes - Buses
+  # Buses - Admin
   - path: "/api/v1/buses"
     methods: ["GET", "POST"]
     auth:
@@ -46,7 +62,14 @@ routes:
       required: true
       roles: ["admin"]
 
-  # Admin-only routes - Routes
+  # Seats - Admin
+  - path: "/api/v1/buses/seats/:id"
+    methods: ["PUT"]
+    auth:
+      required: true
+      roles: ["admin"]
+
+  # Routes - Admin
   - path: "/api/v1/routes"
     methods: ["GET", "POST"]
     auth:
@@ -59,7 +82,7 @@ routes:
       required: true
       roles: ["admin"]
 
-  # Admin-only routes - Route Stops
+  # Route Stops - Admin
   - path: "/api/v1/routes/stops"
     methods: ["POST"]
     auth:
