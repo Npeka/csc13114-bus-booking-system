@@ -1,4 +1,4 @@
-package utils
+package service
 
 import (
 	"bus-booking/user-service/config"

@@ -10,6 +10,21 @@ definitions:
       user:
         $ref: '#/definitions/bus-booking_user-service_internal_model.UserResponse'
     type: object
+  bus-booking_user-service_internal_model.CreateGuestAccountRequest:
+    properties:
+      email:
+        type: string
+      full_name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      phone:
+        maxLength: 15
+        minLength: 10
+        type: string
+    required:
+    - full_name
+    type: object
   bus-booking_user-service_internal_model.FirebaseAuthRequest:
     properties:
       id_token:
@@ -175,18 +190,15 @@ definitions:
     - 1
     - 2
     - 4
-    - 8
     type: integer
     x-enum-comments:
-      RoleAdmin: 'bit 1: 2'
-      RoleOperator: 'bit 2: 4'
-      RolePassenger: 'bit 0: 1'
-      RoleSupport: 'bit 3: 8'
+      RoleAdmin: 'bit 2: 4'
+      RoleGuest: 'bit 0: 1'
+      RolePassenger: 'bit 1: 2'
     x-enum-varnames:
+    - RoleGuest
     - RolePassenger
     - RoleAdmin
-    - RoleOperator
-    - RoleSupport
   constants.UserStatus:
     enum:
     - active
@@ -321,6 +333,42 @@ paths:
           schema:
             $ref: '#/definitions/ginext.Response'
       summary: Request password reset
+      tags:
+      - Authentication
+  /auth/guest:
+    post:
+      consumes:
+      - application/json
+      description: Creates a guest user account for non-authenticated bookings. Requires
+        either email or phone.
+      parameters:
+      - description: Guest account creation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_user-service_internal_model.CreateGuestAccountRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Guest account created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/ginext.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bus-booking_user-service_internal_model.UserResponse'
+              type: object
+        "400":
+          description: Invalid request data or missing contact info
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: Create guest account
       tags:
       - Authentication
   /auth/login:
