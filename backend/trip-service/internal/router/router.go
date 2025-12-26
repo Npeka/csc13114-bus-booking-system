@@ -32,7 +32,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 
 	v1 := router.Group("/api/v1")
 	{
-		v1.GET("/constants", ginext.WrapHandler(h.ConstantsHandler.GetConstants))
+		v1.GET("/constants", ginext.WrapHandler(h.ConstantsHandler.GetList))
 
 		trips := v1.Group("/trips")
 		{
@@ -42,13 +42,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 
 		buses := v1.Group("/buses")
 		{
-			buses.GET("/:id", ginext.WrapHandler(h.BusHandler.GetBus))
-		}
-
-		// internal routes
-		seats := v1.Group("/buses/seats")
-		{
-			seats.GET("/ids", ginext.WrapHandler(h.SeatHandler.ListByIDs))
+			buses.GET("/:id", ginext.WrapHandler(h.BusHandler.Get))
 		}
 	}
 
@@ -66,26 +60,24 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 
 		buses := adminV1.Group("/buses")
 		{
-			buses.GET("", ginext.WrapHandler(h.BusHandler.ListBuses))
-			buses.POST("", ginext.WrapHandler(h.BusHandler.CreateBus))
-			buses.PUT("/:id", ginext.WrapHandler(h.BusHandler.UpdateBus))
-			buses.DELETE("/:id", ginext.WrapHandler(h.BusHandler.DeleteBus))
+			buses.GET("", ginext.WrapHandler(h.BusHandler.GetList))
+			buses.POST("", ginext.WrapHandler(h.BusHandler.Create))
+			buses.PUT("/:id", ginext.WrapHandler(h.BusHandler.Update))
+			buses.DELETE("/:id", ginext.WrapHandler(h.BusHandler.Delete))
 		}
 
-		seats := v1.Group("/buses/seats")
+		seats := adminV1.Group("/buses/seats")
 		{
-			seats.POST("", ginext.WrapHandler(h.SeatHandler.CreateSeat))
-			seats.PUT("/:id", ginext.WrapHandler(h.SeatHandler.UpdateSeat))
-			seats.DELETE("/:id", ginext.WrapHandler(h.SeatHandler.DeleteSeat))
+			seats.PUT("/:id", ginext.WrapHandler(h.SeatHandler.Update))
 		}
 
 		routes := adminV1.Group("/routes")
 		{
-			routes.GET("", ginext.WrapHandler(h.RouteHandler.ListRoutes))
-			routes.GET("/:id", ginext.WrapHandler(h.RouteHandler.GetRoute))
-			routes.POST("", ginext.WrapHandler(h.RouteHandler.CreateRoute))
-			routes.PUT("/:id", ginext.WrapHandler(h.RouteHandler.UpdateRoute))
-			routes.DELETE("/:id", ginext.WrapHandler(h.RouteHandler.DeleteRoute))
+			routes.GET("", ginext.WrapHandler(h.RouteHandler.GetList))
+			routes.GET("/:id", ginext.WrapHandler(h.RouteHandler.GetByID))
+			routes.POST("", ginext.WrapHandler(h.RouteHandler.Create))
+			routes.PUT("/:id", ginext.WrapHandler(h.RouteHandler.Update))
+			routes.DELETE("/:id", ginext.WrapHandler(h.RouteHandler.Delete))
 		}
 
 		routeStops := adminV1.Group("/routes/stops")
@@ -94,6 +86,15 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 			routeStops.PUT("/:id", ginext.WrapHandler(h.RouteStopHandler.UpdateRouteStop))
 			routeStops.POST("/:id/move", ginext.WrapHandler(h.RouteStopHandler.MoveRouteStop))
 			routeStops.DELETE("/:id", ginext.WrapHandler(h.RouteStopHandler.DeleteRouteStop))
+		}
+
+	}
+
+	internalV1 := router.Group("/api/v1")
+	{
+		seats := internalV1.Group("/buses/seats")
+		{
+			seats.GET("/ids", ginext.WrapHandler(h.SeatHandler.GetListByIDs))
 		}
 	}
 }

@@ -10,17 +10,10 @@ import (
 )
 
 type SeatRepository interface {
-	Create(ctx context.Context, seat *model.Seat) error
-	CreateBulk(ctx context.Context, seats []model.Seat) error
-	CreateWithTx(ctx context.Context, seat *model.Seat, tx *gorm.DB) error
-	CreateBulkWithTx(ctx context.Context, seats []model.Seat, tx *gorm.DB) error
-	Update(ctx context.Context, seat *model.Seat) error
-	Delete(ctx context.Context, id uuid.UUID) error
 	GetByID(ctx context.Context, id uuid.UUID) (*model.Seat, error)
-	ListByIDs(ctx context.Context, ids []uuid.UUID) ([]model.Seat, error)
-	ListByBusID(ctx context.Context, busID uuid.UUID) ([]model.Seat, error)
-	GetSeatMap(ctx context.Context, busID uuid.UUID) ([]model.Seat, error)
-	CountByBusID(ctx context.Context, busID uuid.UUID) (int64, error)
+	GetListByIDs(ctx context.Context, ids []uuid.UUID) ([]model.Seat, error)
+	GetListByBusID(ctx context.Context, busID uuid.UUID) ([]model.Seat, error)
+	Update(ctx context.Context, seat *model.Seat) error
 }
 
 type SeatRepositoryImpl struct {
@@ -31,54 +24,15 @@ func NewSeatRepository(db *gorm.DB) SeatRepository {
 	return &SeatRepositoryImpl{db: db}
 }
 
-func (r *SeatRepositoryImpl) Create(ctx context.Context, seat *model.Seat) error {
-	return r.db.WithContext(ctx).Create(seat).Error
-}
-
-func (r *SeatRepositoryImpl) CreateBulk(ctx context.Context, seats []model.Seat) error {
-	return r.db.WithContext(ctx).Create(&seats).Error
-}
-
-func (r *SeatRepositoryImpl) CreateWithTx(ctx context.Context, seat *model.Seat, tx *gorm.DB) error {
-	return tx.WithContext(ctx).Create(seat).Error
-}
-
-func (r *SeatRepositoryImpl) CreateBulkWithTx(ctx context.Context, seats []model.Seat, tx *gorm.DB) error {
-	return tx.WithContext(ctx).Create(&seats).Error
-}
-
-func (r *SeatRepositoryImpl) Update(ctx context.Context, seat *model.Seat) error {
-	return r.db.WithContext(ctx).Save(seat).Error
-}
-
-func (r *SeatRepositoryImpl) Delete(ctx context.Context, id uuid.UUID) error {
-	return r.db.WithContext(ctx).Delete(&model.Seat{}, id).Error
-}
-
 func (r *SeatRepositoryImpl) GetByID(ctx context.Context, id uuid.UUID) (*model.Seat, error) {
 	var seat model.Seat
-	err := r.db.WithContext(ctx).
-		Preload("Bus").
-		First(&seat, id).Error
-	if err != nil {
+	if err := r.db.WithContext(ctx).First(&seat, id).Error; err != nil {
 		return nil, err
 	}
 	return &seat, nil
 }
 
-func (r *SeatRepositoryImpl) ListByBusID(ctx context.Context, busID uuid.UUID) ([]model.Seat, error) {
-	var seats []model.Seat
-	err := r.db.WithContext(ctx).
-		Where("bus_id = ?", busID).
-		Order("floor ASC, row ASC, \"column\" ASC").
-		Find(&seats).Error
-	if err != nil {
-		return nil, err
-	}
-	return seats, nil
-}
-
-func (r *SeatRepositoryImpl) ListByIDs(ctx context.Context, ids []uuid.UUID) ([]model.Seat, error) {
+func (r *SeatRepositoryImpl) GetListByIDs(ctx context.Context, ids []uuid.UUID) ([]model.Seat, error) {
 	var seats []model.Seat
 	if err := r.db.WithContext(ctx).
 		Where("id IN ?", ids).
@@ -88,10 +42,10 @@ func (r *SeatRepositoryImpl) ListByIDs(ctx context.Context, ids []uuid.UUID) ([]
 	return seats, nil
 }
 
-func (r *SeatRepositoryImpl) GetSeatMap(ctx context.Context, busID uuid.UUID) ([]model.Seat, error) {
+func (r *SeatRepositoryImpl) GetListByBusID(ctx context.Context, busID uuid.UUID) ([]model.Seat, error) {
 	var seats []model.Seat
 	err := r.db.WithContext(ctx).
-		Where("bus_id = ? AND is_available = ?", busID, true).
+		Where("bus_id = ?", busID).
 		Order("floor ASC, row ASC, \"column\" ASC").
 		Find(&seats).Error
 	if err != nil {
@@ -100,11 +54,6 @@ func (r *SeatRepositoryImpl) GetSeatMap(ctx context.Context, busID uuid.UUID) ([
 	return seats, nil
 }
 
-func (r *SeatRepositoryImpl) CountByBusID(ctx context.Context, busID uuid.UUID) (int64, error) {
-	var count int64
-	err := r.db.WithContext(ctx).
-		Model(&model.Seat{}).
-		Where("bus_id = ?", busID).
-		Count(&count).Error
-	return count, err
+func (r *SeatRepositoryImpl) Update(ctx context.Context, seat *model.Seat) error {
+	return r.db.WithContext(ctx).Save(seat).Error
 }

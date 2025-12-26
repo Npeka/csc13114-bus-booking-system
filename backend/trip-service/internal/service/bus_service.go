@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"bus-booking/shared/ginext"
-	"bus-booking/trip-service/internal/constants"
 	"bus-booking/trip-service/internal/model"
 	"bus-booking/trip-service/internal/repository"
 
@@ -15,7 +14,6 @@ import (
 type BusService interface {
 	GetBusByID(ctx context.Context, id uuid.UUID) (*model.Bus, error)
 	ListBuses(ctx context.Context, req model.ListBusesRequest) ([]model.Bus, int64, error)
-	GetBusSeats(ctx context.Context, busID uuid.UUID) ([]model.Seat, error)
 
 	CreateBus(ctx context.Context, req *model.CreateBusRequest) (*model.Bus, error)
 	UpdateBus(ctx context.Context, id uuid.UUID, req *model.UpdateBusRequest) (*model.Bus, error)
@@ -54,15 +52,6 @@ func (s *BusServiceImpl) ListBuses(ctx context.Context, req model.ListBusesReque
 	return buses, total, nil
 }
 
-func (s *BusServiceImpl) GetBusSeats(ctx context.Context, busID uuid.UUID) ([]model.Seat, error) {
-	seats, err := s.seatRepo.ListByBusID(ctx, busID)
-	if err != nil {
-		return nil, ginext.NewInternalServerError("failed to get bus seats")
-	}
-
-	return seats, nil
-}
-
 func (s *BusServiceImpl) CreateBus(ctx context.Context, req *model.CreateBusRequest) (*model.Bus, error) {
 	existing, err := s.busRepo.GetBusByPlateNumber(ctx, req.PlateNumber)
 	if err == nil && existing != nil {
@@ -72,7 +61,7 @@ func (s *BusServiceImpl) CreateBus(ctx context.Context, req *model.CreateBusRequ
 	// Calculate total seat capacity from all floors
 	totalCapacity := 0
 	for _, floor := range req.Floors {
-		totalCapacity += floor.SeatCapacity
+		totalCapacity += len(floor.Seats)
 	}
 
 	if totalCapacity > 100 {
@@ -82,11 +71,11 @@ func (s *BusServiceImpl) CreateBus(ctx context.Context, req *model.CreateBusRequ
 	bus := &model.Bus{
 		PlateNumber:  req.PlateNumber,
 		Model:        req.Model,
-		BusType:      req.BusType, // Raw string: standard, vip, sleeper, double_decker
+		BusType:      req.BusType,
 		SeatCapacity: totalCapacity,
 		Amenities:    req.Amenities,
-		IsActive:     true,
-		Seats:        s.generateSeatsForBus(req.Floors),
+		IsActive:     req.IsActive,
+		Seats:        s.generateSeatsFromFloorConfig(req.Floors),
 	}
 
 	if err := s.busRepo.CreateBus(ctx, bus); err != nil {
@@ -96,43 +85,51 @@ func (s *BusServiceImpl) CreateBus(ctx context.Context, req *model.CreateBusRequ
 	return bus, nil
 }
 
-func (s *BusServiceImpl) generateSeatsForBus(floors []model.FloorConfig) []model.Seat {
+// generateSeatsFromFloorConfig creates seats based on individual seat configurations
+func (s *BusServiceImpl) generateSeatsFromFloorConfig(floors []model.FloorConfig) []model.Seat {
 	seats := make([]model.Seat, 0)
-	rowNames := []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N"}
+	rowNames := []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T"}
 
 	for _, floorConfig := range floors {
-		seatsPerRow := 4
-		if floorConfig.SeatCapacity > 40 {
-			seatsPerRow = 5
-		}
+		// Create map to detect duplicate seat positions
+		seatPositions := make(map[string]bool)
 
-		floorSeatCount := 0
-		for rowIdx := 0; rowIdx < len(rowNames) && floorSeatCount < floorConfig.SeatCapacity; rowIdx++ {
-			for seatNum := 1; seatNum <= seatsPerRow && floorSeatCount < floorConfig.SeatCapacity; seatNum++ {
-				seatType := constants.SeatTypeStandard
-
-				// First and last rows are premium (VIP)
-				if rowIdx == 0 || rowIdx == len(rowNames)-1 {
-					seatType = constants.SeatTypeVIP
-				}
-
-				// Add floor prefix to seat number if multiple floors
-				seatNumber := fmt.Sprintf("%s%d", rowNames[rowIdx], seatNum)
-				if len(floors) > 1 {
-					seatNumber = fmt.Sprintf("F%d-%s%d", floorConfig.Floor, rowNames[rowIdx], seatNum)
-				}
-
-				seat := model.Seat{
-					SeatNumber:  seatNumber,
-					SeatType:    seatType,
-					Row:         rowIdx + 1,
-					Column:      seatNum,
-					Floor:       floorConfig.Floor,
-					IsAvailable: true,
-				}
-				seats = append(seats, seat)
-				floorSeatCount++
+		for _, seatConfig := range floorConfig.Seats {
+			// Check for duplicate positions
+			posKey := fmt.Sprintf("%d-%d", seatConfig.Row, seatConfig.Column)
+			if seatPositions[posKey] {
+				// Skip duplicates (or could return error)
+				continue
 			}
+			seatPositions[posKey] = true
+
+			// Validate seat position is within floor boundaries
+			if seatConfig.Row > floorConfig.Rows || seatConfig.Column > floorConfig.Columns {
+				// Skip invalid positions (or could return error)
+				continue
+			}
+
+			// Generate seat number
+			seatNumber := fmt.Sprintf("%s%d", rowNames[seatConfig.Row-1], seatConfig.Column)
+			if len(floors) > 1 {
+				seatNumber = fmt.Sprintf("F%d-%s%d", floorConfig.Floor, rowNames[seatConfig.Row-1], seatConfig.Column)
+			}
+
+			seat := model.Seat{
+				SeatNumber:  seatNumber,
+				SeatType:    seatConfig.SeatType,
+				Row:         seatConfig.Row,
+				Column:      seatConfig.Column,
+				Floor:       floorConfig.Floor,
+				IsAvailable: true,
+			}
+
+			// Use custom price multiplier if provided, otherwise use default from seat type
+			if seatConfig.PriceMultiplier != nil {
+				seat.PriceMultiplier = *seatConfig.PriceMultiplier
+			}
+
+			seats = append(seats, seat)
 		}
 	}
 
@@ -159,13 +156,6 @@ func (s *BusServiceImpl) UpdateBus(ctx context.Context, id uuid.UUID, req *model
 
 	if req.BusType != nil {
 		bus.BusType = *req.BusType
-	}
-
-	if req.SeatCapacity != nil {
-		if *req.SeatCapacity <= 0 || *req.SeatCapacity > 100 {
-			return nil, ginext.NewBadRequestError("seat capacity must be between 1 and 100")
-		}
-		bus.SeatCapacity = *req.SeatCapacity
 	}
 
 	if req.Amenities != nil {

@@ -10,13 +10,13 @@ import (
 )
 
 type RouteHandler interface {
-	GetRoute(r *ginext.Request) (*ginext.Response, error)
-	ListRoutes(r *ginext.Request) (*ginext.Response, error)
+	GetByID(r *ginext.Request) (*ginext.Response, error)
+	GetList(r *ginext.Request) (*ginext.Response, error)
 	SearchRoutes(r *ginext.Request) (*ginext.Response, error)
 
-	CreateRoute(r *ginext.Request) (*ginext.Response, error)
-	UpdateRoute(r *ginext.Request) (*ginext.Response, error)
-	DeleteRoute(r *ginext.Request) (*ginext.Response, error)
+	Create(r *ginext.Request) (*ginext.Response, error)
+	Update(r *ginext.Request) (*ginext.Response, error)
+	Delete(r *ginext.Request) (*ginext.Response, error)
 }
 
 type RouteHandlerImpl struct {
@@ -29,9 +29,9 @@ func NewRouteHandler(service service.RouteService) RouteHandler {
 	}
 }
 
-// GetRoute godoc
-// @Summary Get route by ID
-// @Description Get detailed information about a specific route
+// GetByID godoc
+// @Summary GetByID route by ID
+// @Description GetByID detailed information about a specific route
 // @Tags routes
 // @Accept json
 // @Produce json
@@ -40,7 +40,7 @@ func NewRouteHandler(service service.RouteService) RouteHandler {
 // @Failure 400 {object} ginext.Response "Invalid route ID"
 // @Failure 404 {object} ginext.Response "Route not found"
 // @Router /api/v1/routes/{id} [get]
-func (h *RouteHandlerImpl) GetRoute(r *ginext.Request) (*ginext.Response, error) {
+func (h *RouteHandlerImpl) GetByID(r *ginext.Request) (*ginext.Response, error) {
 	idStr := r.GinCtx.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -56,7 +56,7 @@ func (h *RouteHandlerImpl) GetRoute(r *ginext.Request) (*ginext.Response, error)
 	return ginext.NewSuccessResponse(model.ToRouteResponse(route)), nil
 }
 
-// ListRoutes godoc
+// GetList godoc
 // @Summary List routes
 // @Description Get a paginated list of routes, optionally filtered by operator
 // @Tags routes
@@ -69,7 +69,7 @@ func (h *RouteHandlerImpl) GetRoute(r *ginext.Request) (*ginext.Response, error)
 // @Failure 400 {object} ginext.Response "Invalid request"
 // @Failure 500 {object} ginext.Response "Internal server error"
 // @Router /api/v1/routes [get]
-func (h *RouteHandlerImpl) ListRoutes(r *ginext.Request) (*ginext.Response, error) {
+func (h *RouteHandlerImpl) GetList(r *ginext.Request) (*ginext.Response, error) {
 	var req model.ListRoutesRequest
 	if err := r.GinCtx.ShouldBindQuery(&req); err != nil {
 		return nil, ginext.NewBadRequestError(err.Error())
@@ -111,7 +111,7 @@ func (h *RouteHandlerImpl) SearchRoutes(r *ginext.Request) (*ginext.Response, er
 	return ginext.NewSuccessResponse(model.ToRouteResponseList(routes)), nil
 }
 
-// CreateRoute godoc
+// Create godoc
 // @Summary Create a new route
 // @Description Create a new route with origin, destination, and distance information
 // @Tags routes
@@ -122,14 +122,14 @@ func (h *RouteHandlerImpl) SearchRoutes(r *ginext.Request) (*ginext.Response, er
 // @Failure 400 {object} ginext.Response "Invalid request"
 // @Failure 500 {object} ginext.Response "Internal server error"
 // @Router /api/v1/routes [post]
-func (h *RouteHandlerImpl) CreateRoute(r *ginext.Request) (*ginext.Response, error) {
+func (h *RouteHandlerImpl) Create(r *ginext.Request) (*ginext.Response, error) {
 	var req model.CreateRouteRequest
 	if err := r.GinCtx.ShouldBindJSON(&req); err != nil {
 		log.Debug().Err(err).Msg("JSON binding failed")
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
-	route, err := h.service.CreateRoute(r.Context(), &req)
+	route, err := h.service.Create(r.Context(), &req)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create route")
 		return nil, err
@@ -138,7 +138,7 @@ func (h *RouteHandlerImpl) CreateRoute(r *ginext.Request) (*ginext.Response, err
 	return ginext.NewSuccessResponse(model.ToRouteResponse(route)), nil
 }
 
-// UpdateRoute godoc
+// Update godoc
 // @Summary Update route
 // @Description Update route information such as origin, destination, or distance
 // @Tags routes
@@ -150,7 +150,7 @@ func (h *RouteHandlerImpl) CreateRoute(r *ginext.Request) (*ginext.Response, err
 // @Failure 400 {object} ginext.Response "Invalid request"
 // @Failure 500 {object} ginext.Response "Internal server error"
 // @Router /api/v1/routes/{id} [put]
-func (h *RouteHandlerImpl) UpdateRoute(r *ginext.Request) (*ginext.Response, error) {
+func (h *RouteHandlerImpl) Update(r *ginext.Request) (*ginext.Response, error) {
 	idStr := r.GinCtx.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -163,7 +163,7 @@ func (h *RouteHandlerImpl) UpdateRoute(r *ginext.Request) (*ginext.Response, err
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
-	route, err := h.service.UpdateRoute(r.Context(), id, &req)
+	route, err := h.service.Update(r.Context(), id, &req)
 	if err != nil {
 		log.Error().Err(err).Str("route_id", idStr).Msg("Failed to update route")
 		return nil, err
@@ -172,7 +172,7 @@ func (h *RouteHandlerImpl) UpdateRoute(r *ginext.Request) (*ginext.Response, err
 	return ginext.NewSuccessResponse(model.ToRouteResponse(route)), nil
 }
 
-// DeleteRoute godoc
+// Delete godoc
 // @Summary Delete route
 // @Description Delete a route by ID
 // @Tags routes
@@ -183,15 +183,14 @@ func (h *RouteHandlerImpl) UpdateRoute(r *ginext.Request) (*ginext.Response, err
 // @Failure 400 {object} ginext.Response "Invalid route ID"
 // @Failure 500 {object} ginext.Response "Internal server error"
 // @Router /api/v1/routes/{id} [delete]
-func (h *RouteHandlerImpl) DeleteRoute(r *ginext.Request) (*ginext.Response, error) {
+func (h *RouteHandlerImpl) Delete(r *ginext.Request) (*ginext.Response, error) {
 	idStr := r.GinCtx.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		return nil, ginext.NewBadRequestError("invalid route ID")
 	}
 
-	err = h.service.DeleteRoute(r.Context(), id)
-	if err != nil {
+	if err = h.service.Delete(r.Context(), id); err != nil {
 		log.Error().Err(err).Str("route_id", idStr).Msg("Failed to delete route")
 		return nil, err
 	}

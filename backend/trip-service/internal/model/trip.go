@@ -88,7 +88,7 @@ type RouteDetail struct {
 	ID              uuid.UUID `json:"id"`
 	Origin          string    `json:"origin"`
 	Destination     string    `json:"destination"`
-	DistanceKm      int       `json:"distance_km"`
+	DistanceKm      float64   `json:"distance_km"`
 	DurationMinutes int       `json:"duration_minutes"`
 }
 
