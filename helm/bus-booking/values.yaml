@@ -99,7 +99,7 @@ services:
   notification-service:
     containerName: notification-service
     image: npkhang22/bb-notification-service
-    tag: notification-service-c2940d0
+    tag: notification-service-83414b1
     port: 8080
     env:
       SERVICE_NAME: 'notification-service'
