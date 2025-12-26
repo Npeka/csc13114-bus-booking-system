@@ -43,18 +43,18 @@ type AuthService interface {
 
 type AuthServiceImpl struct {
 	config             *config.Config
-	userRepo           repository.UserRepository
-	jwtManager         utils.JWTManager
-	firebaseAuth       FirebaseAuthClient
+	jwtManager         JWTManager
+	firebaseAuth       FirebaseAuth
 	tokenManager       TokenManager
 	redisClient        db.RedisManager
+	userRepo           repository.UserRepository
 	notificationClient client.NotificationClient
 }
 
 func NewAuthService(
 	config *config.Config,
-	jwtManager utils.JWTManager,
-	firebaseAuth FirebaseAuthClient,
+	jwtManager JWTManager,
+	firebaseAuth FirebaseAuth,
 	tokenManager TokenManager,
 	userRepo repository.UserRepository,
 	redisClient db.RedisManager,
