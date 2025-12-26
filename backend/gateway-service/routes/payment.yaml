@@ -1,36 +1,59 @@
 service: "payment"
 routes:
-  - path: "/api/v1/transactions"
-    methods: ["POST"]
-    auth:
-      required: true
-
-  - path: "/api/v1/transactions/:id"
+  # Public routes (no auth)
+  - path: "/api/v1/constants"
     methods: ["GET"]
-    auth:
-      required: true
-
-  - path: "/api/v1/transactions/:id/status"
-    methods: ["GET"]
-    auth:
-      required: true
 
   - path: "/api/v1/transactions/webhook"
     methods: ["POST"]
 
-  - path: "/api/v1/admin/transactions"
+  # User routes (auth required)
+  - path: "/api/v1/bank-accounts"
+    methods: ["GET", "POST"]
+    auth:
+      required: true
+
+  - path: "/api/v1/bank-accounts/:id"
+    methods: ["PUT", "DELETE"]
+    auth:
+      required: true
+
+  - path: "/api/v1/bank-accounts/:id/set-primary"
+    methods: ["POST"]
+    auth:
+      required: true
+
+  - path: "/api/v1/refunds"
+    methods: ["POST"]
+    auth:
+      required: true
+
+  # Admin routes (auth + role required)
+  - path: "/api/v1/transactions"
     methods: ["GET"]
     auth:
       required: true
       roles: ["admin"]
 
-  - path: "/api/v1/admin/transactions/:id"
+  - path: "/api/v1/transactions/stats"
     methods: ["GET"]
     auth:
       required: true
       roles: ["admin"]
 
-  - path: "/api/v1/admin/transactions/:id/refund"
+  - path: "/api/v1/refunds"
+    methods: ["GET"]
+    auth:
+      required: true
+      roles: ["admin"]
+
+  - path: "/api/v1/refunds/:id"
+    methods: ["PUT"]
+    auth:
+      required: true
+      roles: ["admin"]
+
+  - path: "/api/v1/refunds/export"
     methods: ["POST"]
     auth:
       required: true
