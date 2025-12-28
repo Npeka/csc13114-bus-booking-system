@@ -1,5 +1,42 @@
 definitions:
-  bus-booking_payment-service_internal_model.CreatePaymentLinkRequest:
+  bus-booking_payment-service_internal_model.BankAccountRequest:
+    properties:
+      account_holder:
+        maxLength: 100
+        minLength: 1
+        type: string
+      account_number:
+        type: string
+      bank_code:
+        type: string
+    required:
+    - account_holder
+    - account_number
+    - bank_code
+    type: object
+  bus-booking_payment-service_internal_model.BankAccountResponse:
+    properties:
+      account_holder:
+        type: string
+      account_number:
+        type: string
+      bank_code:
+        type: string
+      bank_name:
+        description: Resolved from BankCode
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      is_primary:
+        type: boolean
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  bus-booking_payment-service_internal_model.CreateTransactionRequest:
     properties:
       amount:
         type: integer
@@ -8,6 +45,10 @@ definitions:
       currency:
         $ref: '#/definitions/bus-booking_payment-service_internal_model.Currency'
       description:
+        type: string
+      expires_at:
+        type: string
+      id:
         type: string
       payment_method:
         $ref: '#/definitions/bus-booking_payment-service_internal_model.PaymentMethod'
@@ -23,6 +64,16 @@ definitions:
     type: string
     x-enum-varnames:
     - CurrencyVND
+  bus-booking_payment-service_internal_model.ExportRefundsRequest:
+    properties:
+      refund_ids:
+        items:
+          type: string
+        minItems: 1
+        type: array
+    required:
+    - refund_ids
+    type: object
   bus-booking_payment-service_internal_model.PaymentMethod:
     enum:
     - PAYOS
@@ -77,6 +128,68 @@ definitions:
       virtualAccountNumber:
         type: string
     type: object
+  bus-booking_payment-service_internal_model.RefundRequest:
+    properties:
+      booking_id:
+        type: string
+      reason:
+        maxLength: 500
+        minLength: 10
+        type: string
+      refund_amount:
+        type: integer
+    required:
+    - booking_id
+    - reason
+    - refund_amount
+    type: object
+  bus-booking_payment-service_internal_model.RefundResponse:
+    properties:
+      account_holder:
+        type: string
+      account_number:
+        type: string
+      bank_code:
+        description: User bank account info (for export)
+        type: string
+      bank_name:
+        type: string
+      booking_id:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      original_transaction_id:
+        description: For compatibility
+        type: string
+      processed_at:
+        type: string
+      processed_by:
+        type: string
+      refund_amount:
+        type: integer
+      refund_reason:
+        type: string
+      refund_status:
+        $ref: '#/definitions/bus-booking_payment-service_internal_model.RefundStatus'
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  bus-booking_payment-service_internal_model.RefundStatus:
+    enum:
+    - PENDING
+    - PROCESSING
+    - COMPLETED
+    - REJECTED
+    type: string
+    x-enum-varnames:
+    - RefundStatusPending
+    - RefundStatusProcessing
+    - RefundStatusCompleted
+    - RefundStatusRejected
   bus-booking_payment-service_internal_model.TransactionResponse:
     properties:
       amount:
@@ -122,6 +235,18 @@ definitions:
     - TransactionStatusExpired
     - TransactionStatusProcessing
     - TransactionStatusFailed
+  bus-booking_payment-service_internal_model.UpdateRefundStatusRequest:
+    properties:
+      status:
+        allOf:
+        - $ref: '#/definitions/bus-booking_payment-service_internal_model.RefundStatus'
+        enum:
+        - PROCESSING
+        - COMPLETED
+        - REJECTED
+    required:
+    - status
+    type: object
   ginext.ErrorBody:
     properties:
       message:
@@ -171,6 +296,553 @@ info:
   title: Payment Service API
   version: "1.0"
 paths:
+  /api/v1/bank-accounts:
+    get:
+      consumes:
+      - application/json
+      description: Get all bank accounts of the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/ginext.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/bus-booking_payment-service_internal_model.BankAccountResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: Get my bank accounts
+      tags:
+      - bank-accounts
+    post:
+      consumes:
+      - application/json
+      description: Create a new bank account for the authenticated user
+      parameters:
+      - description: Bank account details
+        in: body
+        name: account
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_payment-service_internal_model.BankAccountRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/ginext.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bus-booking_payment-service_internal_model.BankAccountResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: Create a bank account
+      tags:
+      - bank-accounts
+  /api/v1/bank-accounts/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a bank account of the authenticated user
+      parameters:
+      - description: Bank Account ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: Delete a bank account
+      tags:
+      - bank-accounts
+    put:
+      consumes:
+      - application/json
+      description: Update a bank account of the authenticated user
+      parameters:
+      - description: Bank Account ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Bank account details
+        in: body
+        name: account
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_payment-service_internal_model.BankAccountRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/ginext.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bus-booking_payment-service_internal_model.BankAccountResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: Update a bank account
+      tags:
+      - bank-accounts
+  /api/v1/bank-accounts/{id}/set-primary:
+    post:
+      consumes:
+      - application/json
+      description: Set a bank account as the primary account for refunds
+      parameters:
+      - description: Bank Account ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: Set primary bank account
+      tags:
+      - bank-accounts
+  /api/v1/constants:
+    get:
+      consumes:
+      - application/json
+      description: Get constants by type (banks). Returns all types if type parameter
+        is not specified.
+      parameters:
+      - description: Constant type
+        enum:
+        - banks
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Constants
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "400":
+          description: Invalid type parameter
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: Get constants
+      tags:
+      - constants
+  /api/v1/refunds:
+    get:
+      consumes:
+      - application/json
+      description: List refund transactions with filters
+      parameters:
+      - description: Refund status
+        enum:
+        - PENDING
+        - PROCESSING
+        - COMPLETED
+        - REJECTED
+        in: query
+        name: status
+        type: string
+      - description: Start date (RFC3339)
+        in: query
+        name: start_date
+        type: string
+      - description: End date (RFC3339)
+        in: query
+        name: end_date
+        type: string
+      - default: 20
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: List refunds (Admin)
+      tags:
+      - admin
+    post:
+      consumes:
+      - application/json
+      description: Create a refund request for a cancelled booking
+      parameters:
+      - description: Refund request
+        in: body
+        name: refund
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_payment-service_internal_model.RefundRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/ginext.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bus-booking_payment-service_internal_model.RefundResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: Create a refund request
+      tags:
+      - refunds
+  /api/v1/refunds/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Update the status of a refund transaction
+      parameters:
+      - description: Refund Transaction ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Status update request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_payment-service_internal_model.UpdateRefundStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: Update refund status (Admin)
+      tags:
+      - admin
+  /api/v1/refunds/booking/{booking_id}:
+    get:
+      consumes:
+      - application/json
+      description: Get refund information for a specific booking
+      parameters:
+      - description: Booking ID
+        in: path
+        name: booking_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/ginext.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bus-booking_payment-service_internal_model.RefundResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: Get refund by booking ID
+      tags:
+      - refunds
+  /api/v1/refunds/export:
+    post:
+      consumes:
+      - application/json
+      description: Export selected refund transactions to an Excel file
+      parameters:
+      - description: Export request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_payment-service_internal_model.ExportRefundsRequest'
+      produces:
+      - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+      responses:
+        "200":
+          description: Excel file
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: Export refunds to Excel (Admin)
+      tags:
+      - admin
+  /api/v1/transactions:
+    get:
+      consumes:
+      - application/json
+      description: List all transactions with filters
+      parameters:
+      - description: Transaction type
+        enum:
+        - IN
+        - OUT
+        in: query
+        name: transaction_type
+        type: string
+      - description: Transaction status
+        in: query
+        name: status
+        type: string
+      - description: Refund status
+        in: query
+        name: refund_status
+        type: string
+      - description: Start date (RFC3339)
+        in: query
+        name: start_date
+        type: string
+      - description: End date (RFC3339)
+        in: query
+        name: end_date
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: List all transactions (Admin)
+      tags:
+      - admin
+    post:
+      consumes:
+      - application/json
+      description: Create a payment link via PayOS for a booking
+      parameters:
+      - description: Payment creation request
+        in: body
+        name: transaction
+        required: true
+        schema:
+          $ref: '#/definitions/bus-booking_payment-service_internal_model.CreateTransactionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/ginext.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/bus-booking_payment-service_internal_model.TransactionResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ginext.Response'
+      summary: Create a payment link
+      tags:
+      - transactions
   /api/v1/transactions/{id}:
     get:
       consumes:
@@ -242,41 +914,61 @@ paths:
       summary: Cancel a payment
       tags:
       - transactions
-  /api/v1/transactions/payment-link:
-    post:
+  /api/v1/transactions/stats:
+    get:
       consumes:
       - application/json
-      description: Create a payment link via PayOS for a booking
+      description: Get transaction stats with filters
       parameters:
-      - description: Payment creation request
-        in: body
-        name: transaction
-        required: true
-        schema:
-          $ref: '#/definitions/bus-booking_payment-service_internal_model.CreatePaymentLinkRequest'
+      - description: Transaction type
+        enum:
+        - IN
+        - OUT
+        in: query
+        name: transaction_type
+        type: string
+      - description: Transaction status
+        in: query
+        name: status
+        type: string
+      - description: Refund status
+        in: query
+        name: refund_status
+        type: string
+      - description: Start date (RFC3339)
+        in: query
+        name: start_date
+        type: string
+      - description: End date (RFC3339)
+        in: query
+        name: end_date
+        type: string
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
-            allOf:
-            - $ref: '#/definitions/ginext.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/bus-booking_payment-service_internal_model.TransactionResponse'
-              type: object
+            $ref: '#/definitions/ginext.Response'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ginext.Response'
+        "403":
+          description: Forbidden
           schema:
             $ref: '#/definitions/ginext.Response'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/ginext.Response'
-      summary: Create a payment link
+      summary: Get transaction stats (Admin)
       tags:
-      - transactions
+      - admin
   /api/v1/transactions/webhook:
     post:
       consumes:
