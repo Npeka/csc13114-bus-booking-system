@@ -28,6 +28,11 @@ routes:
     auth:
       required: true
 
+  - path: "/api/v1/refunds/booking/:booking_id"
+    methods: ["GET"]
+    auth:
+      required: true
+
   # Admin routes (auth + role required)
   - path: "/api/v1/transactions"
     methods: ["GET"]
