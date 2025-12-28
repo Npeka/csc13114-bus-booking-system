@@ -39,7 +39,19 @@ jobs:
           make fmt-check
           make vet
           make lint
-          make test
+      - name: Run tests with coverage check
+        working-directory: backend/user-service
+        run: |
+          OUTPUT=$(go test ./internal/service -cover)
+          echo "$OUTPUT"
+          COVERAGE=$(echo "$OUTPUT" | grep -oP 'coverage: \K[0-9.]+' || echo "0")
+          echo "Coverage: ${COVERAGE}%"
+          if (( $(echo "$COVERAGE < 70" | bc -l) )); then
+            echo "[FAIL] Coverage ${COVERAGE}% is below 70% threshold"
+            exit 1
+          else
+            echo "[PASS] Coverage ${COVERAGE}% meets the 70% threshold"
+          fi
 
   cd:
     name: ${{ inputs.service-changed == 'true' && '✓ CD - user-service' || '⊘ CD - user-service (skipped)' }}

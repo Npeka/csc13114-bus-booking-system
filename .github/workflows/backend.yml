@@ -6,11 +6,11 @@ on:
     paths:
       - 'backend/**'
       - '.github/workflows/**'
-  pull_request:
-    branches: [main, develop]
-    paths:
-      - 'backend/**'
-      - '.github/workflows/**'
+  # pull_request:
+  #   branches: [main, develop]
+  #   paths:
+  #     - 'backend/**'
+  #     - '.github/workflows/**'
 
 permissions:
   contents: write
