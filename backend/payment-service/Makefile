@@ -54,3 +54,6 @@ migrate-reset:
 
 migrate-version:
 	migrate -path migrations -database "$(DB_URL)" version
+
+migrate-force:
+	migrate -path migrations -database "$(DB_URL)" force $(version)
