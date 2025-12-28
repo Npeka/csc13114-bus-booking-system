@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@/lib/test-utils";
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { useAuthStore } from "@/lib/stores/auth-store";
-import { hasValidSession } from "@/lib/api/auth-service";
+import { hasValidSession } from "@/lib/api/user";
 import { Role } from "@/lib/auth/roles";
 import { createMockUser, createMockAdmin } from "@/lib/test-utils";
 import { routerMocks } from "@/jest.setup";
@@ -119,8 +119,8 @@ describe("AuthGuard component", () => {
     });
 
     render(
-      <AuthGuard requiredRole={Role.OPERATOR}>
-        <div>Operator Content</div>
+      <AuthGuard requiredRole={Role.ADMIN}>
+        <div>Admin Content</div>
       </AuthGuard>,
     );
 

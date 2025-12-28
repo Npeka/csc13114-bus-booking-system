@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@/lib/test-utils";
 import { AuthenticatedTemplate } from "@/components/auth/authenticated-template";
 import { useAuthStore } from "@/lib/stores/auth-store";
-import { hasValidSession } from "@/lib/api/auth-service";
+import { hasValidSession } from "@/lib/api/user/auth-service";
 import { createMockUser } from "@/lib/test-utils";
 import { act } from "react";
 
