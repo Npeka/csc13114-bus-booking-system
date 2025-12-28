@@ -21,11 +21,17 @@ type Transaction struct {
 	QRCode          string            `gorm:"type:text" json:"qr_code,omitempty"`
 	Reference       string            `gorm:"type:varchar(255)" json:"reference,omitempty"`
 	TransactionTime *int64            `json:"transaction_time,omitempty"`
+
+	// Transaction type and refund fields
+	TransactionType TransactionType `gorm:"type:varchar(10);not null;default:'IN';index" json:"transaction_type"`
+	RefundStatus    *RefundStatus   `gorm:"type:varchar(20);index" json:"refund_status,omitempty"`
+	RefundAmount    *int            `json:"refund_amount,omitempty"`
 }
 
 type Currency string
 type PaymentMethod string
 type TransactionStatus string
+type TransactionType string
 
 const (
 	CurrencyVND Currency = "VND"
@@ -39,6 +45,9 @@ const (
 	TransactionStatusExpired    TransactionStatus = "EXPIRED"
 	TransactionStatusProcessing TransactionStatus = "PROCESSING"
 	TransactionStatusFailed     TransactionStatus = "FAILED"
+
+	TransactionTypeIn  TransactionType = "IN"
+	TransactionTypeOut TransactionType = "OUT"
 )
 
 func (Transaction) TableName() string {
@@ -75,4 +84,14 @@ type TransactionResponse struct {
 	Status        TransactionStatus `json:"status"`
 	CheckoutURL   string            `json:"checkout_url,omitempty"`
 	QRCode        string            `json:"qr_code,omitempty"`
+}
+
+// TransactionListQuery represents query parameters for listing transactions
+type TransactionListQuery struct {
+	PaginationRequest
+	TransactionType *TransactionType   `form:"transaction_type"`
+	Status          *TransactionStatus `form:"status"`
+	RefundStatus    *RefundStatus      `form:"refund_status"`
+	StartDate       *time.Time         `form:"start_date"`
+	EndDate         *time.Time         `form:"end_date"`
 }
