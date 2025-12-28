@@ -1,4 +1,4 @@
-import apiClient, { ApiResponse } from "./client";
+import apiClient, { ApiResponse } from "../client";
 
 /**
  * Verify OTP for password reset

@@ -17,7 +17,7 @@ import {
   FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { loginWithGoogle, loginWithEmail } from "@/lib/api/auth-service";
+import { loginWithGoogle, loginWithEmail } from "@/lib/api/user/auth-service";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { isAdmin } from "@/lib/auth/roles";
 import { Eye, EyeOff } from "lucide-react";

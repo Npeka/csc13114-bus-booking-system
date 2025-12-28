@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { loginWithPhone, verifyPhoneOTP } from "@/lib/api/auth-service";
+import { loginWithPhone, verifyPhoneOTP } from "@/lib/api/user/auth-service";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { isAdmin } from "@/lib/auth/roles";
 import { useAuthDialog } from "./hooks/use-auth-dialog";

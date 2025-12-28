@@ -1,10 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import {
-  lockSeats,
-  unlockSeats as unlockSeatsAPI,
-} from "@/lib/api/booking-service";
+import { lockSeats, unlockSeats as unlockSeatsAPI } from "@/lib/api/booking";
 
 const SESSION_STORAGE_KEY = "seat_lock_session";
 const LOCK_DURATION_SECONDS = 15 * 60; // 15 minutes

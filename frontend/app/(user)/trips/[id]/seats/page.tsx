@@ -12,8 +12,8 @@ import {
   type Seat,
 } from "@/components/trips/seat-map";
 import { Clock, MapPin, Star, Bus } from "lucide-react";
-import { getTripById, getBusSeats } from "@/lib/api/trip-service";
-import { getSeatAvailability } from "@/lib/api/booking-service";
+import { getTripById, getTripSeats } from "@/lib/api/trip";
+import { getSeatAvailability } from "@/lib/api/booking";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { getDisplayName, getValue } from "@/lib/utils";
@@ -32,48 +32,31 @@ export default function SeatSelectionPage({
     queryFn: () => getTripById(params.id),
   });
 
-  // Fetch bus seats
-  const { data: busSeats, isLoading: seatsLoading } = useQuery({
-    queryKey: ["bus-seats", trip?.bus_id],
-    queryFn: () => getBusSeats(trip!.bus_id),
-    enabled: !!trip?.bus_id,
+  // Fetch trip seats (includes availability)
+  const { data: seatData, isLoading: seatsLoading } = useQuery({
+    queryKey: ["trip-seats", params.id],
+    queryFn: () => getTripSeats(params.id),
+    enabled: !!params.id,
   });
 
-  // Fetch seat availability
-  const { data: availability, isLoading: availabilityLoading } = useQuery({
-    queryKey: ["seat-availability", params.id],
-    queryFn: () => getSeatAvailability(params.id),
-  });
-
-  // Transform bus seats with availability status
+  // Transform seat data to match component needs
   const seats = useMemo<Seat[]>(() => {
-    if (!busSeats || !availability) return [];
+    if (!seatData?.seats) return [];
 
-    return busSeats.map((busSeat) => {
-      let status: "available" | "booked" | "reserved" = "available";
-
-      if (availability.booked_seats.includes(busSeat.id)) {
-        status = "booked";
-      } else if (availability.reserved_seats.includes(busSeat.id)) {
-        status = "reserved";
-      }
-
-      const seatType =
-        typeof busSeat.seat_type === "string"
-          ? busSeat.seat_type
-          : getValue(busSeat.seat_type);
-
-      return {
-        id: busSeat.id,
-        row: busSeat.row,
-        column: busSeat.column,
-        status,
-        type: seatType as "standard" | "vip" | "sleeper",
-        price: trip ? trip.base_price * busSeat.price_multiplier : 0,
-        label: busSeat.seat_number,
-      };
-    });
-  }, [busSeats, availability, trip]);
+    return seatData.seats.map((seatDetail) => ({
+      id: seatDetail.id,
+      row: 1, // getTripSeats doesn't return row/column info, will use simple layout
+      column: 1,
+      status: seatDetail.is_booked
+        ? ("booked" as const)
+        : seatDetail.is_locked
+          ? ("reserved" as const)
+          : ("available" as const),
+      type: seatDetail.seat_type as "standard" | "vip" | "sleeper",
+      price: seatDetail.price,
+      label: seatDetail.seat_code,
+    }));
+  }, [seatData]);
 
   const handleSeatSelect = (seatId: string) => {
     setSelectedSeats((prev) =>
@@ -98,7 +81,7 @@ export default function SeatSelectionPage({
     selectedSeats.includes(seat.id),
   );
 
-  if (tripLoading || seatsLoading || availabilityLoading) {
+  if (tripLoading || seatsLoading) {
     return (
       <div className="min-h-screen">
         <div className="border-b">

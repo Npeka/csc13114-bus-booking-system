@@ -15,9 +15,8 @@ import {
   Download,
   ArrowRight,
   Clock,
-  User,
 } from "lucide-react";
-import { getBookingById, downloadETicket } from "@/lib/api/booking-service";
+import { getBookingById, downloadETicket } from "@/lib/api/booking";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { toast } from "sonner";

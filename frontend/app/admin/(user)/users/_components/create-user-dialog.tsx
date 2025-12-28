@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { UserCreateRequest } from "@/lib/api/user-service";
+import type { UserCreateRequest } from "@/lib/api/user/user-service";
 
 interface CreateUserDialogProps {
   open: boolean;

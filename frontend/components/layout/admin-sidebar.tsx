@@ -60,11 +60,11 @@ const menuItems = [
     href: "/admin/users",
   },
   {
-    title: "Chuyến đi",
+    title: "Vận hành",
     icon: Calendar,
     items: [
       {
-        title: "Danh sách chuyến",
+        title: "Lịch trình",
         href: "/admin/trips",
       },
       {
@@ -72,7 +72,7 @@ const menuItems = [
         href: "/admin/routes",
       },
       {
-        title: "Xe",
+        title: "Quản lý xe",
         href: "/admin/buses",
       },
     ],
@@ -80,7 +80,16 @@ const menuItems = [
   {
     title: "Thanh toán",
     icon: DollarSign,
-    href: "/admin/payments",
+    items: [
+      {
+        title: "Giao dịch",
+        href: "/admin/transactions",
+      },
+      {
+        title: "Hoàn tiền",
+        href: "/admin/refunds",
+      },
+    ],
   },
   {
     title: "Thống kê",
@@ -137,7 +146,12 @@ export function AdminSidebar() {
             <SidebarMenu>
               {menuItems.map((item) =>
                 item.items ? (
-                  <Collapsible key={item.title} asChild defaultOpen={true}>
+                  <Collapsible
+                    key={item.title}
+                    asChild
+                    defaultOpen={true}
+                    className="group"
+                  >
                     <SidebarMenuItem>
                       <CollapsibleTrigger asChild>
                         <SidebarMenuButton
@@ -148,7 +162,7 @@ export function AdminSidebar() {
                         >
                           {item.icon && <item.icon />}
                           <span>{item.title}</span>
-                          <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                          <ChevronRight className="ml-auto h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-90" />
                         </SidebarMenuButton>
                       </CollapsibleTrigger>
                       <CollapsibleContent>

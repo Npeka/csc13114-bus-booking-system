@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -30,9 +34,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { createTrip, listRoutes, listBuses } from "@/lib/api/trip-service";
+import { createTrip, listRoutes, listBuses } from "@/lib/api";
 import type { Route } from "@/lib/types/trip";
 import PageHeader from "@/components/shared/admin/page-header";
+import { InfiniteSelect } from "@/components/ui/infinite-select";
 
 const tripFormSchema = z
   .object({
@@ -81,22 +86,52 @@ export default function NewTripPage() {
     },
   });
 
-  // Fetch routes
-  const { data: routesData, isLoading: routesLoading } = useQuery({
-    queryKey: ["routes"],
-    queryFn: () => listRoutes({ page_size: 100 }),
+  // Fetch routes with infinite scroll
+  const {
+    data: routesData,
+    isLoading: routesLoading,
+    hasNextPage: routeHasNextPage,
+    isFetchingNextPage: routeIsFetchingNextPage,
+    fetchNextPage: fetchRoutesNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["routes-infinite"],
+    queryFn: ({ pageParam = 1 }) =>
+      listRoutes({ page: pageParam, page_size: 20 }),
+    getNextPageParam: (lastPage) => {
+      if (!lastPage || !lastPage.total_pages) return undefined;
+      const currentPage = lastPage.page || 1;
+      return currentPage < lastPage.total_pages ? currentPage + 1 : undefined;
+    },
+    initialPageParam: 1,
   });
 
-  // Fetch buses (filtered by route's operator when route is selected)
-  const { data: busesData, isLoading: busesLoading } = useQuery({
-    queryKey: ["buses"],
-    queryFn: () => listBuses({ page_size: 5 }),
+  // Fetch buses with infinite scroll (when route selected)
+  const {
+    data: busesData,
+    isLoading: busesLoading,
+    hasNextPage: busHasNextPage,
+    isFetchingNextPage: busIsFetchingNextPage,
+    fetchNextPage: fetchBusesNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["buses-infinite", selectedRoute?.id],
+    queryFn: ({ pageParam = 1 }) =>
+      listBuses({ page: pageParam, page_size: 20 }),
+    getNextPageParam: (lastPage) => {
+      if (!lastPage || !lastPage.total_pages) return undefined;
+      const currentPage = lastPage.page || 1;
+      return currentPage < lastPage.total_pages ? currentPage + 1 : undefined;
+    },
     enabled: !!selectedRoute,
+    initialPageParam: 1,
   });
+
+  // Flatten paginated data
+  const flatRoutes =
+    routesData?.pages.flatMap((page) => page.routes || []) || [];
+  const flatBuses = busesData?.pages.flatMap((page) => page.buses || []) || [];
 
   const createMutation = useMutation({
     mutationFn: (data: TripFormValues) => {
-      // Append timezone offset (+07:00) for backend compatibility
       const departureDateTime = `${data.departure_date}T${data.departure_time}:00+07:00`;
       const arrivalDateTime = `${data.arrival_date}T${data.arrival_time}:00+07:00`;
 
@@ -120,8 +155,8 @@ export default function NewTripPage() {
 
   const handleRouteChange = (routeId: string) => {
     form.setValue("route_id", routeId);
-    form.setValue("bus_id", ""); // Reset bus selection
-    const route = routesData?.routes.find((r) => r.id === routeId);
+    form.setValue("bus_id", "");
+    const route = flatRoutes.find((r) => r.id === routeId);
     setSelectedRoute(route || null);
   };
 
@@ -153,40 +188,30 @@ export default function NewTripPage() {
                 Thông tin chuyến xe
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="grid gap-4 md:grid-cols-2">
               <FormField
                 control={form.control}
                 name="route_id"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Tuyến đường *</FormLabel>
-                    <Select
-                      onValueChange={handleRouteChange}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Chọn tuyến đường" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {routesLoading ? (
-                          <SelectItem value="loading" disabled>
-                            Đang tải...
-                          </SelectItem>
-                        ) : routesData?.routes.length === 0 ? (
-                          <SelectItem value="none" disabled>
-                            Không có tuyến đường
-                          </SelectItem>
-                        ) : (
-                          routesData?.routes.map((route) => (
-                            <SelectItem key={route.id} value={route.id}>
-                              {route.origin} → {route.destination}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <InfiniteSelect
+                        value={field.value}
+                        onValueChange={handleRouteChange}
+                        options={flatRoutes.map((route) => ({
+                          value: route.id,
+                          label: `${route.origin} → ${route.destination}`,
+                        }))}
+                        placeholder="Chọn tuyến đường"
+                        searchPlaceholder="Tìm tuyến..."
+                        emptyText="Không có tuyến đường"
+                        isLoading={routesLoading}
+                        hasNextPage={routeHasNextPage}
+                        isFetchingNextPage={routeIsFetchingNextPage}
+                        fetchNextPage={fetchRoutesNextPage}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -198,41 +223,26 @@ export default function NewTripPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Xe *</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      disabled={!selectedRoute}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue
-                            placeholder={
-                              !selectedRoute
-                                ? "Chọn tuyến đường trước"
-                                : "Chọn xe"
-                            }
-                          />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {busesLoading ? (
-                          <SelectItem value="loading" disabled>
-                            Đang tải...
-                          </SelectItem>
-                        ) : busesData?.buses.length === 0 ? (
-                          <SelectItem value="none" disabled>
-                            Không có xe khả dụng
-                          </SelectItem>
-                        ) : (
-                          busesData?.buses.map((bus) => (
-                            <SelectItem key={bus.id} value={bus.id}>
-                              {bus.model} - {bus.plate_number} (
-                              {bus.seat_capacity} chỗ)
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <InfiniteSelect
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        options={flatBuses.map((bus) => ({
+                          value: bus.id,
+                          label: `${bus.model} - ${bus.plate_number} (${bus.seat_capacity} chỗ)`,
+                        }))}
+                        placeholder={
+                          !selectedRoute ? "Chọn tuyến đường trước" : "Chọn xe"
+                        }
+                        searchPlaceholder="Tìm xe..."
+                        emptyText="Không có xe khả dụng"
+                        disabled={!selectedRoute}
+                        isLoading={busesLoading}
+                        hasNextPage={busHasNextPage}
+                        isFetchingNextPage={busIsFetchingNextPage}
+                        fetchNextPage={fetchBusesNextPage}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

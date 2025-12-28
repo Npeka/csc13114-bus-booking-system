@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SeatMap, type Seat } from "@/components/trips/seat-map";
-import { getTripById } from "@/lib/api/trip-service";
+import { getTripById } from "@/lib/api/trip/trip-service";
 import type { Trip, RouteStop } from "@/lib/types/trip";
 import { TripHeader } from "./_components/trip-header";
 import { RouteStops } from "./_components/route-stops";

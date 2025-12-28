@@ -7,7 +7,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { searchTrips, deleteTrip } from "@/lib/api/trip-service";
+import { searchTrips, deleteTrip } from "@/lib/api";
 import { TripFilters } from "./_components/trip-filters";
 import type { TripFilters as TripFiltersType } from "./_components/trip-filters";
 import { TripTable } from "./_components/trip-table";

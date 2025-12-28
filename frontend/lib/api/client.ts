@@ -88,7 +88,7 @@ apiClient.interceptors.response.use(
 
       try {
         // Import authService dynamically to avoid circular dependency
-        const { refreshAccessToken } = await import("./auth-service");
+        const { refreshAccessToken } = await import("./user/auth-service");
         const newAccessToken = await refreshAccessToken();
 
         if (newAccessToken && originalRequest?.headers) {
@@ -146,6 +146,17 @@ export interface ApiResponse<T = unknown> {
   };
   error?: {
     message: string;
+  };
+}
+
+// Paginated API response (when data is array)
+export interface PaginatedResponse<T = unknown> {
+  data: T[];
+  meta: {
+    page: number;
+    page_size: number;
+    total: number;
+    total_pages: number;
   };
 }
 

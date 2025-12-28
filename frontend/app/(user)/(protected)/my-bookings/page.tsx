@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { getUserBookings } from "@/lib/api/booking-service";
+import { getUserBookings } from "@/lib/api/booking/booking-service";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { format, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";

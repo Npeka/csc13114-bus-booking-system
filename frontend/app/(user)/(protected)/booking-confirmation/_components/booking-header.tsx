@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 interface BookingHeaderProps {
   bookingReference: string;
   transactionStatus?: string;
-  timeRemaining: number;
+  timeRemaining: number; // Now in seconds
   onCopy: () => void;
 }
 
@@ -14,6 +14,11 @@ export function BookingHeader({
   timeRemaining,
   onCopy,
 }: BookingHeaderProps) {
+  // Format time as MM:SS
+  const minutes = Math.floor(timeRemaining / 60);
+  const seconds = timeRemaining % 60;
+  const timeDisplay = `${minutes}:${String(seconds).padStart(2, "0")}`;
+
   return (
     <div className="mb-8 text-center">
       <div className="mb-4 flex justify-center">
@@ -38,7 +43,9 @@ export function BookingHeader({
         <div className="mt-3 flex items-center justify-center gap-2 text-orange-600 dark:text-orange-400">
           <AlertCircle className="h-4 w-4" />
           <span className="text-sm">
-            Vui lòng thanh toán trong {timeRemaining} phút để giữ chỗ
+            Vui lòng thanh toán trong{" "}
+            <span className="text-lg font-semibold">{timeDisplay}</span> để giữ
+            chỗ
           </span>
         </div>
       )}

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getBookingStats, getPopularTrips } from "@/lib/api/booking-service";
+import { getBookingStats, getPopularTrips } from "@/lib/api/booking";
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { vi } from "date-fns/locale";
 import { AnalyticsSummary } from "./_components/analytics-summary";

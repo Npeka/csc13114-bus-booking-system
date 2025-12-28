@@ -84,65 +84,81 @@ export default function RefundPolicyPage() {
             id="process"
             icon={GitPullRequest}
           >
+            <Alert className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Yêu cầu quan trọng</AlertTitle>
+              <AlertDescription>
+                Bạn cần cung cấp thông tin tài khoản ngân hàng trong Hồ sơ của
+                mình trước khi yêu cầu hoàn tiền.
+              </AlertDescription>
+            </Alert>
             <div className="relative ml-2 space-y-6 border-l-2 border-muted pl-6">
               <div className="relative">
                 <span className="absolute -left-[31px] flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
                   1
                 </span>
-                <h4 className="font-semibold">Gửi yêu cầu</h4>
+                <h4 className="font-semibold">Gửi yêu cầu hủy vé</h4>
                 <p className="text-sm text-muted-foreground">
-                  Đăng nhập, chọn vé cần hủy và xác nhận hủy vé.
+                  Đăng nhập, vào Hồ sơ để thêm thông tin tài khoản ngân hàng
+                  (nếu chưa có), sau đó chọn vé cần hủy và xác nhận.
                 </p>
               </div>
               <div className="relative">
                 <span className="absolute -left-[31px] flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
                   2
                 </span>
-                <h4 className="font-semibold">Xác nhận</h4>
+                <h4 className="font-semibold">Quản trị viên xem xét</h4>
                 <p className="text-sm text-muted-foreground">
-                  Hệ thống tự động tính toán số tiền hoàn và gửi email xác nhận.
+                  Đội ngũ quản trị sẽ kiểm tra yêu cầu, xác nhận điều kiện hoàn
+                  tiền và số tiền được hoàn lại.
                 </p>
               </div>
               <div className="relative">
                 <span className="absolute -left-[31px] flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
                   3
                 </span>
-                <h4 className="font-semibold">Hoàn tiền</h4>
+                <h4 className="font-semibold">Chuyển khoản ngân hàng</h4>
                 <p className="text-sm text-muted-foreground">
-                  Tiền được chuyển về tài khoản của bạn theo thời gian quy định.
+                  Sau khi duyệt, tiền sẽ được chuyển khoản vào tài khoản ngân
+                  hàng bạn đã đăng ký trong vòng 7-14 ngày làm việc.
                 </p>
               </div>
             </div>
           </PolicySection>
 
           <PolicySection title="Thời gian xử lý" id="timeline" icon={Clock}>
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="rounded-lg border p-4 text-center">
-                <div className="text-2xl font-bold text-primary">5-7</div>
-                <div className="text-xs tracking-wider text-muted-foreground uppercase">
-                  Ngày làm việc
-                </div>
-                <div className="mt-2 text-sm font-medium">Chuyển khoản</div>
-              </div>
-              <div className="rounded-lg border p-4 text-center">
-                <div className="text-2xl font-bold text-primary">3-5</div>
-                <div className="text-xs tracking-wider text-muted-foreground uppercase">
-                  Ngày làm việc
-                </div>
-                <div className="mt-2 text-sm font-medium">Ví điện tử</div>
-              </div>
-              <div className="rounded-lg border p-4 text-center">
-                <div className="text-2xl font-bold text-primary">7-14</div>
-                <div className="text-xs tracking-wider text-muted-foreground uppercase">
-                  Ngày làm việc
-                </div>
-                <div className="mt-2 text-sm font-medium">Thẻ tín dụng</div>
-              </div>
+            <div className="overflow-hidden rounded-lg border">
+              <table className="w-full">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-semibold">
+                      Phương thức hoàn tiền
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold">
+                      Thời gian hoàn tiền
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  <tr>
+                    <td className="px-4 py-3 text-sm">
+                      Chuyển khoản ngân hàng
+                    </td>
+                    <td className="px-4 py-3 text-sm font-medium">
+                      7-14 ngày làm việc
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            <p className="mt-4 text-center text-sm text-muted-foreground">
-              * Trong trường hợp đặc biệt, thời gian có thể kéo dài hơn. Chúng
-              tôi sẽ thông báo nếu có thay đổi.
-            </p>
+            <Alert className="mt-4">
+              <Clock className="h-4 w-4" />
+              <AlertDescription>
+                Hiện tại, chúng tôi chỉ hỗ trợ hoàn tiền qua chuyển khoản ngân
+                hàng. Vui lòng cung cấp thông tin tài khoản chính xác trong Hồ
+                sơ để nhận tiền hoàn.
+              </AlertDescription>
+            </Alert>
           </PolicySection>
 
           <PolicySection

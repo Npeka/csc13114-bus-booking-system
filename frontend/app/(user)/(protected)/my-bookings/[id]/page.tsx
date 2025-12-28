@@ -7,8 +7,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Download, Copy, Check, Calendar, Hash } from "lucide-react";
 import Link from "next/link";
-import { getBookingById, downloadETicket } from "@/lib/api/booking-service";
-import { getTripById } from "@/lib/api/trip-service";
+import {
+  getBookingById,
+  downloadETicket,
+} from "@/lib/api/booking/booking-service";
+import { getTripById } from "@/lib/api/trip/trip-service";
 import { toast } from "sonner";
 import type { BookingResponse } from "@/lib/types/booking";
 import type { Trip } from "@/lib/types/trip";
@@ -232,6 +235,7 @@ export default function BookingDetailPage({ params }: PageProps) {
           <div className="space-y-6">
             <PaymentInfoCard
               bookingId={booking.id}
+              bookingReference={booking.booking_reference}
               totalAmount={booking.total_amount}
               transactionStatus={booking.transaction_status}
               transaction={booking.transaction}

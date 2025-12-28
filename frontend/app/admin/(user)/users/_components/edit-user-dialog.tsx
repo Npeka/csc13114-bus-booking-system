@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import type { User } from "@/lib/stores/auth-store";
 import { UserStatus } from "@/lib/stores/auth-store";
-import type { UserUpdateRequest } from "@/lib/api/user-service";
+import type { UserUpdateRequest } from "@/lib/api/user/user-service";
 
 interface EditUserDialogProps {
   open: boolean;
