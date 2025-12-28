@@ -17,9 +17,11 @@ import (
 )
 
 type TransactionService interface {
-	Create(ctx context.Context, req *model.CreateTransactionRequest, userID uuid.UUID) (*model.TransactionResponse, error)
+	GetList(ctx context.Context, query *model.TransactionListQuery) ([]*model.TransactionResponse, int64, error)
+	GetStats(ctx context.Context) (*model.TransactionStats, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*model.TransactionResponse, error)
 	GetByBookingID(ctx context.Context, bookingID uuid.UUID) (*model.TransactionResponse, error)
+	Create(ctx context.Context, req *model.CreateTransactionRequest, userID uuid.UUID) (*model.TransactionResponse, error)
 	Cancel(ctx context.Context, transactionID uuid.UUID) (*model.TransactionResponse, error)
 	HandleWebhook(ctx context.Context, webhookMap map[string]interface{}, webhookData model.PaymentWebhookData) error
 }
@@ -40,6 +42,29 @@ func NewTransactionService(
 		bookingClient:   bookingClient,
 		payOSService:    payOSService,
 	}
+}
+
+func (s *TransactionServiceImpl) GetList(ctx context.Context, query *model.TransactionListQuery) ([]*model.TransactionResponse, int64, error) {
+	transactions, total, err := s.transactionRepo.GetList(ctx, query)
+	if err != nil {
+		return nil, 0, ginext.NewInternalServerError("failed to list transactions")
+	}
+
+	responses := make([]*model.TransactionResponse, len(transactions))
+	for i, tx := range transactions {
+		responses[i] = s.toTransactionResponse(tx)
+	}
+
+	return responses, total, nil
+}
+
+func (s *TransactionServiceImpl) GetStats(ctx context.Context) (*model.TransactionStats, error) {
+	stats, err := s.transactionRepo.GetStats(ctx)
+	if err != nil {
+		return nil, ginext.NewInternalServerError("failed to get transaction stats")
+	}
+
+	return stats, nil
 }
 
 func (s *TransactionServiceImpl) Create(ctx context.Context, req *model.CreateTransactionRequest, userID uuid.UUID) (*model.TransactionResponse, error) {

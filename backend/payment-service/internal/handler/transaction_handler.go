@@ -14,10 +14,13 @@ import (
 )
 
 type TransactionHandler interface {
-	Create(r *ginext.Request) (*ginext.Response, error)
-	HandleWebhook(r *ginext.Request) (*ginext.Response, error)
-	Cancel(r *ginext.Request) (*ginext.Response, error)
+	GetList(r *ginext.Request) (*ginext.Response, error)
 	GetByID(r *ginext.Request) (*ginext.Response, error)
+	GetStats(r *ginext.Request) (*ginext.Response, error)
+
+	Create(r *ginext.Request) (*ginext.Response, error)
+	Cancel(r *ginext.Request) (*ginext.Response, error)
+	HandleWebhook(r *ginext.Request) (*ginext.Response, error)
 }
 
 type TransactionHandlerImpl struct {
@@ -28,6 +31,71 @@ func NewTransactionHandler(service service.TransactionService) TransactionHandle
 	return &TransactionHandlerImpl{
 		service: service,
 	}
+}
+
+// GetList godoc
+// @Summary List all transactions (Admin)
+// @Description List all transactions with filters
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param transaction_type query string false "Transaction type" Enums(IN, OUT)
+// @Param status query string false "Transaction status"
+// @Param refund_status query string false "Refund status"
+// @Param start_date query string false "Start date (RFC3339)"
+// @Param end_date query string false "End date (RFC3339)"
+// @Param page query int false "Page number" default(1)
+// @Param page_size query int false "Page size" default(20)
+// @Success 200 {object} ginext.Response
+// @Failure 400 {object} ginext.Response
+// @Failure 401 {object} ginext.Response
+// @Failure 403 {object} ginext.Response
+// @Failure 500 {object} ginext.Response
+// @Router /api/v1/transactions [get]
+func (h *TransactionHandlerImpl) GetList(r *ginext.Request) (*ginext.Response, error) {
+	var query model.TransactionListQuery
+	if err := r.GinCtx.ShouldBindQuery(&query); err != nil {
+		log.Debug().Err(err).Msg("Query binding failed")
+		return nil, ginext.NewBadRequestError("Invalid query parameters")
+	}
+
+	// Normalize defaults
+	query.Normalize()
+
+	transactions, total, err := h.service.GetList(r.Context(), &query)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to list transactions")
+		return nil, err
+	}
+
+	return ginext.NewPaginatedResponse(transactions, query.Page, query.PageSize, total), nil
+}
+
+// GetStats godoc
+// @Summary Get transaction stats (Admin)
+// @Description Get transaction stats with filters
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param transaction_type query string false "Transaction type" Enums(IN, OUT)
+// @Param status query string false "Transaction status"
+// @Param refund_status query string false "Refund status"
+// @Param start_date query string false "Start date (RFC3339)"
+// @Param end_date query string false "End date (RFC3339)"
+// @Success 200 {object} ginext.Response
+// @Failure 400 {object} ginext.Response
+// @Failure 401 {object} ginext.Response
+// @Failure 403 {object} ginext.Response
+// @Failure 500 {object} ginext.Response
+// @Router /api/v1/transactions/stats [get]
+func (h *TransactionHandlerImpl) GetStats(r *ginext.Request) (*ginext.Response, error) {
+	stats, err := h.service.GetStats(r.Context())
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get transaction stats")
+		return nil, err
+	}
+
+	return ginext.NewSuccessResponse(stats), nil
 }
 
 // Create godoc
