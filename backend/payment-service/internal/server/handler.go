@@ -13,10 +13,16 @@ import (
 
 func (s *Server) buildHandler() http.Handler {
 	transactionRepo := repository.NewTransactionRepository(s.db.DB)
+	bankAccountRepo := repository.NewBankAccountRepository(s.db.DB)
+	refundRepo := repository.NewRefundRepository(s.db.DB) // NEW
 
 	// Initialize PayOS client
 	payosClient := service.NewPayOSService(s.cfg.PayOS)
 	bookingClient := client.NewBookingClient(s.cfg.ServiceName, s.cfg.External.BookingServiceURL)
+
+	// Initialize constants and Excel services
+	constantsService := service.NewConstantsService()
+	excelService := service.NewExcelService()
 
 	// Initialize services with PayOS client
 	transactionService := service.NewTransactionService(
@@ -25,7 +31,23 @@ func (s *Server) buildHandler() http.Handler {
 		payosClient,
 	)
 
+	bankAccountService := service.NewBankAccountService(
+		bankAccountRepo,
+		constantsService,
+	)
+
+	refundService := service.NewRefundService(
+		refundRepo, // NEW - first param
+		transactionRepo,
+		bankAccountRepo,
+		constantsService,
+		excelService,
+	)
+
 	transactionHandler := handler.NewTransactionHandler(transactionService)
+	bankAccountHandler := handler.NewBankAccountHandler(bankAccountService)
+	constantsHandler := handler.NewConstantsHandler(constantsService)
+	refundHandler := handler.NewRefundHandler(refundService)
 
 	if s.cfg.Server.IsProduction {
 		gin.SetMode(gin.ReleaseMode)
@@ -36,6 +58,9 @@ func (s *Server) buildHandler() http.Handler {
 	engine := gin.New()
 	router.SetupRoutes(engine, s.cfg, &router.Handlers{
 		TransactionHandler: transactionHandler,
+		BankAccountHandler: bankAccountHandler,
+		ConstantsHandler:   constantsHandler,
+		RefundHandler:      refundHandler,
 	})
 	return engine
 }
