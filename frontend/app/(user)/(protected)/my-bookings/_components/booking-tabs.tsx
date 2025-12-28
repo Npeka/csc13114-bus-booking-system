@@ -32,7 +32,7 @@ import {
   cancelBooking,
   downloadETicket,
   getUserBookings,
-} from "@/lib/api/booking-service";
+} from "@/lib/api/booking/booking-service";
 import { toast } from "sonner";
 import type { BookingResponse } from "@/lib/types/booking";
 import { PaginationWithLinks } from "@/components/ui/pagination-with-links";

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import * as React from "react";
+import { useState, useEffect } from "react";
 import {
   DndContext,
   closestCenter,
@@ -155,9 +156,17 @@ export function RouteStopsList({
   onReorder,
   isDeleting,
 }: RouteStopsListProps) {
-  const [localStops, setLocalStops] = useState(
-    [...(stops || [])].sort((a, b) => a.stop_order - b.stop_order),
+  // Use useMemo to derive sorted stops from props
+  const sortedStopsFromProps = React.useMemo(
+    () => [...(stops || [])].sort((a, b) => a.stop_order - b.stop_order),
+    [stops],
   );
+
+  // Local state for drag-drop optimistic updates
+  const [localStops, setLocalStops] =
+    React.useState<RouteStop[]>(sortedStopsFromProps);
+  // Track the last synced stops to avoid unnecessary re-renders
+  const lastSyncedStopsRef = React.useRef(sortedStopsFromProps);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -165,6 +174,15 @@ export function RouteStopsList({
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
+
+  // Sync when props change from server
+  React.useEffect(() => {
+    // Compare by reference first for performance
+    if (sortedStopsFromProps !== lastSyncedStopsRef.current) {
+      setLocalStops(sortedStopsFromProps);
+      lastSyncedStopsRef.current = sortedStopsFromProps;
+    }
+  }, [sortedStopsFromProps]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -185,16 +203,6 @@ export function RouteStopsList({
       onReorder?.(reorderedStops);
     }
   };
-
-  // Update local stops when props change
-  if (
-    JSON.stringify(stops.map((s) => s.id)) !==
-    JSON.stringify(localStops.map((s) => s.id))
-  ) {
-    setLocalStops(
-      [...(stops || [])].sort((a, b) => a.stop_order - b.stop_order),
-    );
-  }
 
   return (
     <Card>

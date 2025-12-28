@@ -27,7 +27,7 @@ import {
 import { User } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/lib/stores/auth-store";
-import { logout as authLogout } from "@/lib/api/auth-service";
+import { logout as authLogout } from "@/lib/api/user/auth-service";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 export default function AdminLayout({

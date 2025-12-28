@@ -8,9 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getBookingById } from "@/lib/api/booking-service";
-import { getTripById } from "@/lib/api/trip-service";
-import { useAuthStore } from "@/lib/stores/auth-store";
+import { getBookingById } from "@/lib/api/booking/booking-service";
+import { getTripById } from "@/lib/api/trip/trip-service";
 import { BookingHeader } from "./_components/booking-header";
 import { TripInfoSection } from "./_components/trip-info-section";
 import { PassengerInfoSection } from "./_components/passenger-info-section";
@@ -39,7 +38,7 @@ function BookingConfirmationContent() {
     enabled: !!booking?.trip_id,
   });
 
-  // Countdown timer
+  // Countdown timer - now in seconds
   useEffect(() => {
     if (!booking?.expires_at) return;
 
@@ -48,12 +47,12 @@ function BookingConfirmationContent() {
         ? new Date(booking.expires_at).getTime()
         : 0;
       const now = Date.now();
-      const diff = Math.max(0, Math.floor((expiresAt - now) / 1000 / 60));
+      const diff = Math.max(0, Math.floor((expiresAt - now) / 1000)); // Calculate in seconds
       setTimeRemaining(diff);
     };
 
     calculateTimeRemaining();
-    const interval = setInterval(calculateTimeRemaining, 60000); // Update every minute
+    const interval = setInterval(calculateTimeRemaining, 1000); // Update every second
 
     return () => clearInterval(interval);
   }, [booking?.expires_at]);
@@ -98,7 +97,9 @@ function BookingConfirmationContent() {
 
   const handleRetryPayment = async () => {
     try {
-      const { retryPayment } = await import("@/lib/api/booking-service");
+      const { retryPayment } = await import(
+        "@/lib/api/booking/booking-service"
+      );
       const updatedBooking = await retryPayment(booking.id);
 
       toast.success("Đã tạo link thanh toán mới!");

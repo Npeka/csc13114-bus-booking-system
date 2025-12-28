@@ -1,19 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
+import { Loader2, Edit2, Save, X, Camera } from "lucide-react";
 import { toast } from "sonner";
 import {
   getProfile,
   updateProfile,
   type UpdateProfileRequest,
-} from "@/lib/api/user-service";
+} from "@/lib/api/user/user-service";
 import { useAuthStore, type User } from "@/lib/stores/auth-store";
 import { ProfileSummary } from "./_components/profile-summary";
 import { ProfileDetails } from "./_components/profile-details";
+import BankAccountsSection from "./_components/bank-accounts-section";
 import { ROLE_LABELS } from "@/lib/auth/roles";
 
 export default function ProfilePage() {
@@ -225,6 +226,10 @@ export default function ProfilePage() {
             onSave={handleSave}
             onFormChange={setFormData}
           />
+        </div>
+
+        <div className="mt-4">
+          <BankAccountsSection />
         </div>
       </div>
     </div>

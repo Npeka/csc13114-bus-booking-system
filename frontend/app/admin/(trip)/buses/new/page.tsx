@@ -1,17 +1,12 @@
 "use client";
 
+import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import {
-  ArrowLeft,
-  Bus as BusIcon,
-  Tag,
-  Users,
-  CheckSquare,
-} from "lucide-react";
+import { ArrowLeft, Bus as BusIcon, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -24,11 +19,33 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { createBus } from "@/lib/api/trip-service";
-import { getBusConstants } from "@/lib/api/constants-service";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { createBus } from "@/lib/api";
+import { getBusConstants } from "@/lib/api/trip/constants-service";
 import { toast } from "sonner";
 import { PageHeader, PageHeaderLayout } from "@/components/shared/admin";
+import { FloorConfigSection } from "./_components/floor-config-section";
+import { AmenitiesSection } from "./_components/amenities-section";
+
+const seatConfigSchema = z.object({
+  row: z.number().min(1).max(20),
+  column: z.number().min(1).max(5),
+  seat_type: z.enum(["standard", "vip", "sleeper"]),
+  price_multiplier: z.number().min(0.5).max(5.0).optional(),
+});
+
+const floorConfigSchema = z.object({
+  floor: z.number().min(1).max(2),
+  rows: z.number().min(1).max(20),
+  columns: z.number().min(1).max(5),
+  seats: z.array(seatConfigSchema).min(1, "Mỗi tầng phải có ít nhất 1 ghế"),
+});
 
 const busFormSchema = z.object({
   plate_number: z
@@ -39,11 +56,10 @@ const busFormSchema = z.object({
     .string()
     .min(1, "Vui lòng nhập model xe")
     .max(100, "Model xe quá dài"),
-  seat_capacity: z
-    .number()
-    .min(1, "Sức chứa tối thiểu là 1")
-    .max(100, "Sức chứa tối đa là 100"),
-  amenities: z.array(z.string()).optional(),
+  bus_type: z.enum(["standard", "vip", "sleeper", "double_decker"]),
+  floors: z.array(floorConfigSchema).min(1).max(2),
+  amenities: z.array(z.string()).default([]),
+  is_active: z.boolean().default(true),
 });
 
 type BusFormValues = z.infer<typeof busFormSchema>;
@@ -53,16 +69,32 @@ export default function NewBusPage() {
   const queryClient = useQueryClient();
 
   const form = useForm<BusFormValues>({
-    resolver: zodResolver(busFormSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(busFormSchema) as any,
     defaultValues: {
       plate_number: "",
       model: "",
-      seat_capacity: 40,
+      bus_type: "standard",
+      floors: [
+        {
+          floor: 1,
+          rows: 10,
+          columns: 4,
+          seats: [], // Will be populated by the UI component
+        },
+      ],
       amenities: [],
+      is_active: true,
     },
   });
 
-  // Fetch bus constants for amenities
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "floors",
+  });
+
+  const busType = form.watch("bus_type");
+
   const { data: busConstants, isLoading: constantsLoading } = useQuery({
     queryKey: ["bus-constants"],
     queryFn: getBusConstants,
@@ -73,8 +105,10 @@ export default function NewBusPage() {
       return createBus({
         plate_number: data.plate_number,
         model: data.model,
-        seat_capacity: data.seat_capacity,
+        bus_type: data.bus_type,
+        floors: data.floors,
         amenities: data.amenities || [],
+        is_active: data.is_active,
       });
     },
     onSuccess: () => {
@@ -111,165 +145,121 @@ export default function NewBusPage() {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* Plate Number */}
+            <form
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              onSubmit={form.handleSubmit(onSubmit as any)}
+              className="space-y-5"
+            >
+              {/* Basic Info */}
+              <div className="grid gap-4 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="plate_number"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm">
+                        <Tag className="mr-2 inline h-4 w-4" />
+                        Biển số xe
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="VD: 51B-12345"
+                          {...field}
+                          className="h-9 font-mono"
+                        />
+                      </FormControl>
+                      <FormDescription className="text-xs">
+                        Định dạng: XX-XXXXX
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="model"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm">
+                        <BusIcon className="mr-2 inline h-4 w-4" />
+                        Model xe
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="VD: Hyundai Universe"
+                          {...field}
+                          className="h-9"
+                        />
+                      </FormControl>
+                      <FormDescription className="text-xs">
+                        Nhập tên model của xe
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Bus Type */}
               <FormField
                 control={form.control}
-                name="plate_number"
+                name="bus_type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>
-                      <Tag className="mr-2 inline h-4 w-4" />
-                      Biển số xe
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="VD: 51B-12345"
-                        {...field}
-                        className="font-mono"
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Nhập biển số xe theo định dạng: XX-XXXXX hoặc XXX-XXXXX
-                    </FormDescription>
+                    <FormLabel className="text-sm">Loại xe</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="h-9">
+                          <SelectValue placeholder="Chọn loại xe" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="standard">Standard</SelectItem>
+                        <SelectItem value="vip">VIP</SelectItem>
+                        <SelectItem value="sleeper">Sleeper</SelectItem>
+                        <SelectItem value="double_decker">
+                          Double Decker
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              {/* Model */}
-              <FormField
-                control={form.control}
-                name="model"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      <BusIcon className="mr-2 inline h-4 w-4" />
-                      Model xe
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="VD: Hyundai Universe, Mercedes-Benz O500"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>Nhập tên model và hãng xe</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Seat Capacity */}
-              <FormField
-                control={form.control}
-                name="seat_capacity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      <Users className="mr-2 inline h-4 w-4" />
-                      Sức chứa (số ghế)
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        {...field}
-                        onChange={(e) =>
-                          field.onChange(parseInt(e.target.value) || 0)
-                        }
-                        min="1"
-                        max="100"
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Tổng số ghế tối đa mà xe có thể chứa (1-100 ghế)
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
+              {/* Floor Configuration */}
+              <FloorConfigSection
+                form={form}
+                fields={fields}
+                append={append}
+                remove={remove}
               />
 
               {/* Amenities */}
-              <FormField
-                control={form.control}
-                name="amenities"
-                render={() => (
-                  <FormItem>
-                    <div className="mb-4">
-                      <FormLabel className="text-base">
-                        <CheckSquare className="mr-2 inline h-4 w-4" />
-                        Tiện ích
-                      </FormLabel>
-                      <FormDescription>
-                        Chọn các tiện ích có sẵn trên xe
-                      </FormDescription>
-                    </div>
-                    {constantsLoading ? (
-                      <div className="space-y-2">
-                        <div className="h-6 w-32 animate-pulse rounded bg-muted" />
-                        <div className="h-6 w-32 animate-pulse rounded bg-muted" />
-                        <div className="h-6 w-32 animate-pulse rounded bg-muted" />
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {busConstants?.amenities.map((amenity) => (
-                          <FormField
-                            key={amenity.value}
-                            control={form.control}
-                            name="amenities"
-                            render={({ field }) => {
-                              return (
-                                <FormItem
-                                  key={amenity.value}
-                                  className="flex flex-row items-start space-y-0 space-x-3"
-                                >
-                                  <FormControl>
-                                    <Checkbox
-                                      checked={field.value?.includes(
-                                        amenity.value,
-                                      )}
-                                      onCheckedChange={(checked) => {
-                                        return checked
-                                          ? field.onChange([
-                                              ...(field.value || []),
-                                              amenity.value,
-                                            ])
-                                          : field.onChange(
-                                              field.value?.filter(
-                                                (value) =>
-                                                  value !== amenity.value,
-                                              ),
-                                            );
-                                      }}
-                                    />
-                                  </FormControl>
-                                  <FormLabel className="font-normal">
-                                    {amenity.display_name}
-                                  </FormLabel>
-                                </FormItem>
-                              );
-                            }}
-                          />
-                        ))}
-                      </div>
-                    )}
-                    <FormMessage />
-                  </FormItem>
-                )}
+              <AmenitiesSection
+                form={form}
+                amenities={busConstants?.amenities || []}
+                isLoading={constantsLoading}
               />
 
               {/* Submit Buttons */}
-              <div className="flex gap-4 pt-4">
+              <div className="flex gap-3 pt-2">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => router.back()}
                   className="flex-1"
+                  disabled={createMutation.isPending}
                 >
                   Hủy
                 </Button>
                 <Button
                   type="submit"
-                  className="flex-1 bg-primary text-white hover:bg-primary/90"
+                  className="flex-1"
                   disabled={createMutation.isPending}
                 >
                   {createMutation.isPending ? "Đang tạo..." : "Tạo xe"}
@@ -277,7 +267,7 @@ export default function NewBusPage() {
               </div>
 
               {createMutation.error && (
-                <div className="rounded-lg border border-destructive bg-destructive/10 p-4 text-sm text-destructive">
+                <div className="rounded-lg border border-destructive bg-destructive/10 p-3 text-sm text-destructive">
                   {createMutation.error instanceof Error
                     ? createMutation.error.message
                     : "Đã xảy ra lỗi khi tạo xe"}

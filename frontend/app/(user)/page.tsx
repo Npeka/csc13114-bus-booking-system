@@ -15,7 +15,7 @@ import {
   Users,
   Bus,
 } from "lucide-react";
-import { getSearchFilterConstants } from "@/lib/api/constants-service";
+import { getSearchFilterConstants } from "@/lib/api/trip/constants-service";
 
 export default function Home() {
   const queryClient = useQueryClient();

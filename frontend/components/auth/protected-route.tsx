@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/stores/auth-store";
-import { hasValidSession } from "@/lib/api/auth-service";
+import { hasValidSession } from "@/lib/api/user/auth-service";
 import { hasRole } from "@/lib/auth/roles";
 
 interface ProtectedRouteProps {

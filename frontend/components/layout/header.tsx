@@ -15,7 +15,7 @@ import { User } from "lucide-react";
 import { useState } from "react";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { useRole } from "@/lib/auth/useRole";
-import { logout as authLogout } from "@/lib/api/auth-service";
+import { logout as authLogout } from "@/lib/api/user/auth-service";
 import { AuthDialogs } from "@/components/auth/auth-dialogs";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 

@@ -44,12 +44,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  getTripById,
-  updateTrip,
-  listRoutes,
-  listBuses,
-} from "@/lib/api/trip-service";
+import { getTripById, updateTrip, listRoutes, listBuses } from "@/lib/api";
 import type { Route, Trip } from "@/lib/types/trip";
 import { formatDateForInput } from "@/lib/utils";
 import { TripHeaderBadges } from "./_components/trip-header-badges";

@@ -13,7 +13,7 @@ import {
   updateUser,
   type UserCreateRequest,
   type UserUpdateRequest,
-} from "@/lib/api/user-service";
+} from "@/lib/api/user/user-service";
 import type { User } from "@/lib/stores/auth-store";
 import { UserFilters } from "./_components/user-filters";
 import { UserTable } from "./_components/user-table";

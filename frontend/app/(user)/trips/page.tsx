@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { PaginationWithLinks } from "@/components/ui/pagination-with-links";
 import { Filter } from "lucide-react";
-import { searchTrips } from "@/lib/api/trip-service";
+import { searchTrips } from "@/lib/api/trip/trip-service";
 import type { ApiTripItem, TripSearchParams } from "@/lib/types/trip";
 import { parseDateFromVnFormat } from "@/lib/utils";
 import { TripSummaryHeader } from "./_components/trip-summary-header";

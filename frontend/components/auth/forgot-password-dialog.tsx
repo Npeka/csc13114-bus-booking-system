@@ -12,8 +12,11 @@ import { Field, FieldLabel } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { requestPasswordReset, resetPassword } from "@/lib/api/auth-service";
-import { verifyOTP } from "@/lib/api/verify-otp";
+import {
+  requestPasswordReset,
+  resetPassword,
+} from "@/lib/api/user/auth-service";
+import { verifyOTP } from "@/lib/api/user/verify-otp";
 import { useAuthDialog } from "./hooks/use-auth-dialog";
 import { Stepper } from "./stepper";
 import { Eye, EyeOff } from "lucide-react";

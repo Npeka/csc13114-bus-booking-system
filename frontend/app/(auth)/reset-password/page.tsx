@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { resetPassword } from "@/lib/api/auth-service";
+import { resetPassword } from "@/lib/api/user/auth-service";
 import { Eye, EyeOff, Lock, CheckCircle } from "lucide-react";
 
 function ResetPasswordContent() {

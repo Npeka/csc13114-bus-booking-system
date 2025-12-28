@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -10,7 +11,7 @@ import {
   updateRouteStop,
   moveRouteStop,
   deleteRouteStop,
-} from "@/lib/api/trip-service";
+} from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -66,20 +67,23 @@ export default function EditRoutePage() {
       ? Math.max(...route.route_stops.map((s) => s.stop_order)) + 100
       : 100;
 
+  // Track last synced route to avoid unnecessary updates
+  const lastRouteIdRef = React.useRef<string | null>(null);
+
   // Update form when route data changes
-  useEffect(() => {
-    if (route) {
-      setFormData((prev) => ({
-        ...prev,
+  React.useEffect(() => {
+    if (route && route.id !== lastRouteIdRef.current) {
+      setFormData({
         origin: route.origin,
         destination: route.destination,
         distance_km: route.distance_km,
         estimated_minutes: route.estimated_minutes,
         is_active: route.is_active,
-      }));
+      });
+      setOptimisticStops(null);
+      lastRouteIdRef.current = route.id;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [route?.id]); // Only update when route ID changes
+  }, [route]);
 
   // Update mutation
   const updateMutation = useMutation({

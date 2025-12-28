@@ -1,10 +1,15 @@
 "use client";
 
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Star, Clock, Users } from "lucide-react";
+import { Star, Clock, Users, ChevronDown, ChevronUp } from "lucide-react";
+import { getTripReviews, getTripReviewSummary } from "@/lib/api/booking";
+import { format } from "date-fns";
+import { vi } from "date-fns/locale";
 
 export interface Trip {
   id: string;
@@ -28,12 +33,25 @@ interface TripCardProps {
 }
 
 export function TripCard({ trip, onSelect }: TripCardProps) {
+  const [showReviews, setShowReviews] = useState(false);
+
+  // Fetch review summary
+  const { data: reviewSummary } = useQuery({
+    queryKey: ["trip-review-summary", trip.id],
+    queryFn: () => getTripReviewSummary(trip.id),
+    enabled: showReviews,
+  });
+
+  // Fetch reviews when expanded
+  const { data: reviewsData, isLoading: reviewsLoading } = useQuery({
+    queryKey: ["trip-reviews", trip.id],
+    queryFn: () => getTripReviews(trip.id, 1, 5),
+    enabled: showReviews,
+  });
+
   return (
-    <Card
-      className="card-hover cursor-pointer py-0!"
-      onClick={() => onSelect(trip.id)}
-    >
-      <CardContent className="p-4">
+    <Card className="card-hover cursor-pointer py-0!">
+      <CardContent className="p-4" onClick={() => onSelect(trip.id)}>
         {/* Top Row: Operator Info + Price/Action */}
         <div className="mb-2 flex items-center justify-between gap-4">
           {/* Operator Info */}
@@ -126,6 +144,125 @@ export function TripCard({ trip, onSelect }: TripCardProps) {
             ))}
           </div>
         )}
+
+        {/* Reviews Toggle */}
+        <div className="mt-3 border-t pt-3">
+          <button
+            className="flex w-full items-center justify-between text-sm font-medium hover:text-primary"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowReviews(!showReviews);
+            }}
+          >
+            <span className="flex items-center gap-2">
+              <Star className="h-4 w-4 fill-warning text-warning" />
+              <span>
+                {reviewSummary
+                  ? `${reviewSummary.average_rating.toFixed(1)} (${reviewSummary.total_reviews} đánh giá)`
+                  : "Xem đánh giá"}
+              </span>
+            </span>
+            {showReviews ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
+          </button>
+
+          {/* Reviews Content */}
+          {showReviews && (
+            <div className="mt-3 space-y-3">
+              {reviewsLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                </div>
+              ) : reviewsData?.data && reviewsData.data.length > 0 ? (
+                <>
+                  {/* Rating Distribution */}
+                  {reviewSummary && (
+                    <div className="rounded-lg bg-secondary/50 p-3">
+                      <div className="grid grid-cols-5 gap-2 text-center text-xs">
+                        {[5, 4, 3, 2, 1].map((rating) => {
+                          const count = reviewSummary[
+                            `rating_${rating}_count` as keyof typeof reviewSummary
+                          ] as number;
+                          return (
+                            <div key={rating}>
+                              <div className="flex items-center justify-center gap-0.5">
+                                {rating}
+                                <Star className="h-3 w-3 fill-warning text-warning" />
+                              </div>
+                              <div className="mt-1 font-semibold">{count}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Reviews List */}
+                  <div className="space-y-3">
+                    {reviewsData.data.slice(0, 3).map((review) => (
+                      <div
+                        key={review.id}
+                        className="rounded-lg border bg-card p-3"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-1">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`h-3 w-3 ${
+                                  i < review.rating
+                                    ? "fill-warning text-warning"
+                                    : "text-muted-foreground"
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(review.created_at), "dd/MM/yyyy", {
+                              locale: vi,
+                            })}
+                          </span>
+                        </div>
+                        {review.comment && (
+                          <p className="mt-2 text-sm text-muted-foreground">
+                            {review.comment}
+                          </p>
+                        )}
+                        {review.is_verified && (
+                          <Badge variant="outline" className="mt-2 text-xs">
+                            <span className="mr-1">✓</span>
+                            Đã xác thực
+                          </Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* View More Link */}
+                  {reviewsData.meta.total > 3 && (
+                    <button
+                      className="text-sm text-primary hover:underline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelect(trip.id);
+                      }}
+                    >
+                      Xem tất cả {reviewsData.meta.total} đánh giá →
+                    </button>
+                  )}
+                </>
+              ) : (
+                <p className="text-center text-sm text-muted-foreground">
+                  Chưa có đánh giá
+                </p>
+              )}
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

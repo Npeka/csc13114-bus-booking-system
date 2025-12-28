@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { registerWithEmail } from "@/lib/api/auth-service";
+import { registerWithEmail } from "@/lib/api/user/auth-service";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { isAdmin } from "@/lib/auth/roles";
 import { Eye, EyeOff } from "lucide-react";

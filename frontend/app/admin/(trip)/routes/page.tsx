@@ -15,7 +15,7 @@ import {
 import { MapPin, Plus, Pencil, Trash2 } from "lucide-react";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listRoutes, deleteRoute } from "@/lib/api/trip-service";
+import { listRoutes, deleteRoute } from "@/lib/api";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";

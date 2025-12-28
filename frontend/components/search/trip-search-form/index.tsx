@@ -17,7 +17,7 @@ import { PassengerField } from "./passenger-field";
 import { PopularRoutes } from "./popular-routes";
 import { VIETNAM_CITIES } from "./constants";
 import { fuzzyMatchCity } from "./utils";
-import { getCities } from "@/lib/api/constants-service";
+import { getCities } from "@/lib/api/trip/constants-service";
 import { formatDateForApi } from "@/lib/utils";
 
 export function TripSearchForm() {

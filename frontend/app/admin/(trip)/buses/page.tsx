@@ -33,7 +33,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { listBuses, deleteBus } from "@/lib/api/trip-service";
+import { listBuses, deleteBus } from "@/lib/api";
 import { toast } from "sonner";
 import { getDisplayName } from "@/lib/utils";
 import { PageHeader, PageHeaderLayout } from "@/components/shared/admin";
@@ -268,7 +268,7 @@ export default function AdminBusesPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() =>
-                              router.push(`/admin/buses/${bus.id}/seats/layout`)
+                              router.push(`/admin/buses/${bus.id}`)
                             }
                             title="Cấu hình sơ đồ ghế"
                             className="h-8 w-8 p-0"
