@@ -297,13 +297,13 @@ export function PaymentInfoCard({
       await fetchRefundInfo(); // Refetch refund info to show status
       onRetrySuccess?.(); // Refetch booking
     } catch (error: unknown) {
-      const errorMessage =
-        (error &&
-          typeof error === "object" &&
-          "response" in error &&
-          (error as { response?: { data?: { error?: { message?: string } } } })
-            .response?.data?.error?.message) ||
-        "Không thể gửi yêu cầu hoàn tiền";
+      let errorMessage = "Không thể gửi yêu cầu hoàn tiền";
+      if (error && typeof error === "object" && "response" in error) {
+        const apiError = error as {
+          response?: { data?: { error?: { message?: string } } };
+        };
+        errorMessage = apiError.response?.data?.error?.message || errorMessage;
+      }
       toast.error(errorMessage);
       console.error(error);
     } finally {
