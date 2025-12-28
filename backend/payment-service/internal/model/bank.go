@@ -9,15 +9,12 @@ import (
 
 // BankAccount represents a user's bank account for refund purposes
 type BankAccount struct {
-	ID            uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	CreatedAt     time.Time      `json:"created_at"`
-	UpdatedAt     time.Time      `json:"updated_at"`
-	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
-	UserID        uuid.UUID      `gorm:"type:uuid;not null;index" json:"user_id"`
-	BankCode      string         `gorm:"type:varchar(20);not null" json:"bank_code"`
-	AccountNumber string         `gorm:"type:varchar(50);not null" json:"account_number"`
-	AccountHolder string         `gorm:"type:varchar(100);not null" json:"account_holder"`
-	IsPrimary     bool           `gorm:"default:false;index" json:"is_primary"`
+	BaseModel
+	UserID        uuid.UUID `gorm:"type:uuid;not null;index" json:"user_id"`
+	BankCode      string    `gorm:"type:varchar(20);not null" json:"bank_code"`
+	AccountNumber string    `gorm:"type:varchar(50);not null" json:"account_number"`
+	AccountHolder string    `gorm:"type:varchar(100);not null" json:"account_holder"`
+	IsPrimary     bool      `gorm:"default:false;index" json:"is_primary"`
 }
 
 func (BankAccount) TableName() string {
