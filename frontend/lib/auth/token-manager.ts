@@ -1,4 +1,4 @@
-import { refreshAccessToken } from "@/lib/api/auth-service";
+import { refreshAccessToken } from "@/lib/api/user/auth-service";
 import { useAuthStore } from "@/lib/stores/auth-store";
 
 // Token refresh interval (refresh 1 minute before expiry)

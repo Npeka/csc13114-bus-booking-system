@@ -1,4 +1,4 @@
-import apiClient, { ApiResponse, handleApiError } from "./client";
+import apiClient, { ApiResponse, handleApiError } from "../client";
 
 /**
  * Constant display value structure

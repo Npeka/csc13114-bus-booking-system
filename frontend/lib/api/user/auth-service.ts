@@ -11,7 +11,7 @@ import {
   getRecaptchaVerifier,
   clearRecaptchaVerifier,
 } from "@/lib/firebase";
-import apiClient, { ApiResponse } from "./client";
+import apiClient, { ApiResponse } from "../client";
 import { useAuthStore, User } from "@/lib/stores/auth-store";
 import { initializeSession } from "@/lib/auth/session";
 import Cookies from "js-cookie";

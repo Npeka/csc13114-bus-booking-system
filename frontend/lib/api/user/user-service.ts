@@ -4,7 +4,7 @@
  * Follows the pattern established in trip-service.ts and booking-service.ts
  */
 
-import apiClient, { handleApiError } from "./client";
+import apiClient, { handleApiError } from "../client";
 import type { User } from "@/lib/stores/auth-store";
 import { UserStatus } from "@/lib/stores/auth-store";
 

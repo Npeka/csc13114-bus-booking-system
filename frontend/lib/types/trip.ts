@@ -209,6 +209,7 @@ export interface CreateSeatRequest {
   seat_type: "standard" | "vip" | "sleeper";
   price_multiplier?: number;
   floor: number;
+  is_available: boolean;
 }
 
 export interface BulkCreateSeatsRequest {
@@ -221,6 +222,7 @@ export interface Bus {
   id: string;
   plate_number: string;
   model: string;
+  bus_type: "standard" | "vip" | "sleeper" | "double_decker";
   seat_capacity: number;
   amenities: ConstantDisplay[]; // Backend returns array of {value, display_name}
   is_active: boolean;
@@ -251,7 +253,7 @@ export interface Seat {
   bus_id: string;
   seat_code: string;
   seat_type: "standard" | "vip" | "sleeper";
-  is_active: boolean;
+  is_available: boolean;
 }
 
 // Seat detail from trip seats response

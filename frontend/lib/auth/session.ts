@@ -1,5 +1,8 @@
 import { useAuthStore } from "@/lib/stores/auth-store";
-import { refreshAccessToken, hasValidSession } from "@/lib/api/auth-service";
+import {
+  refreshAccessToken,
+  hasValidSession,
+} from "@/lib/api/user/auth-service";
 import { initializeTokenManager, cleanupTokenManager } from "./token-manager";
 
 let isRestoringSession = false;
