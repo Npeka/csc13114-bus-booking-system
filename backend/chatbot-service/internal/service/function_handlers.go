@@ -31,12 +31,12 @@ func (s *ChatbotServiceImpl) handleSearchTrips(ctx context.Context, args map[str
 	if departureDateStr, ok := args["departure_date"].(string); ok && departureDateStr != "" {
 		// Try multiple date formats
 		dateFormats := []string{
-			"2006-01-02",                  // YYYY-MM-DD (most common from Gemini)
-			"2006-01-02T15:04:05Z07:00",   // Full RFC3339
-			"2006-01-02T15:04:05Z",        // RFC3339 UTC
-			"2006-01-02T15:04:05",         // ISO without timezone
-			"02/01/2006",                  // DD/MM/YYYY (Vietnamese format)
-			"02-01-2006",                  // DD-MM-YYYY
+			"2006-01-02",                // YYYY-MM-DD (most common from Gemini)
+			"2006-01-02T15:04:05Z07:00", // Full RFC3339
+			"2006-01-02T15:04:05Z",      // RFC3339 UTC
+			"2006-01-02T15:04:05",       // ISO without timezone
+			"02/01/2006",                // DD/MM/YYYY (Vietnamese format)
+			"02-01-2006",                // DD-MM-YYYY
 		}
 
 		var parsed bool
