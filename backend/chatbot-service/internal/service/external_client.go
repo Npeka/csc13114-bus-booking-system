@@ -7,12 +7,51 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"bus-booking/chatbot-service/internal/model"
 
 	"github.com/rs/zerolog/log"
 )
+
+// cityAliases maps common city name aliases to their canonical database names
+var cityAliases = map[string]string{
+	"Sài Gòn":      "TP. Hồ Chí Minh",
+	"Saigon":       "TP. Hồ Chí Minh",
+	"SG":           "TP. Hồ Chí Minh",
+	"TPHCM":        "TP. Hồ Chí Minh",
+	"Ho Chi Minh":  "TP. Hồ Chí Minh",
+	"HCM":          "TP. Hồ Chí Minh",
+	"Dalat":        "Đà Lạt",
+	"Da Lat":       "Đà Lạt",
+	"Ha Noi":       "Hà Nội",
+	"Hanoi":        "Hà Nội",
+	"Nha Trang":    "Nha Trang",
+	"Can Tho":      "Cần Thơ",
+	"Da Nang":      "Đà Nẵng",
+	"Danang":       "Đà Nẵng",
+	"Hai Phong":    "Hải Phòng",
+	"Ha Long":      "Hạ Long",
+	"Sapa":         "Sapa",
+	"Sa Pa":        "Sapa",
+	"Cao Bang":     "Cao Bằng",
+}
+
+// normalizeCityName maps common city aliases to their canonical database names
+func normalizeCityName(name string) string {
+	// Check exact match first
+	if canonical, ok := cityAliases[name]; ok {
+		return canonical
+	}
+	// Check case-insensitive match
+	for alias, canonical := range cityAliases {
+		if strings.EqualFold(alias, name) {
+			return canonical
+		}
+	}
+	return name // Return original if no match
+}
 
 // TripServiceClient interfaces with trip-service
 type TripServiceClient interface {
@@ -41,11 +80,11 @@ func (c *tripServiceClientImpl) SearchTrips(ctx context.Context, params *model.T
 	queryParams := make(map[string]string)
 
 	if params.Origin != "" {
-		queryParams["origin"] = params.Origin
+		queryParams["origin"] = normalizeCityName(params.Origin)
 	}
 
 	if params.Destination != "" {
-		queryParams["destination"] = params.Destination
+		queryParams["destination"] = normalizeCityName(params.Destination)
 	}
 
 	if !params.DepartureDate.IsZero() {
@@ -54,20 +93,17 @@ func (c *tripServiceClientImpl) SearchTrips(ctx context.Context, params *model.T
 		queryParams["departure_time_end"] = params.DepartureDate.Add(24 * time.Hour).Format("2006-01-02T00:00:00Z")
 	}
 
-	// Construct URL with query parameters
-	url := baseURL
+	// Construct URL with properly encoded query parameters
+	reqURL := baseURL
 	if len(queryParams) > 0 {
-		query := ""
+		values := url.Values{}
 		for key, value := range queryParams {
-			if query != "" {
-				query += "&"
-			}
-			query += fmt.Sprintf("%s=%s", key, value)
+			values.Add(key, value)
 		}
-		url = fmt.Sprintf("%s?%s", baseURL, query)
+		reqURL = fmt.Sprintf("%s?%s", baseURL, values.Encode())
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
