@@ -128,7 +128,15 @@ func (c *tripServiceClientImpl) SearchTrips(ctx context.Context, params *model.T
 
 	if resp.StatusCode != http.StatusOK {
 		// Read error response body for debugging
-		bodyBytes, _ := io.ReadAll(resp.Body)
+		bodyBytes, readErr := io.ReadAll(resp.Body)
+		if readErr != nil {
+			log.Error().
+				Int("status_code", resp.StatusCode).
+				Err(readErr).
+				Str("url", reqURL).
+				Msg("Trip service returned non-200 status, failed to read body")
+			return nil, fmt.Errorf("trip service returned status %d", resp.StatusCode)
+		}
 		log.Error().
 			Int("status_code", resp.StatusCode).
 			Str("response_body", string(bodyBytes)).
