@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"bus-booking/chatbot-service/internal/model"
 
@@ -13,16 +14,43 @@ import (
 
 // handleSearchTrips processes searchTrips function call
 func (s *ChatbotServiceImpl) handleSearchTrips(ctx context.Context, args map[string]any) map[string]any {
-	argsJSON, err := json.Marshal(args)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to marshal arguments")
-		return map[string]any{"error": "Invalid arguments"}
+	// Extract args manually to handle date parsing flexibly
+	var params model.TripSearchParams
+
+	if origin, ok := args["origin"].(string); ok {
+		params.Origin = origin
+	}
+	if destination, ok := args["destination"].(string); ok {
+		params.Destination = destination
+	}
+	if passengers, ok := args["passengers"].(float64); ok {
+		params.Passengers = int(passengers)
 	}
 
-	var params model.TripSearchParams
-	if err := json.Unmarshal(argsJSON, &params); err != nil {
-		log.Error().Err(err).Msg("Failed to parse searchTrips arguments")
-		return map[string]any{"error": "Invalid arguments"}
+	// Parse departure_date which may come in various formats
+	if departureDateStr, ok := args["departure_date"].(string); ok && departureDateStr != "" {
+		// Try multiple date formats
+		dateFormats := []string{
+			"2006-01-02",                  // YYYY-MM-DD (most common from Gemini)
+			"2006-01-02T15:04:05Z07:00",   // Full RFC3339
+			"2006-01-02T15:04:05Z",        // RFC3339 UTC
+			"2006-01-02T15:04:05",         // ISO without timezone
+			"02/01/2006",                  // DD/MM/YYYY (Vietnamese format)
+			"02-01-2006",                  // DD-MM-YYYY
+		}
+
+		var parsed bool
+		for _, format := range dateFormats {
+			if t, err := time.Parse(format, departureDateStr); err == nil {
+				params.DepartureDate = t
+				parsed = true
+				break
+			}
+		}
+
+		if !parsed {
+			log.Warn().Str("departure_date", departureDateStr).Msg("Could not parse departure_date, ignoring")
+		}
 	}
 
 	log.Info().Interface("params", params).Msg("Executing searchTrips function")
