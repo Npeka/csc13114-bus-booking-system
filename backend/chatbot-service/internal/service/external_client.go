@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -89,9 +90,13 @@ func (c *tripServiceClientImpl) SearchTrips(ctx context.Context, params *model.T
 
 	if !params.DepartureDate.IsZero() {
 		// Format as ISO date string for the trip-service API
-		queryParams["departure_time_start"] = params.DepartureDate.Format("2006-01-02T00:00:00Z")
-		queryParams["departure_time_end"] = params.DepartureDate.Add(24 * time.Hour).Format("2006-01-02T00:00:00Z")
+		queryParams["departure_time_start"] = params.DepartureDate.Format(time.RFC3339)
+		queryParams["departure_time_end"] = params.DepartureDate.Add(24 * time.Hour).Format(time.RFC3339)
 	}
+
+	// Always include pagination parameters
+	queryParams["page"] = "1"
+	queryParams["page_size"] = "20"
 
 	// Construct URL with properly encoded query parameters
 	reqURL := baseURL
@@ -102,6 +107,8 @@ func (c *tripServiceClientImpl) SearchTrips(ctx context.Context, params *model.T
 		}
 		reqURL = fmt.Sprintf("%s?%s", baseURL, values.Encode())
 	}
+
+	log.Info().Str("url", reqURL).Msg("Calling trip service search API")
 
 	req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
 	if err != nil {
@@ -120,8 +127,14 @@ func (c *tripServiceClientImpl) SearchTrips(ctx context.Context, params *model.T
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		log.Error().Int("status_code", resp.StatusCode).Msg("Trip service returned non-200 status")
-		return nil, fmt.Errorf("trip service returned status %d", resp.StatusCode)
+		// Read error response body for debugging
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		log.Error().
+			Int("status_code", resp.StatusCode).
+			Str("response_body", string(bodyBytes)).
+			Str("url", reqURL).
+			Msg("Trip service returned non-200 status")
+		return nil, fmt.Errorf("trip service returned status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
 
 	var result interface{}
