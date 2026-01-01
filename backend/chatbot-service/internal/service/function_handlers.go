@@ -260,10 +260,84 @@ func (s *ChatbotServiceImpl) handleCreatePaymentLink(ctx context.Context, args m
 
 	log.Info().Str("booking_id", bookingIDStr).Msg("Executing createPaymentLink function")
 
+	// Step 1: Validate booking ID format
+	bookingUUID, err := uuid.Parse(bookingIDStr)
+	if err != nil {
+		log.Error().Err(err).Str("booking_id", bookingIDStr).Msg("Invalid booking ID format")
+		return map[string]any{"error": "Invalid booking ID format"}
+	}
+
+	// Step 2: Get booking details to retrieve the amount
+	booking, err := s.bookingService.GetBookingByID(ctx, bookingIDStr)
+	if err != nil {
+		log.Error().Err(err).Str("booking_id", bookingIDStr).Msg("Failed to get booking for payment")
+		return map[string]any{"error": fmt.Sprintf("Cannot find booking: %v", err)}
+	}
+
+	// Step 3: Check if booking is in a valid state for payment
+	if booking.Status != "pending" {
+		log.Warn().Str("status", booking.Status).Msg("Booking is not in pending status")
+		if booking.Status == "confirmed" {
+			return map[string]any{
+				"error":   "Booking is already paid",
+				"message": fmt.Sprintf("Đặt vé %s đã được thanh toán thành công!", booking.Reference),
+			}
+		}
+		return map[string]any{"error": fmt.Sprintf("Booking cannot be paid, current status: %s", booking.Status)}
+	}
+
+	// Step 4: Check if there's already a transaction with checkout URL
+	if booking.Transaction != nil && booking.Transaction.CheckoutURL != "" {
+		log.Info().Str("booking_id", bookingIDStr).Msg("Returning existing payment link")
+		return map[string]any{
+			"success":      true,
+			"checkout_url": booking.Transaction.CheckoutURL,
+			"qr_code":      booking.Transaction.QRCode,
+			"message":      fmt.Sprintf("Link thanh toán cho đặt vé %s: %s", booking.Reference, booking.Transaction.CheckoutURL),
+		}
+	}
+
+	// Step 5: Create payment transaction request
+	// Convert float price to int (VND doesn't use decimals)
+	amount := int(booking.TotalPrice)
+	if amount <= 0 {
+		return map[string]any{"error": "Invalid booking amount"}
+	}
+
+	txReq := &model.CreateTransactionRequest{
+		BookingID:     bookingUUID,
+		Amount:        amount,
+		Currency:      "VND",
+		PaymentMethod: "PAYOS",
+		Description:   fmt.Sprintf("Thanh toán vé xe - %s", booking.Reference),
+	}
+
+	// Step 6: Call payment service to create transaction
+	transaction, err := s.paymentService.CreateTransaction(ctx, txReq)
+	if err != nil {
+		log.Error().Err(err).Str("booking_id", bookingIDStr).Msg("Failed to create payment transaction")
+		return map[string]any{
+			"error":      fmt.Sprintf("Không thể tạo link thanh toán: %v", err),
+			"suggestion": "Vui lòng thử lại sau hoặc liên hệ hỗ trợ",
+		}
+	}
+
+	log.Info().
+		Str("booking_id", bookingIDStr).
+		Str("transaction_id", transaction.ID.String()).
+		Str("checkout_url", transaction.CheckoutURL).
+		Msg("Payment link created successfully")
+
+	// Step 7: Return payment information to the chatbot
 	return map[string]any{
-		"error":      "Payment link generation is not yet fully implemented",
-		"suggestion": "Please contact support or visit the website to complete payment",
-		"booking_id": bookingIDStr,
+		"success":        true,
+		"transaction_id": transaction.ID.String(),
+		"checkout_url":   transaction.CheckoutURL,
+		"qr_code":        transaction.QRCode,
+		"amount":         amount,
+		"currency":       "VND",
+		"message": fmt.Sprintf("Đã tạo link thanh toán cho đặt vé %s. Số tiền: %d VNĐ. Vui lòng thanh toán tại: %s",
+			booking.Reference, amount, transaction.CheckoutURL),
 	}
 }
 

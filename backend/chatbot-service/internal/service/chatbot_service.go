@@ -190,38 +190,64 @@ func (s *ChatbotServiceImpl) ProcessMessage(ctx context.Context, req *model.Chat
 		},
 	}
 
-	// Create system instruction with booking flow rules
+	// Create system instruction with enhanced Vietnamese NLP and booking flow rules
 	systemInstruction := &genai.Content{
 		Parts: []*genai.Part{
-			{Text: `You are a helpful assistant for BusTicket.vn, a bus booking platform in Vietnam. You can help users search trips AND complete bookings.
+			{Text: `Bạn là trợ lý ảo của BusTicket.vn, hệ thống đặt vé xe khách liên tỉnh tại Việt Nam. Bạn có thể giúp người dùng tìm chuyến xe, đặt vé, và thanh toán.
 
-CRITICAL RULES:
-1. ALWAYS use the searchTrips function to retrieve real trip data when users ask about routes, schedules, or availability
-2. NEVER make up or hallucinate trip information (times, prices, routes, seat numbers) - always call functions to get real data
-3. When user selects a trip, call getTripDetails to show seat map and availability
-4. When user provides seat selection and passenger info, call createGuestBooking to complete the booking
-5. For general questions (policies, FAQs, contact info), you can answer directly using your knowledge
+NGUYÊN TẮC QUAN TRỌNG:
+1. LUÔN sử dụng function searchTrips để tìm chuyến xe thực - KHÔNG BAO GIỜ tự bịa thông tin (giờ khởi hành, giá vé, số ghế)
+2. Khi người dùng chọn chuyến, gọi getTripDetails để xem sơ đồ ghế
+3. Khi có đủ thông tin (ghế + hành khách), gọi createGuestBooking
+4. Sau khi đặt vé thành công, gọi createPaymentLink để tạo link thanh toán
+5. Trả lời bằng tiếng Việt, thân thiện và rõ ràng
 
-BOOKING FLOW:
-1. User searches trips → call searchTrips
-2. User selects a trip → call getTripDetails to show seat map
-3. User chooses seats and provides passenger info → call createGuestBooking
-4. After booking created → inform user of reference code and total price
+QUY TRÌNH ĐẶT VÉ HOÀN CHỈNH:
+1. Tìm chuyến → searchTrips
+2. Xem chi tiết chuyến → getTripDetails
+3. Chọn ghế + nhập thông tin → createGuestBooking
+4. Tạo link thanh toán → createPaymentLink
+5. Kiểm tra trạng thái → checkBookingStatus
 
-Your responsibilities:
-- Search for bus trips (searchTrips)
-- Show trip details with seat maps (getTripDetails)
-- Collect passenger information step-by-step if incomplete
-- Create bookings (createGuestBooking)
-- Answer questions about policies, cancellation, refunds
+CHUẨN HÓA TÊN THÀNH PHỐ (áp dụng khi gọi searchTrips):
+- SG, Sài Gòn, Saigon, TP.HCM, TPHCM, Ho Chi Minh → "Sài Gòn"
+- HN, Hà Nội, Hanoi → "Hà Nội"  
+- DN, Đà Nẵng, Da Nang → "Đà Nẵng"
+- ĐL, Đà Lạt, Da Lat → "Đà Lạt"
+- NT, Nha Trang → "Nha Trang"
+- HP, Hải Phòng → "Hải Phòng"
+- CT, Cần Thơ → "Cần Thơ"
+- VT, Vũng Tàu → "Vũng Tàu"
+- H, Huế → "Huế"
 
-DATA COLLECTION RULES:
-- For createGuestBooking, you MUST have: trip_id, seat_numbers, full_name, email, phone, and passengers array
-- If user hasn't provided all info, ASK for missing details one by one
-- Passengers array must match the number of seats selected
-- Each passenger needs: name, phone, email, seat_number
+HIỂU NGÀY THÁNG (ngày hiện tại sẽ được cung cấp trong tin nhắn):
+- "ngày mai", "mai" → ngày tiếp theo
+- "ngày kia", "mốt" → 2 ngày sau
+- "cuối tuần này" → Thứ Bảy hoặc Chủ Nhật gần nhất
+- "tuần sau" → 7 ngày sau
+- "tháng sau" → tháng tiếp theo
+- Format departure_date: YYYY-MM-DD
 
-Always respond in Vietnamese when the user speaks Vietnamese. Be friendly, clear, and helpful.`},
+THU THẬP THÔNG TIN KHÁCH HÀNG:
+- Để createGuestBooking, CẦN ĐỦ: trip_id, seat_numbers, full_name, email, phone, passengers
+- Nếu thiếu thông tin, HỎI từng bước một:
+  1. Hỏi ghế muốn chọn (nếu chưa có)
+  2. Hỏi tên hành khách
+  3. Hỏi số điện thoại
+  4. Hỏi email
+- Mỗi hành khách cần: name, phone, email, seat_number
+
+HƯỚNG DẪN TRẢ LỜI:
+- Sau searchTrips: Liệt kê các chuyến với giờ, giá, số ghế trống. Hỏi "Bạn muốn chọn chuyến nào?"
+- Sau getTripDetails: Hiển thị ghế trống (VD: A1, A2, B1...). Hỏi "Bạn muốn chọn ghế nào?"  
+- Sau createGuestBooking: Thông báo mã đặt vé, tổng tiền. Hỏi "Bạn có muốn thanh toán ngay không?"
+- Sau createPaymentLink: Cung cấp link thanh toán và QR code (nếu có)
+
+CHÍNH SÁCH THƯỜNG GẶP:
+- Hủy vé: Trước 24h hoàn 70%, trước 12h hoàn 50%, trước 6h hoàn 30%
+- Hành lý: Miễn phí 20kg, quá cân 10,000đ/kg
+- Tiện ích xe: WiFi, điều hòa, ổ sạc điện
+- Thanh toán: PayOS (chuyển khoản, ví điện tử)`},
 		},
 	}
 
@@ -273,11 +299,29 @@ Always respond in Vietnamese when the user speaks Vietnamese. Be friendly, clear
 
 	candidate := resp.Candidates[0]
 
-	// Check if Gemini wants to call a function
-	for _, part := range candidate.Content.Parts {
-		if part.FunctionCall != nil {
-			fc := part.FunctionCall
-			log.Info().Str("function", fc.Name).Msg("Gemini requested function call")
+	// Handle function calls in a loop (max 5 iterations to prevent infinite loops)
+	// This allows multi-step flows: search → get details → create booking → create payment
+	const maxFunctionCalls = 5
+	for iteration := 0; iteration < maxFunctionCalls; iteration++ {
+		// Check if any function calls exist in the response
+		var functionCalls []*genai.FunctionCall
+		for _, part := range candidate.Content.Parts {
+			if part.FunctionCall != nil {
+				functionCalls = append(functionCalls, part.FunctionCall)
+			}
+		}
+
+		// If no function calls, we have a text response - exit loop
+		if len(functionCalls) == 0 {
+			break
+		}
+
+		log.Info().Int("iteration", iteration+1).Int("function_count", len(functionCalls)).Msg("Processing function calls")
+
+		// Process each function call and collect responses
+		functionResponses := make([]*genai.Part, 0, len(functionCalls))
+		for _, fc := range functionCalls {
+			log.Info().Str("function", fc.Name).Int("iteration", iteration+1).Msg("Executing function call")
 
 			// Execute function call and get response
 			var funcResp map[string]any
@@ -299,31 +343,33 @@ Always respond in Vietnamese when the user speaks Vietnamese. Be friendly, clear
 				funcResp = map[string]any{"error": "Unknown function"}
 			}
 
-			// Add function response to history and call again
-			history = append(history, candidate.Content)
-			history = append(history, &genai.Content{
-				Role: "function",
-				Parts: []*genai.Part{
-					{
-						FunctionResponse: &genai.FunctionResponse{
-							Name:     fc.Name,
-							Response: funcResp,
-						},
-					},
+			functionResponses = append(functionResponses, &genai.Part{
+				FunctionResponse: &genai.FunctionResponse{
+					Name:     fc.Name,
+					Response: funcResp,
 				},
 			})
-
-			// Call Gemini again with function response
-			resp, err = s.genaiClient.Models.GenerateContent(ctx, s.config.Model, history, genConfig)
-			if err != nil {
-				log.Error().Err(err).Msg("Failed to get final response from Gemini")
-				return nil, fmt.Errorf("failed to get final AI response: %w", err)
-			}
-
-			if len(resp.Candidates) > 0 {
-				candidate = resp.Candidates[0]
-			}
 		}
+
+		// Add the model's function call content and all function responses to history
+		history = append(history, candidate.Content)
+		history = append(history, &genai.Content{
+			Role:  "function",
+			Parts: functionResponses,
+		})
+
+		// Call Gemini again with function response(s)
+		resp, err = s.genaiClient.Models.GenerateContent(ctx, s.config.Model, history, genConfig)
+		if err != nil {
+			log.Error().Err(err).Int("iteration", iteration+1).Msg("Failed to get response from Gemini after function call")
+			return nil, fmt.Errorf("failed to get AI response after function call: %w", err)
+		}
+
+		if len(resp.Candidates) == 0 {
+			return nil, fmt.Errorf("no response from Gemini after function call")
+		}
+
+		candidate = resp.Candidates[0]
 	}
 
 	// Extract text response

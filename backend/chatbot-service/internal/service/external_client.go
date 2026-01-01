@@ -133,6 +133,7 @@ func (c *tripServiceClientImpl) GetTripByID(ctx context.Context, tripID string) 
 type BookingServiceClient interface {
 	CreateGuestBooking(ctx context.Context, req *model.CreateGuestBookingRequest) (*model.BookingResponse, error)
 	GetBookingByReference(ctx context.Context, reference string, email string) (*model.BookingResponse, error)
+	GetBookingByID(ctx context.Context, bookingID string) (*model.BookingResponse, error)
 }
 
 type bookingServiceClientImpl struct {
@@ -222,6 +223,38 @@ func (c *bookingServiceClientImpl) GetBookingByReference(ctx context.Context, re
 	if resp.StatusCode != http.StatusOK {
 		log.Error().Int("status_code", resp.StatusCode).Msg("Booking service returned non-200 status")
 		return nil, fmt.Errorf("booking not found or service error: status %d", resp.StatusCode)
+	}
+
+	var apiResp model.APIResponse[model.BookingResponse]
+	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &apiResp.Data, nil
+}
+
+func (c *bookingServiceClientImpl) GetBookingByID(ctx context.Context, bookingID string) (*model.BookingResponse, error) {
+	reqURL := fmt.Sprintf("%s/api/v1/bookings/%s", c.baseURL, bookingID)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to call booking service")
+		return nil, fmt.Errorf("failed to call booking service: %w", err)
+	}
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			log.Error().Err(closeErr).Msg("Failed to close response body")
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		log.Error().Int("status_code", resp.StatusCode).Str("booking_id", bookingID).Msg("Booking service returned non-200 status")
+		return nil, fmt.Errorf("booking not found: status %d", resp.StatusCode)
 	}
 
 	var apiResp model.APIResponse[model.BookingResponse]
