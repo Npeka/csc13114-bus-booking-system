@@ -121,7 +121,7 @@ export function ChatBot() {
       {isOpen && (
         <Card className="fixed right-6 bottom-6 z-50 w-96 max-w-[calc(100vw-3rem)] py-0! shadow-elevated">
           {/* Header */}
-          <div className="flex items-center justify-between rounded-t-lg border-b bg-primary p-4 text-white">
+          <div className="flex items-center justify-between rounded-t-[12px] border-b bg-primary p-4 text-white">
             <div className="flex items-center space-x-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full">
                 <Bot className="h-6 w-6" />
