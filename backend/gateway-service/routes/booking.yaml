@@ -27,7 +27,7 @@ routes:
 
   # User routes (auth required)
   - path: "/api/v1/bookings"
-    methods: ["POST"]
+    methods: ["GET", "POST"]
     auth:
       required: true
 

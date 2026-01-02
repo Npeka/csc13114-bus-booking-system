@@ -157,6 +157,22 @@ func (mr *MockBookingRepositoryMockRecorder) GetTripBookings(ctx, tripID, page, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTripBookings", reflect.TypeOf((*MockBookingRepository)(nil).GetTripBookings), ctx, tripID, page, limit)
 }
 
+// ListBookings mocks base method.
+func (m *MockBookingRepository) ListBookings(ctx context.Context, req model.ListBookingsRequest) ([]*model.Booking, int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListBookings", ctx, req)
+	ret0, _ := ret[0].([]*model.Booking)
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ListBookings indicates an expected call of ListBookings.
+func (mr *MockBookingRepositoryMockRecorder) ListBookings(ctx, req interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListBookings", reflect.TypeOf((*MockBookingRepository)(nil).ListBookings), ctx, req)
+}
+
 // UpdateBooking mocks base method.
 func (m *MockBookingRepository) UpdateBooking(ctx context.Context, booking *model.Booking) error {
 	m.ctrl.T.Helper()

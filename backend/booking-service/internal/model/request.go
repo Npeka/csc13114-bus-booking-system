@@ -177,3 +177,29 @@ type SeatBookingStatus struct {
 	IsBooked bool `json:"is_booked"`
 	IsLocked bool `json:"is_locked"`
 }
+
+// ListBookingsRequest represents request to list all bookings (admin)
+type ListBookingsRequest struct {
+	Page      int    `form:"page" binding:"omitempty,min=1"`
+	PageSize  int    `form:"limit" binding:"omitempty,min=1,max=100"`
+	Status    string `form:"status" binding:"omitempty"`
+	StartDate string `form:"start_date" binding:"omitempty"`
+	EndDate   string `form:"end_date" binding:"omitempty"`
+	SortBy    string `form:"sort_by" binding:"omitempty,oneof=created_at total_amount"`
+	Order     string `form:"order" binding:"omitempty,oneof=asc desc"`
+}
+
+func (r *ListBookingsRequest) Normalize() {
+	if r.Page <= 0 {
+		r.Page = 1
+	}
+	if r.PageSize <= 0 {
+		r.PageSize = 10
+	}
+	if r.SortBy == "" {
+		r.SortBy = "created_at"
+	}
+	if r.Order == "" {
+		r.Order = "desc"
+	}
+}

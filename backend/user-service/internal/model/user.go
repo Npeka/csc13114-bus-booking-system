@@ -88,5 +88,13 @@ type UserListQuery struct {
 	Role     string `form:"role" binding:"omitempty,oneof=1 2 4 8" json:"role"`
 	Status   string `form:"status" binding:"omitempty,oneof=active inactive suspended verified" json:"status"`
 	SortBy   string `form:"sort_by" binding:"omitempty,oneof=created_at updated_at email phone full_name" json:"sort_by"`
+	Order    string `form:"order" binding:"omitempty,oneof=asc desc" json:"order"`
 	SortDesc bool   `form:"sort_desc" json:"sort_desc"`
+}
+
+func (q *UserListQuery) Normalize() {
+	q.PaginationRequest.Normalize()
+	if q.Order == "desc" {
+		q.SortDesc = true
+	}
 }

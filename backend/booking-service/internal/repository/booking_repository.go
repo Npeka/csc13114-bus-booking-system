@@ -20,6 +20,7 @@ type BookingRepository interface {
 	GetBookingsByUserID(ctx context.Context, userID uuid.UUID, statuses []model.BookingStatus, limit, offset int) ([]*model.Booking, int64, error)
 	GetBookingsByTripID(ctx context.Context, tripID uuid.UUID, limit, offset int) ([]*model.Booking, int64, error)
 	GetTripBookings(ctx context.Context, tripID uuid.UUID, page, limit int) ([]*model.Booking, int64, error)
+	ListBookings(ctx context.Context, req model.ListBookingsRequest) ([]*model.Booking, int64, error)
 	UpdateBooking(ctx context.Context, booking *model.Booking) error
 	UpdateStatus(ctx context.Context, id uuid.UUID, status model.BookingStatus) error
 	CancelBooking(ctx context.Context, id uuid.UUID, reason string) error
@@ -137,10 +138,56 @@ func (r *bookingRepositoryImpl) GetBookingsByTripID(ctx context.Context, tripID 
 	return bookings, total, nil
 }
 
-// GetTripBookings with pagination
 func (r *bookingRepositoryImpl) GetTripBookings(ctx context.Context, tripID uuid.UUID, page, limit int) ([]*model.Booking, int64, error) {
 	offset := (page - 1) * limit
 	return r.GetBookingsByTripID(ctx, tripID, limit, offset)
+}
+
+func (r *bookingRepositoryImpl) ListBookings(ctx context.Context, req model.ListBookingsRequest) ([]*model.Booking, int64, error) {
+	var bookings []*model.Booking
+	var total int64
+
+	query := r.db.WithContext(ctx).Model(&model.Booking{})
+
+	if req.Status != "" {
+		query = query.Where("status = ?", req.Status)
+	}
+
+	if req.StartDate != "" {
+		// Assuming ISO date string YYYY-MM-DD
+		query = query.Where("created_at >= ?", req.StartDate)
+	}
+
+	if req.EndDate != "" {
+		query = query.Where("created_at <= ?", req.EndDate+" 23:59:59")
+	}
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, fmt.Errorf("failed to count bookings: %w", err)
+	}
+
+	order := "created_at DESC"
+	if req.SortBy != "" {
+		orderStr := "ASC"
+		if req.Order == "desc" {
+			orderStr = "DESC"
+		}
+		order = fmt.Sprintf("%s %s", req.SortBy, orderStr)
+	}
+
+	offset := (req.Page - 1) * req.PageSize
+	err := query.
+		Preload("BookingSeats").
+		Order(order).
+		Limit(req.PageSize).
+		Offset(offset).
+		Find(&bookings).Error
+
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to list bookings: %w", err)
+	}
+
+	return bookings, total, nil
 }
 
 func (r *bookingRepositoryImpl) UpdateBooking(ctx context.Context, booking *model.Booking) error {

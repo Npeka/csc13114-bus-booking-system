@@ -31,6 +31,7 @@ type BookingService interface {
 	GetByReference(ctx context.Context, reference string, email string) (*model.BookingResponse, error)
 	GetUserBookings(ctx context.Context, req model.GetUserBookingsRequest, userID uuid.UUID) ([]*model.BookingResponse, int64, error)
 	GetTripBookings(ctx context.Context, req model.PaginationRequest, tripID uuid.UUID) ([]*model.BookingResponse, int64, error)
+	ListBookings(ctx context.Context, req model.ListBookingsRequest) ([]*model.BookingResponse, int64, error)
 
 	CancelBooking(ctx context.Context, id uuid.UUID, reason string) error
 	RetryPayment(ctx context.Context, bookingID uuid.UUID) (*model.BookingResponse, error)
@@ -792,6 +793,64 @@ func (s *bookingServiceImpl) ExpireBooking(ctx context.Context, bookingID uuid.U
 	}()
 
 	return nil
+}
+
+func (s *bookingServiceImpl) ListBookings(ctx context.Context, req model.ListBookingsRequest) ([]*model.BookingResponse, int64, error) {
+	bookings, total, err := s.bookingRepo.ListBookings(ctx, req)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	responses := make([]*model.BookingResponse, len(bookings))
+
+	// Collect unique trip IDs
+	uniqueTripIDs := make(map[uuid.UUID]bool)
+	for _, booking := range bookings {
+		uniqueTripIDs[booking.TripID] = true
+	}
+
+	// Convert to slice
+	tripIDs := make([]uuid.UUID, 0, len(uniqueTripIDs))
+	for tripID := range uniqueTripIDs {
+		tripIDs = append(tripIDs, tripID)
+	}
+
+	// Batch fetch all trips with preloads in a single API call
+	var tripDataMap map[uuid.UUID]*trip.Trip
+	if len(tripIDs) > 0 {
+		trips, err := s.tripClient.GetTripsByIDs(ctx, trip.GetTripByIDRequest{
+			PreLoadRoute: true,
+			PreloadBus:   true,
+		}, tripIDs)
+		if err != nil {
+			log.Warn().Err(err).Msg("Failed to batch fetch trip data for bookings")
+		} else {
+			// Build map for quick lookup
+			tripDataMap = make(map[uuid.UUID]*trip.Trip, len(trips))
+			for i := range trips {
+				tripDataMap[trips[i].ID] = &trips[i]
+			}
+		}
+	}
+
+	// Build responses with trip data
+	for i, booking := range bookings {
+		resp := s.toBookingResponse(booking)
+
+		// Add trip info if available
+		if tripData, ok := tripDataMap[booking.TripID]; ok {
+			resp.Trip = &model.TripBasicInfo{
+				Origin:        tripData.Route.Origin,
+				Destination:   tripData.Route.Destination,
+				DepartureTime: tripData.DepartureTime,
+				BusName:       tripData.Bus.Model,
+			}
+		}
+
+		responses[i] = resp
+	}
+
+	return responses, total, nil
 }
 
 // Email Helper Methods

@@ -19,6 +19,7 @@ type BookingHandler interface {
 	GetByReference(r *ginext.Request) (*ginext.Response, error)
 	GetUserBookings(r *ginext.Request) (*ginext.Response, error)
 	GetTripBookings(r *ginext.Request) (*ginext.Response, error)
+	ListBookings(r *ginext.Request) (*ginext.Response, error)
 
 	CancelBooking(r *ginext.Request) (*ginext.Response, error)
 	RetryPayment(r *ginext.Request) (*ginext.Response, error)
@@ -401,4 +402,38 @@ func (h *BookingHandlerImpl) DownloadETicket(r *ginext.Request) error {
 	r.GinCtx.Data(200, "application/pdf", pdfBuffer.Bytes())
 
 	return nil
+}
+
+// ListBookings godoc
+// @Summary List all bookings
+// @Description List all bookings with pagination and filters (Admin only)
+// @Tags bookings
+// @Produce json
+// @Param page query int false "Page number" default(1)
+// @Param limit query int false "Items per page" default(10)
+// @Param status query string false "Filter by status"
+// @Param start_date query string false "Start date (YYYY-MM-DD)"
+// @Param end_date query string false "End date (YYYY-MM-DD)"
+// @Param sort_by query string false "Sort field" default(created_at)
+// @Param order query string false "Sort order" default(desc)
+// @Success 200 {object} ginext.Response{data=model.PaginatedBookingResponse}
+// @Failure 400 {object} ginext.Response
+// @Failure 500 {object} ginext.Response
+// @Router /api/v1/bookings [get]
+func (h *BookingHandlerImpl) ListBookings(r *ginext.Request) (*ginext.Response, error) {
+	var req model.ListBookingsRequest
+	if err := r.GinCtx.ShouldBindQuery(&req); err != nil {
+		log.Error().Err(err).Msg("failed to bind query parameters")
+		return nil, ginext.NewBadRequestError(err.Error())
+	}
+
+	req.Normalize()
+
+	bookings, total, err := h.bookingService.ListBookings(r.Context(), req)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to list bookings")
+		return nil, err
+	}
+
+	return ginext.NewPaginatedResponse(bookings, req.Page, req.PageSize, total), nil
 }

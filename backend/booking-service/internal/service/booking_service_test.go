@@ -1669,3 +1669,246 @@ func TestExpireBooking_AlreadyProcessed(t *testing.T) {
 
 	assert.NoError(t, err) // Returns nil - already processed
 }
+
+func TestListBookings_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBookingRepo := repo_mocks.NewMockBookingRepository(ctrl)
+	mockPaymentClient := mocks.NewMockPaymentClient(ctrl)
+	mockTripClient := mocks.NewMockTripClient(ctrl)
+	mockUserClient := mocks.NewMockUserClient(ctrl)
+	mockNotificationClient := mocks.NewMockNotificationClient(ctrl)
+	mockDelayedQueue := queue_mocks.NewMockDelayedQueueManager(ctrl)
+	mockSeatLockService := service_mocks.NewMockSeatLockService(ctrl)
+
+	service := NewBookingService(
+		mockBookingRepo,
+		mockPaymentClient,
+		mockTripClient,
+		mockUserClient,
+		mockNotificationClient,
+		mockDelayedQueue,
+		mockSeatLockService,
+	)
+
+	ctx := context.Background()
+	tripID1 := uuid.New()
+	tripID2 := uuid.New()
+
+	req := model.ListBookingsRequest{
+		Page:     1,
+		PageSize: 10,
+		SortBy:   "created_at",
+		Order:    "desc",
+	}
+
+	bookings := []*model.Booking{
+		{
+			BaseModel:        model.BaseModel{ID: uuid.New()},
+			BookingReference: "BK001",
+			TripID:           tripID1,
+			UserID:           uuid.New(),
+			TotalAmount:      100000,
+			Status:           model.BookingStatusConfirmed,
+		},
+		{
+			BaseModel:        model.BaseModel{ID: uuid.New()},
+			BookingReference: "BK002",
+			TripID:           tripID2,
+			UserID:           uuid.New(),
+			TotalAmount:      150000,
+			Status:           model.BookingStatusPending,
+		},
+	}
+
+	trips := []trip.Trip{
+		{
+			ID:            tripID1,
+			BasePrice:     100000,
+			DepartureTime: time.Now(),
+			Route: &trip.Route{
+				Origin:      "Ha Noi",
+				Destination: "Da Nang",
+			},
+			Bus: &trip.Bus{
+				Model: "Hyundai Universe",
+			},
+		},
+		{
+			ID:            tripID2,
+			BasePrice:     150000,
+			DepartureTime: time.Now(),
+			Route: &trip.Route{
+				Origin:      "Ho Chi Minh",
+				Destination: "Vung Tau",
+			},
+			Bus: &trip.Bus{
+				Model: "Mercedes Benz",
+			},
+		},
+	}
+
+	mockBookingRepo.EXPECT().
+		ListBookings(ctx, req).
+		Return(bookings, int64(2), nil).
+		Times(1)
+
+	mockTripClient.EXPECT().
+		GetTripsByIDs(ctx, gomock.Any(), gomock.Any()).
+		Return(trips, nil).
+		Times(1)
+
+	result, total, err := service.ListBookings(ctx, req)
+
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+	assert.Equal(t, int64(2), total)
+	assert.Equal(t, "BK001", result[0].BookingReference)
+	assert.Equal(t, "BK002", result[1].BookingReference)
+	assert.NotNil(t, result[0].Trip)
+	assert.Equal(t, "Ha Noi", result[0].Trip.Origin)
+	assert.NotNil(t, result[1].Trip)
+	assert.Equal(t, "Ho Chi Minh", result[1].Trip.Origin)
+}
+
+func TestListBookings_EmptyResults(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBookingRepo := repo_mocks.NewMockBookingRepository(ctrl)
+	mockPaymentClient := mocks.NewMockPaymentClient(ctrl)
+	mockTripClient := mocks.NewMockTripClient(ctrl)
+	mockUserClient := mocks.NewMockUserClient(ctrl)
+	mockNotificationClient := mocks.NewMockNotificationClient(ctrl)
+	mockDelayedQueue := queue_mocks.NewMockDelayedQueueManager(ctrl)
+	mockSeatLockService := service_mocks.NewMockSeatLockService(ctrl)
+
+	service := NewBookingService(
+		mockBookingRepo,
+		mockPaymentClient,
+		mockTripClient,
+		mockUserClient,
+		mockNotificationClient,
+		mockDelayedQueue,
+		mockSeatLockService,
+	)
+
+	ctx := context.Background()
+	req := model.ListBookingsRequest{
+		Page:     1,
+		PageSize: 10,
+	}
+
+	mockBookingRepo.EXPECT().
+		ListBookings(ctx, req).
+		Return([]*model.Booking{}, int64(0), nil).
+		Times(1)
+
+	result, total, err := service.ListBookings(ctx, req)
+
+	assert.NoError(t, err)
+	assert.Empty(t, result)
+	assert.Equal(t, int64(0), total)
+}
+
+func TestListBookings_RepositoryError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBookingRepo := repo_mocks.NewMockBookingRepository(ctrl)
+	mockPaymentClient := mocks.NewMockPaymentClient(ctrl)
+	mockTripClient := mocks.NewMockTripClient(ctrl)
+	mockUserClient := mocks.NewMockUserClient(ctrl)
+	mockNotificationClient := mocks.NewMockNotificationClient(ctrl)
+	mockDelayedQueue := queue_mocks.NewMockDelayedQueueManager(ctrl)
+	mockSeatLockService := service_mocks.NewMockSeatLockService(ctrl)
+
+	service := NewBookingService(
+		mockBookingRepo,
+		mockPaymentClient,
+		mockTripClient,
+		mockUserClient,
+		mockNotificationClient,
+		mockDelayedQueue,
+		mockSeatLockService,
+	)
+
+	ctx := context.Background()
+	req := model.ListBookingsRequest{
+		Page:     1,
+		PageSize: 10,
+	}
+
+	mockBookingRepo.EXPECT().
+		ListBookings(ctx, req).
+		Return(nil, int64(0), assert.AnError).
+		Times(1)
+
+	result, total, err := service.ListBookings(ctx, req)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Equal(t, int64(0), total)
+}
+
+func TestListBookings_TripFetchError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBookingRepo := repo_mocks.NewMockBookingRepository(ctrl)
+	mockPaymentClient := mocks.NewMockPaymentClient(ctrl)
+	mockTripClient := mocks.NewMockTripClient(ctrl)
+	mockUserClient := mocks.NewMockUserClient(ctrl)
+	mockNotificationClient := mocks.NewMockNotificationClient(ctrl)
+	mockDelayedQueue := queue_mocks.NewMockDelayedQueueManager(ctrl)
+	mockSeatLockService := service_mocks.NewMockSeatLockService(ctrl)
+
+	service := NewBookingService(
+		mockBookingRepo,
+		mockPaymentClient,
+		mockTripClient,
+		mockUserClient,
+		mockNotificationClient,
+		mockDelayedQueue,
+		mockSeatLockService,
+	)
+
+	ctx := context.Background()
+	tripID := uuid.New()
+
+	req := model.ListBookingsRequest{
+		Page:     1,
+		PageSize: 10,
+	}
+
+	bookings := []*model.Booking{
+		{
+			BaseModel:        model.BaseModel{ID: uuid.New()},
+			BookingReference: "BK001",
+			TripID:           tripID,
+			UserID:           uuid.New(),
+			TotalAmount:      100000,
+			Status:           model.BookingStatusConfirmed,
+		},
+	}
+
+	mockBookingRepo.EXPECT().
+		ListBookings(ctx, req).
+		Return(bookings, int64(1), nil).
+		Times(1)
+
+	// Trip fetch fails but should not cause entire operation to fail
+	mockTripClient.EXPECT().
+		GetTripsByIDs(ctx, gomock.Any(), gomock.Any()).
+		Return(nil, assert.AnError).
+		Times(1)
+
+	result, total, err := service.ListBookings(ctx, req)
+
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, int64(1), total)
+	assert.Equal(t, "BK001", result[0].BookingReference)
+	assert.Nil(t, result[0].Trip) // Trip should be nil when fetch fails
+}
