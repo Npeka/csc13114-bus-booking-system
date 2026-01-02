@@ -16,6 +16,7 @@ import { PaymentSummary } from "../../(protected)/checkout/_components/payment-s
 import { ImportantNotes } from "../../(protected)/checkout/_components/important-notes";
 import { TermsConditions } from "../../(protected)/checkout/_components/terms-conditions";
 
+// Checkout guest page component
 function CheckoutGuestContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
