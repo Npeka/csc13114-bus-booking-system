@@ -2,15 +2,26 @@
 
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Download, Copy, Check, Calendar, Hash } from "lucide-react";
+import {
+  ArrowLeft,
+  Download,
+  Copy,
+  Check,
+  Calendar,
+  Hash,
+  Star,
+  MessageSquare,
+} from "lucide-react";
 import Link from "next/link";
 import {
   getBookingById,
   downloadETicket,
 } from "@/lib/api/booking/booking-service";
+import { getReviewByBooking } from "@/lib/api/booking";
 import { getTripById } from "@/lib/api/trip/trip-service";
 import { toast } from "sonner";
 import type { BookingResponse } from "@/lib/types/booking";
@@ -18,6 +29,7 @@ import type { Trip } from "@/lib/types/trip";
 import { BookingStatusBadge } from "./_components/booking-status-badge";
 import { TripInfoCard } from "./_components/trip-info-card";
 import { PaymentInfoCard } from "./_components/payment-info-card";
+import { ReviewForm } from "@/components/reviews";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 
@@ -33,6 +45,15 @@ export default function BookingDetailPage({ params }: PageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isCopied, setIsCopied] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+
+  // Fetch existing review for this booking
+  const { data: existingReview, refetch: refetchReview } = useQuery({
+    queryKey: ["booking-review", resolvedParams.id],
+    queryFn: () => getReviewByBooking(resolvedParams.id),
+    enabled: !!booking && booking.status === "CONFIRMED",
+    retry: false,
+  });
 
   const fetchBooking = async () => {
     try {
@@ -247,7 +268,7 @@ export default function BookingDetailPage({ params }: PageProps) {
 
         {/* Actions */}
         {booking.status === "CONFIRMED" && (
-          <div className="mt-6">
+          <div className="mt-6 flex flex-wrap gap-3">
             <Button
               className="w-full sm:w-auto"
               onClick={handleDownloadTicket}
@@ -257,6 +278,72 @@ export default function BookingDetailPage({ params }: PageProps) {
               {isDownloading ? "Đang tải..." : "Tải vé điện tử"}
             </Button>
           </div>
+        )}
+
+        {/* Review Section */}
+        {booking.status === "CONFIRMED" && (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Star className="h-5 w-5 text-warning" />
+                Đánh giá chuyến đi
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {existingReview ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`h-5 w-5 ${
+                          i < existingReview.rating
+                            ? "fill-warning text-warning"
+                            : "text-muted-foreground"
+                        }`}
+                      />
+                    ))}
+                    <span className="ml-2 text-sm text-muted-foreground">
+                      {format(
+                        new Date(existingReview.created_at),
+                        "dd/MM/yyyy",
+                        { locale: vi },
+                      )}
+                    </span>
+                  </div>
+                  {existingReview.comment && (
+                    <p className="text-muted-foreground">
+                      {existingReview.comment}
+                    </p>
+                  )}
+                  <p className="flex items-center gap-1 text-sm text-success">
+                    <Check className="h-4 w-4" />
+                    Cảm ơn bạn đã đánh giá!
+                  </p>
+                </div>
+              ) : showReviewForm ? (
+                <ReviewForm
+                  bookingId={booking.id}
+                  tripId={booking.trip_id}
+                  onSuccess={() => {
+                    setShowReviewForm(false);
+                    refetchReview();
+                  }}
+                  onCancel={() => setShowReviewForm(false)}
+                />
+              ) : (
+                <div className="text-center">
+                  <p className="mb-4 text-muted-foreground">
+                    Chia sẻ trải nghiệm của bạn về chuyến đi này
+                  </p>
+                  <Button onClick={() => setShowReviewForm(true)}>
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Viết đánh giá
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>
