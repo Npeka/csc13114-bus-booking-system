@@ -5,6 +5,8 @@ import (
 	"bus-booking/booking-service/internal/service"
 	"bus-booking/shared/ginext"
 
+	sharedCtx "bus-booking/shared/context"
+
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
@@ -45,16 +47,12 @@ func NewReviewHandler(reviewService service.ReviewService) ReviewHandler {
 // @Router /api/v1/bookings/{id}/review [post]
 // @Security BearerAuth
 func (h *ReviewHandlerImpl) CreateReview(r *ginext.Request) (*ginext.Response, error) {
+	userID := sharedCtx.GetUserID(r.GinCtx)
+
 	bookingIDStr := r.GinCtx.Param("id")
 	bookingID, err := uuid.Parse(bookingIDStr)
 	if err != nil {
 		return nil, ginext.NewBadRequestError("invalid booking id")
-	}
-
-	// Get user ID from context (set by auth middleware)
-	userID, exists := r.GinCtx.Get("user_id")
-	if !exists {
-		return nil, ginext.NewUnauthorizedError("user not authenticated")
 	}
 
 	var req model.CreateReviewRequest
@@ -63,10 +61,9 @@ func (h *ReviewHandlerImpl) CreateReview(r *ginext.Request) (*ginext.Response, e
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
-	// Override booking_id from path
 	req.BookingID = bookingID
 
-	review, err := h.reviewService.CreateReview(r.Context(), userID.(uuid.UUID), &req)
+	review, err := h.reviewService.CreateReview(r.Context(), userID, &req)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to create review")
 		return nil, err
@@ -218,15 +215,12 @@ func (h *ReviewHandlerImpl) GetTripReviewSummary(r *ginext.Request) (*ginext.Res
 // @Router /api/v1/reviews/{id} [put]
 // @Security BearerAuth
 func (h *ReviewHandlerImpl) UpdateReview(r *ginext.Request) (*ginext.Response, error) {
+	userID := sharedCtx.GetUserID(r.GinCtx)
+
 	reviewIDStr := r.GinCtx.Param("id")
 	reviewID, err := uuid.Parse(reviewIDStr)
 	if err != nil {
 		return nil, ginext.NewBadRequestError("invalid review id")
-	}
-
-	userID, exists := r.GinCtx.Get("user_id")
-	if !exists {
-		return nil, ginext.NewUnauthorizedError("user not authenticated")
 	}
 
 	var req model.UpdateReviewRequest
@@ -234,7 +228,7 @@ func (h *ReviewHandlerImpl) UpdateReview(r *ginext.Request) (*ginext.Response, e
 		return nil, ginext.NewBadRequestError(err.Error())
 	}
 
-	review, err := h.reviewService.UpdateReview(r.Context(), userID.(uuid.UUID), reviewID, &req)
+	review, err := h.reviewService.UpdateReview(r.Context(), userID, reviewID, &req)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to update review")
 		return nil, err
@@ -255,18 +249,15 @@ func (h *ReviewHandlerImpl) UpdateReview(r *ginext.Request) (*ginext.Response, e
 // @Router /api/v1/reviews/{id} [delete]
 // @Security BearerAuth
 func (h *ReviewHandlerImpl) DeleteReview(r *ginext.Request) (*ginext.Response, error) {
+	userID := sharedCtx.GetUserID(r.GinCtx)
+
 	reviewIDStr := r.GinCtx.Param("id")
 	reviewID, err := uuid.Parse(reviewIDStr)
 	if err != nil {
 		return nil, ginext.NewBadRequestError("invalid review id")
 	}
 
-	userID, exists := r.GinCtx.Get("user_id")
-	if !exists {
-		return nil, ginext.NewUnauthorizedError("user not authenticated")
-	}
-
-	if err := h.reviewService.DeleteReview(r.Context(), userID.(uuid.UUID), reviewID); err != nil {
+	if err := h.reviewService.DeleteReview(r.Context(), userID, reviewID); err != nil {
 		log.Error().Err(err).Msg("failed to delete review")
 		return nil, err
 	}
