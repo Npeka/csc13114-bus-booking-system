@@ -17,6 +17,7 @@ import {
   Clock,
 } from "lucide-react";
 import { getBookingById, downloadETicket } from "@/lib/api/booking";
+import { getTripById } from "@/lib/api/trip/trip-service";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { toast } from "sonner";
@@ -27,11 +28,20 @@ export default function BookingDetailsPage() {
   const bookingId = params.id as string;
   const reference = searchParams.get("ref");
 
-  const { data: booking, isLoading } = useQuery({
+  const { data: booking, isLoading: bookingLoading } = useQuery({
     queryKey: ["booking", bookingId],
     queryFn: () => getBookingById(bookingId),
     enabled: !!bookingId,
   });
+
+  // Fetch trip details using trip_id from booking
+  const { data: trip, isLoading: tripLoading } = useQuery({
+    queryKey: ["trip", booking?.trip_id],
+    queryFn: () => getTripById(booking!.trip_id),
+    enabled: !!booking?.trip_id,
+  });
+
+  const isLoading = bookingLoading || tripLoading;
 
   const downloadMutation = useMutation({
     mutationFn: () => downloadETicket(bookingId),
@@ -143,7 +153,9 @@ export default function BookingDetailsPage() {
                     <MapPin className="h-4 w-4 text-muted-foreground" />
                     <div>
                       <p className="text-sm text-muted-foreground">Điểm đi</p>
-                      <p className="font-semibold">Thông tin từ trip service</p>
+                      <p className="font-semibold">
+                        {trip?.route?.origin || "Đang tải..."}
+                      </p>
                     </div>
                   </div>
                   <ArrowRight className="h-5 w-5 text-muted-foreground" />
@@ -151,7 +163,9 @@ export default function BookingDetailsPage() {
                     <MapPin className="h-4 w-4 text-muted-foreground" />
                     <div className="text-right">
                       <p className="text-sm text-muted-foreground">Điểm đến</p>
-                      <p className="font-semibold">Thông tin từ trip service</p>
+                      <p className="font-semibold">
+                        {trip?.route?.destination || "Đang tải..."}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -166,9 +180,15 @@ export default function BookingDetailsPage() {
                         Ngày khởi hành
                       </p>
                       <p className="font-medium">
-                        {format(new Date(booking.created_at), "dd/MM/yyyy", {
-                          locale: vi,
-                        })}
+                        {trip?.departure_time
+                          ? format(
+                              new Date(trip.departure_time),
+                              "dd/MM/yyyy",
+                              {
+                                locale: vi,
+                              },
+                            )
+                          : "Đang tải..."}
                       </p>
                     </div>
                   </div>
@@ -178,7 +198,13 @@ export default function BookingDetailsPage() {
                       <p className="text-sm text-muted-foreground">
                         Giờ khởi hành
                       </p>
-                      <p className="font-medium">--:--</p>
+                      <p className="font-medium">
+                        {trip?.departure_time
+                          ? format(new Date(trip.departure_time), "HH:mm", {
+                              locale: vi,
+                            })
+                          : "--:--"}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -283,17 +309,6 @@ export default function BookingDetailsPage() {
                       >
                         Thanh toán ngay
                       </Button>
-                    )}
-
-                    {booking.transaction.qr_code && (
-                      <div className="rounded-md border bg-muted/50 p-3">
-                        <p className="mb-2 text-xs font-medium text-muted-foreground">
-                          Mã QR chuyển khoản:
-                        </p>
-                        <pre className="font-mono text-[10px] leading-tight break-all whitespace-pre-wrap">
-                          {booking.transaction.qr_code}
-                        </pre>
-                      </div>
                     )}
                   </div>
                 )}
