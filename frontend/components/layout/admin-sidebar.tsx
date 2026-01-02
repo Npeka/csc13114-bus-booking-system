@@ -10,7 +10,6 @@ import {
   Calendar,
   DollarSign,
   BarChart3,
-  Settings,
   ChevronRight,
   LogOut,
 } from "lucide-react";
@@ -95,11 +94,6 @@ const menuItems = [
     title: "Thống kê",
     icon: BarChart3,
     href: "/admin/analytics",
-  },
-  {
-    title: "Cài đặt",
-    icon: Settings,
-    href: "/admin/settings",
   },
 ];
 
@@ -258,13 +252,6 @@ export function AdminSidebar() {
                     </div>
                   </div>
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/admin/settings">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Cài đặt
-                  </Link>
-                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={handleLogout}
