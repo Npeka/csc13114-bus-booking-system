@@ -34,7 +34,7 @@ export function TripFilters({
 }: TripFiltersProps) {
   const [priceRange, setPriceRange] = useState(filters.priceRange);
 
-  // Use local constants instead of fetching from API
+  // Use local constants instead of fetching from api
   const seatTypes = getAllSeatTypeOptions();
   const amenities = getAllAmenityOptions();
 
