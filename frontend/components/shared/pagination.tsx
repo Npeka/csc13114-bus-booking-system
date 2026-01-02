@@ -84,7 +84,6 @@ export function Pagination({
             value={pageSize.toString()}
             onValueChange={(value) => {
               onPageSizeChange(Number(value));
-              onPageChange(1); // Reset to first page when changing page size
             }}
           >
             <SelectTrigger className="h-9 w-20">

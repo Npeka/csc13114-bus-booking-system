@@ -74,6 +74,10 @@ const menuItems = [
         title: "Quản lý xe",
         href: "/admin/buses",
       },
+      {
+        title: "Đặt vé",
+        href: "/admin/bookings",
+      },
     ],
   },
   {
