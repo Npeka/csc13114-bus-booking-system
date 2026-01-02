@@ -72,18 +72,21 @@ type CreateTransactionRequest struct {
 }
 
 type TransactionResponse struct {
-	ID            uuid.UUID         `json:"id"`
-	CreatedAt     time.Time         `json:"created_at"`
-	UpdatedAt     time.Time         `json:"updated_at"`
-	BookingID     uuid.UUID         `json:"booking_id"`
-	UserID        uuid.UUID         `json:"user_id"`
-	Amount        int               `json:"amount"`
-	Currency      Currency          `json:"currency"`
-	PaymentMethod PaymentMethod     `json:"payment_method"`
-	OrderCode     int64             `json:"order_code,omitempty"`
-	Status        TransactionStatus `json:"status"`
-	CheckoutURL   string            `json:"checkout_url,omitempty"`
-	QRCode        string            `json:"qr_code,omitempty"`
+	ID              uuid.UUID         `json:"id"`
+	CreatedAt       time.Time         `json:"created_at"`
+	UpdatedAt       time.Time         `json:"updated_at"`
+	BookingID       uuid.UUID         `json:"booking_id"`
+	UserID          uuid.UUID         `json:"user_id"`
+	Amount          int               `json:"amount"`
+	Currency        Currency          `json:"currency"`
+	PaymentMethod   PaymentMethod     `json:"payment_method"`
+	OrderCode       int64             `json:"order_code,omitempty"`
+	Status          TransactionStatus `json:"status"`
+	CheckoutURL     string            `json:"checkout_url,omitempty"`
+	QRCode          string            `json:"qr_code,omitempty"`
+	TransactionType TransactionType   `json:"transaction_type"`
+	RefundStatus    *RefundStatus     `json:"refund_status,omitempty"`
+	RefundAmount    *int              `json:"refund_amount,omitempty"`
 }
 
 // TransactionListQuery represents query parameters for listing transactions
