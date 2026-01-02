@@ -108,6 +108,19 @@ export function getValue(
   return "";
 }
 
+/**
+ * Format a number as Vietnamese currency (VND)
+ * @param amount - The amount to format
+ * @returns Formatted currency string
+ * @example formatCurrency(100000) // returns "100.000₫"
+ */
+export function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+  }).format(amount);
+}
+
 import { ApiTripItem, TripDetail } from "@/lib/types/trip";
 import { getAmenityDisplay, getTripStatusDisplay } from "@/lib/constants/trip";
 

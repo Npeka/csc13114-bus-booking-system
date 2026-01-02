@@ -3,7 +3,12 @@
  * Handles booking CRUD operations
  */
 
-import apiClient, { ApiResponse, handleApiError } from "../client";
+import apiClient, {
+  ApiResponse,
+  handleApiError,
+  PaginatedApiResponse,
+  PaginatedResponse,
+} from "../client";
 import {
   BookingResponse,
   PaginatedBookingResponse,
@@ -20,7 +25,7 @@ export async function getUserBookings(
   page: number = 1,
   pageSize: number = 10,
   status?: string[],
-): Promise<PaginatedBookingResponse> {
+): Promise<PaginatedApiResponse<BookingResponse>> {
   try {
     const params: Record<string, string | number | string[]> = {
       page,
@@ -31,47 +36,12 @@ export async function getUserBookings(
       params.status = status;
     }
 
-    const response = await apiClient.get<{ data: unknown; meta?: unknown }>(
+    const response = await apiClient.get<PaginatedApiResponse<BookingResponse>>(
       `/booking/api/v1/bookings/user/${userId}`,
       { params },
     );
 
-    if (response.data && typeof response.data === "object") {
-      const responseData = response.data as {
-        data: BookingResponse[] | null;
-        meta?: {
-          page: number;
-          page_size: number;
-          total: number;
-          total_pages: number;
-        };
-      };
-      const { data, meta } = responseData;
-
-      // Handle null data with meta field
-      if (data === null && meta) {
-        return {
-          data: [],
-          total: 0,
-          page: meta.page || 1,
-          page_size: meta.page_size || pageSize,
-          total_pages: 0,
-        };
-      }
-
-      // Handle normal response with data array
-      if (Array.isArray(data) && meta) {
-        return {
-          data: data,
-          total: meta.total || 0,
-          page: meta.page || 1,
-          page_size: meta.page_size || pageSize,
-          total_pages: meta.total_pages || 0,
-        };
-      }
-    }
-
-    throw new Error("Invalid response format from booking service");
+    return response.data;
   } catch (error) {
     throw new Error(handleApiError(error));
   }
@@ -250,6 +220,45 @@ export async function getTripBookings(
     }
 
     return response.data.data;
+  } catch (error) {
+    throw new Error(handleApiError(error));
+  }
+}
+
+/**
+ * List all bookings (Admin only)
+ */
+export async function listBookings(
+  page: number = 1,
+  pageSize: number = 10,
+  filters?: {
+    status?: string;
+    startDate?: string;
+    endDate?: string;
+    sortBy?: string;
+    order?: "asc" | "desc";
+  },
+): Promise<PaginatedApiResponse<BookingResponse>> {
+  try {
+    const params: Record<string, string | number> = {
+      page,
+      limit: pageSize,
+    };
+
+    if (filters) {
+      if (filters.status) params.status = filters.status;
+      if (filters.startDate) params.start_date = filters.startDate;
+      if (filters.endDate) params.end_date = filters.endDate;
+      if (filters.sortBy) params.sort_by = filters.sortBy;
+      if (filters.order) params.order = filters.order;
+    }
+
+    const result = await apiClient.get<PaginatedApiResponse<BookingResponse>>(
+      `/booking/api/v1/bookings`,
+      { params },
+    );
+
+    return result.data;
   } catch (error) {
     throw new Error(handleApiError(error));
   }

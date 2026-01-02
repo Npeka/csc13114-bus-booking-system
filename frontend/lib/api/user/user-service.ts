@@ -30,6 +30,8 @@ export interface UserListQuery {
   search?: string;
   role?: number;
   status?: UserStatus | string;
+  sort_by?: string;
+  order?: "asc" | "desc";
 }
 
 /**

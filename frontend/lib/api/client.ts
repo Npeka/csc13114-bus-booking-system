@@ -138,7 +138,14 @@ export interface BackendErrorResponse {
 // Type-safe API response wrapper (for success responses)
 export interface ApiResponse<T = unknown> {
   data?: T;
-  meta?: {
+  error?: {
+    message: string;
+  };
+}
+
+export interface PaginatedApiResponse<T = unknown> {
+  data: T[];
+  meta: {
     page: number;
     page_size: number;
     total: number;

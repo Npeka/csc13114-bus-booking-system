@@ -11,6 +11,8 @@ import type {
 import { TransactionStatsCards } from "./_components/transaction-stats-cards";
 import { TransactionFilters } from "./_components/transaction-filters";
 import { TransactionTable } from "./_components/transaction-table";
+import { PageHeader, PageHeaderLayout } from "@/components/shared/admin";
+import { Pagination } from "@/components/shared/pagination";
 
 export default function AdminTransactionsPage() {
   const [filters, setFilters] = useState({
@@ -45,6 +47,10 @@ export default function AdminTransactionsPage() {
     setFilters({ ...filters, page });
   };
 
+  const handlePageSizeChange = (pageSize: number) => {
+    setFilters({ ...filters, page_size: pageSize, page: 1 });
+  };
+
   if (statsLoading) {
     return (
       <div className="flex h-96 items-center justify-center">
@@ -58,10 +64,12 @@ export default function AdminTransactionsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Quản lý giao dịch</h1>
-        <p className="text-gray-500">Theo dõi và quản lý tất cả giao dịch</p>
-      </div>
+      <PageHeaderLayout>
+        <PageHeader
+          title="Quản lý giao dịch"
+          description="Theo dõi và quản lý tất cả giao dịch"
+        />
+      </PageHeaderLayout>
 
       <TransactionStatsCards stats={stats} formatCurrency={formatCurrency} />
 
@@ -71,8 +79,14 @@ export default function AdminTransactionsPage() {
         transactions={transactionsData?.data || []}
         isLoading={transactionsLoading}
         formatCurrency={formatCurrency}
-        meta={transactionsData?.meta}
+      />
+
+      <Pagination
+        currentPage={filters.page}
+        totalPages={transactionsData?.meta?.total_pages || 1}
+        pageSize={filters.page_size}
         onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
       />
     </div>
   );

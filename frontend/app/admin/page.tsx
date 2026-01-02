@@ -12,74 +12,29 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { PageHeader } from "@/components/shared/admin";
-
-// Mock data for admin dashboard
-const dashboardStats = {
-  totalUsers: 1_250,
-  totalBookings: 3_847,
-  monthlyRevenue: 245_800_000,
-  averageRating: 4.7,
-};
-
-const recentBookings = [
-  {
-    id: "BK123456",
-    customer: "Nguyễn Văn A",
-    trip: "TP. Hồ Chí Minh → Đà Lạt",
-    amount: 370_000,
-    status: "confirmed",
-    date: "23/11/2025",
-  },
-  {
-    id: "BK123457",
-    customer: "Trần Thị B",
-    trip: "Hà Nội → Đà Nẵng",
-    amount: 350_000,
-    status: "confirmed",
-    date: "22/11/2025",
-  },
-  {
-    id: "BK123458",
-    customer: "Lê Minh C",
-    trip: "TP. Hồ Chí Minh → Nha Trang",
-    amount: 220_000,
-    status: "pending",
-    date: "21/11/2025",
-  },
-];
-
-const recentUsers = [
-  {
-    id: "U001",
-    name: "Nguyễn Văn A",
-    email: "nguyenvana@example.com",
-    joinDate: "20/11/2025",
-    bookings: 5,
-  },
-  {
-    id: "U002",
-    name: "Trần Thị B",
-    email: "tranthib@example.com",
-    joinDate: "18/11/2025",
-    bookings: 2,
-  },
-  {
-    id: "U003",
-    name: "Lê Minh C",
-    email: "leminc@example.com",
-    joinDate: "15/11/2025",
-    bookings: 8,
-  },
-];
+import { useEffect, useState } from "react";
+import { getBookingStats } from "@/lib/api/booking/stats-service";
+import { getTransactionStats } from "@/lib/api/payment/transaction-service";
+import { listBookings } from "@/lib/api/booking/booking-service";
+import { listUsers } from "@/lib/api/user/user-service";
+import { BookingStatsResponse } from "@/lib/types/booking";
+import { TransactionStats } from "@/lib/types/payment";
+import { BookingResponse } from "@/lib/types/booking";
+import { User } from "@/lib/stores/auth-store";
+import { formatCurrency } from "@/lib/utils";
+import { format } from "date-fns";
+import { vi } from "date-fns/locale";
 
 function StatCard({
   title,
   value,
   icon: Icon,
+  loading = false,
 }: {
   title: string;
   value: string;
   icon: React.ComponentType<{ className: string }>;
+  loading?: boolean;
 }) {
   return (
     <Card>
@@ -88,15 +43,20 @@ function StatCard({
         <Icon className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
+        {loading ? (
+          <div className="h-8 w-24 animate-pulse rounded bg-muted"></div>
+        ) : (
+          <div className="text-2xl font-bold">{value}</div>
+        )}
       </CardContent>
     </Card>
   );
 }
 
 function getStatusBadge(status: string) {
-  switch (status) {
+  switch (status.toLowerCase()) {
     case "confirmed":
+    case "completed":
       return (
         <Badge variant="secondary" className="bg-success/10 text-success">
           Đã xác nhận
@@ -109,9 +69,11 @@ function getStatusBadge(status: string) {
         </Badge>
       );
     case "cancelled":
+    case "failed":
+    case "expired":
       return (
         <Badge variant="secondary" className="bg-error/10 text-error">
-          Đã hủy
+          Đã hủy/Lỗi
         </Badge>
       );
     default:
@@ -120,6 +82,76 @@ function getStatusBadge(status: string) {
 }
 
 export default function AdminPage() {
+  const [loading, setLoading] = useState(true);
+  const [bookingStats, setBookingStats] = useState<BookingStatsResponse | null>(
+    null,
+  );
+  const [transactionStats, setTransactionStats] =
+    useState<TransactionStats | null>(null);
+  const [recentBookings, setRecentBookings] = useState<BookingResponse[]>([]);
+  const [recentUsers, setRecentUsers] = useState<User[]>([]);
+  const [totalUsers, setTotalUsers] = useState(0);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+          .toISOString()
+          .split("T")[0];
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+          .toISOString()
+          .split("T")[0];
+
+        const [bStats, tStats, rBookings, rUsers] = await Promise.allSettled([
+          getBookingStats(startOfMonth, endOfMonth),
+          getTransactionStats(),
+          listBookings(1, 5, { sortBy: "created_at", order: "desc" }),
+          listUsers({
+            page: 1,
+            page_size: 5,
+            sort_by: "created_at",
+            order: "desc",
+          }),
+        ]);
+
+        if (bStats.status === "fulfilled") {
+          setBookingStats(bStats.value);
+        } else {
+          console.error("Failed to fetch booking stats:", bStats.reason);
+        }
+
+        if (tStats.status === "fulfilled") {
+          setTransactionStats(tStats.value);
+        } else {
+          console.error("Failed to fetch transaction stats:", tStats.reason);
+        }
+
+        if (rBookings.status === "fulfilled") {
+          setRecentBookings(rBookings.value.data);
+        } else {
+          console.error("Failed to fetch recent bookings:", rBookings.reason);
+          setRecentBookings([]);
+        }
+
+        if (rUsers.status === "fulfilled") {
+          setRecentUsers(rUsers.value?.data || []);
+          setTotalUsers(rUsers.value?.meta?.total || 0);
+        } else {
+          console.error("Failed to fetch recent users:", rUsers.reason);
+          setRecentUsers([]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   return (
     <div className="flex flex-1 flex-col gap-4">
       <PageHeader
@@ -131,23 +163,27 @@ export default function AdminPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Tổng người dùng"
-          value={dashboardStats.totalUsers.toLocaleString()}
+          value={totalUsers.toLocaleString()}
           icon={Users}
+          loading={loading}
         />
         <StatCard
-          title="Tổng đặt vé"
-          value={dashboardStats.totalBookings.toLocaleString()}
+          title="Tổng đặt vé (Tháng)"
+          value={bookingStats?.total_bookings.toLocaleString() || "0"}
           icon={Calendar}
+          loading={loading}
         />
         <StatCard
-          title="Doanh thu tháng"
-          value={`${(dashboardStats.monthlyRevenue / 1_000_000).toFixed(0)}M₫`}
+          title="Tổng doanh thu"
+          value={formatCurrency(transactionStats?.total_in || 0)}
           icon={DollarSign}
+          loading={loading}
         />
         <StatCard
           title="Đánh giá trung bình"
-          value={dashboardStats.averageRating.toFixed(1)}
+          value={bookingStats?.average_rating.toFixed(1) || "0.0"}
           icon={TrendingUp}
+          loading={loading}
         />
       </div>
 
@@ -167,28 +203,49 @@ export default function AdminPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentBookings.map((booking) => (
-                <div
-                  key={booking.id}
-                  className="flex items-center justify-between border-b pb-4 last:border-b-0"
-                >
-                  <div>
-                    <p className="font-medium">{booking.customer}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {booking.trip}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {booking.date}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold">
-                      {booking.amount.toLocaleString()}đ
-                    </p>
-                    {getStatusBadge(booking.status)}
-                  </div>
+              {loading ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="h-16 animate-pulse rounded bg-muted"
+                    />
+                  ))}
                 </div>
-              ))}
+              ) : recentBookings.length === 0 ? (
+                <div className="py-8 text-center text-sm text-muted-foreground">
+                  Chưa có đặt vé nào
+                </div>
+              ) : (
+                recentBookings.map((booking) => (
+                  <div
+                    key={booking.id}
+                    className="flex items-center justify-between border-b pb-4 last:border-b-0"
+                  >
+                    <div>
+                      <p className="font-medium">{booking.booking_reference}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {booking.trip
+                          ? `${booking.trip.origin} → ${booking.trip.destination}`
+                          : "Chuyến đi"}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {format(
+                          new Date(booking.created_at),
+                          "dd/MM/yyyy HH:mm",
+                          { locale: vi },
+                        )}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold">
+                        {formatCurrency(booking.total_amount)}
+                      </p>
+                      {getStatusBadge(booking.status)}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
@@ -208,26 +265,49 @@ export default function AdminPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentUsers.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex items-center justify-between border-b pb-4 last:border-b-0"
-                >
-                  <div>
-                    <p className="font-medium">{user.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {user.email}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Gia nhập: {user.joinDate}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold">{user.bookings} vé</p>
-                    <Badge variant="outline">Hoạt động</Badge>
-                  </div>
+              {loading ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="h-16 animate-pulse rounded bg-muted"
+                    />
+                  ))}
                 </div>
-              ))}
+              ) : recentUsers.length === 0 ? (
+                <div className="py-8 text-center text-sm text-muted-foreground">
+                  Chưa có người dùng mới
+                </div>
+              ) : (
+                recentUsers.map((user) => (
+                  <div
+                    key={user.id}
+                    className="flex items-center justify-between border-b pb-4 last:border-b-0"
+                  >
+                    <div>
+                      <p className="font-medium">{user.full_name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {user.email || user.phone}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Gia nhập:{" "}
+                        {format(new Date(user.created_at), "dd/MM/yyyy", {
+                          locale: vi,
+                        })}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <Badge
+                        variant={
+                          user.status === "active" ? "default" : "secondary"
+                        }
+                      >
+                        {user.status === "active" ? "Hoạt động" : user.status}
+                      </Badge>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>

@@ -348,7 +348,7 @@ export function BookingTabs({ userId, transformBooking }: BookingTabsProps) {
           <span className="hidden sm:inline">Chờ thanh toán</span>
           <span className="sm:hidden">Chờ TT</span>
           <span className="ml-1 rounded-full bg-warning/20 px-2 py-0.5 text-xs font-medium text-warning">
-            {pendingData?.total || 0}
+            {pendingData?.meta.total || 0}
           </span>
         </TabsTrigger>
         <TabsTrigger value="confirmed" className="flex items-center gap-2">
@@ -356,7 +356,7 @@ export function BookingTabs({ userId, transformBooking }: BookingTabsProps) {
           <span className="hidden sm:inline">Đã xác nhận</span>
           <span className="sm:hidden">Xác nhận</span>
           <span className="ml-1 rounded-full bg-success/20 px-2 py-0.5 text-xs font-medium text-success">
-            {confirmedData?.total || 0}
+            {confirmedData?.meta.total || 0}
           </span>
         </TabsTrigger>
         <TabsTrigger value="cancelled" className="flex items-center gap-2">
@@ -364,7 +364,7 @@ export function BookingTabs({ userId, transformBooking }: BookingTabsProps) {
           <span className="hidden sm:inline">Đã hủy</span>
           <span className="sm:hidden">Hủy</span>
           <span className="ml-1 rounded-full bg-destructive/20 px-2 py-0.5 text-xs font-medium text-destructive">
-            {cancelledData?.total || 0}
+            {cancelledData?.meta?.total || 0}
           </span>
         </TabsTrigger>
         <TabsTrigger value="all" className="flex items-center gap-2">
@@ -372,7 +372,7 @@ export function BookingTabs({ userId, transformBooking }: BookingTabsProps) {
           <span className="hidden sm:inline">Tất cả</span>
           <span className="sm:hidden">Tất cả</span>
           <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
-            {allData?.total || 0}
+            {allData?.meta?.total || 0}
           </span>
         </TabsTrigger>
       </TabsList>
@@ -385,10 +385,10 @@ export function BookingTabs({ userId, transformBooking }: BookingTabsProps) {
           "Không có vé chờ thanh toán",
           true,
         )}
-        {pendingData && pendingData.total_pages > 1 && (
+        {pendingData && pendingData.meta.total_pages > 1 && (
           <PaginationWithLinks
             page={pendingPage}
-            totalPages={pendingData.total_pages}
+            totalPages={pendingData.meta.total_pages}
             createPageURL={(page) => {
               setPendingPage(page);
               return `#pending-${page}`;
@@ -405,10 +405,10 @@ export function BookingTabs({ userId, transformBooking }: BookingTabsProps) {
           "Không có vé đã xác nhận",
           false,
         )}
-        {confirmedData && confirmedData.total_pages > 1 && (
+        {confirmedData && confirmedData.meta.total_pages > 1 && (
           <PaginationWithLinks
             page={confirmedPage}
-            totalPages={confirmedData.total_pages}
+            totalPages={confirmedData.meta.total_pages}
             createPageURL={(page) => {
               setConfirmedPage(page);
               return `#confirmed-${page}`;
@@ -425,10 +425,10 @@ export function BookingTabs({ userId, transformBooking }: BookingTabsProps) {
           "Không có vé đã hủy",
           false,
         )}
-        {cancelledData && cancelledData.total_pages > 1 && (
+        {cancelledData && cancelledData.meta.total_pages > 1 && (
           <PaginationWithLinks
             page={cancelledPage}
-            totalPages={cancelledData.total_pages}
+            totalPages={cancelledData.meta.total_pages}
             createPageURL={(page) => {
               setCancelledPage(page);
               return `#cancelled-${page}`;
@@ -440,10 +440,10 @@ export function BookingTabs({ userId, transformBooking }: BookingTabsProps) {
       {/* ALL Tab */}
       <TabsContent value="all" className="space-y-4">
         {renderBookingsGrid(allBookings, allLoading, "Chưa có vé nào", true)}
-        {allData && allData.total_pages > 1 && (
+        {allData && allData.meta.total_pages > 1 && (
           <PaginationWithLinks
             page={allPage}
-            totalPages={allData.total_pages}
+            totalPages={allData.meta.total_pages}
             createPageURL={(page) => {
               setAllPage(page);
               return `#all-${page}`;

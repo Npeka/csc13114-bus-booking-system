@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -14,30 +14,16 @@ interface TransactionTableProps {
   transactions: Transaction[];
   isLoading: boolean;
   formatCurrency: (amount: number) => string;
-  meta:
-    | {
-        page: number;
-        page_size: number;
-        total: number;
-        total_pages: number;
-      }
-    | undefined;
-  onPageChange: (page: number) => void;
 }
 
 export function TransactionTable({
   transactions,
   isLoading,
   formatCurrency,
-  meta,
-  onPageChange,
 }: TransactionTableProps) {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Danh sách giao dịch</CardTitle>
-      </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         {isLoading ? (
           <div className="py-8 text-center text-gray-500">Đang tải...</div>
         ) : (
@@ -73,32 +59,6 @@ export function TransactionTable({
               )}
             </TableBody>
           </Table>
-        )}
-
-        {/* Pagination */}
-        {meta && meta.total > meta.page_size && (
-          <div className="mt-4 flex items-center justify-between">
-            <p className="text-sm text-gray-500">
-              Hiển thị {(meta.page - 1) * meta.page_size + 1} -{" "}
-              {Math.min(meta.page * meta.page_size, meta.total)} / {meta.total}
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => onPageChange(meta.page - 1)}
-                disabled={meta.page === 1}
-                className="rounded border px-3 py-1 text-sm disabled:opacity-50"
-              >
-                Trước
-              </button>
-              <button
-                onClick={() => onPageChange(meta.page + 1)}
-                disabled={meta.page >= meta.total_pages}
-                className="rounded border px-3 py-1 text-sm disabled:opacity-50"
-              >
-                Sau
-              </button>
-            </div>
-          </div>
         )}
       </CardContent>
     </Card>

@@ -165,10 +165,12 @@ export interface BookingResponse {
  */
 export interface PaginatedBookingResponse {
   data: BookingResponse[];
-  total: number;
-  page: number;
-  page_size: number;
-  total_pages: number;
+  meta: {
+    total: number;
+    page: number;
+    page_size: number;
+    total_pages: number;
+  };
 }
 
 /**
