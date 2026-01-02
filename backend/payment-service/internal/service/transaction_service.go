@@ -237,17 +237,20 @@ func (s *TransactionServiceImpl) Cancel(ctx context.Context, transactionID uuid.
 
 func (s *TransactionServiceImpl) toTransactionResponse(t *model.Transaction) *model.TransactionResponse {
 	return &model.TransactionResponse{
-		ID:            t.ID,
-		CreatedAt:     t.CreatedAt,
-		UpdatedAt:     t.UpdatedAt,
-		BookingID:     t.BookingID,
-		UserID:        t.UserID,
-		Amount:        t.Amount,
-		Currency:      t.Currency,
-		PaymentMethod: t.PaymentMethod,
-		OrderCode:     t.OrderCode,
-		Status:        t.Status,
-		CheckoutURL:   t.CheckoutURL,
-		QRCode:        t.QRCode,
+		ID:              t.ID,
+		CreatedAt:       t.CreatedAt,
+		UpdatedAt:       t.UpdatedAt,
+		BookingID:       t.BookingID,
+		UserID:          t.UserID,
+		Amount:          t.Amount,
+		Currency:        t.Currency,
+		PaymentMethod:   t.PaymentMethod,
+		OrderCode:       t.OrderCode,
+		Status:          t.Status,
+		CheckoutURL:     t.CheckoutURL,
+		QRCode:          t.QRCode,
+		TransactionType: t.TransactionType,
+		RefundStatus:    t.RefundStatus,
+		RefundAmount:    t.RefundAmount,
 	}
 }
