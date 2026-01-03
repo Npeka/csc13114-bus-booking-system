@@ -48,12 +48,52 @@ export interface ChatbotTripData {
   };
 }
 
+// Seat data from getAvailableSeats function
+export interface ChatbotSeatData {
+  seat_number: string;
+  seat_id: string;
+  seat_type?: string;
+  floor?: number;
+}
+
+// Booking data from createGuestBooking function
+export interface ChatbotBookingData {
+  id: string;
+  reference: string;
+  total_price: number;
+  status: string;
+  expires_at?: string;
+  trip?: {
+    origin?: string;
+    destination?: string;
+    departure_time?: string;
+  };
+}
+
+// Payment data from createPaymentLink function
+export interface ChatbotPaymentData {
+  success: boolean;
+  checkout_url?: string;
+  qr_code?: string;
+  amount?: number;
+  currency?: string;
+  transaction_id?: string;
+  message?: string;
+}
+
 export interface ChatResponse {
   message: string;
   intent?: string;
   action?: string;
   data?: {
     trips?: ChatbotTripData[];
+    available_seats?: ChatbotSeatData[];
+    total_available?: number;
+    booking?: ChatbotBookingData;
+    success?: boolean;
+    checkout_url?: string;
+    qr_code?: string;
+    amount?: number;
     [key: string]: unknown;
   };
   context?: ChatContext;

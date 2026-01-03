@@ -7,8 +7,17 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle, X, Send, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { sendChatMessage, ChatbotTripData } from "@/lib/api/chatbot-service";
+import {
+  sendChatMessage,
+  ChatbotTripData,
+  ChatbotSeatData,
+  ChatbotBookingData,
+  ChatbotPaymentData,
+} from "@/lib/api/chatbot-service";
 import { ChatbotTripList } from "./chatbot-trip-card";
+import { ChatbotSeatCard } from "./chatbot-seat-card";
+import { ChatbotBookingCard } from "./chatbot-booking-card";
+import { ChatbotPaymentCard } from "./chatbot-payment-card";
 
 interface Message {
   id: string;
@@ -17,28 +26,38 @@ interface Message {
   timestamp: Date;
   suggestions?: string[];
   trips?: ChatbotTripData[];
+  seats?: { seats: ChatbotSeatData[]; totalAvailable: number };
+  booking?: ChatbotBookingData;
+  payment?: ChatbotPaymentData;
 }
 
 // Helper function to extract trips from various response data structures
+// API returns: { trips: { data: [...array of trips...], meta: {...} } }
 function extractTripsFromData(data: unknown): ChatbotTripData[] | undefined {
   if (!data || typeof data !== "object") return undefined;
 
   const dataObj = data as Record<string, unknown>;
 
-  // Check if data contains trips directly
-  if (dataObj.trips && Array.isArray(dataObj.trips)) {
-    return dataObj.trips as ChatbotTripData[];
-  }
-
-  // Check for nested data.data structure (API wrapper)
-  if (dataObj.data && typeof dataObj.data === "object") {
-    const nestedData = dataObj.data as Record<string, unknown>;
-    if (nestedData.trips && Array.isArray(nestedData.trips)) {
-      return nestedData.trips as ChatbotTripData[];
+  // Check if data.trips is a pagination wrapper object with data array inside
+  if (dataObj.trips && typeof dataObj.trips === "object") {
+    const tripsWrapper = dataObj.trips as Record<string, unknown>;
+    // Handle paginated response: { data: [...], meta: {...} }
+    if (tripsWrapper.data && Array.isArray(tripsWrapper.data)) {
+      return tripsWrapper.data.map((trip: Record<string, unknown>) => ({
+        id: trip.id as string,
+        departure_time: trip.departure_time as string,
+        arrival_time: trip.arrival_time as string,
+        origin: (trip.route as Record<string, string>)?.origin || "",
+        destination: (trip.route as Record<string, string>)?.destination || "",
+        price: (trip.base_price as number) || 0,
+        available_seats: (trip.available_seats as number) || 0,
+        bus: trip.bus as ChatbotTripData["bus"],
+        route: trip.route as ChatbotTripData["route"],
+      }));
     }
-    // Some APIs return trips array directly in data.data
-    if (Array.isArray(nestedData)) {
-      return nestedData as ChatbotTripData[];
+    // Direct array check
+    if (Array.isArray(dataObj.trips)) {
+      return dataObj.trips as ChatbotTripData[];
     }
   }
 
@@ -101,7 +120,32 @@ export function ChatBot() {
       });
 
       // Extract trips from response data if available
-      const trips = response.data?.trips || extractTripsFromData(response.data);
+      // Note: response.data.trips is a pagination wrapper { data: [...], meta: {...} }
+      const trips = extractTripsFromData(response.data);
+
+      // Extract seats data if available
+      const seatsData = response.data?.available_seats
+        ? {
+            seats: response.data.available_seats,
+            totalAvailable:
+              response.data.total_available ||
+              response.data.available_seats.length,
+          }
+        : undefined;
+
+      // Extract booking data if available
+      const bookingData = response.data?.booking;
+
+      // Extract payment data if available
+      const paymentData =
+        response.data?.success && response.data?.checkout_url
+          ? {
+              success: response.data.success,
+              checkout_url: response.data.checkout_url,
+              qr_code: response.data.qr_code as string | undefined,
+              amount: response.data.amount as number | undefined,
+            }
+          : undefined;
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -110,6 +154,9 @@ export function ChatBot() {
         timestamp: new Date(),
         suggestions: response.suggestions || [],
         trips: trips,
+        seats: seatsData,
+        booking: bookingData,
+        payment: paymentData,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -222,6 +269,33 @@ export function ChatBot() {
                             <ChatbotTripList trips={message.trips} />
                           </div>
                         )}
+                      {/* Seat Selection Card */}
+                      {message.role === "assistant" &&
+                        message.seats &&
+                        message.seats.seats.length > 0 && (
+                          <ChatbotSeatCard
+                            seats={message.seats.seats}
+                            totalAvailable={message.seats.totalAvailable}
+                            onSeatSelect={(seatNumber) => {
+                              handleSendMessage(`Tôi chọn ghế ${seatNumber}`);
+                            }}
+                          />
+                        )}
+                      {/* Booking Confirmation Card */}
+                      {message.role === "assistant" && message.booking && (
+                        <ChatbotBookingCard
+                          booking={message.booking}
+                          onPayment={(bookingId) => {
+                            handleSendMessage(
+                              `Tôi muốn thanh toán đặt vé ${bookingId}`,
+                            );
+                          }}
+                        />
+                      )}
+                      {/* Payment Link Card */}
+                      {message.role === "assistant" && message.payment && (
+                        <ChatbotPaymentCard payment={message.payment} />
+                      )}
                       <p className="mt-1 text-xs text-muted-foreground">
                         {message.timestamp.toLocaleTimeString("vi-VN", {
                           hour: "2-digit",
