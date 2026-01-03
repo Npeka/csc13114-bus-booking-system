@@ -7,8 +7,10 @@ import (
 
 	"bus-booking/shared/ginext"
 	"bus-booking/trip-service/internal/client"
+	"bus-booking/trip-service/internal/constants"
 	"bus-booking/trip-service/internal/model"
 	"bus-booking/trip-service/internal/model/booking"
+	"bus-booking/trip-service/internal/model/payment"
 	"bus-booking/trip-service/internal/repository"
 
 	"github.com/google/uuid"
@@ -27,6 +29,7 @@ type TripService interface {
 	UpdateTrip(ctx context.Context, id uuid.UUID, req *model.UpdateTripRequest) (*model.Trip, error)
 	DeleteTrip(ctx context.Context, id uuid.UUID) error
 	RescheduleTrip(ctx context.Context, id uuid.UUID, newDeparture, newArrival time.Time) error
+	CancelTrip(ctx context.Context, id uuid.UUID) error
 	ProcessTripStatusUpdates(ctx context.Context) error
 }
 
@@ -37,6 +40,7 @@ type TripServiceImpl struct {
 	busRepo       repository.BusRepository
 	seatRepo      repository.SeatRepository
 	bookingClient client.BookingClient
+	paymentClient client.PaymentClient
 }
 
 func NewTripService(
@@ -46,6 +50,7 @@ func NewTripService(
 	busRepo repository.BusRepository,
 	seatRepo repository.SeatRepository,
 	bookingClient client.BookingClient,
+	paymentClient client.PaymentClient,
 ) TripService {
 	return &TripServiceImpl{
 		tripRepo:      tripRepo,
@@ -54,6 +59,7 @@ func NewTripService(
 		busRepo:       busRepo,
 		seatRepo:      seatRepo,
 		bookingClient: bookingClient,
+		paymentClient: paymentClient,
 	}
 }
 
@@ -344,4 +350,57 @@ func (s *TripServiceImpl) RescheduleTrip(ctx context.Context, id uuid.UUID, newD
 // ProcessTripStatusUpdates triggers the batch update of trip statuses
 func (s *TripServiceImpl) ProcessTripStatusUpdates(ctx context.Context) error {
 	return s.tripRepo.UpdateTripStatuses(ctx)
+}
+
+func (s *TripServiceImpl) CancelTrip(ctx context.Context, id uuid.UUID) error {
+	// 1. Get Trip
+	trip, err := s.tripRepo.GetTripByID(ctx, &model.GetTripByIDRequest{}, id)
+	if err != nil {
+		return ginext.NewInternalServerError("failed to get trip")
+	}
+
+	// 2. Validate Status Check
+	// Only Scheduled or Delayed trips can be cancelled
+	if trip.Status != constants.TripStatusScheduled && trip.Status != constants.TripStatusDelayed {
+		return ginext.NewBadRequestError(fmt.Sprintf("Cannot cancel trip with status: %s. Only scheduled or delayed trips can be cancelled.", trip.Status))
+	}
+
+	// 3. Update Status to Cancelled
+	trip.Status = constants.TripStatusCancelled
+	
+	if err := s.tripRepo.UpdateTrip(ctx, trip); err != nil {
+		return ginext.NewInternalServerError("failed to update trip status")
+	}
+
+	// 4. Get Bookings
+	bookings, err := s.bookingClient.GetTripBookings(ctx, id)
+	if err != nil {
+		// Log error but we already cancelled the trip in DB. 
+		log.Error().Err(err).Str("trip_id", id.String()).Msg("Failed to get bookings for cancelled trip for processing refunds")
+		return nil 
+	}
+
+	// 5. Refund/Cancel Bookings
+	for _, b := range bookings {
+		// Refund if PAID
+		if b.TransactionStatus == "PAID" {
+			req := &payment.RefundRequest{
+				BookingID:    b.ID,
+				Reason:       "Trip Cancelled by Operator",
+				RefundAmount: b.TotalAmount,
+			}
+			_, err := s.paymentClient.CreateRefund(ctx, req)
+			if err != nil {
+				log.Error().Err(err).Str("booking_id", b.ID.String()).Msg("Failed to process refund for booking")
+			}
+		}
+
+		// Cancel Booking
+		err := s.bookingClient.CancelBooking(ctx, b.ID, "Trip Cancelled by Operator")
+		if err != nil {
+			log.Error().Err(err).Str("booking_id", b.ID.String()).Msg("Failed to cancel booking")
+		}
+	}
+
+	return nil
 }

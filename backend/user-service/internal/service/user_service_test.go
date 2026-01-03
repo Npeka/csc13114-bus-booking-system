@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"mime/multipart"
 	"testing"
 	"time"
 
@@ -629,4 +630,151 @@ func TestCalculateTokenTTL_ExpiredToken(t *testing.T) {
 	// So TTL should be around 5 minutes, not 0
 	assert.Greater(t, ttl, 4*time.Minute)
 	assert.Less(t, ttl, 6*time.Minute)
+}
+
+func TestUploadAvatar_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := repo_mocks.NewMockUserRepository(ctrl)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+	service := NewUserService(mockRepo, mockStorage)
+
+	ctx := context.Background()
+	userID := uuid.New()
+
+	header := make(map[string][]string)
+	header["Content-Type"] = []string{"image/jpeg"}
+	fileHeader := &multipart.FileHeader{
+		Filename: "avatar.jpg",
+		Size:     1024,
+		Header:   header,
+	}
+
+	user := &model.User{BaseModel: model.BaseModel{ID: userID}}
+	expectedURL := "https://cdn.example.com/avatars/avatar.jpg"
+
+	mockRepo.EXPECT().GetByID(ctx, userID).Return(user, nil).Times(1)
+	mockStorage.EXPECT().UploadFile(ctx, gomock.Any(), fileHeader, "avatars").Return(expectedURL, nil).Times(1)
+	mockRepo.EXPECT().Update(ctx, gomock.Any()).Do(func(_ context.Context, u *model.User) {
+		assert.Equal(t, expectedURL, u.Avatar)
+	}).Return(nil).Times(1)
+
+	result, err := service.UploadAvatar(ctx, userID, nil, fileHeader)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, expectedURL, result.Avatar)
+}
+
+func TestUploadAvatar_InvalidType(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := repo_mocks.NewMockUserRepository(ctrl)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+	service := NewUserService(mockRepo, mockStorage)
+
+	ctx := context.Background()
+	userID := uuid.New()
+
+	header := make(map[string][]string)
+	header["Content-Type"] = []string{"application/pdf"}
+	fileHeader := &multipart.FileHeader{
+		Filename: "doc.pdf",
+		Size:     1024,
+		Header:   header,
+	}
+
+	user := &model.User{BaseModel: model.BaseModel{ID: userID}}
+
+	mockRepo.EXPECT().GetByID(ctx, userID).Return(user, nil).Times(1)
+
+	result, err := service.UploadAvatar(ctx, userID, nil, fileHeader)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Contains(t, err.Error(), "Chỉ chấp nhận file ảnh")
+}
+
+func TestUploadAvatar_FileTooLarge(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := repo_mocks.NewMockUserRepository(ctrl)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+	service := NewUserService(mockRepo, mockStorage)
+
+	ctx := context.Background()
+	userID := uuid.New()
+
+	header := make(map[string][]string)
+	header["Content-Type"] = []string{"image/jpeg"}
+	fileHeader := &multipart.FileHeader{
+		Filename: "large.jpg",
+		Size:     6 * 1024 * 1024, // 6MB
+		Header:   header,
+	}
+
+	user := &model.User{BaseModel: model.BaseModel{ID: userID}}
+
+	mockRepo.EXPECT().GetByID(ctx, userID).Return(user, nil).Times(1)
+
+	result, err := service.UploadAvatar(ctx, userID, nil, fileHeader)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Contains(t, err.Error(), "Kích thước file không được vượt quá")
+}
+
+func TestDeleteAvatar_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := repo_mocks.NewMockUserRepository(ctrl)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+	service := NewUserService(mockRepo, mockStorage)
+
+	ctx := context.Background()
+	userID := uuid.New()
+	avatarURL := "https://cdn.example.com/avatars/avatar.jpg"
+
+	user := &model.User{
+		BaseModel: model.BaseModel{ID: userID},
+		Avatar:    avatarURL,
+	}
+
+	mockRepo.EXPECT().GetByID(ctx, userID).Return(user, nil).Times(1)
+	mockStorage.EXPECT().DeleteFile(ctx, avatarURL).Return(nil).Times(1)
+	mockRepo.EXPECT().Update(ctx, gomock.Any()).Do(func(_ context.Context, u *model.User) {
+		assert.Empty(t, u.Avatar)
+	}).Return(nil).Times(1)
+
+	err := service.DeleteAvatar(ctx, userID)
+
+	assert.NoError(t, err)
+}
+
+func TestDeleteAvatar_NoAvatar(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := repo_mocks.NewMockUserRepository(ctrl)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+	service := NewUserService(mockRepo, mockStorage)
+
+	ctx := context.Background()
+	userID := uuid.New()
+
+	user := &model.User{
+		BaseModel: model.BaseModel{ID: userID},
+		Avatar:    "", // Empty
+	}
+
+	mockRepo.EXPECT().GetByID(ctx, userID).Return(user, nil).Times(1)
+
+	err := service.DeleteAvatar(ctx, userID)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "không có avatar")
 }

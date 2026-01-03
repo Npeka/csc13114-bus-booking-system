@@ -55,6 +55,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 			trips.GET("", ginext.WrapHandler(h.TripHandler.ListTrips))
 			trips.POST("", ginext.WrapHandler(h.TripHandler.CreateTrip))
 			trips.PUT("/:id", ginext.WrapHandler(h.TripHandler.UpdateTrip))
+			trips.PUT("/:id/cancel", ginext.WrapHandler(h.TripHandler.CancelTrip))
 			trips.DELETE("/:id", ginext.WrapHandler(h.TripHandler.DeleteTrip))
 		}
 

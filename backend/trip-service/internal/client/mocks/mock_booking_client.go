@@ -50,3 +50,32 @@ func (mr *MockBookingClientMockRecorder) GetSeatStatus(ctx, tripID, seatIDs inte
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSeatStatus", reflect.TypeOf((*MockBookingClient)(nil).GetSeatStatus), ctx, tripID, seatIDs)
 }
+
+// GetTripBookings mocks base method.
+func (m *MockBookingClient) GetTripBookings(ctx context.Context, tripID uuid.UUID) ([]*booking.Booking, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTripBookings", ctx, tripID)
+	ret0, _ := ret[0].([]*booking.Booking)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTripBookings indicates an expected call of GetTripBookings.
+func (mr *MockBookingClientMockRecorder) GetTripBookings(ctx, tripID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTripBookings", reflect.TypeOf((*MockBookingClient)(nil).GetTripBookings), ctx, tripID)
+}
+
+// CancelBooking mocks base method.
+func (m *MockBookingClient) CancelBooking(ctx context.Context, bookingID uuid.UUID, reason string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CancelBooking", ctx, bookingID, reason)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CancelBooking indicates an expected call of CancelBooking.
+func (mr *MockBookingClientMockRecorder) CancelBooking(ctx, bookingID, reason interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelBooking", reflect.TypeOf((*MockBookingClient)(nil).CancelBooking), ctx, bookingID, reason)
+}

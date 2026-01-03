@@ -212,7 +212,9 @@ func (s *UserServiceImpl) UploadAvatar(ctx context.Context, userID uuid.UUID, fi
 	if err := s.userRepo.Update(ctx, user); err != nil {
 		log.Error().Err(err).Msg("Failed to update user avatar in database")
 		// Try to clean up uploaded file
-		_ = s.storageService.DeleteFile(ctx, avatarURL)
+		if err := s.storageService.DeleteFile(ctx, avatarURL); err != nil {
+			log.Warn().Err(err).Msg("Failed to delete uploaded avatar, continuing with error")
+		}
 		return nil, ginext.NewInternalServerError("Không thể cập nhật avatar")
 	}
 

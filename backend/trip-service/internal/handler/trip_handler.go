@@ -22,6 +22,7 @@ type TripHandler interface {
 	CreateTrip(r *ginext.Request) (*ginext.Response, error)
 	UpdateTrip(r *ginext.Request) (*ginext.Response, error)
 	DeleteTrip(r *ginext.Request) (*ginext.Response, error)
+	CancelTrip(r *ginext.Request) (*ginext.Response, error)
 }
 
 type TripHandlerImpl struct {

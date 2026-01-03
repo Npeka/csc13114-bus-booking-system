@@ -9,6 +9,7 @@ import (
 	"bus-booking/booking-service/internal/model"
 	"bus-booking/booking-service/internal/model/payment"
 	"bus-booking/booking-service/internal/model/trip"
+	"bus-booking/booking-service/internal/model/user"
 	repo_mocks "bus-booking/booking-service/internal/repository/mocks"
 	service_mocks "bus-booking/booking-service/internal/service/mocks"
 	queue_mocks "bus-booking/shared/queue/mocks"
@@ -1911,4 +1912,427 @@ func TestListBookings_TripFetchError(t *testing.T) {
 	assert.Equal(t, int64(1), total)
 	assert.Equal(t, "BK001", result[0].BookingReference)
 	assert.Nil(t, result[0].Trip) // Trip should be nil when fetch fails
+}
+
+func TestGetTripPassengers_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBookingRepo := repo_mocks.NewMockBookingRepository(ctrl)
+	mockUserClient := mocks.NewMockUserClient(ctrl)
+	mockPaymentClient := mocks.NewMockPaymentClient(ctrl)
+	mockTripClient := mocks.NewMockTripClient(ctrl)
+	mockNotificationClient := mocks.NewMockNotificationClient(ctrl)
+	mockDelayedQueue := queue_mocks.NewMockDelayedQueueManager(ctrl)
+	mockSeatLockService := service_mocks.NewMockSeatLockService(ctrl)
+
+	service := NewBookingService(
+		mockBookingRepo,
+		mockPaymentClient,
+		mockTripClient,
+		mockUserClient,
+		mockNotificationClient,
+		mockDelayedQueue,
+		mockSeatLockService,
+	)
+
+	ctx := context.Background()
+	tripID := uuid.New()
+	userID := uuid.New()
+	bookingID := uuid.New()
+
+	bookings := []*model.Booking{
+		{
+			BaseModel:   model.BaseModel{ID: bookingID},
+			TripID:      tripID,
+			UserID:      userID,
+			Status:      model.BookingStatusConfirmed,
+			TotalAmount: 100000,
+			BookingSeats: []model.BookingSeat{
+				{SeatNumber: "A1", Price: 100000},
+			},
+			BookingReference: "BKREF123",
+		},
+	}
+
+	userResp := &user.User{
+		ID:       userID,
+		FullName: "Test Passenger",
+		Email:    "passenger@example.com",
+		Phone:    "0987654321",
+	}
+
+	mockBookingRepo.EXPECT().
+		GetAllActiveBookingsByTripID(ctx, tripID).
+		Return(bookings, nil).
+		Times(1)
+
+	mockUserClient.EXPECT().
+		GetUserByID(gomock.Any(), userID).
+		Return(userResp, nil).
+		Times(1)
+
+	result, err := service.GetTripPassengers(ctx, tripID)
+
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, "Test Passenger", result[0].FullName)
+	assert.Equal(t, "A1", result[0].Seats[0])
+}
+
+func TestCheckInPassenger_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBookingRepo := repo_mocks.NewMockBookingRepository(ctrl)
+	mockPaymentClient := mocks.NewMockPaymentClient(ctrl)
+	mockTripClient := mocks.NewMockTripClient(ctrl)
+	mockUserClient := mocks.NewMockUserClient(ctrl)
+	mockNotificationClient := mocks.NewMockNotificationClient(ctrl)
+	mockDelayedQueue := queue_mocks.NewMockDelayedQueueManager(ctrl)
+	mockSeatLockService := service_mocks.NewMockSeatLockService(ctrl)
+
+	service := NewBookingService(
+		mockBookingRepo,
+		mockPaymentClient,
+		mockTripClient,
+		mockUserClient,
+		mockNotificationClient,
+		mockDelayedQueue,
+		mockSeatLockService,
+	)
+
+	ctx := context.Background()
+	bookingID := uuid.New()
+
+	booking := &model.Booking{
+		BaseModel: model.BaseModel{ID: bookingID},
+		Status:    model.BookingStatusConfirmed,
+		IsBoarded: false,
+	}
+
+	mockBookingRepo.EXPECT().
+		GetBookingByID(ctx, bookingID).
+		Return(booking, nil).
+		Times(1)
+
+	mockBookingRepo.EXPECT().
+		CheckInPassenger(ctx, bookingID).
+		Return(nil).
+		Times(1)
+
+	err := service.CheckInPassenger(ctx, bookingID)
+
+	assert.NoError(t, err)
+}
+
+func TestUpdateBookingStatus_Paid_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBookingRepo := repo_mocks.NewMockBookingRepository(ctrl)
+	mockPaymentClient := mocks.NewMockPaymentClient(ctrl)
+	mockTripClient := mocks.NewMockTripClient(ctrl)
+	mockUserClient := mocks.NewMockUserClient(ctrl)
+	mockNotificationClient := mocks.NewMockNotificationClient(ctrl)
+	mockDelayedQueue := queue_mocks.NewMockDelayedQueueManager(ctrl)
+	mockSeatLockService := service_mocks.NewMockSeatLockService(ctrl)
+
+	service := NewBookingService(
+		mockBookingRepo,
+		mockPaymentClient,
+		mockTripClient,
+		mockUserClient,
+		mockNotificationClient,
+		mockDelayedQueue,
+		mockSeatLockService,
+	)
+
+	ctx := context.Background()
+	bookingID := uuid.New()
+	tripID := uuid.New()
+	userID := uuid.New()
+
+	booking := &model.Booking{
+		BaseModel:        model.BaseModel{ID: bookingID},
+		TripID:           tripID,
+		UserID:           userID,
+		Status:           model.BookingStatusPending,
+		BookingSeats:     []model.BookingSeat{{SeatNumber: "A1"}},
+		TotalAmount:      100000,
+		BookingReference: "BKREF",
+	}
+
+	req := &model.UpdateBookingStatusRequest{
+		TransactionStatus: payment.TransactionStatusPaid,
+	}
+
+	tripData := &trip.Trip{
+		ID:            tripID,
+		DepartureTime: time.Now().Add(24 * time.Hour), // Future trip
+		Route:         &trip.Route{Origin: "A", Destination: "B"},
+	}
+
+	userData := &user.User{
+		ID:       userID,
+		Email:    "test@example.com",
+		FullName: "Test User",
+	}
+
+	// 1. Get Booking
+	mockBookingRepo.EXPECT().
+		GetBookingByID(ctx, bookingID).
+		Return(booking, nil).
+		Times(1)
+
+	// 2. Update Booking Status
+	mockBookingRepo.EXPECT().
+		UpdateBooking(ctx, gomock.Any()).
+		Do(func(_ context.Context, b *model.Booking) {
+			assert.Equal(t, model.BookingStatusConfirmed, b.Status)
+		}).
+		Return(nil).
+		Times(1)
+
+	// 3. Async: Send Confirmation Email
+	// Need to expect these to be called asynchronously.
+	// Since we can't easily wait, we mock them and hope the scheduler runs them.
+	// We'll add a short sleep at the end.
+
+	// Re-fetch booking (inside sendBookingConfirmationEmail)
+	mockBookingRepo.EXPECT().
+		GetBookingByID(gomock.Any(), bookingID).
+		Return(booking, nil).
+		MaxTimes(1)
+
+	// Fetch User (inside sendBookingConfirmationEmail)
+	mockUserClient.EXPECT().
+		GetUserByID(gomock.Any(), userID).
+		Return(userData, nil).
+		MaxTimes(1)
+
+	// Fetch Trip (inside sendBookingConfirmationEmail AND UpdateBookingStatus for reminder)
+	// UpdateBookingStatus calls GetTripByID for reminder scheduling
+	// sendBookingConfirmationEmail calls GetTripByID for email details
+	mockTripClient.EXPECT().
+		GetTripByID(gomock.Any(), gomock.Any(), tripID).
+		Return(tripData, nil).
+		MinTimes(1)
+
+	// Send Email
+	mockNotificationClient.EXPECT().
+		SendBookingConfirmation(gomock.Any(), gomock.Any()).
+		Return(nil).
+		MaxTimes(1)
+
+	// Schedule Reminder
+	mockDelayedQueue.EXPECT().
+		Schedule(gomock.Any(), "trip_reminder", gomock.Any(), gomock.Any()).
+		Return(nil).
+		MaxTimes(1)
+
+	err := service.UpdateBookingStatus(ctx, req, bookingID)
+
+	assert.NoError(t, err)
+
+	// Wait for async goroutines
+	time.Sleep(50 * time.Millisecond)
+}
+
+func TestRetryPayment_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBookingRepo := repo_mocks.NewMockBookingRepository(ctrl)
+	mockPaymentClient := mocks.NewMockPaymentClient(ctrl)
+	mockTripClient := mocks.NewMockTripClient(ctrl)
+	mockUserClient := mocks.NewMockUserClient(ctrl)
+	mockNotificationClient := mocks.NewMockNotificationClient(ctrl)
+	mockDelayedQueue := queue_mocks.NewMockDelayedQueueManager(ctrl)
+	mockSeatLockService := service_mocks.NewMockSeatLockService(ctrl)
+
+	service := NewBookingService(
+		mockBookingRepo,
+		mockPaymentClient,
+		mockTripClient,
+		mockUserClient,
+		mockNotificationClient,
+		mockDelayedQueue,
+		mockSeatLockService,
+	)
+
+	ctx := context.Background()
+	bookingID := uuid.New()
+	tripID := uuid.New()
+	userID := uuid.New()
+
+	booking := &model.Booking{
+		BaseModel:        model.BaseModel{ID: bookingID},
+		TripID:           tripID,
+		UserID:           userID,
+		Status:           model.BookingStatusFailed,
+		BookingReference: "BKREF",
+		TotalAmount:      100000,
+	}
+
+	tripData := &trip.Trip{
+		ID:        tripID,
+		BasePrice: 100000,
+		Route:     &trip.Route{Origin: "A", Destination: "B"},
+	}
+
+	userData := &user.User{
+		ID:       userID,
+		Email:    "test@example.com",
+		FullName: "Test User",
+	}
+
+	// 1. Get booking
+	mockBookingRepo.EXPECT().
+		GetBookingByID(ctx, bookingID).
+		Return(booking, nil).
+		Times(1)
+
+	// 2. Get Trip
+	mockTripClient.EXPECT().
+		GetTripByID(ctx, gomock.Any(), tripID).
+		Return(tripData, nil).
+		Times(1)
+
+	// 3. Create Transaction
+	transaction := &payment.TransactionResponse{
+		ID:          uuid.New(),
+		CheckoutURL: "http://checkout.url",
+	}
+	mockPaymentClient.EXPECT().
+		CreateTransaction(ctx, gomock.Any()).
+		Return(transaction, nil).
+		Times(1)
+
+	// 4. Update Booking
+	mockBookingRepo.EXPECT().
+		UpdateBooking(ctx, gomock.Any()).
+		Return(nil).
+		Times(1)
+
+	// 5. Async: Schedule Expiry
+	mockDelayedQueue.EXPECT().
+		Schedule(gomock.Any(), "booking_expiry", gomock.Any(), gomock.Any()).
+		Return(nil).
+		MaxTimes(1)
+
+	// 6. Async: Send Pending Email
+	// Re-fetch user
+	mockUserClient.EXPECT().
+		GetUserByID(gomock.Any(), userID).
+		Return(userData, nil).
+		MaxTimes(1)
+
+	// Send Email
+	mockNotificationClient.EXPECT().
+		SendBookingPending(gomock.Any(), gomock.Any()).
+		Return(nil).
+		MaxTimes(1)
+
+	result, err := service.RetryPayment(ctx, bookingID)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+
+	time.Sleep(50 * time.Millisecond)
+}
+
+func TestExpireBooking_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBookingRepo := repo_mocks.NewMockBookingRepository(ctrl)
+	mockPaymentClient := mocks.NewMockPaymentClient(ctrl)
+	mockTripClient := mocks.NewMockTripClient(ctrl)
+	mockUserClient := mocks.NewMockUserClient(ctrl)
+	mockNotificationClient := mocks.NewMockNotificationClient(ctrl)
+	mockDelayedQueue := queue_mocks.NewMockDelayedQueueManager(ctrl)
+	mockSeatLockService := service_mocks.NewMockSeatLockService(ctrl)
+
+	service := NewBookingService(
+		mockBookingRepo,
+		mockPaymentClient,
+		mockTripClient,
+		mockUserClient,
+		mockNotificationClient,
+		mockDelayedQueue,
+		mockSeatLockService,
+	)
+
+	ctx := context.Background()
+	bookingID := uuid.New()
+	userID := uuid.New()
+	tripID := uuid.New()
+
+	// Past grace period
+	expiredAt := time.Now().Add(-1 * time.Hour)
+
+	booking := &model.Booking{
+		BaseModel:     model.BaseModel{ID: bookingID},
+		Status:        model.BookingStatusPending,
+		ExpiresAt:     &expiredAt,
+		TransactionID: uuid.New(),
+		UserID:        userID,
+		TripID:        tripID,
+	}
+
+	userData := &user.User{ID: userID, Email: "test@example.com", FullName: "Test"}
+	tripData := &trip.Trip{ID: tripID, Route: &trip.Route{Origin: "A", Destination: "B"}}
+
+	// 1. Get Booking
+	mockBookingRepo.EXPECT().
+		GetBookingByID(ctx, bookingID).
+		Return(booking, nil).
+		Times(1)
+
+	// 2. Cancel Transaction
+	mockPaymentClient.EXPECT().
+		CancelTransaction(ctx, booking.TransactionID).
+		Return(nil, nil).
+		Times(1)
+
+	// 3. Update Booking
+	mockBookingRepo.EXPECT().
+		UpdateBooking(ctx, gomock.Any()).
+		Do(func(_ context.Context, b *model.Booking) {
+			assert.Equal(t, model.BookingStatusExpired, b.Status)
+		}).
+		Return(nil).
+		Times(1)
+
+	// 4. Async: Send Failure Email
+	// Fetch booking
+	mockBookingRepo.EXPECT().
+		GetBookingByID(gomock.Any(), bookingID).
+		Return(booking, nil).
+		MaxTimes(1)
+
+	// Fetch User
+	mockUserClient.EXPECT().
+		GetUserByID(gomock.Any(), userID).
+		Return(userData, nil).
+		MaxTimes(1)
+
+	// Fetch Trip
+	mockTripClient.EXPECT().
+		GetTripByID(gomock.Any(), gomock.Any(), tripID).
+		Return(tripData, nil).
+		MaxTimes(1)
+
+	// Send Email
+	mockNotificationClient.EXPECT().
+		SendBookingFailure(gomock.Any(), gomock.Any()).
+		Return(nil).
+		MaxTimes(1)
+
+	err := service.ExpireBooking(ctx, bookingID)
+
+	assert.NoError(t, err)
+
+	time.Sleep(50 * time.Millisecond)
 }

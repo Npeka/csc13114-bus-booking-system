@@ -34,6 +34,7 @@ func TestNewTripService(t *testing.T) {
 		mockBusRepo,
 		mockSeatRepo,
 		mockBookingClient,
+		nil,
 	)
 
 	assert.NotNil(t, service)
@@ -51,7 +52,7 @@ func TestSearchTrips_Success(t *testing.T) {
 	mockSeatRepo := repo_mocks.NewMockSeatRepository(ctrl)
 	mockBookingClient := mocks.NewMockBookingClient(ctrl)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient, nil)
 
 	ctx := context.Background()
 	origin := "Ha Noi"
@@ -85,7 +86,7 @@ func TestSearchTrips_Error(t *testing.T) {
 	mockSeatRepo := repo_mocks.NewMockSeatRepository(ctrl)
 	mockBookingClient := mocks.NewMockBookingClient(ctrl)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient, nil)
 
 	ctx := context.Background()
 	req := &model.TripSearchRequest{}
@@ -113,7 +114,7 @@ func TestGetTripByID_Simple(t *testing.T) {
 	mockSeatRepo := repo_mocks.NewMockSeatRepository(ctrl)
 	mockBookingClient := mocks.NewMockBookingClient(ctrl)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient, nil)
 
 	ctx := context.Background()
 	tripID := uuid.New()
@@ -147,7 +148,7 @@ func TestListTrips_ByIDs(t *testing.T) {
 	mockSeatRepo := repo_mocks.NewMockSeatRepository(ctrl)
 	mockBookingClient := mocks.NewMockBookingClient(ctrl)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient, nil)
 
 	ctx := context.Background()
 	tripIDs := []uuid.UUID{uuid.New(), uuid.New()}
@@ -181,7 +182,7 @@ func TestListTrips_Pagination(t *testing.T) {
 	mockSeatRepo := repo_mocks.NewMockSeatRepository(ctrl)
 	mockBookingClient := mocks.NewMockBookingClient(ctrl)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient, nil)
 
 	ctx := context.Background()
 	req := &model.ListTripsRequest{
@@ -213,7 +214,7 @@ func TestGetSeatAvailability_Success(t *testing.T) {
 	mockSeatRepo := repo_mocks.NewMockSeatRepository(ctrl)
 	mockBookingClient := mocks.NewMockBookingClient(ctrl)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient, nil)
 
 	ctx := context.Background()
 	tripID := uuid.New()
@@ -271,7 +272,7 @@ func TestGetTripsByRouteAndDate_Success(t *testing.T) {
 	mockSeatRepo := repo_mocks.NewMockSeatRepository(ctrl)
 	mockBookingClient := mocks.NewMockBookingClient(ctrl)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient, nil)
 
 	ctx := context.Background()
 	routeID := uuid.New()
@@ -307,7 +308,7 @@ func TestGetTripsByRouteAndDate_InvalidRoute(t *testing.T) {
 	mockSeatRepo := repo_mocks.NewMockSeatRepository(ctrl)
 	mockBookingClient := mocks.NewMockBookingClient(ctrl)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient, nil)
 
 	ctx := context.Background()
 	date := time.Now()
@@ -330,7 +331,7 @@ func TestCreateTrip_Success(t *testing.T) {
 	mockSeatRepo := repo_mocks.NewMockSeatRepository(ctrl)
 	mockBookingClient := mocks.NewMockBookingClient(ctrl)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient, nil)
 
 	ctx := context.Background()
 	now := time.Now()
@@ -369,7 +370,7 @@ func TestCreateTrip_ArrivalBeforeDeparture(t *testing.T) {
 	mockSeatRepo := repo_mocks.NewMockSeatRepository(ctrl)
 	mockBookingClient := mocks.NewMockBookingClient(ctrl)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient, nil)
 
 	ctx := context.Background()
 	now := time.Now()
@@ -396,7 +397,7 @@ func TestCreateTrip_PastDeparture(t *testing.T) {
 	mockSeatRepo := repo_mocks.NewMockSeatRepository(ctrl)
 	mockBookingClient := mocks.NewMockBookingClient(ctrl)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient, nil)
 
 	ctx := context.Background()
 	past := time.Now().Add(-1 * time.Hour)
@@ -423,7 +424,7 @@ func TestUpdateTrip_Success(t *testing.T) {
 	mockSeatRepo := repo_mocks.NewMockSeatRepository(ctrl)
 	mockBookingClient := mocks.NewMockBookingClient(ctrl)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient, nil)
 
 	ctx := context.Background()
 	tripID := uuid.New()
@@ -459,7 +460,7 @@ func TestUpdateTrip_NegativePrice(t *testing.T) {
 	mockSeatRepo := repo_mocks.NewMockSeatRepository(ctrl)
 	mockBookingClient := mocks.NewMockBookingClient(ctrl)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient, nil)
 
 	ctx := context.Background()
 	tripID := uuid.New()
@@ -488,7 +489,7 @@ func TestDeleteTrip_Success(t *testing.T) {
 	mockSeatRepo := repo_mocks.NewMockSeatRepository(ctrl)
 	mockBookingClient := mocks.NewMockBookingClient(ctrl)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient, nil)
 
 	ctx := context.Background()
 	tripID := uuid.New()
@@ -518,7 +519,7 @@ func TestDeleteTrip_NotScheduled(t *testing.T) {
 	mockSeatRepo := repo_mocks.NewMockSeatRepository(ctrl)
 	mockBookingClient := mocks.NewMockBookingClient(ctrl)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient, nil)
 
 	ctx := context.Background()
 	tripID := uuid.New()
@@ -547,7 +548,7 @@ func TestRescheduleTrip_Success(t *testing.T) {
 	mockSeatRepo := repo_mocks.NewMockSeatRepository(ctrl)
 	mockBookingClient := mocks.NewMockBookingClient(ctrl)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient, nil)
 
 	ctx := context.Background()
 	tripID := uuid.New()
@@ -575,7 +576,7 @@ func TestRescheduleTrip_InvalidTimes(t *testing.T) {
 	mockSeatRepo := repo_mocks.NewMockSeatRepository(ctrl)
 	mockBookingClient := mocks.NewMockBookingClient(ctrl)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient, nil)
 
 	ctx := context.Background()
 	tripID := uuid.New()
@@ -603,7 +604,7 @@ func TestGetCompletedTripsForReschedule(t *testing.T) {
 	mockSeatRepo := repo_mocks.NewMockSeatRepository(ctrl)
 	mockBookingClient := mocks.NewMockBookingClient(ctrl)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient, nil)
 
 	ctx := context.Background()
 	expectedTrips := []model.Trip{{BaseModel: model.BaseModel{ID: uuid.New()}}}
@@ -630,7 +631,7 @@ func TestGetTripByID_WithSeatStatus(t *testing.T) {
 	mockSeatRepo := repo_mocks.NewMockSeatRepository(ctrl)
 	mockBookingClient := mocks.NewMockBookingClient(ctrl)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient, nil)
 
 	ctx := context.Background()
 	tripID := uuid.New()
@@ -691,7 +692,7 @@ func TestUpdateTrip_Validations(t *testing.T) {
 	mockSeatRepo := repo_mocks.NewMockSeatRepository(ctrl)
 	mockBookingClient := mocks.NewMockBookingClient(ctrl)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient, nil)
 
 	ctx := context.Background()
 	tripID := uuid.New()
@@ -758,7 +759,7 @@ func TestUpdateTrip_FullUpdate(t *testing.T) {
 	mockSeatRepo := repo_mocks.NewMockSeatRepository(ctrl)
 	mockBookingClient := mocks.NewMockBookingClient(ctrl)
 
-	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient)
+	service := NewTripService(mockTripRepo, mockRouteRepo, mockRouteStopRepo, mockBusRepo, mockSeatRepo, mockBookingClient, nil)
 
 	ctx := context.Background()
 	tripID := uuid.New()

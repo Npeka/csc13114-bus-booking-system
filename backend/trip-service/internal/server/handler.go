@@ -16,6 +16,7 @@ import (
 
 func (s *Server) buildHandler() (http.Handler, *cronjob.TripRescheduleCronJob, *cronjob.TripStatusCronJob) {
 	bookingClient := client.NewBookingClient(s.cfg.ServiceName, s.cfg.External.BookingServiceURL)
+	paymentClient := client.NewPaymentClient(s.cfg.ServiceName, s.cfg.External.PaymentServiceURL)
 
 	// Initialize repositories
 	tripRepo := repository.NewTripRepository(s.db.DB)
@@ -39,7 +40,7 @@ func (s *Server) buildHandler() (http.Handler, *cronjob.TripRescheduleCronJob, *
 	}
 
 	// Initialize services
-	tripService := service.NewTripService(tripRepo, routeRepo, routeStopRepo, busRepo, seatRepo, bookingClient)
+	tripService := service.NewTripService(tripRepo, routeRepo, routeStopRepo, busRepo, seatRepo, bookingClient, paymentClient)
 	routeService := service.NewRouteService(routeRepo)
 	busService := service.NewBusService(busRepo, seatRepo, storageService)
 	routeStopService := service.NewRouteStopService(routeStopRepo, routeRepo)

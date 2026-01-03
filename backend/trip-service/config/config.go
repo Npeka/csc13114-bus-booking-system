@@ -13,6 +13,7 @@ type Config struct {
 type ExternalConfig struct {
 	BookingServiceURL string `env:"BOOKING_SERVICE_URL" envDefault:"http://localhost:8080"`
 	UserServiceURL    string `env:"USER_SERVICE_URL" envDefault:"http://localhost:8083"`
+	PaymentServiceURL string `env:"PAYMENT_SERVICE_URL" envDefault:"http://localhost:8085"`
 }
 
 func LoadConfig(envFilePath ...string) (*Config, error) {

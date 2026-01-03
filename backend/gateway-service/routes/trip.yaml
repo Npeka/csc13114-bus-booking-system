@@ -49,6 +49,12 @@ routes:
       required: true
       roles: ["admin"]
 
+  - path: "/api/v1/trips/:id/cancel"
+    methods: ["PUT"]
+    auth:
+      required: true
+      roles: ["admin"]
+
   # Buses - Admin
   - path: "/api/v1/buses"
     methods: ["GET", "POST"]

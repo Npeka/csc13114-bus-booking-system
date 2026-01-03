@@ -526,7 +526,8 @@ func (s *AuthServiceImpl) CreateGuestAccount(ctx context.Context, req *model.Cre
 			return nil, ginext.NewInternalServerError("Không thể kiểm tra người dùng")
 		}
 		if existingUser != nil {
-			return existingUser.ToResponse(), nil
+			log.Warn().Str("email", req.Email).Msg("Email already registered")
+			return nil, ginext.NewBadRequestError("Email đã được đăng ký")
 		}
 	}
 
@@ -536,7 +537,8 @@ func (s *AuthServiceImpl) CreateGuestAccount(ctx context.Context, req *model.Cre
 			return nil, ginext.NewInternalServerError("Không thể kiểm tra người dùng")
 		}
 		if existingUser != nil {
-			return existingUser.ToResponse(), nil
+			log.Warn().Str("phone", req.Phone).Msg("Phone already registered")
+			return nil, ginext.NewBadRequestError("Số điện thoại đã được đăng ký")
 		}
 	}
 
