@@ -89,9 +89,15 @@ func (c *tripServiceClientImpl) SearchTrips(ctx context.Context, params *model.T
 	}
 
 	if !params.DepartureDate.IsZero() {
+		// Convert to Vietnam timezone (UTC+7) for proper date handling
+		vietnamTz := time.FixedZone("Asia/Ho_Chi_Minh", 7*60*60)
+		// Get the date parts and reconstruct in Vietnam timezone
+		year, month, day := params.DepartureDate.Date()
+		startOfDay := time.Date(year, month, day, 0, 0, 0, 0, vietnamTz)
+		endOfDay := time.Date(year, month, day, 23, 59, 59, 0, vietnamTz)
 		// Format as ISO date string for the trip-service API
-		queryParams["departure_time_start"] = params.DepartureDate.Format(time.RFC3339)
-		queryParams["departure_time_end"] = params.DepartureDate.Add(24 * time.Hour).Format(time.RFC3339)
+		queryParams["departure_time_start"] = startOfDay.Format(time.RFC3339)
+		queryParams["departure_time_end"] = endOfDay.Format(time.RFC3339)
 	}
 
 	// Always include pagination parameters
