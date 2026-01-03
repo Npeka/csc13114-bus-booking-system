@@ -132,7 +132,7 @@ services:
   chatbot-service:
     containerName: chatbot-service
     image: npkhang22/bb-chatbot-service
-    tag: chatbot-service-00ea252
+    tag: chatbot-service-6032559
     port: 8080
     env:
       SERVICE_NAME: 'chatbot-service'
