@@ -54,8 +54,7 @@ function CheckoutGuestContent() {
       })) || [];
 
   const subtotal = seats.reduce((sum, seat) => sum + seat.price, 0);
-  const serviceFee = 10000 * seats.length;
-  const total = subtotal + serviceFee;
+  const total = subtotal;
 
   // Create guest booking mutation
   const createBookingMutation = useMutation({
@@ -222,7 +221,6 @@ function CheckoutGuestContent() {
               {/* Payment Summary */}
               <PaymentSummary
                 subtotal={subtotal}
-                serviceFee={serviceFee}
                 total={total}
                 seatsCount={seats.length}
                 agreedToTerms={agreedToTerms}

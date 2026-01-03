@@ -6,7 +6,6 @@ import { Shield, AlertCircle } from "lucide-react";
 
 interface PaymentSummaryProps {
   subtotal: number;
-  serviceFee: number;
   total: number;
   seatsCount: number;
   agreedToTerms: boolean;
@@ -16,7 +15,6 @@ interface PaymentSummaryProps {
 
 export function PaymentSummary({
   subtotal,
-  serviceFee,
   total,
   seatsCount,
   agreedToTerms,
@@ -34,12 +32,6 @@ export function PaymentSummary({
           <div className="flex justify-between text-sm">
             <span>Giá vé ({seatsCount} chỗ)</span>
             <span className="font-semibold">{subtotal.toLocaleString()}đ</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span>Phí dịch vụ</span>
-            <span className="font-semibold">
-              {serviceFee.toLocaleString()}đ
-            </span>
           </div>
 
           <Separator />
@@ -91,7 +83,7 @@ export function PaymentSummary({
           {/* Warning when not agreed */}
           {!agreedToTerms && (
             <div className="flex items-center gap-2 rounded-md bg-warning/10 px-3 py-2 text-xs text-warning">
-              <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
               <span>Vui lòng đồng ý điều khoản để tiếp tục</span>
             </div>
           )}
