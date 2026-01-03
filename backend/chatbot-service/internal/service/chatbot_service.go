@@ -302,6 +302,7 @@ CHÍNH SÁCH THƯỜNG GẶP:
 	// Handle function calls in a loop (max 5 iterations to prevent infinite loops)
 	// This allows multi-step flows: search → get details → create booking → create payment
 	const maxFunctionCalls = 5
+	var lastSearchTripsData map[string]any // Track last search trips result for response
 	for iteration := 0; iteration < maxFunctionCalls; iteration++ {
 		// Check if any function calls exist in the response
 		var functionCalls []*genai.FunctionCall
@@ -328,6 +329,8 @@ CHÍNH SÁCH THƯỜNG GẶP:
 			switch fc.Name {
 			case "searchTrips":
 				funcResp = s.handleSearchTrips(ctx, fc.Args)
+				// Store for including in final response
+				lastSearchTripsData = funcResp
 			case "getTripDetails":
 				funcResp = s.handleGetTripDetails(ctx, fc.Args)
 			case "getAvailableSeats":
@@ -403,10 +406,17 @@ CHÍNH SÁCH THƯỜNG GẶP:
 		suggestions = []string{"Tìm chuyến xe", "Xem giá vé", "Chính sách hoàn vé"}
 	}
 
+	// Include trips data in response if available
+	var responseData interface{}
+	if lastSearchTripsData != nil {
+		responseData = lastSearchTripsData
+	}
+
 	return &model.ChatResponse{
 		Message:     aiMessage,
 		Intent:      intent,
 		Action:      action,
+		Data:        responseData,
 		Context:     req.Context,
 		Suggestions: suggestions,
 	}, nil
