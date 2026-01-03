@@ -50,6 +50,20 @@ func (mr *MockBookingRepositoryMockRecorder) CancelBooking(ctx, id, reason inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelBooking", reflect.TypeOf((*MockBookingRepository)(nil).CancelBooking), ctx, id, reason)
 }
 
+// CheckInPassenger mocks base method.
+func (m *MockBookingRepository) CheckInPassenger(ctx context.Context, bookingID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckInPassenger", ctx, bookingID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CheckInPassenger indicates an expected call of CheckInPassenger.
+func (mr *MockBookingRepositoryMockRecorder) CheckInPassenger(ctx, bookingID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckInPassenger", reflect.TypeOf((*MockBookingRepository)(nil).CheckInPassenger), ctx, bookingID)
+}
+
 // CreateBooking mocks base method.
 func (m *MockBookingRepository) CreateBooking(ctx context.Context, booking *model.Booking) error {
 	m.ctrl.T.Helper()

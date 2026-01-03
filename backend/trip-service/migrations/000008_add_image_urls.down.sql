@@ -1,0 +1,1 @@
+ALTER TABLE buses DROP COLUMN IF EXISTS image_urls;

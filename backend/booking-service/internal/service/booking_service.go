@@ -39,6 +39,7 @@ type BookingService interface {
 	GetSeatStatus(ctx context.Context, tripID uuid.UUID, seatIDs []uuid.UUID) ([]model.SeatStatusItem, error)
 	GetTripPassengers(ctx context.Context, tripID uuid.UUID) ([]model.PassengerResponse, error)
 	ExpireBooking(ctx context.Context, bookingID uuid.UUID) error
+	CheckInPassenger(ctx context.Context, bookingID uuid.UUID) error
 }
 
 type bookingServiceImpl struct {
@@ -851,8 +852,8 @@ func (s *bookingServiceImpl) GetTripPassengers(ctx context.Context, tripID uuid.
 				BookingReference: booking.BookingReference,
 				Status:           string(booking.Status),
 				Seats:            seats,
-				OriginalPrice:    float64(booking.TotalAmount), // Approximate
-				PaidPrice:        paidPrice,
+				OriginalPrice:    booking.TotalAmount,
+				PaidPrice:        int(paidPrice),
 			}
 			return nil
 		})
@@ -863,6 +864,27 @@ func (s *bookingServiceImpl) GetTripPassengers(ctx context.Context, tripID uuid.
 	}
 
 	return passengerResps, nil
+}
+
+func (s *bookingServiceImpl) CheckInPassenger(ctx context.Context, bookingID uuid.UUID) error {
+	booking, err := s.bookingRepo.GetBookingByID(ctx, bookingID)
+	if err != nil {
+		return err
+	}
+
+	if booking.Status != model.BookingStatusConfirmed && booking.Status != model.BookingStatusPending {
+		return ginext.NewBadRequestError("Booking must be CONFIRMED or PENDING to check in")
+	}
+
+	if booking.IsBoarded {
+		return ginext.NewBadRequestError("Passenger is already checked in")
+	}
+
+	if err := s.bookingRepo.CheckInPassenger(ctx, bookingID); err != nil {
+		return ginext.NewInternalServerError(fmt.Sprintf("Failed to check in passenger: %v", err))
+	}
+
+	return nil
 }
 
 func (s *bookingServiceImpl) ListBookings(ctx context.Context, req model.ListBookingsRequest) ([]*model.BookingResponse, int64, error) {

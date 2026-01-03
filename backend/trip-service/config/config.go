@@ -7,6 +7,7 @@ import (
 type Config struct {
 	*sharedConfig.BaseConfig
 	External ExternalConfig `envPrefix:"EXTERNAL_"`
+	Storage  sharedConfig.StorageConfig
 }
 
 type ExternalConfig struct {

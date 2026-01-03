@@ -89,6 +89,16 @@ type LogConfig struct {
 	Compress   bool   `env:"COMPRESS" envDefault:"true"`
 }
 
+type StorageConfig struct {
+	Endpoint        string `env:"DO_SPACES_ENDPOINT"`
+	Region          string `env:"DO_SPACES_REGION"`
+	AccessKeyID     string `env:"DO_SPACES_KEY"`
+	SecretAccessKey string `env:"DO_SPACES_SECRET"`
+	BucketName      string `env:"DO_SPACES_BUCKET"`
+	UseSSL          bool   `env:"DO_SPACES_USE_SSL" envDefault:"true"`
+	CDNDomain       string `env:"DO_SPACES_CDN_DOMAIN"`
+}
+
 type JWTConfig struct {
 	SecretKey        string        `env:"SECRET_KEY"`
 	RefreshSecretKey string        `env:"REFRESH_SECRET_KEY"`

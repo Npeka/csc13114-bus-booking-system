@@ -25,6 +25,7 @@ type BookingRepository interface {
 	UpdateStatus(ctx context.Context, id uuid.UUID, status model.BookingStatus) error
 	CancelBooking(ctx context.Context, id uuid.UUID, reason string) error
 	GetAllActiveBookingsByTripID(ctx context.Context, tripID uuid.UUID) ([]*model.Booking, error)
+	CheckInPassenger(ctx context.Context, bookingID uuid.UUID) error
 }
 
 type bookingRepositoryImpl struct {
@@ -234,4 +235,12 @@ func (r *bookingRepositoryImpl) GetAllActiveBookingsByTripID(ctx context.Context
 		return nil, fmt.Errorf("failed to get active bookings: %w", err)
 	}
 	return bookings, nil
+}
+
+func (r *bookingRepositoryImpl) CheckInPassenger(ctx context.Context, bookingID uuid.UUID) error {
+	return r.db.WithContext(ctx).
+		Model(&model.Booking{}).
+		Where("id = ?", bookingID).
+		Update("is_boarded", true).
+		Error
 }

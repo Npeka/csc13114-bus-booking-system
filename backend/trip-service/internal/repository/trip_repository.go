@@ -23,6 +23,7 @@ type TripRepository interface {
 	DeleteTrip(ctx context.Context, id uuid.UUID) error
 
 	GetCompletedTripsForReschedule(ctx context.Context) ([]model.Trip, error)
+	UpdateTripStatuses(ctx context.Context) error
 }
 
 type TripRepositoryImpl struct {
@@ -75,16 +76,6 @@ func (r *TripRepositoryImpl) SearchTrips(ctx context.Context, req *model.TripSea
 			query = query.Where("trips.departure_time <= ?", t)
 		}
 	}
-	if req.ArrivalTimeStart != nil && *req.ArrivalTimeStart != "" {
-		if t, err := time.Parse(time.RFC3339, *req.ArrivalTimeStart); err == nil {
-			query = query.Where("trips.arrival_time >= ?", t)
-		}
-	}
-	if req.ArrivalTimeEnd != nil && *req.ArrivalTimeEnd != "" {
-		if t, err := time.Parse(time.RFC3339, *req.ArrivalTimeEnd); err == nil {
-			query = query.Where("trips.arrival_time <= ?", t)
-		}
-	}
 
 	// Price filters
 	if req.MinPrice != nil {
@@ -94,7 +85,6 @@ func (r *TripRepositoryImpl) SearchTrips(ctx context.Context, req *model.TripSea
 		query = query.Where("trips.base_price <= ?", *req.MaxPrice)
 	}
 
-	// Amenities filter
 	if len(req.Amenities) > 0 {
 		for _, amenity := range req.Amenities {
 			query = query.Where("? = ANY(buses.amenities)", string(amenity))
@@ -319,4 +309,26 @@ func (r *TripRepositoryImpl) GetCompletedTripsForReschedule(ctx context.Context)
 		Find(&trips).Error
 
 	return trips, err
+}
+// UpdateTripStatuses updates trip statuses based on current time
+func (r *TripRepositoryImpl) UpdateTripStatuses(ctx context.Context) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		now := time.Now()
+
+		// 1. Scheduled -> In Progress (Departure Time passed)
+		if err := tx.Model(&model.Trip{}).
+			Where("status = ? AND departure_time <= ? AND is_active = ?", "scheduled", now, true).
+			Update("status", "in_progress").Error; err != nil {
+			return err
+		}
+
+		// 2. In Progress -> Completed (Arrival Time passed)
+		if err := tx.Model(&model.Trip{}).
+			Where("status = ? AND arrival_time <= ? AND is_active = ?", "in_progress", now, true).
+			Update("status", "completed").Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
 }

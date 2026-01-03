@@ -12,6 +12,7 @@ type Config struct {
 	Redis    sharedConfig.RedisConfig `envPrefix:"REDIS_"`
 	Firebase FirebaseConfig           `envPrefix:"FIREBASE_"`
 	External ExternalConfig           `envPrefix:"EXTERNAL_"`
+	Storage  sharedConfig.StorageConfig
 }
 
 type JWTConfig struct {

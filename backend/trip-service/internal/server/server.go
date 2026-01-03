@@ -20,6 +20,7 @@ type Server struct {
 	db      *db.DatabaseManager
 	redis   db.RedisManager
 	cronjob *cronjob.TripRescheduleCronJob
+	statusCron *cronjob.TripStatusCronJob
 }
 
 func NewServer(
@@ -31,8 +32,9 @@ func NewServer(
 }
 
 func (s *Server) Run() {
-	handler, cronJob := s.buildHandler()
+	handler, cronJob, statusCron := s.buildHandler()
 	s.cronjob = cronJob
+	s.statusCron = statusCron
 
 	server := &http.Server{
 		Addr:           s.cfg.GetServerAddr(),
@@ -50,6 +52,11 @@ func (s *Server) Run() {
 	go func() {
 		log.Info().Msg("Starting trip schedule cronjob")
 		s.cronjob.Start(ctx)
+	}()
+
+	go func() {
+		log.Info().Msg("Starting trip status cronjob")
+		s.statusCron.Start(ctx)
 	}()
 
 	// Start HTTP server
@@ -74,6 +81,7 @@ func (s *Server) Run() {
 	// Stop cronjob first
 	log.Info().Msg("Stopping cronjob...")
 	s.cronjob.Stop()
+	s.statusCron.Stop()
 	cancel()
 
 	// Then stop HTTP server

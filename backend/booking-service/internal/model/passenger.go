@@ -12,6 +12,7 @@ type PassengerResponse struct {
 	BookingReference string    `json:"booking_reference"`
 	Status           string    `json:"status"`
 	Seats            []string  `json:"seats"` // e.g. ["A1", "B2"]
-	OriginalPrice    float64   `json:"original_price"`
-	PaidPrice        float64   `json:"paid_price"`
+	OriginalPrice    int       `json:"original_price"`
+	PaidPrice        int       `json:"paid_price"`
+	IsBoarded        bool      `json:"is_boarded"`
 }

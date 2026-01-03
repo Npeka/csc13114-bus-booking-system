@@ -34,19 +34,21 @@ func (t *Trip) BeforeCreate(tx *gorm.DB) error {
 }
 
 type TripSearchRequest struct {
-	// Basic search - now all optional
+	// Basic search filters
 	Origin      *string `form:"origin" json:"origin,omitempty"`
 	Destination *string `form:"destination" json:"destination,omitempty"`
 
-	// Advanced filters - time range instead of date
-	DepartureTimeStart *string              `form:"departure_time_start" json:"departure_time_start,omitempty"` // Format: ISO8601 or HH:MM
-	DepartureTimeEnd   *string              `form:"departure_time_end" json:"departure_time_end,omitempty"`     // Format: ISO8601 or HH:MM
-	ArrivalTimeStart   *string              `form:"arrival_time_start" json:"arrival_time_start,omitempty"`     // Format: ISO8601 or HH:MM
-	ArrivalTimeEnd     *string              `form:"arrival_time_end" json:"arrival_time_end,omitempty"`         // Format: ISO8601 or HH:MM
-	MinPrice           *float64             `form:"min_price" json:"min_price,omitempty" validate:"omitempty,min=0"`
-	MaxPrice           *float64             `form:"max_price" json:"max_price,omitempty" validate:"omitempty,min=0"`
-	SeatTypes          []constants.SeatType `form:"seat_types" json:"seat_types,omitempty"`
-	Amenities          []constants.Amenity  `form:"amenities" json:"amenities,omitempty"`
+	// Time range filters (ISO8601 format preferred, HH:MM also supported)
+	DepartureTimeStart *string `form:"departure_time_start" json:"departure_time_start,omitempty"`
+	DepartureTimeEnd   *string `form:"departure_time_end" json:"departure_time_end,omitempty"`
+
+	// Price filters
+	MinPrice *float64 `form:"min_price" json:"min_price,omitempty" validate:"omitempty,min=0"`
+	MaxPrice *float64 `form:"max_price" json:"max_price,omitempty" validate:"omitempty,min=0"`
+
+	// Array filters - must use [] suffix for Gin to bind multiple values
+	SeatTypes []constants.SeatType `form:"seat_types[]" json:"seat_types,omitempty"`
+	Amenities []constants.Amenity  `form:"amenities[]" json:"amenities,omitempty"`
 
 	// Status filter (for admin)
 	Status *string `form:"status" json:"status,omitempty"`

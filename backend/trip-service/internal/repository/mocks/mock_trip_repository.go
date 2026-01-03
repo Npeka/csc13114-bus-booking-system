@@ -185,3 +185,17 @@ func (mr *MockTripRepositoryMockRecorder) UpdateTrip(ctx, trip interface{}) *gom
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTrip", reflect.TypeOf((*MockTripRepository)(nil).UpdateTrip), ctx, trip)
 }
+
+// UpdateTripStatuses mocks base method.
+func (m *MockTripRepository) UpdateTripStatuses(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateTripStatuses", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateTripStatuses indicates an expected call of UpdateTripStatuses.
+func (mr *MockTripRepositoryMockRecorder) UpdateTripStatuses(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTripStatuses", reflect.TypeOf((*MockTripRepository)(nil).UpdateTripStatuses), ctx)
+}

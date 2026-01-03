@@ -12,7 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (s *Server) buildHandler() (http.Handler, *cronjob.TripRescheduleCronJob) {
+func (s *Server) buildHandler() (http.Handler, *cronjob.TripRescheduleCronJob, *cronjob.TripStatusCronJob) {
 	bookingClient := client.NewBookingClient(s.cfg.ServiceName, s.cfg.External.BookingServiceURL)
 
 	// Initialize repositories
@@ -32,6 +32,7 @@ func (s *Server) buildHandler() (http.Handler, *cronjob.TripRescheduleCronJob) {
 
 	// Initialize trip reschedule cronjob
 	cronJob := cronjob.NewTripRescheduleCronJob(tripService)
+	statusCron := cronjob.NewTripStatusCronJob(tripService)
 
 	// Initialize handlers
 	tripHandler := handler.NewTripHandler(tripService)
@@ -56,5 +57,5 @@ func (s *Server) buildHandler() (http.Handler, *cronjob.TripRescheduleCronJob) {
 		SeatHandler:      seatHandler,
 		ConstantsHandler: constantsHandler,
 	})
-	return engine, cronJob
+	return engine, cronJob, statusCron
 }

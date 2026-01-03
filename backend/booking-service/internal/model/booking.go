@@ -21,6 +21,7 @@ type Booking struct {
 	CancelledAt        *time.Time                `json:"cancelled_at,omitempty" gorm:"type:timestamptz"`
 	CancellationReason string                    `json:"cancellation_reason,omitempty" gorm:"type:text"`
 	Notes              string                    `json:"notes,omitempty" gorm:"type:text"`
+	IsBoarded          bool                      `json:"is_boarded" gorm:"default:false"`
 
 	BookingSeats []BookingSeat `json:"booking_seats,omitempty" gorm:"foreignKey:BookingID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }

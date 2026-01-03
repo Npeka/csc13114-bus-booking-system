@@ -27,6 +27,7 @@ type TripService interface {
 	UpdateTrip(ctx context.Context, id uuid.UUID, req *model.UpdateTripRequest) (*model.Trip, error)
 	DeleteTrip(ctx context.Context, id uuid.UUID) error
 	RescheduleTrip(ctx context.Context, id uuid.UUID, newDeparture, newArrival time.Time) error
+	ProcessTripStatusUpdates(ctx context.Context) error
 }
 
 type TripServiceImpl struct {
@@ -338,4 +339,9 @@ func (s *TripServiceImpl) RescheduleTrip(ctx context.Context, id uuid.UUID, newD
 	}
 
 	return nil
+}
+
+// ProcessTripStatusUpdates triggers the batch update of trip statuses
+func (s *TripServiceImpl) ProcessTripStatusUpdates(ctx context.Context) error {
+	return s.tripRepo.UpdateTripStatuses(ctx)
 }

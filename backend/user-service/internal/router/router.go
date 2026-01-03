@@ -63,9 +63,9 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 		}
 
 		// Internal endpoints for service-to-service communication
-		internal := v1.Group("/internal")
+		internalV1 := v1.Group("/internal")
 		{
-			internal.GET("/users/:id", ginext.WrapHandler(h.UserHandler.GetUser))
+			internalV1.GET("/users/:id", ginext.WrapHandler(h.UserHandler.GetUser))
 		}
 	}
 }

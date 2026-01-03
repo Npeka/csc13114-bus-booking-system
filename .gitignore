@@ -62,3 +62,6 @@ fbsvc.json
 node_modules/
 .cursor/
 .github/instructions/
+
+.env
+.env.*
