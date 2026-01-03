@@ -16,10 +16,10 @@ import (
 )
 
 type Server struct {
-	cfg     *config.Config
-	db      *db.DatabaseManager
-	redis   db.RedisManager
-	cronjob *cronjob.TripRescheduleCronJob
+	cfg        *config.Config
+	db         *db.DatabaseManager
+	redis      db.RedisManager
+	cronjob    *cronjob.TripRescheduleCronJob
 	statusCron *cronjob.TripStatusCronJob
 }
 

@@ -310,6 +310,7 @@ func (r *TripRepositoryImpl) GetCompletedTripsForReschedule(ctx context.Context)
 
 	return trips, err
 }
+
 // UpdateTripStatuses updates trip statuses based on current time
 func (r *TripRepositoryImpl) UpdateTripStatuses(ctx context.Context) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
