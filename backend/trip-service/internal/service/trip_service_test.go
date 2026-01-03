@@ -783,3 +783,91 @@ func TestUpdateTrip_FullUpdate(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 }
+
+func TestProcessTripStatusUpdates(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockTripRepo := repo_mocks.NewMockTripRepository(ctrl)
+	service := &TripServiceImpl{tripRepo: mockTripRepo}
+
+	ctx := context.Background()
+
+	mockTripRepo.EXPECT().UpdateTripStatuses(ctx).Return(nil).Times(1)
+
+	err := service.ProcessTripStatusUpdates(ctx)
+	assert.NoError(t, err)
+}
+
+func TestCancelTrip_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockTripRepo := repo_mocks.NewMockTripRepository(ctrl)
+	mockBookingClient := mocks.NewMockBookingClient(ctrl)
+	mockPaymentClient := mocks.NewMockPaymentClient(ctrl)
+
+	service := &TripServiceImpl{
+		tripRepo:      mockTripRepo,
+		bookingClient: mockBookingClient,
+		paymentClient: mockPaymentClient,
+	}
+
+	ctx := context.Background()
+	tripID := uuid.New()
+
+	trip := &model.Trip{
+		BaseModel: model.BaseModel{ID: tripID},
+		Status:    constants.TripStatusScheduled,
+	}
+
+	bookings := []*booking.Booking{
+		{
+			ID:                uuid.New(),
+			TransactionStatus: "PAID",
+			TotalAmount:       100000,
+		},
+		{
+			ID:                uuid.New(),
+			TransactionStatus: "PENDING",
+		},
+	}
+
+	mockTripRepo.EXPECT().GetTripByID(ctx, gomock.Any(), tripID).Return(trip, nil).Times(1)
+	mockTripRepo.EXPECT().UpdateTrip(ctx, gomock.Any()).Do(func(_ context.Context, tr *model.Trip) {
+		assert.Equal(t, constants.TripStatusCancelled, tr.Status)
+	}).Return(nil).Times(1)
+
+	mockBookingClient.EXPECT().GetTripBookings(ctx, tripID).Return(bookings, nil).Times(1)
+
+	// Expect refund for PAID booking
+	mockPaymentClient.EXPECT().CreateRefund(ctx, gomock.Any()).Return(nil, nil).Times(1)
+
+	// Expect cancel for both bookings
+	mockBookingClient.EXPECT().CancelBooking(ctx, gomock.Any(), gomock.Any()).Return(nil).Times(2)
+
+	err := service.CancelTrip(ctx, tripID)
+	assert.NoError(t, err)
+}
+
+func TestCancelTrip_InvalidStatus(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockTripRepo := repo_mocks.NewMockTripRepository(ctrl)
+	service := &TripServiceImpl{tripRepo: mockTripRepo}
+
+	ctx := context.Background()
+	tripID := uuid.New()
+
+	trip := &model.Trip{
+		BaseModel: model.BaseModel{ID: tripID},
+		Status:    constants.TripStatusCompleted, // Cannot cancel completed
+	}
+
+	mockTripRepo.EXPECT().GetTripByID(ctx, gomock.Any(), tripID).Return(trip, nil).Times(1)
+
+	err := service.CancelTrip(ctx, tripID)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "Cannot cancel trip")
+}

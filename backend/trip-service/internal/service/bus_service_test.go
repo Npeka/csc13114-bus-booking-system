@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"mime/multipart"
 	"testing"
 
 	storage_mocks "bus-booking/shared/storage/mocks"
@@ -494,4 +495,131 @@ func TestDeleteBus_Error(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to delete bus")
+}
+
+func TestUploadImages_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBusRepo := mocks.NewMockBusRepository(ctrl)
+	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
+	mockStorageService := storage_mocks.NewMockStorageService(ctrl)
+
+	service := NewBusService(mockBusRepo, mockSeatRepo, mockStorageService)
+
+	ctx := context.Background()
+	busID := uuid.New()
+	existingBus := &model.Bus{
+		BaseModel: model.BaseModel{ID: busID},
+		ImageURLs: []string{"http://example.com/img1.jpg"},
+	}
+
+	mockBusRepo.EXPECT().GetBusByID(ctx, busID).Return(existingBus, nil).Times(1)
+	mockStorageService.EXPECT().UploadFile(ctx, gomock.Any(), gomock.Any(), "bus-images").Return("http://example.com/new.jpg", nil).Times(1)
+	mockBusRepo.EXPECT().UpdateBus(ctx, gomock.Any()).Do(func(_ context.Context, b *model.Bus) {
+		assert.Len(t, b.ImageURLs, 2)
+		assert.Equal(t, "http://example.com/new.jpg", b.ImageURLs[1])
+	}).Return(nil).Times(1)
+
+	fileHeader := &multipart.FileHeader{
+		Filename: "test.jpg",
+		Size:     1024,
+		Header:   make(map[string][]string),
+	}
+	fileHeader.Header.Set("Content-Type", "image/jpeg")
+
+	files := []multipart.File{nil}
+	headers := []*multipart.FileHeader{fileHeader}
+
+	result, err := service.UploadImages(ctx, busID, files, headers)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+}
+
+func TestUploadImages_TooManyImages(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBusRepo := mocks.NewMockBusRepository(ctrl)
+	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
+	mockStorageService := storage_mocks.NewMockStorageService(ctrl)
+
+	service := NewBusService(mockBusRepo, mockSeatRepo, mockStorageService)
+
+	ctx := context.Background()
+	busID := uuid.New()
+	
+	existingBus := &model.Bus{
+		BaseModel: model.BaseModel{ID: busID},
+		ImageURLs: make([]string, 9),
+	}
+
+	mockBusRepo.EXPECT().GetBusByID(ctx, busID).Return(existingBus, nil).Times(1)
+
+	files := make([]multipart.File, 2)
+	headers := make([]*multipart.FileHeader, 2)
+
+	_, err := service.UploadImages(ctx, busID, files, headers)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "tối đa 10 ảnh")
+}
+
+func TestDeleteImage_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBusRepo := mocks.NewMockBusRepository(ctrl)
+	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
+	mockStorageService := storage_mocks.NewMockStorageService(ctrl)
+
+	service := NewBusService(mockBusRepo, mockSeatRepo, mockStorageService)
+
+	ctx := context.Background()
+	busID := uuid.New()
+	targetURL := "http://example.com/img1.jpg"
+	
+	existingBus := &model.Bus{
+		BaseModel: model.BaseModel{ID: busID},
+		ImageURLs: []string{targetURL, "http://example.com/img2.jpg"},
+	}
+
+	mockBusRepo.EXPECT().GetBusByID(ctx, busID).Return(existingBus, nil).Times(1)
+	mockStorageService.EXPECT().DeleteFile(ctx, targetURL).Return(nil).Times(1)
+	mockBusRepo.EXPECT().UpdateBus(ctx, gomock.Any()).Do(func(_ context.Context, b *model.Bus) {
+		assert.Len(t, b.ImageURLs, 1)
+		assert.Equal(t, "http://example.com/img2.jpg", b.ImageURLs[0])
+	}).Return(nil).Times(1)
+
+	result, err := service.DeleteImage(ctx, busID, targetURL)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+}
+
+func TestDeleteImage_NotFound(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBusRepo := mocks.NewMockBusRepository(ctrl)
+	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
+	mockStorageService := storage_mocks.NewMockStorageService(ctrl)
+
+	service := NewBusService(mockBusRepo, mockSeatRepo, mockStorageService)
+
+	ctx := context.Background()
+	busID := uuid.New()
+	
+	existingBus := &model.Bus{
+		BaseModel: model.BaseModel{ID: busID},
+		ImageURLs: []string{"http://example.com/img1.jpg"},
+	}
+
+	mockBusRepo.EXPECT().GetBusByID(ctx, busID).Return(existingBus, nil).Times(1)
+
+	_, err := service.DeleteImage(ctx, busID, "http://example.com/missing.jpg")
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "Không tìm thấy ảnh")
 }
