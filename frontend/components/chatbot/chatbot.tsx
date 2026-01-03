@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle, X, Send, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { sendChatMessage } from "@/lib/api/chatbot-service";
+import { sendChatMessage, ChatbotTripData } from "@/lib/api/chatbot-service";
+import { ChatbotTripList } from "./chatbot-trip-card";
 
 interface Message {
   id: string;
@@ -15,6 +16,33 @@ interface Message {
   content: string;
   timestamp: Date;
   suggestions?: string[];
+  trips?: ChatbotTripData[];
+}
+
+// Helper function to extract trips from various response data structures
+function extractTripsFromData(data: unknown): ChatbotTripData[] | undefined {
+  if (!data || typeof data !== "object") return undefined;
+
+  const dataObj = data as Record<string, unknown>;
+
+  // Check if data contains trips directly
+  if (dataObj.trips && Array.isArray(dataObj.trips)) {
+    return dataObj.trips as ChatbotTripData[];
+  }
+
+  // Check for nested data.data structure (API wrapper)
+  if (dataObj.data && typeof dataObj.data === "object") {
+    const nestedData = dataObj.data as Record<string, unknown>;
+    if (nestedData.trips && Array.isArray(nestedData.trips)) {
+      return nestedData.trips as ChatbotTripData[];
+    }
+    // Some APIs return trips array directly in data.data
+    if (Array.isArray(nestedData)) {
+      return nestedData as ChatbotTripData[];
+    }
+  }
+
+  return undefined;
 }
 
 export function ChatBot() {
@@ -72,12 +100,16 @@ export function ChatBot() {
           })),
       });
 
+      // Extract trips from response data if available
+      const trips = response.data?.trips || extractTripsFromData(response.data);
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
         content: response.message,
         timestamp: new Date(),
         suggestions: response.suggestions || [],
+        trips: trips,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -182,6 +214,14 @@ export function ChatBot() {
                       >
                         <p className="text-sm">{message.content}</p>
                       </div>
+                      {/* Trip Cards */}
+                      {message.role === "assistant" &&
+                        message.trips &&
+                        message.trips.length > 0 && (
+                          <div className="mt-2">
+                            <ChatbotTripList trips={message.trips} />
+                          </div>
+                        )}
                       <p className="mt-1 text-xs text-muted-foreground">
                         {message.timestamp.toLocaleTimeString("vi-VN", {
                           hour: "2-digit",

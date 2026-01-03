@@ -32,7 +32,7 @@ export default function AdminRefundsPage() {
     start_date: undefined as string | undefined,
     end_date: undefined as string | undefined,
     page: 1,
-    page_size: 20,
+    page_size: 5,
   });
 
   // Fetch refunds
