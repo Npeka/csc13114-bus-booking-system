@@ -29,6 +29,7 @@ type BookingHandler interface {
 	GetTripPassengers(r *ginext.Request) (*ginext.Response, error)
 
 	DownloadETicket(r *ginext.Request) error
+	CheckInPassenger(r *ginext.Request) (*ginext.Response, error)
 }
 
 type BookingHandlerImpl struct {
@@ -464,4 +465,31 @@ func (h *BookingHandlerImpl) ListBookings(r *ginext.Request) (*ginext.Response, 
 	}
 
 	return ginext.NewPaginatedResponse(bookings, req.Page, req.PageSize, total), nil
+}
+
+// CheckInPassenger godoc
+// @Summary Check in a passenger
+// @Description Mark a passenger as boarded for a trip (Admin only)
+// @Tags bookings
+// @Produce json
+// @Param id path string true "Booking ID" format(uuid)
+// @Success 200 {object} ginext.Response
+// @Failure 400 {object} ginext.Response
+// @Failure 404 {object} ginext.Response
+// @Failure 500 {object} ginext.Response
+// @Router /api/v1/bookings/{id}/check-in [post]
+func (h *BookingHandlerImpl) CheckInPassenger(r *ginext.Request) (*ginext.Response, error) {
+	idStr := r.GinCtx.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		log.Error().Err(err).Str("id", idStr).Msg("invalid booking id")
+		return nil, ginext.NewBadRequestError("invalid booking id")
+	}
+
+	if err := h.bookingService.CheckInPassenger(r.Context(), id); err != nil {
+		log.Error().Err(err).Str("booking_id", idStr).Msg("failed to check in passenger")
+		return nil, err
+	}
+
+	return ginext.NewSuccessResponse("Passenger checked in successfully"), nil
 }

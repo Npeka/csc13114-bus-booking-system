@@ -60,6 +60,13 @@ routes:
     methods: ["GET"]
     auth:
       required: true
+      roles: ["admin"]
+
+  - path: "/api/v1/bookings/:id/check-in"
+    methods: ["POST"]
+    auth:
+      required: true
+      roles: ["admin"]
 
   # Admin routes (auth + role required)
   - path: "/api/v1/bookings/trip/:trip_id"

@@ -95,6 +95,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 			bookings.GET("/trip/:trip_id", ginext.WrapHandler(h.BookingHandler.GetTripBookings))
 			bookings.GET("/trip/:trip_id/passengers", ginext.WrapHandler(h.BookingHandler.GetTripPassengers))
 			bookings.GET("", ginext.WrapHandler(h.BookingHandler.ListBookings))
+			bookings.POST("/:id/check-in", ginext.WrapHandler(h.BookingHandler.CheckInPassenger))
 		}
 
 		statistics := adminV1.Group("/statistics")

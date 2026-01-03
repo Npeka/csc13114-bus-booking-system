@@ -298,3 +298,18 @@ export async function getTripPassengers(
     throw new Error(handleApiError(error));
   }
 }
+
+/**
+ * Check in a passenger (Admin only)
+ */
+export async function checkInPassenger(bookingId: string): Promise<string> {
+  try {
+    await apiClient.post<ApiResponse<void>>(
+      `/booking/api/v1/bookings/${bookingId}/check-in`,
+    );
+
+    return "Passenger checked in successfully";
+  } catch (error) {
+    throw new Error(handleApiError(error));
+  }
+}

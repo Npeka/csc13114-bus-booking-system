@@ -854,6 +854,7 @@ func (s *bookingServiceImpl) GetTripPassengers(ctx context.Context, tripID uuid.
 				Seats:            seats,
 				OriginalPrice:    booking.TotalAmount,
 				PaidPrice:        int(paidPrice),
+				IsBoarded:        booking.IsBoarded,
 			}
 			return nil
 		})
