@@ -722,13 +722,6 @@ func TestHandleCheckBookingStatus(t *testing.T) {
 	})
 }
 
-// Helper function to convert interface{} to JSON and back for testing
-func toJSON(t *testing.T, v interface{}) []byte {
-	data, err := json.Marshal(v)
-	require.NoError(t, err)
-	return data
-}
-
 func TestNormalizeCityName(t *testing.T) {
 	tests := []struct {
 		name     string
