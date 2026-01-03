@@ -12,6 +12,10 @@ func ToBusResponse(bus *Bus) *BusResponse {
 	amenities := make([]string, len(bus.Amenities))
 	copy(amenities, bus.Amenities)
 
+	// Convert image URLs to string slice
+	imageURLs := make([]string, len(bus.ImageURLs))
+	copy(imageURLs, bus.ImageURLs)
+
 	// Map seats if present
 	var seats []SeatResponse
 	if len(bus.Seats) > 0 {
@@ -28,6 +32,7 @@ func ToBusResponse(bus *Bus) *BusResponse {
 		BusType:      bus.BusType, // Raw string value
 		SeatCapacity: bus.SeatCapacity,
 		Amenities:    amenities,
+		ImageURLs:    imageURLs,
 		IsActive:     bus.IsActive,
 		Seats:        seats,
 	}

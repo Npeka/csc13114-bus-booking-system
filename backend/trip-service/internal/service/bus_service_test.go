@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	storage_mocks "bus-booking/shared/storage/mocks"
 	"bus-booking/trip-service/internal/model"
 	"bus-booking/trip-service/internal/repository/mocks"
 
@@ -18,8 +19,9 @@ func TestNewBusService(t *testing.T) {
 
 	mockBusRepo := mocks.NewMockBusRepository(ctrl)
 	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
 
-	service := NewBusService(mockBusRepo, mockSeatRepo)
+	service := NewBusService(mockBusRepo, mockSeatRepo, mockStorage)
 
 	assert.NotNil(t, service)
 	assert.IsType(t, &BusServiceImpl{}, service)
@@ -31,7 +33,9 @@ func TestGetBusByID_Success(t *testing.T) {
 
 	mockBusRepo := mocks.NewMockBusRepository(ctrl)
 	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
-	service := NewBusService(mockBusRepo, mockSeatRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+
+	service := NewBusService(mockBusRepo, mockSeatRepo, mockStorage)
 
 	ctx := context.Background()
 	busID := uuid.New()
@@ -61,7 +65,9 @@ func TestGetBusByID_Error(t *testing.T) {
 
 	mockBusRepo := mocks.NewMockBusRepository(ctrl)
 	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
-	service := NewBusService(mockBusRepo, mockSeatRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+
+	service := NewBusService(mockBusRepo, mockSeatRepo, mockStorage)
 
 	ctx := context.Background()
 	busID := uuid.New()
@@ -84,7 +90,9 @@ func TestListBuses_Success(t *testing.T) {
 
 	mockBusRepo := mocks.NewMockBusRepository(ctrl)
 	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
-	service := NewBusService(mockBusRepo, mockSeatRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+
+	service := NewBusService(mockBusRepo, mockSeatRepo, mockStorage)
 
 	ctx := context.Background()
 	req := model.ListBusesRequest{
@@ -117,7 +125,9 @@ func TestCreateBus_Success(t *testing.T) {
 
 	mockBusRepo := mocks.NewMockBusRepository(ctrl)
 	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
-	service := NewBusService(mockBusRepo, mockSeatRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+
+	service := NewBusService(mockBusRepo, mockSeatRepo, mockStorage)
 
 	ctx := context.Background()
 	req := &model.CreateBusRequest{
@@ -166,7 +176,9 @@ func TestCreateBus_DuplicatePlateNumber(t *testing.T) {
 
 	mockBusRepo := mocks.NewMockBusRepository(ctrl)
 	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
-	service := NewBusService(mockBusRepo, mockSeatRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+
+	service := NewBusService(mockBusRepo, mockSeatRepo, mockStorage)
 
 	ctx := context.Background()
 	req := &model.CreateBusRequest{
@@ -194,7 +206,9 @@ func TestCreateBus_ExceedCapacity(t *testing.T) {
 
 	mockBusRepo := mocks.NewMockBusRepository(ctrl)
 	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
-	service := NewBusService(mockBusRepo, mockSeatRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+
+	service := NewBusService(mockBusRepo, mockSeatRepo, mockStorage)
 
 	ctx := context.Background()
 
@@ -230,7 +244,9 @@ func TestGenerateSeatsFromFloorConfig_SingleFloor(t *testing.T) {
 
 	mockBusRepo := mocks.NewMockBusRepository(ctrl)
 	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
-	service := NewBusService(mockBusRepo, mockSeatRepo).(*BusServiceImpl)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+
+	service := NewBusService(mockBusRepo, mockSeatRepo, mockStorage).(*BusServiceImpl)
 
 	floors := []model.FloorConfig{
 		{
@@ -259,7 +275,9 @@ func TestGenerateSeatsFromFloorConfig_MultiFloor(t *testing.T) {
 
 	mockBusRepo := mocks.NewMockBusRepository(ctrl)
 	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
-	service := NewBusService(mockBusRepo, mockSeatRepo).(*BusServiceImpl)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+
+	service := NewBusService(mockBusRepo, mockSeatRepo, mockStorage).(*BusServiceImpl)
 
 	floors := []model.FloorConfig{
 		{
@@ -293,7 +311,9 @@ func TestGenerateSeatsFromFloorConfig_DuplicatePositions(t *testing.T) {
 
 	mockBusRepo := mocks.NewMockBusRepository(ctrl)
 	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
-	service := NewBusService(mockBusRepo, mockSeatRepo).(*BusServiceImpl)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+
+	service := NewBusService(mockBusRepo, mockSeatRepo, mockStorage).(*BusServiceImpl)
 
 	floors := []model.FloorConfig{
 		{
@@ -318,7 +338,9 @@ func TestGenerateSeatsFromFloorConfig_CustomPriceMultiplier(t *testing.T) {
 
 	mockBusRepo := mocks.NewMockBusRepository(ctrl)
 	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
-	service := NewBusService(mockBusRepo, mockSeatRepo).(*BusServiceImpl)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+
+	service := NewBusService(mockBusRepo, mockSeatRepo, mockStorage).(*BusServiceImpl)
 
 	customMultiplier := 1.5
 	floors := []model.FloorConfig{
@@ -344,7 +366,9 @@ func TestUpdateBus_Success(t *testing.T) {
 
 	mockBusRepo := mocks.NewMockBusRepository(ctrl)
 	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
-	service := NewBusService(mockBusRepo, mockSeatRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+
+	service := NewBusService(mockBusRepo, mockSeatRepo, mockStorage)
 
 	ctx := context.Background()
 	busID := uuid.New()
@@ -385,7 +409,9 @@ func TestUpdateBus_DuplicatePlateNumber(t *testing.T) {
 
 	mockBusRepo := mocks.NewMockBusRepository(ctrl)
 	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
-	service := NewBusService(mockBusRepo, mockSeatRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+
+	service := NewBusService(mockBusRepo, mockSeatRepo, mockStorage)
 
 	ctx := context.Background()
 	busID := uuid.New()
@@ -429,7 +455,9 @@ func TestDeleteBus_Success(t *testing.T) {
 
 	mockBusRepo := mocks.NewMockBusRepository(ctrl)
 	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
-	service := NewBusService(mockBusRepo, mockSeatRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+
+	service := NewBusService(mockBusRepo, mockSeatRepo, mockStorage)
 
 	ctx := context.Background()
 	busID := uuid.New()
@@ -450,7 +478,9 @@ func TestDeleteBus_Error(t *testing.T) {
 
 	mockBusRepo := mocks.NewMockBusRepository(ctrl)
 	mockSeatRepo := mocks.NewMockSeatRepository(ctrl)
-	service := NewBusService(mockBusRepo, mockSeatRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+
+	service := NewBusService(mockBusRepo, mockSeatRepo, mockStorage)
 
 	ctx := context.Background()
 	busID := uuid.New()

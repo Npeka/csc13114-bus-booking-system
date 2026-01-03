@@ -64,6 +64,8 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 			buses.POST("", ginext.WrapHandler(h.BusHandler.Create))
 			buses.PUT("/:id", ginext.WrapHandler(h.BusHandler.Update))
 			buses.DELETE("/:id", ginext.WrapHandler(h.BusHandler.Delete))
+			buses.POST("/:id/images", ginext.WrapHandler(h.BusHandler.UploadImages))
+			buses.DELETE("/:id/images", ginext.WrapHandler(h.BusHandler.DeleteImage))
 		}
 
 		seats := adminV1.Group("/buses/seats")

@@ -44,10 +44,16 @@ type S3Config struct {
 
 // NewS3StorageService creates a new S3-compatible storage service
 func NewS3StorageService(cfg S3Config) (*S3StorageService, error) {
+	// Clean endpoint if it includes bucket name to prevent double nesting
+	endpoint := cfg.Endpoint
+	if cfg.Bucket != "" && strings.Contains(endpoint, cfg.Bucket+".") {
+		endpoint = strings.Replace(endpoint, cfg.Bucket+".", "", 1)
+	}
+
 	// Create AWS session
 	awsConfig := &aws.Config{
 		Credentials:      credentials.NewStaticCredentials(cfg.AccessKey, cfg.SecretKey, ""),
-		Endpoint:         aws.String(cfg.Endpoint),
+		Endpoint:         aws.String(endpoint),
 		Region:           aws.String(cfg.Region),
 		S3ForcePathStyle: aws.Bool(true),
 		DisableSSL:       aws.Bool(!cfg.UseSSL),
@@ -71,7 +77,8 @@ func (s *S3StorageService) UploadFile(ctx context.Context, file multipart.File, 
 	// Generate unique filename
 	ext := filepath.Ext(header.Filename)
 	filename := fmt.Sprintf("%s-%d%s", uuid.New().String(), time.Now().Unix(), ext)
-	key := filepath.Join(path, filename)
+	// Ensure S3 key uses forward slashes regardless of OS
+	key := fmt.Sprintf("%s/%s", path, filename)
 
 	// Determine content type
 	contentType := header.Header.Get("Content-Type")

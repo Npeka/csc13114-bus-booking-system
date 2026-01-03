@@ -62,6 +62,12 @@ routes:
       required: true
       roles: ["admin"]
 
+  - path: "/api/v1/buses/:id/images"
+    methods: ["POST", "DELETE"]
+    auth:
+      required: true
+      roles: ["admin"]
+
   # Seats - Admin
   - path: "/api/v1/buses/seats/:id"
     methods: ["PUT"]

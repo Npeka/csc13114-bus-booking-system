@@ -50,6 +50,8 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, h *Handlers) {
 			// user
 			users.GET("/profile", ginext.WrapHandler(h.UserHandler.GetProfile))
 			users.PUT("/profile", ginext.WrapHandler(h.UserHandler.UpdateProfile))
+			users.POST("/profile/avatar", ginext.WrapHandler(h.UserHandler.UploadAvatar))
+			users.DELETE("/profile/avatar", ginext.WrapHandler(h.UserHandler.DeleteAvatar))
 
 			// admin
 			users.Use(middleware.RequireRole(constants.RoleAdmin))

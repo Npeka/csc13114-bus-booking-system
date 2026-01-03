@@ -34,6 +34,11 @@ routes:
     auth:
       required: true
 
+  - path: "/api/v1/users/profile/avatar"
+    methods: ["POST", "DELETE"]
+    auth:
+      required: true
+
   # Admin-only user management routes
   - path: "/api/v1/users"
     methods: ["GET", "POST"]

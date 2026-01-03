@@ -241,3 +241,45 @@ export async function updateUserStatus(
     throw new Error(handleApiError(error));
   }
 }
+
+/**
+ * Upload user avatar
+ * @param file - Avatar image file
+ * @returns Updated user profile with new avatar
+ */
+export async function uploadAvatar(file: File): Promise<User> {
+  try {
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    const response = await apiClient.post<{ data: User }>(
+      "/user/api/v1/users/profile/avatar",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    );
+
+    if (response.data && response.data.data) {
+      return response.data.data;
+    }
+
+    throw new Error("Failed to upload avatar");
+  } catch (error) {
+    throw new Error(handleApiError(error));
+  }
+}
+
+/**
+ * Delete user avatar
+ * @returns Success message
+ */
+export async function deleteAvatar(): Promise<void> {
+  try {
+    await apiClient.delete("/user/api/v1/users/profile/avatar");
+  } catch (error) {
+    throw new Error(handleApiError(error));
+  }
+}

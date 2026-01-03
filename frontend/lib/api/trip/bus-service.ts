@@ -168,3 +168,69 @@ export const getBusSeats = async (busId: string): Promise<BusSeat[]> => {
     throw new Error(errorMessage);
   }
 };
+
+/**
+ * Upload bus images (admin only)
+ * @param busId - Bus ID
+ * @param files - Image files to upload
+ * @returns Updated bus with new images
+ */
+export const uploadBusImages = async (
+  busId: string,
+  files: File[],
+): Promise<Bus> => {
+  try {
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append("images", file);
+    });
+
+    const response = await apiClient.post<ApiResponse<Bus>>(
+      `/trip/api/v1/buses/${busId}/images`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    );
+
+    if (!response.data.data) {
+      throw new Error("Failed to upload bus images");
+    }
+
+    return response.data.data;
+  } catch (error) {
+    const errorMessage = handleApiError(error);
+    throw new Error(errorMessage);
+  }
+};
+
+/**
+ * Delete a bus image (admin only)
+ * @param busId - Bus ID
+ * @param imageUrl - URL of the image to delete
+ * @returns Updated bus without the deleted image
+ */
+export const deleteBusImage = async (
+  busId: string,
+  imageUrl: string,
+): Promise<Bus> => {
+  try {
+    const response = await apiClient.delete<ApiResponse<Bus>>(
+      `/trip/api/v1/buses/${busId}/images`,
+      {
+        params: { image_url: imageUrl },
+      },
+    );
+
+    if (!response.data.data) {
+      throw new Error("Failed to delete bus image");
+    }
+
+    return response.data.data;
+  } catch (error) {
+    const errorMessage = handleApiError(error);
+    throw new Error(errorMessage);
+  }
+};

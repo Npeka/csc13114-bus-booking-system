@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import type { User } from "@/lib/stores/auth-store";
 import { Role } from "@/lib/auth/roles";
+import { AvatarUpload } from "./avatar-upload";
 
 interface ProfileSummaryProps {
   profile: User;
@@ -24,17 +25,7 @@ export function ProfileSummary({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-col items-center space-y-3">
-          {profile.avatar ? (
-            <img
-              src={profile.avatar}
-              alt="Avatar"
-              className="h-24 w-24 rounded-full object-cover ring-2 ring-primary/20"
-            />
-          ) : (
-            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary/10 text-3xl font-bold text-primary">
-              {profile.full_name.charAt(0).toUpperCase()}
-            </div>
-          )}
+          <AvatarUpload profile={profile} />
           <div className="text-center">
             <h3 className="text-lg font-semibold">{profile.full_name}</h3>
             <p className="text-sm text-muted-foreground">{profile.email}</p>

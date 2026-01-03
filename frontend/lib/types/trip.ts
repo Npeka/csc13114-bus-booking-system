@@ -225,6 +225,7 @@ export interface Bus {
   bus_type: "standard" | "vip" | "sleeper" | "double_decker";
   seat_capacity: number;
   amenities: ConstantDisplay[]; // Backend returns array of {value, display_name}
+  image_urls?: string[]; // Array of bus image URLs
   is_active: boolean;
   created_at: string;
   updated_at: string;

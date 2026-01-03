@@ -7,6 +7,7 @@ import (
 
 	"bus-booking/shared/constants"
 	"bus-booking/shared/db/mocks"
+	storage_mocks "bus-booking/shared/storage/mocks"
 	"bus-booking/user-service/config"
 	"bus-booking/user-service/internal/model"
 	repo_mocks "bus-booking/user-service/internal/repository/mocks"
@@ -22,7 +23,8 @@ func TestNewUserService(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := repo_mocks.NewMockUserRepository(ctrl)
-	service := NewUserService(mockRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+	service := NewUserService(mockRepo, mockStorage)
 
 	assert.NotNil(t, service)
 	assert.IsType(t, &UserServiceImpl{}, service)
@@ -33,7 +35,8 @@ func TestCreateUser_Success(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := repo_mocks.NewMockUserRepository(ctrl)
-	service := NewUserService(mockRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+	service := NewUserService(mockRepo, mockStorage)
 
 	ctx := context.Background()
 	firebaseUID := "firebase-uid-123"
@@ -63,7 +66,8 @@ func TestCreateUser_EmailExists(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := repo_mocks.NewMockUserRepository(ctrl)
-	service := NewUserService(mockRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+	service := NewUserService(mockRepo, mockStorage)
 
 	ctx := context.Background()
 	req := &model.UserCreateRequest{
@@ -86,7 +90,8 @@ func TestCreateUser_FirebaseUIDExists(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := repo_mocks.NewMockUserRepository(ctrl)
-	service := NewUserService(mockRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+	service := NewUserService(mockRepo, mockStorage)
 
 	ctx := context.Background()
 	firebaseUID := "existing-firebase-uid"
@@ -113,7 +118,8 @@ func TestGetUserByID_Success(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := repo_mocks.NewMockUserRepository(ctrl)
-	service := NewUserService(mockRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+	service := NewUserService(mockRepo, mockStorage)
 
 	ctx := context.Background()
 	userID := uuid.New()
@@ -141,7 +147,8 @@ func TestGetUserByID_Error(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := repo_mocks.NewMockUserRepository(ctrl)
-	service := NewUserService(mockRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+	service := NewUserService(mockRepo, mockStorage)
 
 	ctx := context.Background()
 	userID := uuid.New()
@@ -159,7 +166,8 @@ func TestListUsers_Success(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := repo_mocks.NewMockUserRepository(ctrl)
-	service := NewUserService(mockRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+	service := NewUserService(mockRepo, mockStorage)
 
 	ctx := context.Background()
 	req := model.UserListQuery{
@@ -185,7 +193,8 @@ func TestUpdateUser_Success(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := repo_mocks.NewMockUserRepository(ctrl)
-	service := NewUserService(mockRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+	service := NewUserService(mockRepo, mockStorage)
 
 	ctx := context.Background()
 	userID := uuid.New()
@@ -218,7 +227,8 @@ func TestUpdateUser_EmailChange_AlreadyExists(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := repo_mocks.NewMockUserRepository(ctrl)
-	service := NewUserService(mockRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+	service := NewUserService(mockRepo, mockStorage)
 
 	ctx := context.Background()
 	userID := uuid.New()
@@ -248,7 +258,8 @@ func TestUpdateUser_AllFields(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := repo_mocks.NewMockUserRepository(ctrl)
-	service := NewUserService(mockRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+	service := NewUserService(mockRepo, mockStorage)
 
 	ctx := context.Background()
 	userID := uuid.New()
@@ -296,7 +307,8 @@ func TestDeleteUser_Success(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := repo_mocks.NewMockUserRepository(ctrl)
-	service := NewUserService(mockRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+	service := NewUserService(mockRepo, mockStorage)
 
 	ctx := context.Background()
 	userID := uuid.New()
@@ -316,7 +328,8 @@ func TestDeleteUser_NotFound(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := repo_mocks.NewMockUserRepository(ctrl)
-	service := NewUserService(mockRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+	service := NewUserService(mockRepo, mockStorage)
 
 	ctx := context.Background()
 	userID := uuid.New()
@@ -333,7 +346,8 @@ func TestListUsersByRole_Success(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := repo_mocks.NewMockUserRepository(ctrl)
-	service := NewUserService(mockRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+	service := NewUserService(mockRepo, mockStorage)
 
 	ctx := context.Background()
 	role := constants.RoleAdmin
@@ -359,7 +373,8 @@ func TestListUsersByRole_Error(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := repo_mocks.NewMockUserRepository(ctrl)
-	service := NewUserService(mockRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+	service := NewUserService(mockRepo, mockStorage)
 
 	ctx := context.Background()
 	role := constants.RolePassenger
@@ -378,7 +393,8 @@ func TestCreateUser_EmailCheckError(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := repo_mocks.NewMockUserRepository(ctrl)
-	service := NewUserService(mockRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+	service := NewUserService(mockRepo, mockStorage)
 
 	ctx := context.Background()
 	req := &model.UserCreateRequest{
@@ -405,7 +421,8 @@ func TestUpdateUser_EmailCheckError(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := repo_mocks.NewMockUserRepository(ctrl)
-	service := NewUserService(mockRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+	service := NewUserService(mockRepo, mockStorage)
 
 	ctx := context.Background()
 	userID := uuid.New()
@@ -443,7 +460,8 @@ func TestUpdateUser_UpdateFails(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := repo_mocks.NewMockUserRepository(ctrl)
-	service := NewUserService(mockRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+	service := NewUserService(mockRepo, mockStorage)
 
 	ctx := context.Background()
 	userID := uuid.New()
@@ -481,7 +499,8 @@ func TestDeleteUser_DeleteFails(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := repo_mocks.NewMockUserRepository(ctrl)
-	service := NewUserService(mockRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+	service := NewUserService(mockRepo, mockStorage)
 
 	ctx := context.Background()
 	userID := uuid.New()
@@ -512,7 +531,8 @@ func TestListUsers_Error(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := repo_mocks.NewMockUserRepository(ctrl)
-	service := NewUserService(mockRepo)
+	mockStorage := storage_mocks.NewMockStorageService(ctrl)
+	service := NewUserService(mockRepo, mockStorage)
 
 	ctx := context.Background()
 	req := model.UserListQuery{

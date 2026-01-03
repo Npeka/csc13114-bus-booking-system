@@ -16,6 +16,8 @@ import (
 type UserHandler interface {
 	GetProfile(r *ginext.Request) (*ginext.Response, error)
 	UpdateProfile(r *ginext.Request) (*ginext.Response, error)
+	UploadAvatar(r *ginext.Request) (*ginext.Response, error)
+	DeleteAvatar(r *ginext.Request) (*ginext.Response, error)
 
 	GetUser(r *ginext.Request) (*ginext.Response, error)
 	ListUsers(r *ginext.Request) (*ginext.Response, error)
@@ -86,6 +88,67 @@ func (h *UserHandlerImpl) UpdateProfile(r *ginext.Request) (*ginext.Response, er
 	}
 
 	return ginext.NewSuccessResponse(user), nil
+}
+
+// UploadAvatar godoc
+// @Summary Upload user avatar
+// @Description Uploads a new avatar image for the current user
+// @Tags Users
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param avatar formData file true "Avatar image file (JPEG, PNG, WebP, max 5MB)"
+// @Success 200 {object} ginext.Response{data=model.UserResponse} "Avatar uploaded successfully"
+// @Failure 400 {object} ginext.Response "Invalid file or file too large"
+// @Failure 401 {object} ginext.Response "Unauthorized"
+// @Failure 500 {object} ginext.Response "Internal server error"
+// @Router /users/profile/avatar [post]
+func (h *UserHandlerImpl) UploadAvatar(r *ginext.Request) (*ginext.Response, error) {
+	userID := context.GetUserID(r.GinCtx)
+
+	// Get file from form
+	file, header, err := r.GinCtx.Request.FormFile("avatar")
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get avatar file from form")
+		return nil, ginext.NewBadRequestError("Không thể đọc file avatar")
+	}
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Error().Err(err).Msg("Failed to close avatar file")
+		}
+	}()
+
+	// Upload avatar
+	user, err := h.us.UploadAvatar(r.Context(), userID, file, header)
+	if err != nil {
+		log.Error().Err(err).Str("user_id", userID.String()).Msg("Failed to upload avatar")
+		return nil, err
+	}
+
+	return ginext.NewSuccessResponse(user), nil
+}
+
+// DeleteAvatar godoc
+// @Summary Delete user avatar
+// @Description Deletes the current user's avatar
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} ginext.Response "Avatar deleted successfully"
+// @Failure 400 {object} ginext.Response "User has no avatar"
+// @Failure 401 {object} ginext.Response "Unauthorized"
+// @Failure 500 {object} ginext.Response "Internal server error"
+// @Router /users/profile/avatar [delete]
+func (h *UserHandlerImpl) DeleteAvatar(r *ginext.Request) (*ginext.Response, error) {
+	userID := context.GetUserID(r.GinCtx)
+
+	if err := h.us.DeleteAvatar(r.Context(), userID); err != nil {
+		log.Error().Err(err).Str("user_id", userID.String()).Msg("Failed to delete avatar")
+		return nil, err
+	}
+
+	return ginext.NewSuccessResponse("Avatar đã được xóa thành công"), nil
 }
 
 // GetUser godoc

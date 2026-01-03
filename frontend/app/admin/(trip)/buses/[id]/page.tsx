@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getBusById, getBusSeats, updateSeat, updateBus } from "@/lib/api";
 import { SimpleSeatEditor } from "@/components/admin/simple-seat-editor";
 import { BusEditForm } from "@/components/admin/bus-edit-form";
+import { BusImageUpload } from "@/components/admin/bus-image-upload";
 import { toast } from "sonner";
 import { PageHeader, PageHeaderLayout } from "@/components/shared/admin";
 
@@ -117,6 +118,9 @@ export default function BusDetailPage() {
           }}
           isSaving={updateBusMutation.isPending}
         />
+
+        {/* Bus Images */}
+        <BusImageUpload busId={busId} imageUrls={bus.image_urls} />
 
         {/* Seat Management */}
         {existingSeats && existingSeats.length > 0 ? (

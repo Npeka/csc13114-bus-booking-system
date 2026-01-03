@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bus-booking/shared/storage"
 	"bus-booking/trip-service/internal/client"
 	"bus-booking/trip-service/internal/cronjob"
 	"bus-booking/trip-service/internal/handler"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 )
 
 func (s *Server) buildHandler() (http.Handler, *cronjob.TripRescheduleCronJob, *cronjob.TripStatusCronJob) {
@@ -22,10 +24,24 @@ func (s *Server) buildHandler() (http.Handler, *cronjob.TripRescheduleCronJob, *
 	busRepo := repository.NewBusRepository(s.db.DB)
 	seatRepo := repository.NewSeatRepository(s.db.DB)
 
+	// Initialize storage service
+	storageService, err := storage.NewS3StorageService(storage.S3Config{
+		AccessKey: s.cfg.Storage.AccessKeyID,
+		SecretKey: s.cfg.Storage.SecretAccessKey,
+		Endpoint:  s.cfg.Storage.Endpoint,
+		Bucket:    s.cfg.Storage.BucketName,
+		Region:    s.cfg.Storage.Region,
+		UseSSL:    s.cfg.Storage.UseSSL,
+		CDNDomain: s.cfg.Storage.CDNDomain,
+	})
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to initialize storage service")
+	}
+
 	// Initialize services
 	tripService := service.NewTripService(tripRepo, routeRepo, routeStopRepo, busRepo, seatRepo, bookingClient)
 	routeService := service.NewRouteService(routeRepo)
-	busService := service.NewBusService(busRepo, seatRepo)
+	busService := service.NewBusService(busRepo, seatRepo, storageService)
 	routeStopService := service.NewRouteStopService(routeStopRepo, routeRepo)
 	seatService := service.NewSeatService(seatRepo)
 	constantsService := service.NewConstantsService()

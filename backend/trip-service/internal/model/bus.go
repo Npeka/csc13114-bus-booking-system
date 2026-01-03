@@ -15,6 +15,7 @@ type Bus struct {
 	BusType      constants.BusType `gorm:"type:varchar(20);not null;default:'standard'" json:"bus_type" validate:"required"` // constants.BusType values
 	SeatCapacity int               `gorm:"type:integer;not null" json:"seat_capacity" validate:"required,min=1,max=100"`
 	Amenities    pq.StringArray    `gorm:"type:text[]" json:"amenities"` // constants.Amenity values
+	ImageURLs    pq.StringArray    `gorm:"type:text[];column:image_urls" json:"image_urls"`
 	IsActive     bool              `gorm:"type:boolean;not null;default:true" json:"is_active"`
 
 	Seats []Seat `gorm:"foreignKey:BusID" json:"seats"`
@@ -38,6 +39,7 @@ type BusResponse struct {
 	BusType      constants.BusType `json:"bus_type"` // Raw string value: constants.BusType
 	SeatCapacity int               `json:"seat_capacity"`
 	Amenities    []string          `json:"amenities"` // Raw string values: constants.Amenity
+	ImageURLs    []string          `json:"image_urls"`
 	IsActive     bool              `json:"is_active"`
 
 	Seats []SeatResponse `json:"seats,omitempty"`
