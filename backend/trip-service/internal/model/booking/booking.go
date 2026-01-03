@@ -15,7 +15,7 @@ type CancelBookingRequest struct {
 
 // BookingListResponse represents the response when getting bookings for a trip
 type BookingListResponse struct {
-	Data []*Booking `json:"data"`
-	Page int        `json:"page"`
-	Total int64     `json:"total"`
+	Data  []*Booking `json:"data"`
+	Page  int        `json:"page"`
+	Total int64      `json:"total"`
 }

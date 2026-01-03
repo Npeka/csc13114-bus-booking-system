@@ -367,7 +367,7 @@ func (s *TripServiceImpl) CancelTrip(ctx context.Context, id uuid.UUID) error {
 
 	// 3. Update Status to Cancelled
 	trip.Status = constants.TripStatusCancelled
-	
+
 	if err := s.tripRepo.UpdateTrip(ctx, trip); err != nil {
 		return ginext.NewInternalServerError("failed to update trip status")
 	}
@@ -375,9 +375,9 @@ func (s *TripServiceImpl) CancelTrip(ctx context.Context, id uuid.UUID) error {
 	// 4. Get Bookings
 	bookings, err := s.bookingClient.GetTripBookings(ctx, id)
 	if err != nil {
-		// Log error but we already cancelled the trip in DB. 
+		// Log error but we already cancelled the trip in DB.
 		log.Error().Err(err).Str("trip_id", id.String()).Msg("Failed to get bookings for cancelled trip for processing refunds")
-		return nil 
+		return nil
 	}
 
 	// 5. Refund/Cancel Bookings

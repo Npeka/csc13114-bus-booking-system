@@ -9,6 +9,6 @@ type RefundRequest struct {
 }
 
 type RefundResponse struct {
-	ID uuid.UUID `json:"id"`
-	RefundStatus string `json:"refund_status"`
+	ID           uuid.UUID `json:"id"`
+	RefundStatus string    `json:"refund_status"`
 }
