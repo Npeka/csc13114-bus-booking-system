@@ -526,7 +526,7 @@ func (s *AuthServiceImpl) CreateGuestAccount(ctx context.Context, req *model.Cre
 			return nil, ginext.NewInternalServerError("Không thể kiểm tra người dùng")
 		}
 		if existingUser != nil {
-			return nil, ginext.NewBadRequestError("Email đã được đăng ký")
+			return existingUser.ToResponse(), nil
 		}
 	}
 
@@ -536,7 +536,7 @@ func (s *AuthServiceImpl) CreateGuestAccount(ctx context.Context, req *model.Cre
 			return nil, ginext.NewInternalServerError("Không thể kiểm tra người dùng")
 		}
 		if existingUser != nil {
-			return nil, ginext.NewBadRequestError("Số điện thoại đã được đăng ký")
+			return existingUser.ToResponse(), nil
 		}
 	}
 
