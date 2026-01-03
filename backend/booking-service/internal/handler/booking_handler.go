@@ -26,6 +26,7 @@ type BookingHandler interface {
 
 	UpdateBookingStatus(r *ginext.Request) (*ginext.Response, error)
 	GetSeatStatus(r *ginext.Request) (*ginext.Response, error)
+	GetTripPassengers(r *ginext.Request) (*ginext.Response, error)
 
 	DownloadETicket(r *ginext.Request) error
 }
@@ -368,6 +369,33 @@ func (h *BookingHandlerImpl) GetSeatStatus(r *ginext.Request) (*ginext.Response,
 	}
 
 	return ginext.NewSuccessResponse(seatStatuses), nil
+}
+
+// GetTripPassengers godoc
+// @Summary Get trip passengers
+// @Description Get list of passengers for a trip (Internal/Admin)
+// @Tags bookings
+// @Produce json
+// @Param trip_id path string true "Trip ID" format(uuid)
+// @Success 200 {object} ginext.Response{data=[]model.PassengerResponse}
+// @Failure 400 {object} ginext.Response
+// @Failure 500 {object} ginext.Response
+// @Router /api/v1/bookings/trip/{trip_id}/passengers [get]
+func (h *BookingHandlerImpl) GetTripPassengers(r *ginext.Request) (*ginext.Response, error) {
+	tripIDStr := r.GinCtx.Param("trip_id")
+	tripID, err := uuid.Parse(tripIDStr)
+	if err != nil {
+		log.Error().Err(err).Str("trip_id", tripIDStr).Msg("invalid trip id")
+		return nil, ginext.NewBadRequestError("invalid trip id")
+	}
+
+	passengers, err := h.bookingService.GetTripPassengers(r.Context(), tripID)
+	if err != nil {
+		log.Error().Err(err).Str("trip_id", tripIDStr).Msg("failed to get trip passengers")
+		return nil, err
+	}
+
+	return ginext.NewSuccessResponse(passengers), nil
 }
 
 // DownloadETicket godoc

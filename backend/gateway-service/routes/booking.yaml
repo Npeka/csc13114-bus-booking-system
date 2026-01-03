@@ -68,6 +68,12 @@ routes:
       required: true
       roles: ["admin"]
 
+  - path: "/api/v1/bookings/trip/:trip_id/passengers"
+    methods: ["GET"]
+    auth:
+      required: true
+      roles: ["admin"]
+
   - path: "/api/v1/statistics/bookings"
     methods: ["GET"]
     auth:

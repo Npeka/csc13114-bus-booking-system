@@ -37,6 +37,7 @@ type BookingService interface {
 	RetryPayment(ctx context.Context, bookingID uuid.UUID) (*model.BookingResponse, error)
 
 	GetSeatStatus(ctx context.Context, tripID uuid.UUID, seatIDs []uuid.UUID) ([]model.SeatStatusItem, error)
+	GetTripPassengers(ctx context.Context, tripID uuid.UUID) ([]model.PassengerResponse, error)
 	ExpireBooking(ctx context.Context, bookingID uuid.UUID) error
 }
 
@@ -793,6 +794,75 @@ func (s *bookingServiceImpl) ExpireBooking(ctx context.Context, bookingID uuid.U
 	}()
 
 	return nil
+}
+
+func (s *bookingServiceImpl) GetTripPassengers(ctx context.Context, tripID uuid.UUID) ([]model.PassengerResponse, error) {
+	// 1. Get all active bookings for the trip
+	bookings, err := s.bookingRepo.GetAllActiveBookingsByTripID(ctx, tripID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(bookings) == 0 {
+		return []model.PassengerResponse{}, nil
+	}
+
+	// 2. Prepare for concurrent fetching
+	passengerResps := make([]model.PassengerResponse, len(bookings))
+	g, gCtx := errgroup.WithContext(ctx)
+
+	// We can limit concurrency if needed, but for now let's just launch per booking
+	// For production with high load, we should use a worker pool or semaphore
+	// Here we use a buffered channel as semaphore to limit concurrency
+	semaphore := make(chan struct{}, 10) // Max 10 concurrent requests
+
+	for i, booking := range bookings {
+		i, booking := i, booking // Capture loop variables
+		g.Go(func() error {
+			semaphore <- struct{}{}        // Acquire
+			defer func() { <-semaphore }() // Release
+
+			// Get User details
+			userData, err := s.userClient.GetUserByID(gCtx, booking.UserID)
+			if err != nil {
+				log.Error().Err(err).Str("user_id", booking.UserID.String()).Msg("Failed to fetch user details for passenger list")
+				userData = &user.User{
+					ID:       booking.UserID,
+					FullName: "Unknown User",
+					Email:    "N/A",
+					Phone:    "N/A",
+				}
+			}
+
+			// Format seats
+			var seats []string
+			var paidPrice float64 = 0
+			for _, seat := range booking.BookingSeats {
+				seats = append(seats, seat.SeatNumber)
+				paidPrice += seat.Price
+			}
+
+			passengerResps[i] = model.PassengerResponse{
+				UserID:           booking.UserID,
+				FullName:         userData.FullName,
+				Email:            userData.Email,
+				Phone:            userData.Phone,
+				BookingID:        booking.ID,
+				BookingReference: booking.BookingReference,
+				Status:           string(booking.Status),
+				Seats:            seats,
+				OriginalPrice:    float64(booking.TotalAmount), // Approximate
+				PaidPrice:        paidPrice,
+			}
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
+	return passengerResps, nil
 }
 
 func (s *bookingServiceImpl) ListBookings(ctx context.Context, req model.ListBookingsRequest) ([]*model.BookingResponse, int64, error) {

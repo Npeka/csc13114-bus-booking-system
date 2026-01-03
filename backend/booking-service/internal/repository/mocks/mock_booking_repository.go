@@ -64,6 +64,21 @@ func (mr *MockBookingRepositoryMockRecorder) CreateBooking(ctx, booking interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBooking", reflect.TypeOf((*MockBookingRepository)(nil).CreateBooking), ctx, booking)
 }
 
+// GetAllActiveBookingsByTripID mocks base method.
+func (m *MockBookingRepository) GetAllActiveBookingsByTripID(ctx context.Context, tripID uuid.UUID) ([]*model.Booking, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllActiveBookingsByTripID", ctx, tripID)
+	ret0, _ := ret[0].([]*model.Booking)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllActiveBookingsByTripID indicates an expected call of GetAllActiveBookingsByTripID.
+func (mr *MockBookingRepositoryMockRecorder) GetAllActiveBookingsByTripID(ctx, tripID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllActiveBookingsByTripID", reflect.TypeOf((*MockBookingRepository)(nil).GetAllActiveBookingsByTripID), ctx, tripID)
+}
+
 // GetBookedSeatIDs mocks base method.
 func (m *MockBookingRepository) GetBookedSeatIDs(ctx context.Context, tripID uuid.UUID) ([]uuid.UUID, error) {
 	m.ctrl.T.Helper()
