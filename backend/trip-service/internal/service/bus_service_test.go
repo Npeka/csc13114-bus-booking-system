@@ -549,7 +549,7 @@ func TestUploadImages_TooManyImages(t *testing.T) {
 
 	ctx := context.Background()
 	busID := uuid.New()
-	
+
 	existingBus := &model.Bus{
 		BaseModel: model.BaseModel{ID: busID},
 		ImageURLs: make([]string, 9),
@@ -579,7 +579,7 @@ func TestDeleteImage_Success(t *testing.T) {
 	ctx := context.Background()
 	busID := uuid.New()
 	targetURL := "http://example.com/img1.jpg"
-	
+
 	existingBus := &model.Bus{
 		BaseModel: model.BaseModel{ID: busID},
 		ImageURLs: []string{targetURL, "http://example.com/img2.jpg"},
@@ -610,7 +610,7 @@ func TestDeleteImage_NotFound(t *testing.T) {
 
 	ctx := context.Background()
 	busID := uuid.New()
-	
+
 	existingBus := &model.Bus{
 		BaseModel: model.BaseModel{ID: busID},
 		ImageURLs: []string{"http://example.com/img1.jpg"},
