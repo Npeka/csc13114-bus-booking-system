@@ -48,6 +48,14 @@ services:
       DATABASE_NAME: 'bus_booking_user'
       SERVER_PORT: '8080'
       REDIS_DB: '0'
+
+      DO_SPACES_ENDPOINT: https://bus-booking.sgp1.digitaloceanspaces.com
+      DO_SPACES_REGION: sgp1
+      DO_SPACES_KEY: DO00VLA77KHJ8FA9N7WP
+      DO_SPACES_SECRET: aJRbn3bZK65vk7bQMYc91e1ri61BOQIjIh48OVi3EUc
+      DO_SPACES_BUCKET: bus-booking
+      DO_SPACES_USE_SSL: true
+      DO_SPACES_CDN_DOMAIN: https://bus-booking.sgp1.cdn.digitaloceanspaces.com
     ingress:
       enabled: false
 
@@ -61,6 +69,14 @@ services:
       DATABASE_NAME: 'bus_booking_trip'
       SERVER_PORT: '8080'
       REDIS_DB: '1'
+
+      DO_SPACES_ENDPOINT: https://bus-booking.sgp1.digitaloceanspaces.com
+      DO_SPACES_REGION: sgp1
+      DO_SPACES_KEY: DO00VLA77KHJ8FA9N7WP
+      DO_SPACES_SECRET: aJRbn3bZK65vk7bQMYc91e1ri61BOQIjIh48OVi3EUc
+      DO_SPACES_BUCKET: bus-booking
+      DO_SPACES_USE_SSL: true
+      DO_SPACES_CDN_DOMAIN: https://bus-booking.sgp1.cdn.digitaloceanspaces.com
     ingress:
       enabled: false # Traffic goes through gateway now
 
