@@ -29,11 +29,33 @@ export interface ChatRequest {
   context?: ChatContext;
 }
 
+// Trip data structure returned from chatbot search
+export interface ChatbotTripData {
+  id: string;
+  departure_time: string;
+  arrival_time: string;
+  origin: string;
+  destination: string;
+  price: number;
+  available_seats: number;
+  bus?: {
+    name?: string;
+    type?: string;
+  };
+  route?: {
+    name?: string;
+    estimated_duration?: number;
+  };
+}
+
 export interface ChatResponse {
   message: string;
   intent?: string;
   action?: string;
-  data?: unknown;
+  data?: {
+    trips?: ChatbotTripData[];
+    [key: string]: unknown;
+  };
   context?: ChatContext;
   suggestions?: string[];
 }
