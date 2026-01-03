@@ -4,7 +4,7 @@ services:
   gateway-service:
     containerName: gateway-service
     image: npkhang22/bb-gateway-service
-    tag: gateway-service-8ab99e1
+    tag: gateway-service-d77a806
     port: 8080
     env:
       SERVICE_NAME: 'gateway-service'
