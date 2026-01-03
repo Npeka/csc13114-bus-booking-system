@@ -7,18 +7,18 @@ export interface TripSearchParams {
   // Time range filters (ISO8601 format)
   departure_time_start?: string;
   departure_time_end?: string;
-  arrival_time_start?: string;
-  arrival_time_end?: string;
+  // Arrival time fields are removed from backend usage
 
   // Other filters
   passengers?: number; // Client-side only, for seat availability
-  seat_type?: "standard" | "vip" | "sleeper";
   min_price?: number;
   max_price?: number;
-  departure_time_min?: string; // Deprecated, use departure_time_start
-  departure_time_max?: string; // Deprecated, use departure_time_end
+
+  // Array filters
   amenities?: string[]; // Filter by bus amenities
+  seat_types?: string[]; // Filter by seat types
   bus_type?: string; // Filter by bus type/model
+
   operator_id?: string;
   sort_by?: "price" | "departure_time" | "duration";
   sort_order?: "asc" | "desc";

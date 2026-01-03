@@ -17,18 +17,20 @@ import type { ApiTripItem, TripSearchParams } from "@/lib/types/trip";
 import { parseDateFromVnFormat } from "@/lib/utils";
 import { TripSummaryHeader } from "./_components/trip-summary-header";
 import { TripResults } from "./_components/trip-results";
+import { TripPagination } from "./_components/trip-pagination";
 
 function TripsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [sortBy, setSortBy] = useState<"price" | "departure" | "duration">(
-    "price",
-  );
+  // Read sortBy and sortOrder from URL params
+  const sortBy =
+    (searchParams.get("sort") as "price" | "departure" | "duration") || "price";
+  const sortOrder = (searchParams.get("order") as "asc" | "desc") || "asc";
   const pageSize = 20;
 
-  const origin = searchParams.get("from") || "";
-  const destination = searchParams.get("to") || "";
-  const date = searchParams.get("date") || "";
+  const origin = (searchParams.get("from") || "").replace(/\+/g, " ");
+  const destination = (searchParams.get("to") || "").replace(/\+/g, " ");
+  const date = (searchParams.get("date") || "").replace(/\+/g, " ");
   const passengers = parseInt(searchParams.get("passengers") || "1", 10);
 
   const currentPage = Number(searchParams.get("page")) || 1;
@@ -39,31 +41,46 @@ function TripsContent() {
     return `/trips?${params.toString()}`;
   };
 
-  const [filters, setFilters] = useState<Filters>({
-    priceRange: [0, 1000000],
-    departureTime: [],
-    busTypes: [],
-    amenities: [],
-    operators: [],
-  });
+  // Read filters from URL params
+  const priceMin = parseInt(searchParams.get("priceMin") || "0", 10);
+  const priceMax = parseInt(searchParams.get("priceMax") || "1000000", 10);
+  const departureTimeSlots =
+    searchParams.get("departureTime")?.split(",").filter(Boolean) || [];
+  const busTypes =
+    searchParams.get("busTypes")?.split(",").filter(Boolean) || [];
+  const amenitiesFromUrl =
+    searchParams.get("amenities")?.split(",").filter(Boolean) || [];
 
-  // Map departure time slots to time ranges
+  const filters: Filters = {
+    priceRange: [priceMin, priceMax],
+    departureTime: departureTimeSlots,
+    busTypes: busTypes,
+    amenities: amenitiesFromUrl,
+    operators: [],
+  };
+
+  // Map departure time slots (start times) to time ranges
   const getTimeRange = (slots: string[]) => {
     if (slots.length === 0) return { min: undefined, max: undefined };
 
-    const timeRanges: Record<string, { min: string; max: string }> = {
-      morning: { min: "00:00", max: "06:00" },
-      daytime: { min: "06:00", max: "12:00" },
-      afternoon: { min: "12:00", max: "18:00" },
-      evening: { min: "18:00", max: "24:00" },
+    // Map start_time to end_time
+    // Each slot is 6 hours long
+    const endTimes: Record<string, string> = {
+      "00:00": "06:00",
+      "06:00": "12:00",
+      "12:00": "18:00",
+      "18:00": "24:00",
     };
 
-    const mins = slots.map((s) => timeRanges[s]?.min).filter(Boolean);
-    const maxs = slots.map((s) => timeRanges[s]?.max).filter(Boolean);
+    const validSlots = slots.filter((s) => endTimes[s]);
+    if (validSlots.length === 0) return { min: undefined, max: undefined };
+
+    const mins = validSlots.sort();
+    const maxs = validSlots.map((s) => endTimes[s]).sort();
 
     return {
-      min: mins.length > 0 ? mins.sort()[0] : undefined,
-      max: maxs.length > 0 ? maxs.sort().reverse()[0] : undefined,
+      min: mins[0],
+      max: maxs[maxs.length - 1],
     };
   };
 
@@ -72,9 +89,10 @@ function TripsContent() {
     // Convert date from dd/MM/yyyy to ISO date range
     let departureStart: string | undefined;
     let departureEnd: string | undefined;
+    let parsedDate: Date | null = null;
 
     if (date) {
-      const parsedDate = parseDateFromVnFormat(date);
+      parsedDate = parseDateFromVnFormat(date);
       if (parsedDate) {
         // Start of day
         const startOfDay = new Date(parsedDate);
@@ -101,11 +119,12 @@ function TripsContent() {
     // Add sorting
     if (sortBy === "price") {
       params.sort_by = "price";
-      params.sort_order = "asc";
     } else if (sortBy === "departure") {
       params.sort_by = "departure_time";
-      params.sort_order = "asc";
+    } else if (sortBy === "duration") {
+      params.sort_by = "duration";
     }
+    params.sort_order = sortOrder;
 
     // Add price filter
     if (filters.priceRange[0] > 0) {
@@ -115,29 +134,52 @@ function TripsContent() {
       params.max_price = filters.priceRange[1];
     }
 
-    // Add time range filter
-    if (filters.departureTime.length > 0) {
+    // Add time range filter (merge date with time slots)
+    // If time slots are selected, constrain the start/end times
+    // Otherwise, use the full day range calculated above
+    if (filters.departureTime.length > 0 && parsedDate) {
       const timeRange = getTimeRange(filters.departureTime);
-      if (timeRange.min) params.departure_time_min = timeRange.min;
-      if (timeRange.max) params.departure_time_max = timeRange.max;
+
+      if (timeRange.min) {
+        const [h, m] = timeRange.min.split(":").map(Number);
+        const start = new Date(parsedDate);
+        start.setHours(h, m, 0, 0);
+        params.departure_time_start = start.toISOString();
+      }
+
+      if (timeRange.max) {
+        const [h, m] = timeRange.max.split(":").map(Number);
+        const end = new Date(parsedDate);
+        end.setHours(h, m, 59, 999);
+        params.departure_time_end = end.toISOString();
+      }
     }
 
-    // Add amenities filter
+    // Add amenities filter - filter values are already raw codes (wifi, ac, etc)
     if (filters.amenities.length > 0) {
       params.amenities = filters.amenities;
     }
 
-    // Add bus type filter (map Vietnamese names to search terms)
+    // Add bus/seat type filter
+    // Frontend filter combines Bus Type and Seat Type concepts
+    // We map these to the backend's seat_types[] filter
     if (filters.busTypes.length > 0) {
-      // Use first bus type for now (can be enhanced to support multiple)
-      const busTypeMap: Record<string, string> = {
-        "Ghế ngồi": "seat",
-        "Giường nằm": "bed",
-        Limousine: "limousine",
-        "Cabin đôi": "cabin",
+      const seatTypeMap: Record<string, string> = {
+        "Ghế thường": "standard", // Changed from "Ghế ngồi" to match UI likely
+        "Ghế ngồi": "standard",
+        "Giường nằm": "sleeper",
+        "Ghế VIP": "vip",
+        Limousine: "vip", // Map Limousine to VIP seat for now
       };
-      const mappedType = busTypeMap[filters.busTypes[0]] || filters.busTypes[0];
-      params.bus_type = mappedType;
+
+      // Filter out any unmapped types to avoid sending invalid values
+      const seatTypes = filters.busTypes
+        .map((t) => seatTypeMap[t] || t.toLowerCase())
+        .filter((t) => ["standard", "vip", "sleeper"].includes(t));
+
+      if (seatTypes.length > 0) {
+        params.seat_types = seatTypes;
+      }
     }
 
     return params;
@@ -148,6 +190,7 @@ function TripsContent() {
     passengers,
     currentPage,
     sortBy,
+    sortOrder,
     filters.priceRange,
     filters.departureTime,
     filters.amenities,
@@ -163,6 +206,7 @@ function TripsContent() {
     queryKey: ["trips", searchParams_api],
     queryFn: () => searchTrips(searchParams_api),
     enabled: !!origin && !!destination && !!date,
+    refetchInterval: 2000, // Poll every 2 seconds for realtime seat updates
   });
 
   // Convert API TripDetail to Trip format for TripCard
@@ -193,7 +237,7 @@ function TripsContent() {
           tv: "TV",
           water: "Nước uống",
           blanket: "Chăn",
-          usb_charger: "Sạc USB",
+          charging: "Sạc USB",
           snack: "Snack",
         };
         return mapping[amenity] || amenity;
@@ -216,47 +260,68 @@ function TripsContent() {
     });
   }, [searchResponse]);
 
+  const handleFiltersChange = (newFilters: Filters) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    // Update price range
+    if (newFilters.priceRange[0] > 0) {
+      params.set("priceMin", newFilters.priceRange[0].toString());
+    } else {
+      params.delete("priceMin");
+    }
+    if (newFilters.priceRange[1] < 1000000) {
+      params.set("priceMax", newFilters.priceRange[1].toString());
+    } else {
+      params.delete("priceMax");
+    }
+
+    // Update departure time
+    if (newFilters.departureTime.length > 0) {
+      params.set("departureTime", newFilters.departureTime.join(","));
+    } else {
+      params.delete("departureTime");
+    }
+
+    // Update bus types
+    if (newFilters.busTypes.length > 0) {
+      params.set("busTypes", newFilters.busTypes.join(","));
+    } else {
+      params.delete("busTypes");
+    }
+
+    // Update amenities
+    if (newFilters.amenities.length > 0) {
+      params.set("amenities", newFilters.amenities.join(","));
+    } else {
+      params.delete("amenities");
+    }
+
+    // Reset to page 1 when filters change
+    params.set("page", "1");
+
+    router.push(`/trips?${params.toString()}`, { scroll: false });
+  };
+
   const handleClearFilters = () => {
-    setFilters({
-      priceRange: [0, 1000000],
-      departureTime: [],
-      busTypes: [],
-      amenities: [],
-      operators: [],
-    });
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("priceMin");
+    params.delete("priceMax");
+    params.delete("departureTime");
+    params.delete("busTypes");
+    params.delete("amenities");
+    params.set("page", "1");
+    router.push(`/trips?${params.toString()}`, { scroll: false });
   };
 
   const handleSelectTrip = (tripId: string) => {
     router.push(`/trips/${tripId}`);
   };
 
-  // Apply client-side filters (for bus types and amenities that aren't in API yet)
-  const filteredTrips = trips.filter((trip) => {
-    if (
-      filters.busTypes.length > 0 &&
-      !filters.busTypes.includes(trip.busType)
-    ) {
-      return false;
-    }
-    if (filters.amenities.length > 0) {
-      const hasAllAmenities = filters.amenities.every((amenity) =>
-        trip.amenities.includes(amenity),
-      );
-      if (!hasAllAmenities) return false;
-    }
-    // Departure time filtering will be handled by backend in future
-    return true;
-  });
+  // Remove client-side filtering - backend handles all filters
+  const filteredTrips = trips;
 
-  // Client-side sorting for duration (API handles price and departure)
-  const sortedTrips =
-    sortBy === "duration"
-      ? [...filteredTrips].sort((a, b) => {
-          const aDuration = parseInt(a.duration.replace(/[^\d]/g, "")) || 0;
-          const bDuration = parseInt(b.duration.replace(/[^\d]/g, "")) || 0;
-          return aDuration - bDuration;
-        })
-      : filteredTrips;
+  // Client-side sorting removed - backend handles all sorting including duration
+  const sortedTrips = filteredTrips;
 
   const activeFiltersCount =
     (filters.priceRange[0] !== 0 || filters.priceRange[1] !== 1000000 ? 1 : 0) +
@@ -264,14 +329,11 @@ function TripsContent() {
     filters.busTypes.length +
     filters.amenities.length;
 
-  const handleToggleSort = () => {
-    setSortBy((prev) =>
-      prev === "price"
-        ? "departure"
-        : prev === "departure"
-          ? "duration"
-          : "price",
-    );
+  const handleSortChange = (field: string, order: "asc" | "desc") => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("sort", field);
+    params.set("order", order);
+    router.push(`/trips?${params.toString()}`, { scroll: false });
   };
 
   return (
@@ -291,7 +353,7 @@ function TripsContent() {
             <div className="sticky top-20">
               <TripFilters
                 filters={filters}
-                onFiltersChange={setFilters}
+                onFiltersChange={handleFiltersChange}
                 onClearFilters={handleClearFilters}
               />
             </div>
@@ -314,7 +376,7 @@ function TripsContent() {
               <SheetContent side="left" className="w-80 overflow-y-auto">
                 <TripFilters
                   filters={filters}
-                  onFiltersChange={setFilters}
+                  onFiltersChange={handleFiltersChange}
                   onClearFilters={handleClearFilters}
                 />
               </SheetContent>
@@ -330,7 +392,8 @@ function TripsContent() {
               passengers={passengers.toString()}
               resultsCount={searchResponse?.total || sortedTrips.length}
               sortBy={sortBy}
-              onToggleSort={handleToggleSort}
+              sortOrder={sortOrder}
+              onSortChange={handleSortChange}
             />
             <TripResults
               loading={isLoading}
@@ -339,14 +402,12 @@ function TripsContent() {
               onClearFilters={handleClearFilters}
               error={error}
             />
-            {searchResponse && searchResponse.total_pages > 1 && (
-              <div className="mt-6">
-                <PaginationWithLinks
-                  page={currentPage}
-                  totalPages={searchResponse.total_pages}
-                  createPageURL={createPageURL}
-                />
-              </div>
+            {searchResponse && (
+              <TripPagination
+                currentPage={currentPage}
+                totalPages={searchResponse.total_pages}
+                onPageCreateURL={createPageURL}
+              />
             )}
           </div>
         </div>

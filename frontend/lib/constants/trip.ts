@@ -66,8 +66,8 @@ export const AMENITIES = {
     displayName: "Chăn",
     icon: "🛏️",
   },
-  usb_charger: {
-    value: "usb_charger",
+  charging: {
+    value: "charging",
     displayName: "Sạc USB",
     icon: "🔌",
   },

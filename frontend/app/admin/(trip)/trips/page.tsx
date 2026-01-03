@@ -37,8 +37,6 @@ export default function AdminTripsPage() {
         status: filters.status,
         departure_time_start: filters.departureTimeStart,
         departure_time_end: filters.departureTimeEnd,
-        arrival_time_start: filters.arrivalTimeStart,
-        arrival_time_end: filters.arrivalTimeEnd,
         min_price: filters.minPrice,
         max_price: filters.maxPrice,
         amenities: filters.amenities,

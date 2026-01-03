@@ -17,6 +17,20 @@ import {
   CreateGuestBookingRequest,
 } from "@/lib/types/booking";
 
+export interface PassengerResponse {
+  user_id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  booking_id: string;
+  booking_reference: string;
+  status: string;
+  seats: string[];
+  original_price: number;
+  paid_price: number;
+  is_boarded: boolean;
+}
+
 /**
  * Get all bookings for a specific user with pagination
  */
@@ -259,6 +273,27 @@ export async function listBookings(
     );
 
     return result.data;
+  } catch (error) {
+    throw new Error(handleApiError(error));
+  }
+}
+
+/**
+ * Get all passengers for a specific trip (admin only)
+ */
+export async function getTripPassengers(
+  tripId: string,
+): Promise<PassengerResponse[]> {
+  try {
+    const response = await apiClient.get<ApiResponse<PassengerResponse[]>>(
+      `/booking/api/v1/bookings/trip/${tripId}/passengers`,
+    );
+
+    if (!response.data.data) {
+      return [];
+    }
+
+    return response.data.data;
   } catch (error) {
     throw new Error(handleApiError(error));
   }

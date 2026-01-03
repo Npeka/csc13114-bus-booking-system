@@ -20,6 +20,8 @@ import { getTripById } from "@/lib/api/trip/trip-service";
 import { toast } from "sonner";
 import type { BookingResponse } from "@/lib/types/booking";
 import type { Trip } from "@/lib/types/trip";
+import type { User as UserType } from "@/lib/stores/auth-store";
+import { getUserById } from "@/lib/api/user/user-service";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { PageHeader, PageHeaderLayout } from "@/components/shared/admin";
@@ -36,6 +38,7 @@ export default function AdminBookingDetailPage({ params }: PageProps) {
   const resolvedParams = use(params);
   const [booking, setBooking] = useState<BookingResponse | null>(null);
   const [trip, setTrip] = useState<Trip | null>(null);
+  const [user, setUser] = useState<UserType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchBooking = async () => {
@@ -45,6 +48,17 @@ export default function AdminBookingDetailPage({ params }: PageProps) {
       // Fetch booking first
       const bookingData = await getBookingById(resolvedParams.id);
       setBooking(bookingData);
+
+      // Fetch user info if user_id exists
+      if (bookingData.user_id) {
+        try {
+          const userData = await getUserById(bookingData.user_id);
+          setUser(userData);
+        } catch (error) {
+          console.error("Failed to fetch user details:", error);
+          // Don't block UI if user fetch fails
+        }
+      }
 
       // If trip info not in booking response, fetch it separately
       if (!bookingData.trip && bookingData.trip_id) {
@@ -131,11 +145,6 @@ export default function AdminBookingDetailPage({ params }: PageProps) {
               description={`Mã đặt vé: ${booking.booking_reference}`}
             />
           </div>
-          <div className="flex gap-2">
-            {getBookingStatusBadge(booking.status)}
-            {booking.transaction_status &&
-              getTransactionStatusBadge(booking.transaction_status)}
-          </div>
         </div>
         <Button variant="ghost" asChild>
           <Link href="/admin/bookings">
@@ -151,11 +160,12 @@ export default function AdminBookingDetailPage({ params }: PageProps) {
         <div className="space-y-6">
           {/* Booking Reference Card */}
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle className="flex items-center gap-2">
                 <Hash className="h-5 w-5" />
                 Thông tin đặt vé
               </CardTitle>
+              {getBookingStatusBadge(booking.status)}
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -177,10 +187,25 @@ export default function AdminBookingDetailPage({ params }: PageProps) {
               {booking.user_id && (
                 <div>
                   <div className="text-sm text-muted-foreground">Người đặt</div>
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-mono text-sm">{booking.user_id}</span>
-                  </div>
+                  {user ? (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 font-medium">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        {user.full_name}
+                      </div>
+                      <div className="ml-6 text-sm text-muted-foreground">
+                        <div>{user.email}</div>
+                        <div>{user.phone}</div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-mono text-sm">
+                        {booking.user_id}
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -312,11 +337,13 @@ export default function AdminBookingDetailPage({ params }: PageProps) {
         <div className="space-y-6">
           {/* Payment Details */}
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5" />
                 Thông tin thanh toán
               </CardTitle>
+              {booking.transaction_status &&
+                getTransactionStatusBadge(booking.transaction_status)}
             </CardHeader>
             <CardContent className="space-y-4">
               <div>

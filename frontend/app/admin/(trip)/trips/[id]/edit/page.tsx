@@ -45,12 +45,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getTripById, updateTrip, listRoutes, listBuses } from "@/lib/api";
+import { getTripPassengers } from "@/lib/api/booking/booking-service";
 import type { Route, Trip } from "@/lib/types/trip";
 import { formatDateForInput } from "@/lib/utils";
 import { TripHeaderBadges } from "./_components/trip-header-badges";
 import { TripOverviewStats } from "./_components/trip-overview-stats";
 import { TripRouteInfo } from "./_components/trip-route-info";
 import { TripBusInfo } from "./_components/trip-bus-info";
+import { TripPassengerList } from "./_components/trip-passenger-list";
 
 const tripFormSchema = z
   .object({
@@ -128,6 +130,13 @@ export default function EditTripPage({
         page_size: 100,
       }),
     enabled: !!selectedRoute,
+  });
+
+  // Fetch passengers
+  const { data: passengers, isLoading: passengersLoading } = useQuery({
+    queryKey: ["trip-passengers", id],
+    queryFn: () => getTripPassengers(id),
+    enabled: !!id,
   });
 
   // Derive selected route during render (per React docs: "You don't need Effects to transform data")
@@ -286,6 +295,12 @@ export default function EditTripPage({
               {/* Bus Information */}
               {trip?.bus && <TripBusInfo bus={trip.bus} />}
             </div>
+
+            {/* Passenger List */}
+            <TripPassengerList
+              passengers={passengers || []}
+              isLoading={passengersLoading}
+            />
           </TabsContent>
 
           {/* Edit Tab */}

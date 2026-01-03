@@ -227,18 +227,6 @@ function CheckoutGuestContent() {
                 onAgreedChange={setAgreedToTerms}
                 isLoading={createBookingMutation.isPending}
               />
-
-              {/* Submit Button */}
-              <Button
-                type="submit"
-                size="lg"
-                className="w-full"
-                disabled={createBookingMutation.isPending}
-              >
-                {createBookingMutation.isPending
-                  ? "Đang xử lý..."
-                  : "Xác nhận đặt vé"}
-              </Button>
             </div>
           </div>
         </form>

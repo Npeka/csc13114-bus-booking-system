@@ -12,6 +12,7 @@ import {
   BarChart3,
   ChevronRight,
   LogOut,
+  Ticket,
 } from "lucide-react";
 
 import {
@@ -74,11 +75,12 @@ const menuItems = [
         title: "Quản lý xe",
         href: "/admin/buses",
       },
-      {
-        title: "Đặt vé",
-        href: "/admin/bookings",
-      },
     ],
+  },
+  {
+    title: "Đặt vé",
+    icon: Ticket,
+    href: "/admin/bookings",
   },
   {
     title: "Thanh toán",
