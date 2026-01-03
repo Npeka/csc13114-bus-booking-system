@@ -252,3 +252,77 @@ func TestGetBookingByReference_ErrorResponse(t *testing.T) {
 	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), "404")
 }
+
+// Tests for GetFAQAnswer to increase coverage
+func TestGetFAQAnswer_DirectKeywordMatch(t *testing.T) {
+	service := &ChatbotServiceImpl{
+		faqKnowledge: []model.FAQ{
+			{
+				Question: "Chính sách hủy vé như thế nào?",
+				Answer:   "Hoàn 70% trước 24 giờ",
+				Keywords: []string{"hủy", "cancel", "hoàn tiền"},
+			},
+			{
+				Question: "Hành lý được bao nhiêu kg?",
+				Answer:   "Tối đa 20kg miễn phí",
+				Keywords: []string{"hành lý", "luggage", "kg"},
+			},
+		},
+	}
+
+	tests := []struct {
+		name           string
+		question       string
+		expectedAnswer string
+	}{
+		{
+			name:           "Match cancel keyword",
+			question:       "Tôi muốn hủy vé",
+			expectedAnswer: "Hoàn 70% trước 24 giờ",
+		},
+		{
+			name:           "Match luggage keyword",
+			question:       "Hành lý được mang bao nhiêu?",
+			expectedAnswer: "Tối đa 20kg miễn phí",
+		},
+		{
+			name:           "Match with uppercase",
+			question:       "CHÍNH SÁCH HỦY",
+			expectedAnswer: "Hoàn 70% trước 24 giờ",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			answer, err := service.GetFAQAnswer(context.Background(), tt.question)
+			require.NoError(t, err)
+			assert.Equal(t, tt.expectedAnswer, answer)
+		})
+	}
+}
+
+// Tests for normalizeCityName with actual cityAliases map
+func TestNormalizeCityName_ActualMappings(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{"Sài Gòn to TP.HCM", "Sài Gòn", "TP. Hồ Chí Minh"},
+		{"Saigon case-insensitive", "saigon", "TP. Hồ Chí Minh"},
+		{"SG to TP.HCM", "SG", "TP. Hồ Chí Minh"},
+		{"Hanoi to Hà Nội", "Hanoi", "Hà Nội"},
+		{"Ha Noi to Hà Nội", "Ha Noi", "Hà Nội"},
+		{"Dalat to Đà Lạt", "Dalat", "Đà Lạt"},
+		{"Da Nang to Đà Nẵng", "Da Nang", "Đà Nẵng"},
+		{"Unknown city returns same", "Unknown City", "Unknown City"},
+		{"Empty string", "", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := normalizeCityName(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
