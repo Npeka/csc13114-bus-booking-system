@@ -7,36 +7,36 @@ services:
     tag: gateway-service-d48ae31
     port: 8080
     env:
-      SERVICE_NAME: 'gateway-service'
-      SERVER_PORT: '8080'
-      REDIS_DB: '4'
+      SERVICE_NAME: "gateway-service"
+      SERVER_PORT: "8080"
+      REDIS_DB: "4"
 
-      AUTH_USER_SERVICE_URL: 'http://user-service'
-      AUTH_VERIFY_ENDPOINT: '/api/v1/auth/verify-token'
+      AUTH_USER_SERVICE_URL: "http://user-service"
+      AUTH_VERIFY_ENDPOINT: "/api/v1/auth/verify-token"
 
-      SERVICES_USER_URL: 'http://user-service'
-      SERVICES_USER_TIMEOUT: '60'
-      SERVICES_USER_RETRIES: '3'
+      SERVICES_USER_URL: "http://user-service"
+      SERVICES_USER_TIMEOUT: "60"
+      SERVICES_USER_RETRIES: "3"
 
-      SERVICES_TRIP_URL: 'http://trip-service'
-      SERVICES_TRIP_TIMEOUT: '60'
-      SERVICES_TRIP_RETRIES: '3'
+      SERVICES_TRIP_URL: "http://trip-service"
+      SERVICES_TRIP_TIMEOUT: "60"
+      SERVICES_TRIP_RETRIES: "3"
 
-      SERVICES_BOOKING_URL: 'http://booking-service'
-      SERVICES_BOOKING_TIMEOUT: '60'
-      SERVICES_BOOKING_RETRIES: '3'
+      SERVICES_BOOKING_URL: "http://booking-service"
+      SERVICES_BOOKING_TIMEOUT: "60"
+      SERVICES_BOOKING_RETRIES: "3"
 
-      SERVICES_PAYMENT_URL: 'http://payment-service'
-      SERVICES_PAYMENT_TIMEOUT: '60'
-      SERVICES_PAYMENT_RETRIES: '3'
+      SERVICES_PAYMENT_URL: "http://payment-service"
+      SERVICES_PAYMENT_TIMEOUT: "60"
+      SERVICES_PAYMENT_RETRIES: "3"
 
-      SERVICES_CHATBOT_URL: 'http://chatbot-service'
-      SERVICES_CHATBOT_TIMEOUT: '60'
-      SERVICES_CHATBOT_RETRIES: '3'
+      SERVICES_CHATBOT_URL: "http://chatbot-service"
+      SERVICES_CHATBOT_TIMEOUT: "60"
+      SERVICES_CHATBOT_RETRIES: "3"
     ingress:
       enabled: true
       host: bus-booking.site
-      path: '/'
+      path: "/"
 
   user-service:
     containerName: user-service
@@ -44,18 +44,18 @@ services:
     tag: user-service-72cac0c
     port: 8080
     env:
-      SERVICE_NAME: 'user-service'
-      DATABASE_NAME: 'bus_booking_user'
-      SERVER_PORT: '8080'
-      REDIS_DB: '0'
+      SERVICE_NAME: "user-service"
+      DATABASE_NAME: "bus_booking_user"
+      SERVER_PORT: "8080"
+      REDIS_DB: "0"
 
-      DO_SPACES_ENDPOINT: https://bus-booking.sgp1.digitaloceanspaces.com
-      DO_SPACES_REGION: sgp1
-      DO_SPACES_KEY: DO00VLA77KHJ8FA9N7WP
-      DO_SPACES_SECRET: aJRbn3bZK65vk7bQMYc91e1ri61BOQIjIh48OVi3EUc
-      DO_SPACES_BUCKET: bus-booking
-      DO_SPACES_USE_SSL: true
-      DO_SPACES_CDN_DOMAIN: https://bus-booking.sgp1.cdn.digitaloceanspaces.com
+      DO_SPACES_ENDPOINT:
+      DO_SPACES_REGION:
+      DO_SPACES_KEY:
+      DO_SPACES_SECRET:
+      DO_SPACES_BUCKET:
+      DO_SPACES_USE_SSL:
+      DO_SPACES_CDN_DOMAIN:
     ingress:
       enabled: false
 
@@ -65,18 +65,18 @@ services:
     tag: trip-service-aaddd2e
     port: 8080
     env:
-      SERVICE_NAME: 'trip-service'
-      DATABASE_NAME: 'bus_booking_trip'
-      SERVER_PORT: '8080'
-      REDIS_DB: '1'
+      SERVICE_NAME: "trip-service"
+      DATABASE_NAME: "bus_booking_trip"
+      SERVER_PORT: "8080"
+      REDIS_DB: "1"
 
-      DO_SPACES_ENDPOINT: https://bus-booking.sgp1.digitaloceanspaces.com
-      DO_SPACES_REGION: sgp1
-      DO_SPACES_KEY: DO00VLA77KHJ8FA9N7WP
-      DO_SPACES_SECRET: aJRbn3bZK65vk7bQMYc91e1ri61BOQIjIh48OVi3EUc
-      DO_SPACES_BUCKET: bus-booking
-      DO_SPACES_USE_SSL: true
-      DO_SPACES_CDN_DOMAIN: https://bus-booking.sgp1.cdn.digitaloceanspaces.com
+      DO_SPACES_ENDPOINT:
+      DO_SPACES_REGION:
+      DO_SPACES_KEY:
+      DO_SPACES_SECRET:
+      DO_SPACES_BUCKET:
+      DO_SPACES_USE_SSL:
+      DO_SPACES_CDN_DOMAIN:
     ingress:
       enabled: false # Traffic goes through gateway now
 
@@ -86,10 +86,10 @@ services:
     tag: booking-service-d48ae31
     port: 8080
     env:
-      SERVICE_NAME: 'booking-service'
-      DATABASE_NAME: 'bus_booking_booking'
-      SERVER_PORT: '8080'
-      REDIS_DB: '2'
+      SERVICE_NAME: "booking-service"
+      DATABASE_NAME: "bus_booking_booking"
+      SERVER_PORT: "8080"
+      REDIS_DB: "2"
     ingress:
       enabled: false # Traffic goes through gateway now
 
@@ -99,16 +99,16 @@ services:
     tag: payment-service-8ab99e1
     port: 8080
     env:
-      SERVICE_NAME: 'payment-service'
-      DATABASE_NAME: 'bus_booking_payment'
-      SERVER_PORT: '8080'
-      REDIS_DB: '3'
+      SERVICE_NAME: "payment-service"
+      DATABASE_NAME: "bus_booking_payment"
+      SERVER_PORT: "8080"
+      REDIS_DB: "3"
 
-      PAYOS_CLIENT_ID: ce924919-6874-43ce-88fb-068b5e73988a
-      PAYOS_API_KEY: 8d37f38e-f028-47c4-aa41-12674bf16328
-      PAYOS_CHECKSUM_KEY: e01cb1038e2744ea9e479dc460dc80c91aff7e0b18d9a1431808f78e45dcde91
-      PAYOS_RETURN_URL: https://csc13114-bus-booking-system.vercel.app/payment/success
-      PAYOS_CANCEL_URL: https://csc13114-bus-booking-system.vercel.app/payment/cancel
+      PAYOS_CLIENT_ID:
+      PAYOS_API_KEY:
+      PAYOS_CHECKSUM_KEY:
+      PAYOS_RETURN_URL:
+      PAYOS_CANCEL_URL:
     ingress:
       enabled: false # Traffic goes through gateway now
 
@@ -118,14 +118,14 @@ services:
     tag: notification-service-d48ae31
     port: 8080
     env:
-      SERVICE_NAME: 'notification-service'
+      SERVICE_NAME: "notification-service"
 
-      BREVO_API_KEY: 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
-      FROM_EMAIL: npkhang287@gmail.com
-      FROM_NAME: Bus Booking System
+      BREVO_API_KEY:
+      FROM_EMAIL:
+      FROM_NAME:
 
-      TEMPLATE_PATH: templates
-      LOGO_URL: https://csc13114-bus-booking-system.vercel.app/_next/image?url=%2Ffavicon.png&w=128&q=75
+      TEMPLATE_PATH:
+      LOGO_URL:
     ingress:
       enabled: false # Traffic goes through gateway now
 
@@ -135,22 +135,22 @@ services:
     tag: chatbot-service-6032559
     port: 8080
     env:
-      SERVICE_NAME: 'chatbot-service'
-      SERVER_PORT: '8080'
-      REDIS_DB: '5'
+      SERVICE_NAME: "chatbot-service"
+      SERVER_PORT: "8080"
+      REDIS_DB: "5"
 
       # Gemini Config
-      GEMINI_API_KEY: 'AIzaSyBV4q_feaSxmup1ar8xn87WWNgKFd5BbQM'
-      GEMINI_MODEL: 'gemini-2.5-flash'
-      GEMINI_TEMPERATURE: '0.7'
-      GEMINI_MAX_TOKENS: '2048'
+      GEMINI_API_KEY:
+      GEMINI_MODEL:
+      GEMINI_TEMPERATURE:
+      GEMINI_MAX_TOKENS:
     ingress:
       enabled: false
 
 # Environment Variables
 env:
   # Server
-  GIN_MODE: 'release'
+  GIN_MODE: "release"
   LOG_LEVEL: info
   LOG_FORMAT: console
   LOG_OUTPUT: stdout
@@ -160,13 +160,13 @@ env:
   LOG_MAX_AGE: 30
   LOG_COMPRESS: true
 
-  SERVER_HOST: '0.0.0.0'
-  SERVER_READ_TIMEOUT: '60s'
-  SERVER_WRITE_TIMEOUT: '60s'
-  SERVER_IDLE_TIMEOUT: '120s'
-  SERVER_SHUTDOWN_TIMEOUT: '30s'
-  SERVER_MAX_HEADER_BYTES: '1048576'
-  SERVER_ENVIRONMENT: 'production'
+  SERVER_HOST: "0.0.0.0"
+  SERVER_READ_TIMEOUT: "60s"
+  SERVER_WRITE_TIMEOUT: "60s"
+  SERVER_IDLE_TIMEOUT: "120s"
+  SERVER_SHUTDOWN_TIMEOUT: "30s"
+  SERVER_MAX_HEADER_BYTES: "1048576"
+  SERVER_ENVIRONMENT: "production"
 
   # Rate Limiting Configuration
   RATE_LIMIT_RPS: 100
@@ -175,18 +175,18 @@ env:
   RATE_LIMIT_CLEANUP_AFTER: 10m
 
   # CORS
-  CORS_ALLOWED_ORIGINS: 'https://csc13114-bus-booking-system.vercel.app,http://localhost:3000,https://api-merchant.payos.vn'
-  CORS_ALLOWED_METHODS: 'GET,POST,PUT,PATCH,DELETE,OPTIONS'
-  CORS_ALLOWED_HEADERS: 'Origin,Content-Type,Accept,Authorization,X-Requested-With,X-User-ID,X-User-Role,X-Access-Token'
-  CORS_ALLOW_CREDENTIALS: 'true'
-  CORS_MAX_AGE: '86400'
+  CORS_ALLOWED_ORIGINS: "https://csc13114-bus-booking-system.vercel.app,http://localhost:3000,https://api-merchant.payos.vn"
+  CORS_ALLOWED_METHODS: "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+  CORS_ALLOWED_HEADERS: "Origin,Content-Type,Accept,Authorization,X-Requested-With,X-User-ID,X-User-Role,X-Access-Token"
+  CORS_ALLOW_CREDENTIALS: "true"
+  CORS_MAX_AGE: "86400"
 
   # Database
-  DATABASE_HOST: bus-booking-database-do-user-29228381-0.d.db.ondigitalocean.com
-  DATABASE_PORT: 25060
-  DATABASE_USERNAME: doadmin
-  DATABASE_PASSWORD: AVNS_k8dv8ULBQ3Sjwie2_Xe
-  DATABASE_SSL_MODE: require
+  DATABASE_HOST:
+  DATABASE_PORT:
+  DATABASE_USERNAME:
+  DATABASE_PASSWORD:
+  DATABASE_SSL_MODE:
   DATABASE_TIMEZONE: Asia/Ho_Chi_Minh
   DATABASE_MAX_OPEN_CONNS: 25
   DATABASE_MAX_IDLE_CONNS: 5
@@ -195,12 +195,12 @@ env:
   DATABASE_ENVIRONMENT: production
 
   # Redis
-  REDIS_HOST: singapore-keyvalue.render.com
-  REDIS_PORT: 6379
-  REDIS_USERNAME: red-d4ebsr7pm1nc738oor50
-  REDIS_PASSWORD: MJm32AjPDJoT1sMS9ug2BwzxOU7aayCZ
-  REDIS_TLS: true
-  REDIS_POOL_SIZE: 5
+  REDIS_HOST:
+  REDIS_PORT:
+  REDIS_USERNAME:
+  REDIS_PASSWORD:
+  REDIS_TLS:
+  REDIS_POOL_SIZE:
   REDIS_MIN_IDLE_CONNS: 1
   REDIS_MAX_RETRIES: 3
   REDIS_DIAL_TIMEOUT: 60s
